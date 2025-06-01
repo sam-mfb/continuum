@@ -1,0 +1,215 @@
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #c0c0c0;
+  padding: 20px;
+}
+
+.mac-window {
+  background: #fff;
+  border: 2px solid #000;
+  border-top: 2px solid #fff;
+  border-left: 2px solid #fff;
+  border-right: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+  box-shadow: 2px 2px 0px #808080;
+  min-height: 400px;
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.window-title-bar {
+  background: #fff;
+  border-bottom: 1px solid #808080;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 20px;
+}
+
+.window-controls {
+  display: flex;
+  gap: 2px;
+}
+
+.window-control {
+  width: 12px;
+  height: 12px;
+  border: 1px solid #000;
+  background: #fff;
+  cursor: pointer;
+}
+
+.window-control.close {
+  background: #fff;
+}
+
+.window-title {
+  flex: 1;
+  text-align: center;
+  font-weight: bold;
+  font-size: 16px;
+  letter-spacing: 1px;
+}
+
+.menu-bar {
+  background: #fff;
+  border-bottom: 1px solid #808080;
+  padding: 2px 8px;
+  display: flex;
+  gap: 16px;
+  font-size: 16px;
+}
+
+.menu-item {
+  padding: 2px 4px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.menu-item:hover {
+  background: #000;
+  color: #fff;
+  border: 1px solid #000;
+}
+
+.menu-item.active {
+  background: #000;
+  color: #fff;
+  border: 1px solid #000;
+}
+
+.window-content {
+  flex: 1;
+  padding: 16px;
+  background: #fff;
+  overflow: auto;
+}
+
+.menu-view {
+  text-align: center;
+  padding: 32px 16px;
+}
+
+.menu-view h2 {
+  font-size: 24px;
+  margin: 0 0 16px 0;
+  font-weight: bold;
+}
+
+.menu-view p {
+  margin: 0 0 24px 0;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+.mac-button {
+  background: #fff;
+  border: 2px solid #000;
+  border-top: 2px solid #fff;
+  border-left: 2px solid #fff;
+  border-right: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: bold;
+  margin: 4px;
+  min-width: 80px;
+}
+
+.mac-button:hover {
+  background: #e0e0e0;
+}
+
+.mac-button:active {
+  border-top: 2px solid #808080;
+  border-left: 2px solid #808080;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  background: #d0d0d0;
+}
+
+.game-view {
+  text-align: center;
+  padding: 16px;
+}
+
+.game-view h2 {
+  font-size: 24px;
+  margin: 0 0 16px 0;
+  font-weight: bold;
+}
+
+.game-viewport {
+  width: 512px;
+  height: 342px;
+  border: 2px solid #000;
+  border-top: 2px solid #808080;
+  border-left: 2px solid #808080;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 16px auto;
+  color: #00ff00;
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+}
+
+.settings-view {
+  padding: 16px;
+}
+
+.settings-view h2 {
+  font-size: 24px;
+  margin: 0 0 16px 0;
+  font-weight: bold;
+}
+
+.mac-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  font-size: 16px;
+}
+
+.mac-checkbox input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  border: 1px solid #000;
+  background: #fff;
+  appearance: none;
+  cursor: pointer;
+}
+
+.mac-checkbox input[type='checkbox']:checked {
+  background: #000;
+  position: relative;
+}
+
+.mac-checkbox input[type='checkbox']:checked::after {
+  content: '✓';
+  color: #fff;
+  font-size: 12px;
+  position: absolute;
+  top: -2px;
+  left: 1px;
+}
+
+.debug-info {
+  background: #f0f0f0;
+  border: 1px solid #808080;
+  padding: 12px;
+  margin-top: 16px;
+  font-size: 14px;
+  font-family: 'Monaco', 'Menlo', monospace;
+}

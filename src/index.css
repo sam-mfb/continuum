@@ -1,0 +1,24 @@
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'VT323', 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 20px;
+  line-height: 1.2;
+  background: #c0c0c0;
+  color: #000;
+  image-rendering: pixelated;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #c0c0c0;
+}
+
+* {
+  box-sizing: border-box;
+}
