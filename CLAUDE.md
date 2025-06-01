@@ -69,15 +69,6 @@ This is a recreation of the 68000 Mac game "Continuum" for the web, maintaining 
 - `npm run format`: Format code with Prettier
 - `npm run typecheck`: Run TypeScript type checking
 
-## Tech Stack
-
-- **Framework**: React 18 + TypeScript
-- **State Management**: Redux Toolkit (app-level state only)
-- **Build Tool**: Vite
-- **Testing**: Vitest
-- **Game Rendering**: HTML5 Canvas (512x342 viewport)
-- **Module Type**: ESM
-
 ## Project Structure
 
 - `src/app/`: React app shell and UI components
@@ -89,3 +80,8 @@ This is a recreation of the 68000 Mac game "Continuum" for the web, maintaining 
   - `input/`: Keyboard/mouse handling
 - `src/parsers/`: Original file format parsers
 - `src/assets/`: Converted game assets
+
+## Coding Practices
+
+- Typecheck, lint, and format after you finish editing a file
+- Commit changes to version control when you finish a task
