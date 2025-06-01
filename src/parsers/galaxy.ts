@@ -4,6 +4,8 @@
 // Constants from: GW.h (FILEHEAD=160, PLANSIZE=1540)
 // Original variables: Main.c global vars (int planets, int cartplanet, char indexes[150])
 
+import type { GalaxyBuffer, GalaxyHeader } from './types'
+
 // Continuum was written for the original Macintosh which ran
 // on a Motorola 68000 processor which was big-endian.
 // This function pulls a big-endian 2-byte integer from
@@ -38,13 +40,7 @@ const getInt16BE = (dv: DataView, i: number): number => dv.getInt16(i, false)
 // without any actual data movement in the file. The editor can reorder
 // planets by simply changing the index array values.
 
-// Represents the raw galaxy file split into header and planet data sections
-type Galaxy = {
-  header: ArrayBuffer // First 160 bytes containing file metadata
-  planets: ArrayBuffer // Remaining bytes containing all planet data (1540 bytes each)
-}
-
-export function parseGalaxyFile(galaxyBuffer: ArrayBuffer): Galaxy {
+export function splitGalaxyBuffer(galaxyBuffer: ArrayBuffer): GalaxyBuffer {
   const galaxyHeaderBytes = 160
   const headerBuffer = galaxyBuffer.slice(0, galaxyHeaderBytes)
   const planetsBuffer = galaxyBuffer.slice(galaxyHeaderBytes)
@@ -52,13 +48,6 @@ export function parseGalaxyFile(galaxyBuffer: ArrayBuffer): Galaxy {
     header: headerBuffer,
     planets: planetsBuffer
   }
-}
-
-// Parsed galaxy header information (corresponds to original C variables in Main.c)
-type GalaxyHeader = {
-  planets: number // Total number of planets in galaxy (original: int planets)
-  cartplanet: number // Planet number for demo/intro sequence (original: int cartplanet)
-  indexes: Uint8Array // Planet index array for file positioning (original: char indexes[150])
 }
 
 export function parseGalaxyHeader(galaxyBuffer: ArrayBuffer): GalaxyHeader {

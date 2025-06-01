@@ -72,3 +72,5 @@ temp/
 
 # Yarn Integrity file
 .yarn-integrity
+
+.claude/settings.local.json
