@@ -146,6 +146,47 @@ describe('wordIterator', () => {
     expect(iterator.nextWord()).toBe(-25924) // 0x9ABC as signed 16-bit
   })
 
+  it('tracks nextOffset correctly during iteration', () => {
+    const buffer = new ArrayBuffer(8)
+    const view = new DataView(buffer)
+
+    // Set four words
+    view.setUint8(0, 0x11)
+    view.setUint8(1, 0x11)
+    view.setUint8(2, 0x22)
+    view.setUint8(3, 0x22)
+    view.setUint8(4, 0x33)
+    view.setUint8(5, 0x33)
+    view.setUint8(6, 0x44)
+    view.setUint8(7, 0x44)
+
+    const bigEnd = createBigEnd(buffer)
+    const iterator = bigEnd.wordIterator(0)
+
+    // Before any reads, nextOffset should be 0
+    expect(iterator.nextOffset()).toBe(0)
+
+    // After first read, nextOffset should be 2
+    expect(iterator.nextWord()).toBe(0x1111)
+    expect(iterator.nextOffset()).toBe(2)
+
+    // After second read, nextOffset should be 4
+    expect(iterator.nextWord()).toBe(0x2222)
+    expect(iterator.nextOffset()).toBe(4)
+
+    // After third read, nextOffset should be 6
+    expect(iterator.nextWord()).toBe(0x3333)
+    expect(iterator.nextOffset()).toBe(6)
+
+    // After fourth read, nextOffset should be 8
+    expect(iterator.nextWord()).toBe(0x4444)
+    expect(iterator.nextOffset()).toBe(8)
+
+    // Attempting to read past end should not change nextOffset
+    expect(() => iterator.nextWord()).toThrow()
+    expect(iterator.nextOffset()).toBe(8)
+  })
+
   it('starts iteration from specified offset', () => {
     const buffer = new ArrayBuffer(8)
     const view = new DataView(buffer)
@@ -163,9 +204,15 @@ describe('wordIterator', () => {
     const bigEnd = createBigEnd(buffer)
     const iterator = bigEnd.wordIterator(4)
 
+    // Should start at offset 4
+    expect(iterator.nextOffset()).toBe(4)
+
     // Should skip first two words and start at offset 4
     expect(iterator.nextWord()).toBe(0x3333)
+    expect(iterator.nextOffset()).toBe(6)
+    
     expect(iterator.nextWord()).toBe(0x4444)
+    expect(iterator.nextOffset()).toBe(8)
   })
 
   it('throws when attempting to iterate past buffer bounds', () => {
@@ -190,7 +237,9 @@ describe('wordIterator', () => {
     const bigEnd = createBigEnd(buffer)
     const iterator = bigEnd.wordIterator(4)
 
+    expect(iterator.nextOffset()).toBe(4)
     expect(() => iterator.nextWord()).toThrow('Attempted to iterate past buffer bounds')
+    expect(iterator.nextOffset()).toBe(4) // Should not change after error
   })
 
   it('handles single word at buffer end', () => {
@@ -203,8 +252,11 @@ describe('wordIterator', () => {
     const bigEnd = createBigEnd(buffer)
     const iterator = bigEnd.wordIterator(2)
 
+    expect(iterator.nextOffset()).toBe(2)
     expect(iterator.nextWord()).toBe(-21555) // 0xABCD as signed 16-bit
+    expect(iterator.nextOffset()).toBe(4)
     expect(() => iterator.nextWord()).toThrow('Attempted to iterate past buffer bounds')
+    expect(iterator.nextOffset()).toBe(4) // Should not change after error
   })
 
   it('maintains independent iterators', () => {
@@ -222,15 +274,24 @@ describe('wordIterator', () => {
     const iterator1 = bigEnd.wordIterator(0)
     const iterator2 = bigEnd.wordIterator(2)
 
+    // Check initial offsets
+    expect(iterator1.nextOffset()).toBe(0)
+    expect(iterator2.nextOffset()).toBe(2)
+
     // First iterator reads from start
     expect(iterator1.nextWord()).toBe(0x1111)
+    expect(iterator1.nextOffset()).toBe(2)
     
     // Second iterator reads from offset 2
     expect(iterator2.nextWord()).toBe(0x2222)
+    expect(iterator2.nextOffset()).toBe(4)
     
     // They maintain independent positions
     expect(iterator1.nextWord()).toBe(0x2222)
+    expect(iterator1.nextOffset()).toBe(4)
+    
     expect(iterator2.nextWord()).toBe(0x3333)
+    expect(iterator2.nextOffset()).toBe(6)
   })
 
   it('works with iterator created from immutable buffer copy', () => {

@@ -15,7 +15,10 @@ export type BigEnd = {
    * returns a generator that starts at the given offset and yields
    * one word at a time
    */
-  wordIterator: (offset: number) => { nextWord: () => number }
+  wordIterator: (offset: number) => {
+    nextWord: () => number
+    nextOffset: () => number
+  }
 }
 
 const buildGetWord =
@@ -43,14 +46,17 @@ export function createBigEnd(buffer: ArrayBuffer): BigEnd {
     // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
     wordIterator: offset => {
       const generator = buildWordGenerator(dataView)(offset)()
+      let currentOffset = offset
       return {
         nextWord: (): number => {
           const result = generator.next()
           if (result.done) {
             throw new Error('Attempted to iterate past buffer bounds')
           }
+          currentOffset += WORD_LENGTH_BYTES
           return result.value
-        }
+        },
+        nextOffset: () => currentOffset
       }
     }
   }
