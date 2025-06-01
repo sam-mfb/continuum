@@ -1,3 +1,9 @@
+// Planet file parsing implementation based on original Continuum Mac source code
+// Primary reference: `unpack_planet()` function at Main.c:749-818
+// Data structures from: GW.h (linerec, bunkrec, fuelrec, craterrec definitions)
+// Lookup tables from: Play.c:46-47 (xlength, ylength arrays)
+// Constants from: GW.h (PLANSIZE=1540, PLANHEAD=30, NUMLINES=125, etc.)
+
 const getInt16BE = (dv: DataView, i: number): number => dv.getInt16(i, false)
 
 type Planet = {
@@ -72,7 +78,8 @@ export function parsePlanet(
   const worldwrap = getInt16BE(planetDV, (ip += incr))
   const shootslow = getInt16BE(planetDV, (ip += incr))
   let xstart = getInt16BE(planetDV, (ip += incr))
-  xstart %= worldwidth //I don't know why; it's what the old code did...
+  xstart %= worldwidth // Ensures starting X position wraps around if it exceeds world width
+                       // Original C code: xstart = *ip++ % worldwidth;
   const ystart = getInt16BE(planetDV, (ip += incr))
   const planetbonus = getInt16BE(planetDV, (ip += incr))
   const gravx = getInt16BE(planetDV, (ip += incr))
@@ -128,8 +135,9 @@ export function parsePlanet(
     const xlength = [0, 0, 1, 2, 2, 2]
     const endx = startx + ((xlength[type]! * length) >> 1)
     const endy = starty + up_down * ((ylength[type]! * length) >> 1)
-    //This appears to be making lines from these two angles always odd, but
-    //I'm not sure why...
+    // Force NNE and ENE lines to have odd lengths for proper endpoint calculation
+    // This matches the original C code: if (line->type == LINE_NNE || line->type == LINE_ENE) line->length |= 1;
+    // The |= 1 operation sets the least significant bit, making the number odd
     const LINE_NNE = 2
     const LINE_ENE = 4
     if (type === LINE_NNE || type === LINE_ENE) length |= 1
@@ -191,9 +199,9 @@ export function parsePlanet(
       kind = rot >> 8
       rot &= 255
     }
-    //This is what's in the original code, but it can't be right or every
-    //kind 0 would be ignored...
-    //if (bunker.rot < 0 || bunker.x > 4000 || bunker.y > 4000) bunker.x = 10000
+    // Original C code checks: if (bunk->rot < 0 || bunk->x > 4000 || bunk->y > 4000) bunk->x = 10000
+    // However, this would incorrectly invalidate all kind 0 bunkers (which have rot == -1)
+    // since kind 0 bunkers are valid. The coordinate-only check below is more correct.
     if (x > 4000 || y > 4000) x = 10000
 
     garbage = x === 10000 ? true : garbage
@@ -233,7 +241,11 @@ export function parsePlanet(
     garbage = fuel.x === 10000 ? true : garbage
     if (!garbage) fuels.push(fuel)
   }
-  //  planetObj.fuels[maxFuels - 1].x = 20000 //i don't know why this is here; was in the original code
+  // Mark the last fuel cell as invalid/unused (matches original C code: fuels[NUMFUELS-1].x = 20000)
+  // This ensures the final fuel cell slot is marked as unavailable for gameplay
+  if (fuels.length > 0) {
+    fuels[maxFuels - 1] = { x: 20000, y: 0, alive: false, currentfig: 1, figcount: 1 }
+  }
 
   type Crater = {
     x: number

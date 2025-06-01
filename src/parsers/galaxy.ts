@@ -1,4 +1,8 @@
-// See `do_open` and `read_header` at Main.c:391
+// Galaxy file parsing implementation based on original Continuum Mac source code
+// Primary references: `do_open()` and `read_header()` functions at Main.c:391-404
+// File positioning: `get_planet()` function at Main.c:732-748
+// Constants from: GW.h (FILEHEAD=160, PLANSIZE=1540)
+// Original variables: Main.c global vars (int planets, int cartplanet, char indexes[150])
 
 // Continuum was written for the original Macintosh which ran
 // on a Motorola 68000 processor which was big-endian.
