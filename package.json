@@ -4,39 +4,42 @@
   "type": "module",
   "description": "Recreation of the 68000 Mac game Continuum for the web",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host 0.0.0.0 --port 3000",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "lint:fix": "eslint . --ext ts,tsx --fix",
+    "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^2.8.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "@reduxjs/toolkit": "^2.8.2",
     "react-redux": "^9.2.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.28.0",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",
     "@typescript-eslint/eslint-plugin": "^8.33.0",
     "@typescript-eslint/parser": "^8.33.0",
     "@vitejs/plugin-react": "^4.5.0",
+    "@vitest/ui": "^3.1.4",
     "eslint": "^9.28.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
+    "globals": "^16.2.0",
+    "jsdom": "^26.1.0",
     "prettier": "^3.5.3",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vite-node": "^3.1.4",
-    "vitest": "^3.1.4",
-    "@vitest/ui": "^3.1.4"
+    "vitest": "^3.1.4"
   },
   "engines": {
     "node": ">=20.0.0"
