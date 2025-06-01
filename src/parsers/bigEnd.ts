@@ -1,8 +1,8 @@
 const WORD_LENGTH_BYTES = 2
 
 /**
- * Processing of an ArrayBuffer where the bits are arranged in big endian
- * order.
+ * Helper methods for processing an ArrayBuffer where the bits are
+ * arranged in big endian order.
  *
  * Assumptions:
  *  - Endianness: big

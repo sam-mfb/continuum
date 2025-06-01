@@ -4,13 +4,8 @@
 // Constants from: GW.h (FILEHEAD=160, PLANSIZE=1540)
 // Original variables: Main.c global vars (int planets, int cartplanet, char indexes[150])
 
+import { createBigEnd } from './bigEnd'
 import type { GalaxyBuffer, GalaxyHeader } from './types'
-
-// Continuum was written for the original Macintosh which ran
-// on a Motorola 68000 processor which was big-endian.
-// This function pulls a big-endian 2-byte integer from
-// offset i in DataView dv.
-const getInt16BE = (dv: DataView, i: number): number => dv.getInt16(i, false)
 
 // The Continuum galaxy file format (160-byte header + planet data):
 // Bytes 0-1: File identifier (-17, magic number for validation)
@@ -53,15 +48,15 @@ export function splitGalaxyBuffer(galaxyBuffer: ArrayBuffer): GalaxyBuffer {
 export function parseGalaxyHeader(galaxyBuffer: ArrayBuffer): GalaxyHeader {
   const galaxyFileIdentifier = -17 // Magic number used by original Mac code for validation
   const planetIndexByteOffset = 10 // Index array starts at byte 10 (after header fields)
-  const galaxyDV = new DataView(galaxyBuffer)
+  const galaxyBigEnd = createBigEnd(galaxyBuffer)
 
   // Validate file format using magic number (matches original getw(wfile) != -17 check)
-  if (getInt16BE(galaxyDV, 0) !== galaxyFileIdentifier) {
+  if (galaxyBigEnd.getWord(0) !== galaxyFileIdentifier) {
     throw new Error('Not a valid galaxy file')
   }
 
-  const numPlanets = getInt16BE(galaxyDV, 2)
-  const cartoonPlanet = getInt16BE(galaxyDV, 4)
+  const numPlanets = galaxyBigEnd.getWord(2)
+  const cartoonPlanet = galaxyBigEnd.getWord(4)
   const indexByteEnd = planetIndexByteOffset + numPlanets // 1 byte per planet entry
   const planetsIndex = new Uint8Array(
     // 1 byte per entry so endianness doesn't matter (matches original char indexes[150])

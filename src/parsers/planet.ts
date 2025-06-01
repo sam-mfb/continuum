@@ -79,7 +79,7 @@ export function parsePlanet(
   const shootslow = getInt16BE(planetDV, (ip += incr))
   let xstart = getInt16BE(planetDV, (ip += incr))
   xstart %= worldwidth // Ensures starting X position wraps around if it exceeds world width
-                       // Original C code: xstart = *ip++ % worldwidth;
+  // Original C code: xstart = *ip++ % worldwidth;
   const ystart = getInt16BE(planetDV, (ip += incr))
   const planetbonus = getInt16BE(planetDV, (ip += incr))
   const gravx = getInt16BE(planetDV, (ip += incr))
@@ -244,7 +244,13 @@ export function parsePlanet(
   // Mark the last fuel cell as invalid/unused (matches original C code: fuels[NUMFUELS-1].x = 20000)
   // This ensures the final fuel cell slot is marked as unavailable for gameplay
   if (fuels.length > 0) {
-    fuels[maxFuels - 1] = { x: 20000, y: 0, alive: false, currentfig: 1, figcount: 1 }
+    fuels[maxFuels - 1] = {
+      x: 20000,
+      y: 0,
+      alive: false,
+      currentfig: 1,
+      figcount: 1
+    }
   }
 
   type Crater = {
