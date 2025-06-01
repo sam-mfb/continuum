@@ -4,7 +4,7 @@
 // Lookup tables from: Play.c:46-47 (xlength, ylength arrays)
 // Constants from: GW.h (PLANSIZE=1540, PLANHEAD=30, NUMLINES=125, etc.)
 
-const getInt16BE = (dv: DataView, i: number): number => dv.getInt16(i, false)
+import { createBigEnd } from './bigEnd'
 
 type Planet = {
   worldwidth: number
@@ -59,34 +59,29 @@ export function parsePlanet(
   }
   const planetByteOffset = planetByteSize * planetLocation
   const planetByteEnd = planetByteOffset + planetByteSize
-  const planetDV = new DataView(
+  const planetBigEnd = createBigEnd(
     planetsBuffer.slice(planetByteOffset, planetByteEnd)
   )
   //This does basically the same thing the Continuum code did to "unpack"
-  //a planet--start with a pointer 'ip' and walk it down the stream of bits
-  //one long int (which was 2 bytes) at a time, occassionaly using bitwise
+  //a planet--start with a pointer and walk it down the stream of bits
+  //one long int (which was 2 bytes) at a time, occasionally using bitwise
   //operators when information was stored in single bytes or flags.
-  //Here 'ip' is our pointer and 'incr' reflects that by default we will pull
-  //2 bytes at a time
-  //NB: this would have been easier to do with a Int16 array but we can't because
-  //the file is big-endian and most machines today are not...
-  let ip = 0
-  let incr = 2
+  let iterator = planetBigEnd.wordIterator(0)
 
-  const worldwidth = getInt16BE(planetDV, ip)
-  const worldheight = getInt16BE(planetDV, (ip += incr))
-  const worldwrap = getInt16BE(planetDV, (ip += incr))
-  const shootslow = getInt16BE(planetDV, (ip += incr))
-  let xstart = getInt16BE(planetDV, (ip += incr))
+  const worldwidth = iterator.nextWord()
+  const worldheight = iterator.nextWord()
+  const worldwrap = iterator.nextWord()
+  const shootslow = iterator.nextWord()
+  let xstart = iterator.nextWord()
   xstart %= worldwidth // Ensures starting X position wraps around if it exceeds world width
   // Original C code: xstart = *ip++ % worldwidth;
-  const ystart = getInt16BE(planetDV, (ip += incr))
-  const planetbonus = getInt16BE(planetDV, (ip += incr))
-  const gravx = getInt16BE(planetDV, (ip += incr))
-  const gravy = getInt16BE(planetDV, (ip += incr))
-  const numcraters = getInt16BE(planetDV, (ip += incr))
+  const ystart = iterator.nextWord()
+  const planetbonus = iterator.nextWord()
+  const gravx = iterator.nextWord()
+  const gravy = iterator.nextWord()
+  const numcraters = iterator.nextWord()
 
-  ip = planetHeaderSize - incr //start 2 bytes lower to avoid a kludge in the for loop start
+  iterator = planetBigEnd.wordIterator(planetHeaderSize - 2) //start 2 bytes lower to avoid a kludge in the for loop start
 
   //A Continuum planet is composed of walls (called 'lines'), bunkers, fuel cells, and
   //craters.  The constants below are important because the filesize was hardcoded to allow
@@ -116,15 +111,15 @@ export function parsePlanet(
   const lines: Line[] = []
   let garbage = false
   for (let i = 0; i < maxLines; i++) {
-    let startx = getInt16BE(planetDV, (ip += incr))
-    const starty = getInt16BE(planetDV, (ip += incr))
-    let length = getInt16BE(planetDV, (ip += incr))
+    let startx = iterator.nextWord()
+    const starty = iterator.nextWord()
+    let length = iterator.nextWord()
     //The next two bytes are packed as follows:  the top byte indicates if the line is
     //'up' (-1) or 'down' (1).  The bottom 3 bits of the lower byte indicate which of the
     //five directions in a quadrant (or angles, if you like) the line is pointing.  The
     //two bits above that indicate which 'kind' of line it is: (1) normal, (2) bounce,
     //(3) phantom, or (4) explode.  NB: I don't think the latter type was actually supported.
-    let ud_and_t = getInt16BE(planetDV, (ip += incr))
+    let ud_and_t = iterator.nextWord()
     const up_down = ud_and_t >> 8
     const type = ud_and_t & 7
     const kind = (ud_and_t & 31) >> 3
@@ -178,15 +173,15 @@ export function parsePlanet(
   const bunkers: Bunker[] = []
   garbage = false
   for (let i = 0; i < maxBunkers; i++) {
-    let x = getInt16BE(planetDV, (ip += incr))
-    const y = getInt16BE(planetDV, (ip += incr))
-    let rot = getInt16BE(planetDV, (ip += incr))
+    let x = iterator.nextWord()
+    const y = iterator.nextWord()
+    let rot = iterator.nextWord()
     const alive = true
     const ranges: Bunker['ranges'][number][] = []
     for (let j = 0; j < 2; j++) {
       ranges.push({
-        low: getInt16BE(planetDV, (ip += incr)),
-        high: getInt16BE(planetDV, (ip += incr))
+        low: iterator.nextWord(),
+        high: iterator.nextWord()
       })
     }
     //A rotation ('rot') value of -1 means the bunker is 'kind' 0,
@@ -230,8 +225,8 @@ export function parsePlanet(
   let fuel
   for (let i = 0; i < maxFuels; i++) {
     fuel = {
-      x: getInt16BE(planetDV, (ip += incr)),
-      y: getInt16BE(planetDV, (ip += incr)),
+      x: iterator.nextWord(),
+      y: iterator.nextWord(),
       alive: true,
       currentfig: 1, //these two are for animation
       figcount: 1
@@ -263,8 +258,8 @@ export function parsePlanet(
   let crater
   for (let i = 0; i < maxInitCraters; i++) {
     crater = {
-      x: getInt16BE(planetDV, (ip += incr)),
-      y: getInt16BE(planetDV, (ip += incr))
+      x: iterator.nextWord(),
+      y: iterator.nextWord()
     }
     craters.push(crater)
   }
