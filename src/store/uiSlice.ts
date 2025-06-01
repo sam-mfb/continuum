@@ -10,7 +10,7 @@ type UIState = {
 const initialState: UIState = {
   currentView: 'menu',
   isGamePaused: false,
-  showDebugInfo: false,
+  showDebugInfo: false
 }
 
 export const uiSlice = createSlice({
@@ -25,9 +25,10 @@ export const uiSlice = createSlice({
     },
     toggleDebugInfo: (state) => {
       state.showDebugInfo = !state.showDebugInfo
-    },
-  },
+    }
+  }
 })
 
-export const { setCurrentView, toggleGamePause, toggleDebugInfo } = uiSlice.actions
+export const { setCurrentView, toggleGamePause, toggleDebugInfo } =
+  uiSlice.actions
 export default uiSlice.reducer

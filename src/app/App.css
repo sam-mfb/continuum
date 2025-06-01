@@ -1,99 +1,100 @@
 .app {
-  text-align: center
-  min-height: 100vh
-  display: flex
-  flex-direction: column
+  text-align: center;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .app-header {
-  background-color: #282c34
-  padding: 1rem
-  color: white
+  background-color: #282c34;
+  padding: 1rem;
+  color: white;
 }
 
 .app-header h1 {
-  margin: 0 0 1rem 0
-  font-size: 2rem
+  margin: 0 0 1rem 0;
+  font-size: 2rem;
 }
 
 .app-header nav {
-  display: flex
-  gap: 1rem
-  justify-content: center
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
 }
 
 .app-header button {
-  background: #61dafb
-  border: none
-  padding: 0.5rem 1rem
-  border-radius: 4px
-  cursor: pointer
-  color: #282c34
-  font-weight: bold
+  background: #61dafb;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #282c34;
+  font-weight: bold;
 }
 
 .app-header button:hover {
-  background: #21a9c7
+  background: #21a9c7;
 }
 
 .app-header button.active {
-  background: #fff
-  color: #282c34
+  background: #fff;
+  color: #282c34;
 }
 
 .app-content {
-  flex: 1
-  padding: 2rem
+  flex: 1;
+  padding: 2rem;
 }
 
-.menu-view, .settings-view {
-  max-width: 600px
-  margin: 0 auto
+.menu-view,
+.settings-view {
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .menu-view button {
-  background: #61dafb
-  border: none
-  padding: 1rem 2rem
-  border-radius: 4px
-  cursor: pointer
-  font-size: 1.1rem
-  margin-top: 1rem
+  background: #61dafb;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  margin-top: 1rem;
 }
 
 .menu-view button:hover {
-  background: #21a9c7
+  background: #21a9c7;
 }
 
 .game-view {
-  display: flex
-  flex-direction: column
-  align-items: center
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .game-viewport {
-  width: 512px
-  height: 342px
-  border: 2px solid #333
-  background: #f0f0f0
-  display: flex
-  align-items: center
-  justify-content: center
-  margin-top: 1rem
+  width: 512px;
+  height: 342px;
+  border: 2px solid #333;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1rem;
 }
 
 .settings-view label {
-  display: flex
-  align-items: center
-  gap: 0.5rem
-  justify-content: center
-  margin: 1rem 0
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+  margin: 1rem 0;
 }
 
 .debug-info {
-  background: #f0f0f0
-  padding: 1rem
-  border-radius: 4px
-  margin-top: 1rem
-  text-align: left
+  background: #f0f0f0;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-top: 1rem;
+  text-align: left;
 }

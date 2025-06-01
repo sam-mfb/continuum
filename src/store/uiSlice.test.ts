@@ -1,11 +1,15 @@
 import { describe, it, expect } from 'vitest'
-import uiReducer, { setCurrentView, toggleGamePause, toggleDebugInfo } from './uiSlice'
+import uiReducer, {
+  setCurrentView,
+  toggleGamePause,
+  toggleDebugInfo
+} from './uiSlice'
 
 describe('uiSlice', () => {
   const initialState = {
     currentView: 'menu' as const,
     isGamePaused: false,
-    showDebugInfo: false,
+    showDebugInfo: false
   }
 
   it('should return the initial state', () => {

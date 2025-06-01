@@ -9,6 +9,7 @@ This is a recreation of the 68000 Mac game "Continuum" for the web, maintaining 
 ## Architecture
 
 ### Core Structure
+
 - Original source files are in `orig/Sources/` - these are the reference 68K Mac C files
 - Main game entry point: `orig/Sources/Main.c` and `orig/Sources/Well.c`
 - Core header file: `orig/Sources/GW.h` contains all major constants and macros
@@ -22,12 +23,14 @@ This is a recreation of the 68000 Mac game "Continuum" for the web, maintaining 
   - `Utils.c`: Utility functions
 
 ### Key Technical Details
+
 - Game uses dual-buffer graphics system (front_screen/back_screen)
 - Original designed for 512x342 Mac screen resolution
 - Uses original planet files, graphics, and sound formats
 - Implements gravity-based physics for projectile motion
 
 ### Data Files
+
 - Planet files: `orig/Planets Files/` (original binary format)
 - Graphics: `orig/Graphics/` (original Mac bitmap resources)
 - Galaxy data: Uses "Continuum Galaxy" world file

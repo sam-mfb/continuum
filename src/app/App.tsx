@@ -4,7 +4,9 @@ import { setCurrentView, toggleDebugInfo } from '../store/uiSlice'
 import './App.css'
 
 function App(): React.JSX.Element {
-  const { currentView, showDebugInfo } = useSelector((state: RootState) => state.ui)
+  const { currentView, showDebugInfo } = useSelector(
+    (state: RootState) => state.ui
+  )
   const dispatch = useDispatch()
 
   return (
@@ -12,19 +14,19 @@ function App(): React.JSX.Element {
       <header className="app-header">
         <h1>Continuum</h1>
         <nav>
-          <button 
+          <button
             onClick={() => dispatch(setCurrentView('menu'))}
             className={currentView === 'menu' ? 'active' : ''}
           >
             Menu
           </button>
-          <button 
+          <button
             onClick={() => dispatch(setCurrentView('game'))}
             className={currentView === 'game' ? 'active' : ''}
           >
             Game
           </button>
-          <button 
+          <button
             onClick={() => dispatch(setCurrentView('settings'))}
             className={currentView === 'settings' ? 'active' : ''}
           >
@@ -37,7 +39,9 @@ function App(): React.JSX.Element {
         {currentView === 'menu' && (
           <div className="menu-view">
             <h2>Main Menu</h2>
-            <p>Welcome to Continuum - A recreation of the classic 68K Mac game</p>
+            <p>
+              Welcome to Continuum - A recreation of the classic 68K Mac game
+            </p>
             <button onClick={() => dispatch(setCurrentView('game'))}>
               Start Game
             </button>
