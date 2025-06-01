@@ -17,11 +17,27 @@ const getInt16BE = (dv: DataView, i: number): number => dv.getInt16(i, false)
 // Index array explanation: Each byte contains a planet index number (0-255).
 // To find a planet's file location: 160 + (index_value * 1540)
 // This indirection allows planets to be reordered without moving data blocks.
+//
+// Example of how planet indexing works:
+// File layout:     [Header 160b][Planet0 1540b][Planet1 1540b][Planet2 1540b]
+// Index array:     [2, 0, 1]  (3 planets)
+//
+// When user selects "Planet 1" (first in list):
+//   index_array[0] = 2 → file position = 160 + (2 * 1540) = 3240
+//   Reads Planet2's data from file position 3240
+//
+// When user selects "Planet 2" (second in list):
+//   index_array[1] = 0 → file position = 160 + (0 * 1540) = 160
+//   Reads Planet0's data from file position 160
+//
+// This means the user sees planets in order: Planet2, Planet0, Planet1
+// without any actual data movement in the file. The editor can reorder
+// planets by simply changing the index array values.
 
 // Represents the raw galaxy file split into header and planet data sections
 type Galaxy = {
-  header: ArrayBuffer   // First 160 bytes containing file metadata
-  planets: ArrayBuffer  // Remaining bytes containing all planet data (1540 bytes each)
+  header: ArrayBuffer // First 160 bytes containing file metadata
+  planets: ArrayBuffer // Remaining bytes containing all planet data (1540 bytes each)
 }
 
 export function parseGalaxyFile(galaxyBuffer: ArrayBuffer): Galaxy {
@@ -36,14 +52,14 @@ export function parseGalaxyFile(galaxyBuffer: ArrayBuffer): Galaxy {
 
 // Parsed galaxy header information (corresponds to original C variables in Main.c)
 type GalaxyHeader = {
-  planets: number     // Total number of planets in galaxy (original: int planets)
-  cartplanet: number  // Planet number for demo/intro sequence (original: int cartplanet)
+  planets: number // Total number of planets in galaxy (original: int planets)
+  cartplanet: number // Planet number for demo/intro sequence (original: int cartplanet)
   indexes: Uint8Array // Planet index array for file positioning (original: char indexes[150])
 }
 
 export function parseGalaxyHeader(galaxyBuffer: ArrayBuffer): GalaxyHeader {
   const galaxyFileIdentifier = -17 // Magic number used by original Mac code for validation
-  const planetIndexByteOffset = 10  // Index array starts at byte 10 (after header fields)
+  const planetIndexByteOffset = 10 // Index array starts at byte 10 (after header fields)
   const galaxyDV = new DataView(galaxyBuffer)
 
   // Validate file format using magic number (matches original getw(wfile) != -17 check)
