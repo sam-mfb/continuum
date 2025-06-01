@@ -54,7 +54,7 @@ export function parsePlanet(
   const planetByteSize = 1540
   const planetHeaderSize = 30
   const planetLocation = planetIndex[planet - 1]
-  if (!planetLocation) {
+  if (planetLocation === undefined) {
     throw new Error('No planet location noted in index')
   }
   const planetByteOffset = planetByteSize * planetLocation
@@ -81,7 +81,7 @@ export function parsePlanet(
   const gravy = iterator.nextWord()
   const numcraters = iterator.nextWord()
 
-  iterator = planetBigEnd.wordIterator(planetHeaderSize - 2) //start 2 bytes lower to avoid a kludge in the for loop start
+  iterator = planetBigEnd.wordIterator(planetHeaderSize)
 
   //A Continuum planet is composed of walls (called 'lines'), bunkers, fuel cells, and
   //craters.  The constants below are important because the filesize was hardcoded to allow
