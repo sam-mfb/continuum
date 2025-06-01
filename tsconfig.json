@@ -28,7 +28,10 @@
       "@/*": ["src/*"],
       "@/engine/*": ["src/engine/*"],
       "@/parsers/*": ["src/parsers/*"],
-      "@/assets/*": ["src/assets/*"]
+      "@/assets/*": ["src/assets/*"],
+      "@/asm/*": ["src/asm/*"],
+      "@/file/*": ["src/file/*"],
+      "@/galaxy/*": ["src/galaxy/*"]
     }
   },
   "include": ["src/**/*"],
