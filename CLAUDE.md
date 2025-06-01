@@ -54,3 +54,35 @@ This is a recreation of the 68000 Mac game "Continuum" for the web, maintaining 
 - View height: 318 pixels (VIEWHT = SCRHT - SBARHT)
 - Status bar height: 24 pixels (SBARHT)
 - World coordinate system uses gravity physics
+
+## Development Commands
+
+- `npm run dev`: Start development server
+- `npm run build`: Build for production
+- `npm run test`: Run tests in watch mode
+- `npm run test:run`: Run tests once
+- `npm run lint`: Check code style
+- `npm run lint:fix`: Fix linting issues
+- `npm run format`: Format code with Prettier
+- `npm run typecheck`: Run TypeScript type checking
+
+## Tech Stack
+
+- **Framework**: React 18 + TypeScript
+- **State Management**: Redux Toolkit (app-level state only)
+- **Build Tool**: Vite
+- **Testing**: Vitest
+- **Game Rendering**: HTML5 Canvas (512x342 viewport)
+- **Module Type**: ESM
+
+## Project Structure
+
+- `src/app/`: React app shell and UI components
+- `src/store/`: Redux Toolkit store for app state
+- `src/engine/`: Core game engine modules
+  - `graphics/`: Drawing routines (port of Draw.c)
+  - `physics/`: Gravity/collision (port of Play.c)
+  - `world/`: Terrain/bunkers (port of Terrain.c, etc.)
+  - `input/`: Keyboard/mouse handling
+- `src/parsers/`: Original file format parsers
+- `src/assets/`: Converted game assets
