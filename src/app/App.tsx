@@ -11,72 +11,83 @@ function App(): React.JSX.Element {
 
   return (
     <div className="app">
-      <header className="app-header">
-        <h1>Continuum</h1>
-        <nav>
-          <button
+      <div className="mac-window">
+        <div className="window-title-bar">
+          <div className="window-controls">
+            <div className="window-control close"></div>
+          </div>
+          <div className="window-title">CONTINUUM</div>
+        </div>
+
+        <div className="menu-bar">
+          <div
+            className={`menu-item ${currentView === 'menu' ? 'active' : ''}`}
             onClick={() => dispatch(setCurrentView('menu'))}
-            className={currentView === 'menu' ? 'active' : ''}
           >
             Menu
-          </button>
-          <button
+          </div>
+          <div
+            className={`menu-item ${currentView === 'game' ? 'active' : ''}`}
             onClick={() => dispatch(setCurrentView('game'))}
-            className={currentView === 'game' ? 'active' : ''}
           >
             Game
-          </button>
-          <button
+          </div>
+          <div
+            className={`menu-item ${currentView === 'settings' ? 'active' : ''}`}
             onClick={() => dispatch(setCurrentView('settings'))}
-            className={currentView === 'settings' ? 'active' : ''}
           >
             Settings
-          </button>
-        </nav>
-      </header>
-
-      <main className="app-content">
-        {currentView === 'menu' && (
-          <div className="menu-view">
-            <h2>Main Menu</h2>
-            <p>
-              Welcome to Continuum - A recreation of the classic 68K Mac game
-            </p>
-            <button onClick={() => dispatch(setCurrentView('game'))}>
-              Start Game
-            </button>
           </div>
-        )}
+        </div>
 
-        {currentView === 'game' && (
-          <div className="game-view">
-            <h2>Game View</h2>
-            <div className="game-viewport">
-              <p>Game canvas will go here (512x342)</p>
+        <div className="window-content">
+          {currentView === 'menu' && (
+            <div className="menu-view">
+              <h2>CONTINUUM</h2>
+              <p>A recreation of the classic 68000 Macintosh game</p>
+              <p>Experience the original gravity-based space combat</p>
+              <button
+                className="mac-button"
+                onClick={() => dispatch(setCurrentView('game'))}
+              >
+                START GAME
+              </button>
             </div>
-          </div>
-        )}
+          )}
 
-        {currentView === 'settings' && (
-          <div className="settings-view">
-            <h2>Settings</h2>
-            <label>
-              <input
-                type="checkbox"
-                checked={showDebugInfo}
-                onChange={() => dispatch(toggleDebugInfo())}
-              />
-              Show Debug Info
-            </label>
-            {showDebugInfo && (
-              <div className="debug-info">
-                <p>Debug mode enabled</p>
-                <p>Current view: {currentView}</p>
+          {currentView === 'game' && (
+            <div className="game-view">
+              <h2>GAME</h2>
+              <div className="game-viewport">
+                GAME CANVAS (512x342)
+                <br />
+                LOADING...
               </div>
-            )}
-          </div>
-        )}
-      </main>
+            </div>
+          )}
+
+          {currentView === 'settings' && (
+            <div className="settings-view">
+              <h2>SETTINGS</h2>
+              <div className="mac-checkbox">
+                <input
+                  type="checkbox"
+                  checked={showDebugInfo}
+                  onChange={() => dispatch(toggleDebugInfo())}
+                />
+                <span>Show Debug Information</span>
+              </div>
+              {showDebugInfo && (
+                <div className="debug-info">
+                  <div>DEBUG MODE: ENABLED</div>
+                  <div>CURRENT VIEW: {currentView.toUpperCase()}</div>
+                  <div>SYSTEM: MAC PLUS EMULATION</div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

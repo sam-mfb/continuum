@@ -1,16 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
 body {
   margin: 0;
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
-    'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-family: 'VT323', 'Monaco', 'Menlo', 'Consolas', monospace;
+  font-size: 20px;
+  line-height: 1.2;
+  background: #c0c0c0;
+  color: #000;
+  image-rendering: pixelated;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
 }
 
 #root {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: #c0c0c0;
 }
 
 * {
