@@ -1,6 +1,9 @@
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState } from '../store/store'
 import { setCurrentView, toggleDebugInfo } from '../store/uiSlice'
+import { GalaxySelector } from './components/GalaxySelector'
+import { PlanetList } from './components/PlanetList'
+import { PlanetViewer } from './components/PlanetViewer'
 import './App.css'
 
 function App(): React.JSX.Element {
@@ -25,6 +28,12 @@ function App(): React.JSX.Element {
             onClick={() => dispatch(setCurrentView('menu'))}
           >
             Menu
+          </div>
+          <div
+            className={`menu-item ${currentView === 'galaxy' ? 'active' : ''}`}
+            onClick={() => dispatch(setCurrentView('galaxy'))}
+          >
+            Galaxy
           </div>
           <div
             className={`menu-item ${currentView === 'game' ? 'active' : ''}`}
@@ -52,6 +61,16 @@ function App(): React.JSX.Element {
               >
                 START GAME
               </button>
+            </div>
+          )}
+
+          {currentView === 'galaxy' && (
+            <div className="galaxy-view">
+              <GalaxySelector />
+              <div className="galaxy-content">
+                <PlanetList />
+                <PlanetViewer />
+              </div>
             </div>
           )}
 
