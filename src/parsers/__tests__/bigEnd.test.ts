@@ -1,5 +1,5 @@
 import { it, expect, describe } from 'vitest'
-import { createBigEnd } from './bigEnd'
+import { createBigEnd } from '../bigEnd'
 
 describe('getWord', () => {
   it('reads positive 16-bit integers in big-endian order', () => {
@@ -210,7 +210,7 @@ describe('wordIterator', () => {
     // Should skip first two words and start at offset 4
     expect(iterator.nextWord()).toBe(0x3333)
     expect(iterator.nextOffset()).toBe(6)
-    
+
     expect(iterator.nextWord()).toBe(0x4444)
     expect(iterator.nextOffset()).toBe(8)
   })
@@ -229,7 +229,9 @@ describe('wordIterator', () => {
 
     expect(iterator.nextWord()).toBe(0x1234)
     expect(iterator.nextWord()).toBe(0x5678)
-    expect(() => iterator.nextWord()).toThrow('Attempted to iterate past buffer bounds')
+    expect(() => iterator.nextWord()).toThrow(
+      'Attempted to iterate past buffer bounds'
+    )
   })
 
   it('handles empty iteration when starting at buffer end', () => {
@@ -238,7 +240,9 @@ describe('wordIterator', () => {
     const iterator = bigEnd.wordIterator(4)
 
     expect(iterator.nextOffset()).toBe(4)
-    expect(() => iterator.nextWord()).toThrow('Attempted to iterate past buffer bounds')
+    expect(() => iterator.nextWord()).toThrow(
+      'Attempted to iterate past buffer bounds'
+    )
     expect(iterator.nextOffset()).toBe(4) // Should not change after error
   })
 
@@ -255,7 +259,9 @@ describe('wordIterator', () => {
     expect(iterator.nextOffset()).toBe(2)
     expect(iterator.nextWord()).toBe(-21555) // 0xABCD as signed 16-bit
     expect(iterator.nextOffset()).toBe(4)
-    expect(() => iterator.nextWord()).toThrow('Attempted to iterate past buffer bounds')
+    expect(() => iterator.nextWord()).toThrow(
+      'Attempted to iterate past buffer bounds'
+    )
     expect(iterator.nextOffset()).toBe(4) // Should not change after error
   })
 
@@ -281,15 +287,15 @@ describe('wordIterator', () => {
     // First iterator reads from start
     expect(iterator1.nextWord()).toBe(0x1111)
     expect(iterator1.nextOffset()).toBe(2)
-    
+
     // Second iterator reads from offset 2
     expect(iterator2.nextWord()).toBe(0x2222)
     expect(iterator2.nextOffset()).toBe(4)
-    
+
     // They maintain independent positions
     expect(iterator1.nextWord()).toBe(0x2222)
     expect(iterator1.nextOffset()).toBe(4)
-    
+
     expect(iterator2.nextWord()).toBe(0x3333)
     expect(iterator2.nextOffset()).toBe(6)
   })
