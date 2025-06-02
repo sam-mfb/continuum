@@ -1,9 +1,9 @@
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import { parseGalaxyHeader, splitGalaxyBuffer } from '../parsers/galaxy'
-import { parsePlanet } from '../parsers/planet'
-import type { GalaxyHeader } from '../parsers/types'
-import type { Planet } from './galaxyTypes'
+import type { GalaxyHeader } from '@/galaxy/types'
+import { Galaxy } from '@/galaxy/methods'
+import { parsePlanet } from '@/planet/parsePlanet'
+import type { Planet } from '@/planet/types'
 
 type GalaxyState = {
   loadedGalaxy: GalaxyHeader | null
@@ -30,12 +30,12 @@ export const loadGalaxyFile = createAsyncThunk(
     }
 
     const arrayBuffer = await response.arrayBuffer()
-    const { header, planets: planetBuffer } = splitGalaxyBuffer(arrayBuffer)
-    const galaxyHeader = parseGalaxyHeader(header)
+    const { headerBuffer, planetsBuffer } = Galaxy.splitBuffer(arrayBuffer)
+    const galaxyHeader = Galaxy.parseHeader(headerBuffer)
 
     const planets: Planet[] = []
     for (let i = 0; i < galaxyHeader.planets; i++) {
-      const planet = parsePlanet(planetBuffer, galaxyHeader.indexes, i + 1)
+      const planet = parsePlanet(planetsBuffer, galaxyHeader.indexes, i + 1)
       planets.push(planet)
     }
 
