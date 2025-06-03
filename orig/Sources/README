@@ -1,0 +1,9 @@
+1.  Once your name is on the high scores list, you can start another game by clicking on your name. Only the highest of each person's scores is kept; if one is vastly better than the rest, it will show through his/her score, not the number of times the name appears.
+
+2.  Color screens should be in 2-bit mode for fast animation.
+
+3.  Continuum is incompatible with System file version 6.0 on a Mac 512K through SE, due to an Apple bug; it works great with systems before or after 6.0. It will not run on a 128K Mac. People tell me it is incompatible with Appleshare; some have run it (without sound) under A/UX.
+
+4.  Because Continuum uses the second graphics buffer, it is incompatible with the Ramcache, Macsbug, and some INITs that use high memory, on all Macs with a 68000 processor. Using a reserve-second-screen INIT, however, it is possible to reserve this memory and then use all the other stuff as well. Click the button marked "Reserve-2nd INIT" ONLY IF YOU ARE USING A RESERVE-2ND-SCREEN INIT. Otherwise your mac will crash at strange times, and damage to data might result. Clicking "Reserve-2nd INIT" is only recommended for Macintosh users who really know what they are doing. It is much safer just to turn the RamCache off before running Continuum. People with Mac II's and above don't have this problem.
+
+5.  If "Easy Access" is in your System Folder, firing five times in a row will turn it on, making turning keys stick and having other strange effects. Unless you like an extra challenge, take Easy Access out of your System Folder before running Continuum.

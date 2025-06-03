@@ -1,0 +1,6 @@
+export const PLANET = {
+  MAX_LINES: 125,
+  MAX_BUNKERS: 25,
+  MAX_FUELS: 15,
+  MAX_INIT_CRATERS: 25
+}
