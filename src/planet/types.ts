@@ -16,10 +16,10 @@ export type Planet = {
 }
 
 enum LineKind {
-  NORMAL = 1,
-  BOUNCE = 2,
-  PHANTOM = 3,
-  EXPLODE = 4
+  NORMAL = 0,
+  BOUNCE = 1,
+  PHANTOM = 2,
+  EXPLODE = 3
 }
 
 export enum LineType {
