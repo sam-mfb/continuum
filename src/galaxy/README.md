@@ -15,13 +15,13 @@ The Continuum galaxy file format consists of a 160-byte header followed by plane
 
 ### Header Format (160 bytes)
 
-| Offset | Size | Description |
-|--------|------|-------------|
+| Offset | Size | Description                                        |
+| ------ | ---- | -------------------------------------------------- |
 | 0-1    | 2    | File identifier (-17, magic number for validation) |
-| 2-3    | 2    | Number of planets in galaxy |
-| 4-5    | 2    | Cartoon/demo planet number (for intro sequence) |
-| 6-9    | 4    | Unused/padding |
-| 10-159 | 150  | Index array (1 byte per planet, max 150 entries) |
+| 2-3    | 2    | Number of planets in galaxy                        |
+| 4-5    | 2    | Cartoon/demo planet number (for intro sequence)    |
+| 6-9    | 4    | Unused/padding                                     |
+| 10-159 | 150  | Index array (1 byte per planet, max 150 entries)   |
 
 ### Planet Data
 
@@ -47,11 +47,13 @@ Index array: [2, 0, 1]
 ```
 
 **When user selects "Planet 1" (first in list):**
+
 - Reads `index_array[0] = 2`
 - Calculates file position: `160 + (2 × 1540) = 3240`
 - Loads Planet2's data from file position 3240
 
 **When user selects "Planet 2" (second in list):**
+
 - Reads `index_array[1] = 0`
 - Calculates file position: `160 + (0 × 1540) = 160`
 - Loads Planet0's data from file position 160

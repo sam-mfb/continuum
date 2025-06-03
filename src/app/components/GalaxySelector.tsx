@@ -1,29 +1,33 @@
-import React from 'react';
-import { useAppDispatch, useAppSelector } from '../../store/store';
-import { loadGalaxyFile } from '../../store/galaxySlice';
+import React from 'react'
+import { useAppDispatch, useAppSelector } from '../../store/store'
+import { loadGalaxyFile } from '../../store/galaxySlice'
 
 export const GalaxySelector: React.FC = () => {
-  const dispatch = useAppDispatch();
-  const { loadingState, error, loadedGalaxy } = useAppSelector(state => state.galaxy);
+  const dispatch = useAppDispatch()
+  const { loadingState, error, loadedGalaxy } = useAppSelector(
+    state => state.galaxy
+  )
 
-  const handleLoadGalaxy = (fileName: 'continuum_galaxy.bin' | 'release_galaxy.bin') => {
-    dispatch(loadGalaxyFile(fileName));
-  };
+  const handleLoadGalaxy = (
+    fileName: 'continuum_galaxy.bin' | 'release_galaxy.bin'
+  ) => {
+    dispatch(loadGalaxyFile(fileName))
+  }
 
   return (
     <div className="galaxy-selector">
       <h2>Select Galaxy</h2>
-      
+
       <div className="button-group">
-        <button 
+        <button
           onClick={() => handleLoadGalaxy('continuum_galaxy.bin')}
           disabled={loadingState === 'loading'}
           className="mac-button"
         >
           Load Continuum Galaxy
         </button>
-        
-        <button 
+
+        <button
           onClick={() => handleLoadGalaxy('release_galaxy.bin')}
           disabled={loadingState === 'loading'}
           className="mac-button"
@@ -40,5 +44,5 @@ export const GalaxySelector: React.FC = () => {
         </p>
       )}
     </div>
-  );
-};
+  )
+}

@@ -20,10 +20,10 @@ export const uiSlice = createSlice({
     setCurrentView: (state, action: PayloadAction<UIState['currentView']>) => {
       state.currentView = action.payload
     },
-    toggleGamePause: (state) => {
+    toggleGamePause: state => {
       state.isGamePaused = !state.isGamePaused
     },
-    toggleDebugInfo: (state) => {
+    toggleDebugInfo: state => {
       state.showDebugInfo = !state.showDebugInfo
     }
   }

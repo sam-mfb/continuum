@@ -6,7 +6,10 @@ type Line = {
   kind: number
 }
 
-export const drawLines = (ctx: CanvasRenderingContext2D, lines: Line[]): void => {
+export const drawLines = (
+  ctx: CanvasRenderingContext2D,
+  lines: Line[]
+): void => {
   ctx.save()
   ctx.lineWidth = 1
   for (const line of lines) {

@@ -38,19 +38,19 @@ export const drawBunkers = (
     if (bunkersWithGuns.includes(bunker.kind)) {
       // Note: BunkerKind.DIFFERENT_AT_EACH_ORIENTATION has guns in certain
       // rotations. This needs to be implemented based on original game logic
-      
+
       // Draw two firing arcs (inner and outer)
       for (let j = 0; j < Math.min(2, bunker.ranges.length); j++) {
         const range = bunker.ranges[j]
         if (!range) continue
-        
+
         const angles = getBunkerAngles(
           range.low,
           range.high,
           bunker.kind,
           bunker.rot
         )
-        
+
         ctx.beginPath()
         ctx.arc(
           bunker.x,

@@ -13,18 +13,18 @@ export const getBunkerAngles = (
 ): BunkerAngles => {
   // Default implementation - this would need to be adjusted based on
   // the original game's bunker angle calculation logic
-  
+
   // For now, using the raw low/high values as degrees
   // The original game likely has more complex logic based on bunker type and rotation
   let start = low
   let end = high
-  
+
   // Adjust for bunker rotation if needed
   if (kind !== BunkerKind.GENERATOR) {
     // Generators don't have firing arcs
     start = (start + rot * 90) % 360
     end = (end + rot * 90) % 360
   }
-  
+
   return { start, end }
 }

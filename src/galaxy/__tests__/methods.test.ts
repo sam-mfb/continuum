@@ -16,7 +16,7 @@ describe('splitBuffer', () => {
     // Buffer too small to contain header
     const tooSmallBuffer = new ArrayBuffer(100)
     expect(() => Galaxy.splitBuffer(tooSmallBuffer)).toThrow()
-    
+
     // Empty buffer
     const emptyBuffer = new ArrayBuffer(0)
     expect(() => Galaxy.splitBuffer(emptyBuffer)).toThrow()

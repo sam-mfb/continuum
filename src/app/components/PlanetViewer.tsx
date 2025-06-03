@@ -51,4 +51,3 @@ export const PlanetViewer: React.FC = () => {
     </div>
   )
 }
-
