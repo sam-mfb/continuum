@@ -4,47 +4,8 @@
 // Lookup tables from: Play.c:46-47 (xlength, ylength arrays)
 // Constants from: GW.h (PLANSIZE=1540, PLANHEAD=30, NUMLINES=125, etc.)
 
-import { createBigEnd } from './bigEnd'
-
-type Planet = {
-  worldwidth: number
-  worldheight: number
-  worldwrap: number
-  shootslow: number
-  xstart: number
-  ystart: number
-  planetbonus: number
-  gravx: number
-  gravy: number
-  numcraters: number
-  lines: {
-    startx: number
-    endx: number
-    starty: number
-    endy: number
-    length: number
-    up_down: number
-    type: number
-    kind: number
-    newType: number
-  }[]
-  bunkers: {
-    x: number
-    y: number
-    rot: number
-    ranges: { low: number; high: number }[]
-    alive: boolean
-    kind: number
-  }[]
-  fuels: {
-    x: number
-    y: number
-    alive: boolean
-    currentfig: number
-    figcount: number
-  }[]
-  craters: { x: number; y: number }[]
-}
+import { createBigEnd } from '@/asm/bigEnd'
+import type { Bunker, Crater, Fuel, Line, Planet } from '@/planet/types'
 
 export function parsePlanet(
   planetsBuffer: ArrayBuffer,
@@ -70,7 +31,7 @@ export function parsePlanet(
 
   const worldwidth = iterator.nextWord()
   const worldheight = iterator.nextWord()
-  const worldwrap = iterator.nextWord()
+  const worldwrap = iterator.nextWord() ? true : false
   const shootslow = iterator.nextWord()
   let xstart = iterator.nextWord()
   xstart %= worldwidth // Ensures starting X position wraps around if it exceeds world width
@@ -97,17 +58,6 @@ export function parsePlanet(
   //'up' (i.e., in the northeast quadrant) or 'down" (i.e., in the southeast quadrant).
   //In the latter case, the lines are really going (S, SSE, SE, etc.).  Whether a line is
   //'up' or 'down' is represented by 'up_down', which is -1 for up and 1 for down.
-  type Line = {
-    startx: number
-    endx: number
-    starty: number
-    endy: number
-    length: number
-    up_down: number
-    type: number
-    kind: number
-    newType: number
-  }
   const lines: Line[] = []
   let garbage = false
   for (let i = 0; i < maxLines; i++) {
@@ -138,6 +88,8 @@ export function parsePlanet(
     if (type === LINE_NNE || type === LINE_ENE) length |= 1
     //newType consolidates up_down and type to give the following directions:
     //S, SSE, SE, ESE, E, ENE, NE, NNE
+    // Note that the theoretical value of W, i.e., 0, is ignored in the subsequent
+    // check (!type). the editor only ever creates E lines.
     const newType = up_down === -1 ? 10 - type : type
     //Setting line.startx to 10000  was how Continuum indicated that a line
     //and _all subsequent lines in the buffer_ were invalid (it didn't
@@ -159,15 +111,6 @@ export function parsePlanet(
         endy,
         newType
       })
-  }
-
-  type Bunker = {
-    x: number
-    y: number
-    rot: number
-    ranges: { low: number; high: number }[]
-    alive: boolean
-    kind: number
   }
 
   const bunkers: Bunker[] = []
@@ -211,14 +154,6 @@ export function parsePlanet(
       })
   }
 
-  type Fuel = {
-    x: number
-    y: number
-    alive: boolean
-    currentfig: number
-    figcount: number
-  }
-
   const fuels: Fuel[] = []
   garbage = false
 
@@ -246,11 +181,6 @@ export function parsePlanet(
       currentfig: 1,
       figcount: 1
     }
-  }
-
-  type Crater = {
-    x: number
-    y: number
   }
 
   const craters: Crater[] = []

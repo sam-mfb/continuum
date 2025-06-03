@@ -153,4 +153,3 @@ This architecture represents sophisticated game engineering for its era, with ca
 - Clean separation of concerns
 
 The modular design makes it well-suited for recreation in modern web technologies while maintaining the original game's structure and behavior.
-

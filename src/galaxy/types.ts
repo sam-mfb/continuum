@@ -1,15 +1,28 @@
-/**
- * Represents the raw galaxy file split into header and planet data sections
- */
-export type GalaxyBuffer = {
-  /** First 160 bytes containing file metadata */
-  header: ArrayBuffer
-  /** Remaining bytes containing all planet data (1540 bytes each) */
-  planets: ArrayBuffer
+export type GalaxyBuffer = ArrayBuffer & {
+  _galaxyBufferBrand: string
+}
+
+export type GalaxyHeaderBuffer = ArrayBuffer & {
+  _galaxyHeaderBufferBrand: string
+}
+
+export type PlanetsBuffer = ArrayBuffer & {
+  _planetsBufferBrand: string
 }
 
 /**
- * Parsed galaxy header information (corresponds to original C variables in Main.c)
+ * Represents the raw galaxy file split into header and planet data sections
+ */
+export type GalaxyComponents = {
+  /** First 160 bytes containing file metadata */
+  headerBuffer: GalaxyHeaderBuffer
+  /** Remaining bytes containing all planet data (1540 bytes each) */
+  planetsBuffer: PlanetsBuffer
+}
+
+/**
+ * Parsed galaxy header information
+ * (corresponds to original C variables in Main.c:read_header())
  */
 export type GalaxyHeader = {
   /** Total number of planets in galaxy (original: int planets) */

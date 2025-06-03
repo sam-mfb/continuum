@@ -2,7 +2,7 @@ import { createSlice } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
 
 type UIState = {
-  currentView: 'menu' | 'game' | 'settings'
+  currentView: 'menu' | 'game' | 'settings' | 'galaxy'
   isGamePaused: boolean
   showDebugInfo: boolean
 }
@@ -20,10 +20,10 @@ export const uiSlice = createSlice({
     setCurrentView: (state, action: PayloadAction<UIState['currentView']>) => {
       state.currentView = action.payload
     },
-    toggleGamePause: (state) => {
+    toggleGamePause: state => {
       state.isGamePaused = !state.isGamePaused
     },
-    toggleDebugInfo: (state) => {
+    toggleDebugInfo: state => {
       state.showDebugInfo = !state.showDebugInfo
     }
   }

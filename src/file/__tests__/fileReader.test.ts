@@ -1,5 +1,9 @@
 import { it, expect, describe, beforeAll, afterAll } from 'vitest'
-import { readBinaryFile, readBinaryFileSync, readBinaryFileFromBlob } from '../fileReader'
+import {
+  readBinaryFile,
+  readBinaryFileSync,
+  readBinaryFileFromBlob
+} from '../fileReader'
 import * as fs from 'fs/promises'
 import * as fsSync from 'fs'
 import * as path from 'path'
@@ -43,7 +47,9 @@ describe('readBinaryFile', () => {
   })
 
   it('reads file with binary data including null bytes', async () => {
-    const binaryData = new Uint8Array([0x00, 0xff, 0x12, 0x34, 0x00, 0xab, 0xcd])
+    const binaryData = new Uint8Array([
+      0x00, 0xff, 0x12, 0x34, 0x00, 0xab, 0xcd
+    ])
     const binaryFilePath = path.join(tempDir, 'binary.bin')
     await fs.writeFile(binaryFilePath, binaryData)
 
@@ -56,7 +62,7 @@ describe('readBinaryFile', () => {
 
   it('throws error for non-existent file', async () => {
     const nonExistentPath = path.join(tempDir, 'does-not-exist.bin')
-    
+
     await expect(readBinaryFile(nonExistentPath)).rejects.toThrow(
       /Failed to read binary file.*ENOENT/
     )
@@ -69,7 +75,7 @@ describe('readBinaryFile', () => {
     for (let i = 0; i < size; i++) {
       largeData[i] = i % 256
     }
-    
+
     const largeFilePath = path.join(tempDir, 'large.bin')
     await fs.writeFile(largeFilePath, largeData)
 
@@ -124,7 +130,7 @@ describe('readBinaryFileSync', () => {
 
   it('throws error for non-existent file (sync)', () => {
     const nonExistentPath = path.join(tempDir, 'does-not-exist-sync.bin')
-    
+
     expect(() => readBinaryFileSync(nonExistentPath)).toThrow(
       /Failed to read binary file.*ENOENT/
     )
@@ -152,7 +158,7 @@ describe('readBinaryFileFromBlob', () => {
       testData.byteOffset,
       testData.byteOffset + testData.byteLength
     )
-    
+
     // Create a blob with arrayBuffer method
     const blob = new Blob([testData])
     blob.arrayBuffer = async (): Promise<ArrayBuffer> => arrayBuffer
@@ -166,8 +172,10 @@ describe('readBinaryFileFromBlob', () => {
 
   it('reads binary data from File using FileReader fallback', async () => {
     const testData = new Uint8Array([0x12, 0x34, 0x56, 0x78])
-    const file = new File([testData], 'test.bin', { type: 'application/octet-stream' })
-    
+    const file = new File([testData], 'test.bin', {
+      type: 'application/octet-stream'
+    })
+
     // Don't add arrayBuffer method to trigger FileReader fallback
     // Mock FileReader for jsdom
     const originalFileReader = globalThis.FileReader
@@ -175,7 +183,7 @@ describe('readBinaryFileFromBlob', () => {
       onload: ((event: Event) => void) | null = null
       onerror: ((event: Event) => void) | null = null
       result: ArrayBuffer | null = null
-      
+
       readAsArrayBuffer(_blob: Blob): void {
         // Convert blob to ArrayBuffer in a simple way for testing
         const reader = this
@@ -206,9 +214,8 @@ describe('readBinaryFileFromBlob', () => {
     const blob = new Blob([])
     const emptyBuffer = new ArrayBuffer(0)
     blob.arrayBuffer = async (): Promise<ArrayBuffer> => emptyBuffer
-    
+
     const buffer = await readBinaryFileFromBlob(blob)
     expect(buffer.byteLength).toBe(0)
   })
 })
-
