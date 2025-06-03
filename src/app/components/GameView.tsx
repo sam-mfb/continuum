@@ -1,5 +1,30 @@
 import React, { useEffect, useRef } from 'react'
 
+/**
+ * GameView Component
+ *
+ * This component recreates the display and input system from the original
+ * Continuum game for the Macintosh (1986-88).
+ *
+ * Original Game Context (from orig/Sources/Play.c):
+ * - Fixed 20 FPS game loop using Mac's 60Hz system timer
+ * - Main loop: move_and_display() → wait_for_VR() → swap_screens()
+ * - Polled keyboard input once per frame using GetKeys()
+ * - Hardware double buffering on Mac Plus, software copying on Mac II
+ *
+ * Modern Implementation:
+ * - Uses requestAnimationFrame but enforces 20 FPS timing (50ms/frame)
+ * - Polls keyboard state each frame, tracking keysDown/Pressed/Released
+ * - Single canvas with immediate mode rendering (no double buffering needed)
+ * - Game logic passed as a pure function, allowing any state management
+ *
+ * Key Differences from Original:
+ * - No screen swapping needed (browser handles this automatically)
+ * - No vertical retrace synchronization (requestAnimationFrame handles this)
+ * - Keyboard events instead of GetKeys() system call
+ * - Canvas 2D context instead of direct pixel manipulation
+ */
+
 // Types
 export type GameFrameInfo = {
   // Timing
