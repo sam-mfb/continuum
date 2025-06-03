@@ -23,7 +23,7 @@ while( !endofplanet && !endofgame)
 wait_for_VR()
 {
     static long now=0;
-    
+
     tickwait = TickCount() - now;
     if (tickwait > 20 || tickwait < 0) tickwait = 9;
     while(TickCount() < now + 3)    // Wait until 3 ticks have passed
@@ -77,37 +77,72 @@ case MACHINE_2:
 - Draws to off-screen bitmap (`secondbmap`)
 - Copies entire bitmap to window each frame
 
-## Drawing Order
+## Frame Order of Operations
 
-The `move_and_display()` function (Play.c:192-265) draws elements in a specific order:
+The `move_and_display()` function (Play.c:192-265) executes operations in a specific order each frame:
+
+### 1. Game State Updates (lines 194-211)
+
+Before any drawing occurs:
+
+- Check if mission is complete (line 194-195)
+- Decrement planet bonus every 10 frames (lines 197-202)
+- Handle dead ship countdown and respawn (lines 203-211)
+
+### 2. Ship Control & Movement (lines 213-217)
+
+If the ship is alive:
+
+- `ship_control()` (line 215) - Polls keyboard input and updates velocity
+  - Reads keyboard state via `GetKeys()` or cartoon input
+  - Applies thrust, rotation based on input
+  - Applies gravity and friction to velocity
+  - Handles shield and firing
+- `move_ship()` (line 216) - Updates ship position
+  - Applies velocity to position using fixed-point math
+  - Calls `contain_ship()` to handle screen scrolling
+
+### 3. Drawing Phase
+
+After all game logic updates, drawing begins:
 
 1. **Clear back buffer** (line 219):
+
    ```c
    view_clear(back_screen);
    ```
 
 2. **Background elements** (lines 221-222):
+
    - `do_fuels()` - Fuel depot animations
    - `draw_craters()` - Crater marks from destroyed bunkers
 
 3. **Ship collision mask** (lines 224-226):
+
    ```c
    gray_figure(shipx-(SCENTER-8), shipy-(SCENTER-5),
                ship_masks[shiprot], SHIPHT);
    ```
 
 4. **Terrain layers** (lines 228-236):
+
    - `white_terrain()` - White/visible walls
    - `black_terrain(L_GHOST)` - Ghost/transparent walls
+   - `erase_figure()` - Clear ship area (line 232)
+   - `check_for_bounce()` - Collision with bounce walls (line 234)
    - `black_terrain(L_NORMAL)` - Normal black walls
 
 5. **Game objects** (lines 237-259):
+
    - `do_bunkers()` - Enemy bunkers
    - `move_bullets()` - Enemy projectiles (unless shielding)
-   - Ship sprite rendering
+   - **Ship sprite rendering** (lines 241-249):
+     - Check for ship collision (lines 243-245)
+     - Shift collision mask (lines 246-247)
+     - Draw actual ship sprite (lines 248-249)
    - `move_shipshots()` - Player projectiles
-   - Shield effect (if active)
-   - `flame_on()` - Thrust flame
+   - Shield effect (if active) (lines 252-255)
+   - `flame_on()` - Thrust flame (lines 256-257)
    - `draw_explosions()` - Explosion animations
    - `do_strafes()` - Strafe effects
 
@@ -115,6 +150,13 @@ The `move_and_display()` function (Play.c:192-265) draws elements in a specific 
    ```c
    update_sbar();
    ```
+
+### Key Points
+
+- **Input and physics happen first** - All game state is updated before any drawing
+- **Collision detection during draw** - Some collision checks happen mid-draw for efficiency
+- **Ship drawn in middle** - Ship sprite is drawn after terrain but before effects
+- **Single-threaded** - Everything happens sequentially in one thread
 
 ## Screen Coordinates
 
@@ -136,6 +178,7 @@ char *front_screen, *back_screen,      // front and back screen pointers
 ## Performance Monitoring
 
 The `tickwait` variable tracks frame timing (Play.c:49, 174-175):
+
 - Measures ticks between frames
 - Clamped to reasonable values (9 ticks) if out of range
 - Displayed in debug mode (lines 262-263)
@@ -143,6 +186,7 @@ The `tickwait` variable tracks frame timing (Play.c:49, 174-175):
 ## Input Polling
 
 Input is polled once per frame (Play.c:658-699):
+
 - `GetKeys()` reads entire keyboard state into 16-byte array
 - Processed during `ship_control()` before physics update
 - Every 2 seconds, calls `GetNextEvent()` to prevent screensaver
@@ -150,6 +194,7 @@ Input is polled once per frame (Play.c:658-699):
 ## Screen Mode Support
 
 The game adapts to different Macintosh models:
+
 - **Mac Plus**: Hardware page flipping via memory-mapped I/O
 - **Mac SE/30**: Software double buffering
 - **Mac II**: Window-based rendering with CopyBits

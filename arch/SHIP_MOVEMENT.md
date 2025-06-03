@@ -5,6 +5,7 @@ This document describes how ship movement works in Continuum, based on the origi
 ## Overview
 
 The ship movement system uses:
+
 - Fixed-point velocity with 8-bit fractional precision
 - Thrust vectors in 32 directions (11.25° increments)
 - Point-based gravity system with inverse-square law
@@ -36,6 +37,7 @@ if( (pressed & KEY_THRUST) && fuel)
 ```
 
 **Thrust Vector Table** (Play.c:34-35):
+
 ```c
 int thrustx[32]={0, 9, 18, 27, 34, 40, 44, 47, 48, 47, 44, 40, 34, 27, 18, 9,
                  0,-9,-18,-27,-34,-40,-44,-47,-48,-47,-44,-40,-34,-27,-18,-9};
@@ -60,6 +62,7 @@ if (!bouncing)
 ```
 
 **Gravity Calculation** (Play.c:585-636):
+
 - Starts with global gravity values (`gravx`, `gravy`)
 - Adds point gravity from each generator bunker
 - Uses inverse-square law with 68K assembly optimization
@@ -131,10 +134,12 @@ else if (shipy > BOTMARG)
 ### World Boundaries
 
 **Non-wrapping worlds** (Play.c:405-412, 427-434):
+
 - Screen stops at world edges
 - Ship position adjusted to stay in bounds
 
 **Wrapping worlds** (Play.c:414-417):
+
 ```c
 if(screenx >= worldwidth)
     screenx -= worldwidth;
@@ -145,6 +150,7 @@ else if(screenx < 0)
 ### Edge Constraints
 
 Ship cannot go within `SHIPHT` pixels of screen edge (Play.c:445-456):
+
 - Velocity set to 0 when hitting boundaries
 - Recursive call to `contain_ship()` to recalculate positions
 
@@ -159,6 +165,7 @@ Ship cannot go within `SHIPHT` pixels of screen edge (Play.c:445-456):
 ## Constants and Margins
 
 From `GW.h` (referenced in Play.c):
+
 - `SCRWTH`: 512 pixels (screen width)
 - `VIEWHT`: 318 pixels (gameplay area height)
 - `SHIPHT`: Ship sprite height
@@ -167,6 +174,7 @@ From `GW.h` (referenced in Play.c):
 ## Input Handling
 
 The `ship_control()` function (Play.c:461-557) reads keyboard input:
+
 - **Left/Right arrows**: Rotate ship (Play.c:475-478)
 - **Thrust key**: Apply forward acceleration (Play.c:481-492)
 - **Shield key**: Activate shield and collect fuel (Play.c:507-527)
