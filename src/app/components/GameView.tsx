@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 
 /**
  * GameView Component
@@ -51,6 +51,11 @@ export type GameLoopFunction = (
   env: GameEnvironment
 ) => void
 
+export type GameDefinition = {
+  name: string
+  gameLoop: GameLoopFunction
+}
+
 export type GameViewProps = {
   // Canvas configuration
   width?: number // Canvas width in pixels (default: 512)
@@ -64,7 +69,8 @@ export type GameViewProps = {
   showFps?: boolean // Show FPS counter overlay (default: false)
 
   // Game logic
-  gameLoop: GameLoopFunction
+  games: GameDefinition[]
+  defaultGameIndex?: number
 
   // Optional lifecycle hooks
   onInit?: (ctx: CanvasRenderingContext2D, env: GameEnvironment) => void
@@ -79,12 +85,14 @@ const GameView: React.FC<GameViewProps> = ({
   pixelated = true,
   scale = 1,
   showFps = false,
-  gameLoop,
+  games,
+  defaultGameIndex = 0,
   onInit,
   onCleanup
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationFrameRef = useRef<number>(0)
+  const [selectedGameIndex, setSelectedGameIndex] = useState(defaultGameIndex)
 
   // Timing refs
   const startTimeRef = useRef<number>(0)
@@ -186,8 +194,10 @@ const GameView: React.FC<GameViewProps> = ({
         ctx.fillStyle = backgroundColor
         ctx.fillRect(0, 0, width, height)
 
-        // Call game loop
-        gameLoop(ctx, frameInfo, env)
+        // Call selected game loop
+        if (games[selectedGameIndex]) {
+          games[selectedGameIndex].gameLoop(ctx, frameInfo, env)
+        }
 
         // Draw FPS counter if enabled
         if (showFps && now - lastFpsUpdateRef.current > 500) {
@@ -240,7 +250,8 @@ const GameView: React.FC<GameViewProps> = ({
     pixelated,
     scale,
     showFps,
-    gameLoop,
+    games,
+    selectedGameIndex,
     onInit,
     onCleanup
   ])
@@ -253,12 +264,44 @@ const GameView: React.FC<GameViewProps> = ({
     <div
       style={{
         display: 'flex',
+        flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
         height: '100vh',
-        background: '#333'
+        background: '#333',
+        gap: '20px'
       }}
     >
+      <div
+        style={{
+          display: 'flex',
+          gap: '10px',
+          alignItems: 'center'
+        }}
+      >
+        <label style={{ color: '#fff', fontFamily: 'monospace' }}>
+          Select Game:
+        </label>
+        <select
+          value={selectedGameIndex}
+          onChange={(e) => setSelectedGameIndex(Number(e.target.value))}
+          style={{
+            padding: '5px 10px',
+            fontFamily: 'monospace',
+            fontSize: '14px',
+            backgroundColor: '#222',
+            color: '#fff',
+            border: '1px solid #666',
+            borderRadius: '4px'
+          }}
+        >
+          {games.map((game, index) => (
+            <option key={index} value={index}>
+              {game.name}
+            </option>
+          ))}
+        </select>
+      </div>
       <canvas
         ref={canvasRef}
         style={{

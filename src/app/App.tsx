@@ -6,6 +6,7 @@ import { PlanetList } from './components/PlanetList'
 import { PlanetViewer } from './components/PlanetViewer'
 import GameView from './components/GameView'
 import { testGameLoop } from './games/testGame'
+import { shipMoveGameLoop } from './games/shipMove'
 import './App.css'
 
 function App(): React.JSX.Element {
@@ -78,7 +79,11 @@ function App(): React.JSX.Element {
 
           {currentView === 'game' && (
             <GameView
-              gameLoop={testGameLoop}
+              games={[
+                { name: 'Test Game', gameLoop: testGameLoop },
+                { name: 'Ship Move', gameLoop: shipMoveGameLoop }
+              ]}
+              defaultGameIndex={0}
               scale={2} // Display at 2x size (1024x684)
               pixelated={true} // Keep pixels sharp
               showFps={showDebugInfo}
