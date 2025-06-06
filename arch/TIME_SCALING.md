@@ -133,11 +133,66 @@ The original uses fixed-point math with 8-bit fractional precision (>> 8). When 
 
 2. **Animation Timing**: Visual effects (flame blink, sprite rotation) should use actual time, not frame counts.
 
-3. **Input Polling**: The original polls input once per frame. At higher framerates, consider whether to maintain this behavior or allow more responsive input.
+3. **Input Polling**: The original polls input once per frame. At higher framerates, this naturally provides more responsive input. However, this introduces new challenges:
+   - **Rotation Speed**: Ship rotation (lines 475-478) changes by 1 position per frame, so at 60 FPS the ship would rotate 3x faster than at 20 FPS. This needs time-based accumulation.
+   - **Integer Precision**: With small thrust values (e.g., thrustx[i]=9) and timeScale < 1.0, integer rounding could make certain angles feel different or weaker than intended.
 
-4. **Collision Detection**: Frame-independent physics may require interpolated collision checks to prevent objects passing through each other at high velocities.
+4. **Collision Detection**: Frame-independent physics may require interpolated collision checks to prevent objects passing through each other at high velocities. Note that this is only a concern at framerates lower than the original 20 FPS; higher framerates will naturally have more precise collision detection due to smaller per-frame movement increments.
 
 5. **Network Play**: If implementing multiplayer, all clients must use consistent time scaling to maintain synchronization.
+
+## Input Polling
+
+The original game polls input once per frame at 20 FPS. When adapting for variable framerates, special care must be taken to preserve the original input feel and player techniques.
+
+### The Challenge
+
+Simply polling at higher framerates creates several problems:
+- Ship rotation speed scales with framerate (3x faster at 60 FPS)
+- Quick "tap" inputs may produce inconsistent results based on timing
+- Rapid tapping for incremental thrust (a common technique) could behave differently
+
+### Recommended Solution: Poll Continuously, Process on Logical Frames
+
+Poll input at the rendering framerate but process it at fixed 20Hz intervals:
+
+```c
+// Input buffer - captures any input between logical frames
+struct InputBuffer {
+    bool thrustPressed;
+    bool leftPressed;
+    bool rightPressed;
+    bool firePressed;
+    bool shieldPressed;
+};
+
+// Poll every render frame (e.g., 60 FPS)
+on_input_poll():
+    if (key_down(THRUST)):
+        inputBuffer.thrustPressed = true
+    // etc for other keys
+
+// Process every logical frame (50ms)
+on_logical_frame():
+    if (inputBuffer.thrustPressed):
+        dx += thrustx[shiprot] * 2  // Original thrust amount
+        dy += thrustx[(shiprot+24) & 31] * 2
+    
+    if (inputBuffer.leftPressed):
+        shiprot = (shiprot - 1) & 31  // Original rotation speed
+    
+    // Clear buffer for next logical frame
+    inputBuffer.clear()
+```
+
+### Benefits
+
+1. **No missed inputs**: A 16ms tap at 60 FPS still registers in the buffer
+2. **Preserves original feel**: Each tap provides exactly one frame's worth of action
+3. **Supports rapid tapping**: Players can tap multiple times per second as in the original
+4. **Simple implementation**: No complex calculations or special cases
+
+This approach maintains the exact input behavior of the original game while preventing input loss at higher framerates.
 
 ## Testing
 
