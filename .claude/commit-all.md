@@ -1,0 +1,1 @@
+Stage and commit all the changes in the current branch. You may use multiple commits if that is logical, but if you do so, first tell the user how you propose to break them up and ask if that is ok before proceeding.
