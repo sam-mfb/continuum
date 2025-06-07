@@ -5,7 +5,7 @@ import { SHIP } from './constants'
 
 const initialState: ShipState = {
   shiprot: 0,
-  fuel: 0,
+  fuel: 10000,
   flaming: false,
   thrusting: false,
   firing: false,
@@ -32,6 +32,12 @@ export const shipSlice = createSlice({
   name: 'ship',
   initialState,
   reducers: {
+    initShip: (state, action: PayloadAction<{ x: number; y: number }>) => {
+      state.shipx = action.payload.x
+      state.globalx = action.payload.x
+      state.shipy = action.payload.y
+      state.globaly = action.payload.y
+    },
     shipControl: (state, action: PayloadAction<ControlAction>) => {
       const { controlsPressed, gravity } = action.payload
       const pressed = new Set(controlsPressed)
@@ -137,4 +143,3 @@ export const shipSlice = createSlice({
 })
 
 export default shipSlice.reducer
-
