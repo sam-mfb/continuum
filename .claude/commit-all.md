@@ -1,1 +1,9 @@
-Stage and commit all the changes in the current branch. You may use multiple commits if that is logical, but if you do so, first tell the user how you propose to break them up and ask if that is ok before proceeding.
+Review all the staged and unstaged changes in the current branch.
+
+Review commit instructions in CLAUDE.md, if any.
+
+Determine if it would be logical to make one or more commits.
+
+If you are going to do one commit only, stage those changes and commit.
+
+If you are going to do multiple commits, tell the user your plan and ask for approval before staging and committing.
