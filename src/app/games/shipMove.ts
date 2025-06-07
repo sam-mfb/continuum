@@ -5,7 +5,8 @@ import { shipSlice } from '@/ship/shipSlice'
 import { ShipControl } from '@/ship/types'
 
 const store = configureStore({ reducer: shipSlice.reducer })
-store.dispatch(shipSlice.actions.initShip({ x: 0, y: 0 }))
+// Initialize ship at center of screen (512x318 viewport)
+store.dispatch(shipSlice.actions.initShip({ x: 256, y: 159 }))
 
 export const shipMoveGameLoop: GameLoopFunction = (ctx, frame, _env) => {
   const gravity = { x: 0, y: 0 }
@@ -29,7 +30,7 @@ export const shipMoveGameLoop: GameLoopFunction = (ctx, frame, _env) => {
     })
   )
   store.dispatch(shipSlice.actions.moveShip())
-  const { globalx, globaly } = store.getState()
+  const { globalx, globaly, shiprot } = store.getState()
 
-  drawShip(ctx, globalx, globaly)
+  drawShip(ctx, globalx, globaly, shiprot)
 }

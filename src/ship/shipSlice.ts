@@ -137,7 +137,10 @@ export const shipSlice = createSlice({
       state.shipy += state.yslow >> 8
       state.yslow &= 255
 
-      //contain_ship();
+      // For now, without screen scrolling, globalx/globaly are same as shipx/shipy
+      // TODO: implement contain_ship() with proper screen scrolling
+      state.globalx = state.shipx
+      state.globaly = state.shipy
     }
   }
 })
