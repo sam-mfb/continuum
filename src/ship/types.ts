@@ -35,9 +35,6 @@ export type ShipState = {
   dx: number
   dy: number
   cartooning: boolean
-  // ship position relative to planet
-  globalx: number
-  globaly: number
   // ship position relative to screen
   shipx: number
   shipy: number

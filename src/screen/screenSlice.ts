@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { ScreenState } from './types'
 
 const initialState: ScreenState = {
@@ -9,7 +9,16 @@ const initialState: ScreenState = {
 export const screenSlice = createSlice({
   name: 'screen',
   initialState,
-  reducers: {}
+  reducers: {
+    setPosition: (state, action: PayloadAction<{ x: number; y: number }>) => {
+      state.screenx = action.payload.x
+      state.screeny = action.payload.y
+    },
+    updatePosition: (state, action: PayloadAction<{ x: number; y: number }>) => {
+      state.screenx = action.payload.x
+      state.screeny = action.payload.y
+    }
+  }
 })
 
 export default screenSlice.reducer

@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { PlanetState } from './types'
 
 const initialState: PlanetState = {
@@ -21,7 +21,11 @@ const initialState: PlanetState = {
 export const planetSlice = createSlice({
   name: 'planet',
   initialState,
-  reducers: {}
+  reducers: {
+    loadPlanet: (_state, action: PayloadAction<PlanetState>) => {
+      return action.payload
+    }
+  }
 })
 
 export default planetSlice.reducer

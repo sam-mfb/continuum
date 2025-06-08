@@ -15,8 +15,6 @@ const initialState: ShipState = {
   dx: 0,
   dy: 0,
   cartooning: false,
-  globalx: 0,
-  globaly: 0,
   shipx: 0,
   shipy: 0,
   xslow: 0,
@@ -34,9 +32,13 @@ export const shipSlice = createSlice({
   reducers: {
     initShip: (state, action: PayloadAction<{ x: number; y: number }>) => {
       state.shipx = action.payload.x
-      state.globalx = action.payload.x
       state.shipy = action.payload.y
-      state.globaly = action.payload.y
+    },
+    updatePosition: (state, action: PayloadAction<{ x: number; y: number; dx?: number; dy?: number }>) => {
+      state.shipx = action.payload.x
+      state.shipy = action.payload.y
+      if (action.payload.dx !== undefined) state.dx = action.payload.dx
+      if (action.payload.dy !== undefined) state.dy = action.payload.dy
     },
     shipControl: (state, action: PayloadAction<ControlAction>) => {
       const { controlsPressed, gravity } = action.payload
@@ -136,11 +138,6 @@ export const shipSlice = createSlice({
       state.yslow += state.dy
       state.shipy += state.yslow >> 8
       state.yslow &= 255
-
-      // For now, without screen scrolling, globalx/globaly are same as shipx/shipy
-      // TODO: implement contain_ship() with proper screen scrolling
-      state.globalx = state.shipx
-      state.globaly = state.shipy
     }
   }
 })
