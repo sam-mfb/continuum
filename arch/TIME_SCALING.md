@@ -41,6 +41,22 @@ y += sp->v;
 - Shot position updated by velocity each frame
 - Initial velocities from `shotvecs[]` table (lines 38-41)
 
+#### Shot Lifetime Counters (lines 540, 855)
+```c
+sp->lifecount = SHOTLEN;  // Initial: 35 frames
+sp->lifecount--;          // Decrements each frame
+```
+- Shots exist for exactly 35 frames at 20 FPS (1.75 seconds)
+
+#### Bounce Timing (Terrain.c lines 225-227)
+```c
+sp->lifecount = shortest;  // Frames until wall impact
+if (sp->hitline != NULL && sp->hitline->kind == L_BOUNCE)
+    sp->btime = totallife - shortest;  // Remaining frames after bounce
+```
+- Both `lifecount` and `btime` are frame-based counters
+- Used for precise collision prediction and bounce lifetime preservation
+
 ### 5. Timer-Based Events
 
 #### Planet Bonus Countdown (lines 197-201)
@@ -107,6 +123,11 @@ dx += xgravity * timeScale;
 
 // Projectile movement
 x += sp->h * timeScale;
+
+// Shot lifetime
+sp->lifecount = SHOTLEN / timeScale;  // Convert 35 frames to current framerate
+// OR use time-based approach:
+sp->timeRemaining = 1.75;  // 1.75 seconds instead of 35 frames
 ```
 
 ### Timer Values

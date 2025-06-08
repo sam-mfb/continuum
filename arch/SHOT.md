@@ -96,15 +96,81 @@ The `move_shot()` function (Play.c:848-874) updates each bullet:
 4. Converts 8x precision to pixels: `x = x8 >> 3`
 5. Expires bullet if it goes off top of world
 
+### Fixed-Point Position System
+
+The shot system uses fixed-point arithmetic for smooth sub-pixel movement:
+
+**Position Storage:**
+- `x8, y8`: High-precision position with 3 bits of fractional precision (1/8 pixel units)
+- `x, y`: Integer pixel position for drawing and collision detection
+
+**Initial Position Setup (Play.c:538-540):**
+```c
+sp->x8 = (globalx << 3);     // Convert ship position to 1/8 pixel units
+sp->y8 = (globaly << 3);     // Multiply by 8 for sub-pixel precision
+```
+
+**Position Update (Play.c:855-873):**
+```c
+// Each frame in move_shot():
+x = sp->x8;              // Get high-precision position
+y = sp->y8;
+x += sp->h;              // Add velocity (also in 1/8 pixel units)
+y += sp->v;
+// ... boundary/wrapping checks ...
+sp->x8 = x;              // Store updated high-precision position
+sp->y8 = y;
+x >>= 3;                 // Convert to pixels (divide by 8)
+y >>= 3;
+sp->x = x;               // Store pixel position for drawing
+sp->y = y;
+```
+
+**Benefits of This System:**
+- Allows fractional pixel velocities (e.g., 5/8 pixel per frame)
+- Creates smooth diagonal trajectories
+- Prevents rounding errors from accumulating
+- Maintains consistent physics at all angles
+
+For example, with velocity `h = 5`, the shot moves exactly 5/8 (0.625) pixels per frame horizontally, providing much smoother motion than integer-only movement.
+
 ## Wall Bouncing System
 
 ### Collision Detection
 
-The `lifecount` variable serves dual purpose:
-- **Normal countdown**: Decrements each frame until 0
-- **Wall collision**: Set to frames-until-impact by `set_life()`
+The `lifecount` and `btime` variables work together to handle wall collisions:
 
-When `lifecount` reaches 0 and `btime > 0`, a wall collision occurred.
+**Normal Flight:**
+- `lifecount`: Counts down from 35 to 0 (remaining lifetime in frames)
+- `btime`: Set to 0 (no bounce pending)
+
+**When `set_life()` is Called:**
+This function (Terrain.c:114-230) calculates when the shot will hit a wall:
+
+1. Checks all walls to find which one the shot will hit first
+2. Calculates frames until impact for each potential collision
+3. Sets `lifecount` to frames until the nearest wall hit
+4. For bounce walls (L_BOUNCE type):
+   ```c
+   sp->lifecount = shortest;  // Frames until impact
+   if (sp->hitline != NULL && sp->hitline->kind == L_BOUNCE)
+       sp->btime = totallife - shortest;  // Preserve remaining lifetime
+   else
+       sp->btime = 0;
+   ```
+
+**Example Bounce Scenario:**
+- Shot fired with `lifecount = 35`, `btime = 0`
+- `set_life()` detects bounce wall 10 frames away
+- Sets `lifecount = 10`, `btime = 25` (35 - 10)
+- After 10 frames, `lifecount` reaches 0
+- Since `btime > 0`, triggers bounce:
+  - Velocity is reflected
+  - `lifecount = btime` (restore 25 frames)
+  - `btime = 0`
+  - `set_life()` called again for next collision
+
+This system allows precise collision timing and multiple bounces while preserving the total 35-frame lifetime.
 
 ### Bounce Physics (Play.c:926-948)
 
