@@ -6,6 +6,7 @@ import { planetSlice } from '@/planet/planetSlice'
 import { screenSlice } from '@/screen/screenSlice'
 import { ShipControl } from '@/ship/types'
 import { containShip } from './containShip'
+import { drawBackground } from './drawBackground'
 
 // Configure store with all slices
 const store = configureStore({
@@ -120,7 +121,18 @@ export const shipMoveGameLoop: GameLoopFunction = (ctx, frame, _env) => {
     )
   }
 
+  // Get final state for drawing
+  const finalState = store.getState()
+  
+  // Draw background grid
+  drawBackground(
+    ctx,
+    finalState.screen.screenx,
+    finalState.screen.screeny,
+    finalState.planet.worldwidth,
+    finalState.planet.worldheight
+  )
+  
   // Draw ship at screen position
-  const finalShipState = store.getState().ship
-  drawShip(ctx, finalShipState.shipx, finalShipState.shipy, finalShipState.shiprot)
+  drawShip(ctx, finalState.ship.shipx, finalState.ship.shipy, finalState.ship.shiprot)
 }
