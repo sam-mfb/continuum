@@ -13,12 +13,21 @@ const initialState: GraphicsState = {
   availableFiles: [
     'continuum_title_page.mac',
     'gw_figures_in_grid.mac',
+    'gw_figures_in_grid_paintings.mac',
+    'gw_figures_paintings.mac',
     'gw_look.mac',
     'gw_new_figs.mac',
     'gw_screen_top.mac',
     'gw_title_screen.mac',
+    'gravity_well_ships.mac',
+    'menu_bar_docs.mac',
+    'new_bunkers.mac',
     'new_screen_top.mac',
-    'old_gw_figures_in_grid.mac'
+    'newbitmaps.mac',
+    'old_gw_figures_in_grid.mac',
+    'planet_globals_docs.mac',
+    'startup_screen.mac',
+    'title_screen_paintings.mac'
   ],
   selectedFile: null,
   imageData: null,
