@@ -24,7 +24,7 @@ const initializeGame = (): void => {
     planetSlice.actions.loadPlanet({
       worldwidth: 1000,
       worldheight: 1000,
-      worldwrap: true,
+      worldwrap: false,
       shootslow: 0,
       xstart: 500,
       ystart: 500,
@@ -93,37 +93,25 @@ export const shipMoveGameLoop: GameLoopFunction = (ctx, frame, _env) => {
   const contained = containShip(shipState, screenState, planetState)
 
   // Update positions if they changed
-  if (
-    contained.shipx !== shipState.shipx ||
-    contained.shipy !== shipState.shipy ||
-    contained.dx !== shipState.dx ||
-    contained.dy !== shipState.dy
-  ) {
-    store.dispatch(
-      shipSlice.actions.updatePosition({
-        x: contained.shipx,
-        y: contained.shipy,
-        dx: contained.dx,
-        dy: contained.dy
-      })
-    )
-  }
+  store.dispatch(
+    shipSlice.actions.updatePosition({
+      x: contained.shipx,
+      y: contained.shipy,
+      dx: contained.dx,
+      dy: contained.dy
+    })
+  )
 
-  if (
-    contained.screenx !== screenState.screenx ||
-    contained.screeny !== screenState.screeny
-  ) {
-    store.dispatch(
-      screenSlice.actions.updatePosition({
-        x: contained.screenx,
-        y: contained.screeny
-      })
-    )
-  }
+  store.dispatch(
+    screenSlice.actions.updatePosition({
+      x: contained.screenx,
+      y: contained.screeny
+    })
+  )
 
   // Get final state for drawing
   const finalState = store.getState()
-  
+
   // Draw background grid
   drawBackground(
     ctx,
@@ -132,7 +120,12 @@ export const shipMoveGameLoop: GameLoopFunction = (ctx, frame, _env) => {
     finalState.planet.worldwidth,
     finalState.planet.worldheight
   )
-  
+
   // Draw ship at screen position
-  drawShip(ctx, finalState.ship.shipx, finalState.ship.shipy, finalState.ship.shiprot)
+  drawShip(
+    ctx,
+    finalState.ship.shipx,
+    finalState.ship.shipy,
+    finalState.ship.shiprot
+  )
 }
