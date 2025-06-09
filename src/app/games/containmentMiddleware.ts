@@ -1,12 +1,13 @@
 import type { Middleware } from '@reduxjs/toolkit'
 import { shipSlice } from '@/ship/shipSlice'
 import { screenSlice } from '@/screen/screenSlice'
+import { planetSlice } from '@/planet/planetSlice'
 import { containShip } from './containShip'
 
 type RootState = {
   ship: ReturnType<typeof shipSlice.reducer>
   screen: ReturnType<typeof screenSlice.reducer>
-  planet: { worldwidth: number; worldheight: number; worldwrap: boolean }
+  planet: ReturnType<typeof planetSlice.reducer>
 }
 
 /**
