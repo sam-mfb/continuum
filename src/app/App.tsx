@@ -4,6 +4,9 @@ import { setCurrentView, toggleDebugInfo } from '../store/uiSlice'
 import { GalaxySelector } from './components/GalaxySelector'
 import { PlanetList } from './components/PlanetList'
 import { PlanetViewer } from './components/PlanetViewer'
+import GameView from './components/GameView'
+import { testGameLoop } from './games/testGame'
+import { shipMoveGameLoop } from './games/shipMove'
 import './App.css'
 
 function App(): React.JSX.Element {
@@ -75,14 +78,21 @@ function App(): React.JSX.Element {
           )}
 
           {currentView === 'game' && (
-            <div className="game-view">
-              <h2>GAME</h2>
-              <div className="game-viewport">
-                GAME CANVAS (512x342)
-                <br />
-                LOADING...
-              </div>
-            </div>
+            <GameView
+              games={[
+                { name: 'Test Game', gameLoop: testGameLoop },
+                { name: 'Ship Move', gameLoop: shipMoveGameLoop }
+              ]}
+              defaultGameIndex={0}
+              scale={2} // Display at 2x size (1024x684)
+              pixelated={true} // Keep pixels sharp
+              showFps={showDebugInfo}
+              onInit={(_ctx, env) => {
+                console.log(
+                  `Game initialized: ${env.width}x${env.height} @ ${env.fps}fps`
+                )
+              }}
+            />
           )}
 
           {currentView === 'settings' && (

@@ -5,13 +5,13 @@
 // Constants from: GW.h (PLANSIZE=1540, PLANHEAD=30, NUMLINES=125, etc.)
 
 import { createBigEnd } from '@/asm/bigEnd'
-import type { Bunker, Crater, Fuel, Line, Planet } from '@/planet/types'
+import type { Bunker, Crater, Fuel, Line, PlanetState } from '@/planet/types'
 
 export function parsePlanet(
   planetsBuffer: ArrayBuffer,
   planetIndex: Uint8Array,
   planet: number
-): Planet {
+): PlanetState {
   const planetByteSize = 1540
   const planetHeaderSize = 30
   const planetLocation = planetIndex[planet - 1]

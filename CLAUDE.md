@@ -80,3 +80,9 @@ This is a recreation of the 68000 Mac game "Continuum" for the web, maintaining 
 - Don't use the word "should" in test names
 - Only use 'describe' blocks if there will be more than one at a given level
 - When the user asks you to write unit tests, provide a numbered list of the tests you propose to write and ask which ones the user wants you to actually write
+
+## Commits
+
+- Each commit should relate to a logical piece of work, e.g., don't commit work on two features in one commit
+- Keep commit messages to a single, concise line.
+- No attribution in commits

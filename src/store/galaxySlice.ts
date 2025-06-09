@@ -3,11 +3,11 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import type { GalaxyHeader } from '@/galaxy/types'
 import { Galaxy } from '@/galaxy/methods'
 import { parsePlanet } from '@/planet/parsePlanet'
-import type { Planet } from '@/planet/types'
+import type { PlanetState } from '@/planet/types'
 
 type GalaxyState = {
   loadedGalaxy: GalaxyHeader | null
-  planets: Planet[]
+  planets: PlanetState[]
   selectedPlanetIndex: number | null
   loadingState: 'idle' | 'loading' | 'error'
   error: string | null
@@ -33,7 +33,7 @@ export const loadGalaxyFile = createAsyncThunk(
     const { headerBuffer, planetsBuffer } = Galaxy.splitBuffer(arrayBuffer)
     const galaxyHeader = Galaxy.parseHeader(headerBuffer)
 
-    const planets: Planet[] = []
+    const planets: PlanetState[] = []
     for (let i = 0; i < galaxyHeader.planets; i++) {
       const planet = parsePlanet(planetsBuffer, galaxyHeader.indexes, i + 1)
       planets.push(planet)

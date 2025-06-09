@@ -28,7 +28,7 @@ export const PlanetViewer: React.FC = () => {
     drawBunkers(ctx, selectedPlanet.bunkers)
     drawFuels(ctx, selectedPlanet.fuels)
     drawCraters(ctx, selectedPlanet.craters)
-    drawShip(ctx, selectedPlanet.xstart, selectedPlanet.ystart)
+    drawShip(ctx, selectedPlanet.xstart, selectedPlanet.ystart, 0)
   }, [selectedPlanet])
 
   if (!selectedPlanet) {

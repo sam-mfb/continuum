@@ -1,4 +1,4 @@
-export type Planet = {
+export type PlanetState = {
   worldwidth: number
   worldheight: number
   worldwrap: boolean
