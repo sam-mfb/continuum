@@ -39,29 +39,46 @@ const unpackBytes = (
   length: number
 ): { bytePtr: number; unpackedArray: Uint8Array<ArrayBuffer> } => {
   let unpackedBytes = []
-  while (unpackedBytes.length < length) {
+  
+  // Process compressed data until we have enough bytes or run out of input
+  while (unpackedBytes.length < length && bytePtr < intArray.length) {
     let code = intArray[bytePtr]
-    if (code === undefined) {
-      console.log('intArray undefined at ' + bytePtr)
-      continue
-    }
     bytePtr++
+    
     if (code < 128) {
-      let newPtr = bytePtr + code + 1
-      intArray.slice(bytePtr, newPtr).map(byte => unpackedBytes.push(byte))
-      bytePtr = newPtr
-    }
-    if (code > 128) {
-      for (let i = 0; i < 257 - code; i++) {
-        const nextInt = intArray[bytePtr]
-        if (nextInt !== undefined) {
-          unpackedBytes.push(nextInt)
-        }
+      // Literal run: copy next (code + 1) bytes
+      let numBytes = code + 1
+      let endPtr = Math.min(bytePtr + numBytes, intArray.length)
+      
+      // Copy available bytes
+      for (let i = bytePtr; i < endPtr; i++) {
+        unpackedBytes.push(intArray[i])
       }
-      bytePtr++
+      
+      bytePtr += numBytes
+    } else if (code > 128) {
+      // Repeat run: repeat next byte (257 - code) times
+      let repeatCount = 257 - code
+      
+      if (bytePtr < intArray.length) {
+        const byteToCopy = intArray[bytePtr]
+        for (let i = 0; i < repeatCount; i++) {
+          unpackedBytes.push(byteToCopy)
+        }
+        bytePtr++
+      } else {
+        // No byte to repeat, break out
+        break
+      }
     }
-    if (code == 128) bytePtr++
+    // code === 128 is a no-op, bytePtr already incremented
   }
+  
+  // Pad with zeros (white pixels) if we didn't get enough data
+  while (unpackedBytes.length < length) {
+    unpackedBytes.push(0)
+  }
+  
   return {
     bytePtr: bytePtr,
     unpackedArray: new Uint8Array(unpackedBytes)
@@ -73,11 +90,19 @@ const handleMacPaint = (arraybuffer: ArrayBuffer): Uint8Array<ArrayBuffer> => {
   const packedBytes = new Uint8Array(arraybuffer.slice(512))
   const unpackedBytes = new Uint8Array(lines * 72)
   let bytePtr = 0
+  
   for (let line = 0; line < lines; line++) {
     let unpackedObj = unpackBytes(packedBytes, bytePtr, 72)
     bytePtr = unpackedObj.bytePtr
     unpackedBytes.set(unpackedObj.unpackedArray, line * 72)
+    
+    // Check if we've run out of data
+    if (bytePtr >= packedBytes.length && line < lines - 1) {
+      console.warn(`MacPaint data ended early at line ${line + 1} of ${lines}`)
+      break
+    }
   }
+  
   return unpackedBytes
 }
 
