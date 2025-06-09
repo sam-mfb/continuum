@@ -4,6 +4,8 @@ import { setCurrentView, toggleDebugInfo } from '../store/uiSlice'
 import { GalaxySelector } from './components/GalaxySelector'
 import { PlanetList } from './components/PlanetList'
 import { PlanetViewer } from './components/PlanetViewer'
+import { GraphicsList } from './components/GraphicsList'
+import { GraphicsViewer } from './components/GraphicsViewer'
 import GameView from './components/GameView'
 import { testGameLoop } from './games/testGame'
 import { shipMoveGameLoop } from './games/shipMove'
@@ -43,6 +45,12 @@ function App(): React.JSX.Element {
             onClick={() => dispatch(setCurrentView('game'))}
           >
             Game
+          </div>
+          <div
+            className={`menu-item ${currentView === 'graphics' ? 'active' : ''}`}
+            onClick={() => dispatch(setCurrentView('graphics'))}
+          >
+            Graphics
           </div>
           <div
             className={`menu-item ${currentView === 'settings' ? 'active' : ''}`}
@@ -93,6 +101,15 @@ function App(): React.JSX.Element {
                 )
               }}
             />
+          )}
+
+          {currentView === 'graphics' && (
+            <div className="graphics-view">
+              <div className="graphics-content">
+                <GraphicsList />
+                <GraphicsViewer />
+              </div>
+            </div>
           )}
 
           {currentView === 'settings' && (
