@@ -5,16 +5,18 @@ import { shipSlice } from '@/ship/shipSlice'
 import { planetSlice } from '@/planet/planetSlice'
 import { screenSlice } from '@/screen/screenSlice'
 import { ShipControl } from '@/ship/types'
-import { containShip } from './containShip'
+import { containmentMiddleware } from './containmentMiddleware'
 import { drawBackground } from './drawBackground'
 
-// Configure store with all slices
+// Configure store with all slices and containment middleware
 const store = configureStore({
   reducer: {
     ship: shipSlice.reducer,
     planet: planetSlice.reducer,
     screen: screenSlice.reducer
-  }
+  },
+  middleware: getDefaultMiddleware =>
+    getDefaultMiddleware().concat(containmentMiddleware)
 })
 
 // Initialize game on module load
@@ -82,32 +84,8 @@ export const shipMoveGameLoop: GameLoopFunction = (ctx, frame, _env) => {
     })
   )
 
-  // Move ship
+  // Move ship - containment middleware will automatically apply
   store.dispatch(shipSlice.actions.moveShip())
-
-  // Apply containment
-  const shipState = store.getState().ship
-  const screenState = store.getState().screen
-  const planetState = store.getState().planet
-
-  const contained = containShip(shipState, screenState, planetState)
-
-  // Update positions if they changed
-  store.dispatch(
-    shipSlice.actions.updatePosition({
-      x: contained.shipx,
-      y: contained.shipy,
-      dx: contained.dx,
-      dy: contained.dy
-    })
-  )
-
-  store.dispatch(
-    screenSlice.actions.updatePosition({
-      x: contained.screenx,
-      y: contained.screeny
-    })
-  )
 
   // Get final state for drawing
   const finalState = store.getState()
