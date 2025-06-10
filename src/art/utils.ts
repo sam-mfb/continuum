@@ -165,3 +165,146 @@ export function rawBitmapToImageData(
 ): Uint8ClampedArray<ArrayBuffer> {
   return bytesToImageData(new Uint8Array(rawData))
 }
+
+/**
+ * Decodes PackBits compressed data
+ */
+const decodePackBits = (data: Uint8Array): Uint8Array => {
+  const result: number[] = []
+  let i = 0
+  
+  while (i < data.length) {
+    const flag = data[i]
+    i++
+    
+    if (flag === undefined) break
+    
+    if (flag === 0x80) {
+      // No-op
+      continue
+    } else if (flag > 0x80) {
+      // Run length: repeat next byte (257 - flag) times
+      const repeatCount = 257 - flag
+      if (i < data.length) {
+        const byte = data[i]
+        if (byte !== undefined) {
+          for (let j = 0; j < repeatCount; j++) {
+            result.push(byte)
+          }
+        }
+        i++
+      }
+    } else {
+      // Literal: copy next (flag + 1) bytes
+      const copyCount = flag + 1
+      for (let j = 0; j < copyCount && i < data.length; j++) {
+        const byte = data[i]
+        if (byte !== undefined) {
+          result.push(byte)
+        }
+        i++
+      }
+    }
+  }
+  
+  return new Uint8Array(result)
+}
+
+/**
+ * Decodes Continuum Title Page PICT format
+ * This is a variant PICT with:
+ * - Header through offset 0x22F
+ * - 504x311 pixel bitmap
+ * - Length-prefixed PackBits compressed scanlines
+ * - Optional 0x0098 (PackBitsRect) opcodes
+ */
+export function continuumTitlePictToImageData(
+  pictData: ArrayBuffer
+): ImageData {
+  const data = new Uint8Array(pictData)
+  
+  // Image dimensions from PICT header analysis
+  const width = 504
+  const height = 311
+  const rowbytes = 63 // (504 + 7) / 8
+  
+  // Start of image data after header
+  let offset = 0x230
+  const scanlines: Uint8Array[] = []
+  
+  while (offset < data.length && scanlines.length < height) {
+    if (offset >= data.length) break
+    
+    // Check for PackBitsRect opcode (0x0098)
+    if (offset + 1 < data.length && data[offset] === 0x00 && data[offset + 1] === 0x98) {
+      offset += 2
+      // Skip rect bounds (8 bytes)
+      offset += 8
+      continue
+    }
+    
+    // Read single-byte length
+    const lineLength = data[offset]
+    if (lineLength === undefined) break
+    offset += 1
+    
+    // Special case: if lineLength is 0x98 (152), check if it's actually an opcode
+    if (lineLength === 0x98 && offset < data.length && data[offset] === 0x00) {
+      // This is actually the start of 0x0098 opcode
+      offset += 1  // Skip the 0x00
+      offset += 8  // Skip rect bounds
+      continue
+    }
+    
+    // Decode scanline
+    if (lineLength > 0 && offset + lineLength <= data.length) {
+      const packedLine = data.slice(offset, offset + lineLength)
+      const unpacked = decodePackBits(packedLine)
+      
+      if (unpacked.length >= rowbytes) {
+        scanlines.push(unpacked.slice(0, rowbytes))
+      } else {
+        // Pad if needed
+        const padded = new Uint8Array(rowbytes)
+        padded.set(unpacked)
+        scanlines.push(padded)
+      }
+      
+      offset += lineLength
+    } else if (lineLength === 0) {
+      // Skip zero-length lines
+      continue
+    }
+  }
+  
+  // Create full bitmap data
+  const bitmapData = new Uint8Array(height * rowbytes)
+  for (let i = 0; i < scanlines.length; i++) {
+    const scanline = scanlines[i]
+    if (scanline) {
+      bitmapData.set(scanline, i * rowbytes)
+    }
+  }
+  
+  // Convert to RGBA image data
+  const imageDataArray = new Uint8ClampedArray(width * height * 4)
+  
+  for (let row = 0; row < height; row++) {
+    for (let col = 0; col < width; col++) {
+      const byteIndex = row * rowbytes + Math.floor(col / 8)
+      const bitIndex = 7 - (col % 8)
+      const byte = bitmapData[byteIndex]
+      const bit = byte !== undefined ? (byte >> bitIndex) & 1 : 0
+      
+      const pixelIndex = (row * width + col) * 4
+      const value = bit ? 0 : 255 // 1 = black, 0 = white
+      
+      imageDataArray[pixelIndex] = value     // R
+      imageDataArray[pixelIndex + 1] = value // G
+      imageDataArray[pixelIndex + 2] = value // B
+      imageDataArray[pixelIndex + 3] = 255   // A
+    }
+  }
+  
+  return new ImageData(imageDataArray, width, height)
+}

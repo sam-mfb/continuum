@@ -51,35 +51,31 @@ export const loadGraphicsFile = createAsyncThunk(
     const {
       macPaintToImageData,
       expandTitlePageToImageData,
-      rawBitmapToImageData
+      rawBitmapToImageData,
+      continuumTitlePictToImageData
     } = await import('@/art/utils')
 
-    let imageDataArray: Uint8ClampedArray<ArrayBuffer>
-    let width: number
-    let height: number
+    let imageData: ImageData
 
-    if (fileName === 'rsrc_261.bin') {
+    if (fileName === 'continuum_title_page.pict') {
+      // Continuum PICT variant decoder
+      imageData = continuumTitlePictToImageData(arrayBuffer)
+    } else if (fileName === 'rsrc_261.bin') {
       // Special decoder for compressed title page
-      imageDataArray = expandTitlePageToImageData(arrayBuffer)
-      width = 512
-      height = 342
+      const imageDataArray = expandTitlePageToImageData(arrayBuffer)
+      imageData = new ImageData(imageDataArray, 512, 342)
     } else if (
       fileName === 'rsrc_261.raw' ||
       fileName === 'startup_screen.mac'
     ) {
       // Raw uncompressed bitmap data
-      imageDataArray = rawBitmapToImageData(arrayBuffer)
-      width = 512
-      height = 342
+      const imageDataArray = rawBitmapToImageData(arrayBuffer)
+      imageData = new ImageData(imageDataArray, 512, 342)
     } else {
       // Standard MacPaint decoder
-      imageDataArray = macPaintToImageData(arrayBuffer)
-      width = 576
-      height = 720
+      const imageDataArray = macPaintToImageData(arrayBuffer)
+      imageData = new ImageData(imageDataArray, 576, 720)
     }
-
-    // Create ImageData object with appropriate dimensions
-    const imageData = new ImageData(imageDataArray, width, height)
 
     return { fileName, imageData }
   }
