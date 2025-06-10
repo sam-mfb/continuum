@@ -249,15 +249,6 @@ export function continuumTitlePictToImageData(
     const lineLength = data[offset]
     if (lineLength === undefined) break
     
-    // Special case: if lineLength is 0x98 (152), check if it's actually an opcode
-    if (lineLength === 0x98 && offset + 1 < data.length && data[offset + 1] === 0x00) {
-      // This is actually the start of 0x0098 opcode
-      offset += 2  // Skip both bytes
-      offset += 8  // Skip rect bounds
-      // inRectMode = true
-      continue
-    }
-    
     offset += 1
     
     // Validate line length - PackBits for a 63-byte line shouldn't exceed ~126 bytes
