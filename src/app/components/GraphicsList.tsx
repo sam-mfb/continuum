@@ -12,6 +12,20 @@ export const GraphicsList: React.FC = () => {
     dispatch(loadGraphicsFile(fileName))
   }
 
+  const getFileInfo = (fileName: string): string => {
+    if (fileName === 'rsrc_261.bin') {
+      return 'Compressed Resource (512x342)'
+    }
+    return 'MacPaint (576x720)'
+  }
+
+  const getDisplayName = (fileName: string): string => {
+    if (fileName === 'rsrc_261.bin') {
+      return 'RSRC 261 (TITLE PAGE)'
+    }
+    return fileName.replace('.mac', '').replace(/_/g, ' ').toUpperCase()
+  }
+
   return (
     <div className="graphics-list">
       <h3>Graphics Files</h3>
@@ -25,9 +39,9 @@ export const GraphicsList: React.FC = () => {
           >
             <div className="graphics-item">
               <span className="graphics-name">
-                {fileName.replace('.mac', '').replace(/_/g, ' ').toUpperCase()}
+                {getDisplayName(fileName)}
               </span>
-              <span className="graphics-info">MacPaint (576x720)</span>
+              <span className="graphics-info">{getFileInfo(fileName)}</span>
             </div>
           </li>
         ))}

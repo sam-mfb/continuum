@@ -26,6 +26,7 @@ const initialState: GraphicsState = {
     'newbitmaps.mac',
     'old_gw_figures_in_grid.mac',
     'planet_globals_docs.mac',
+    'rsrc_261.bin',
     'startup_screen.mac',
     'title_screen_paintings.mac'
   ],
@@ -45,12 +46,27 @@ export const loadGraphicsFile = createAsyncThunk(
 
     const arrayBuffer = await response.arrayBuffer()
     
-    // Dynamically import the macPaintToImageData function
-    const { macPaintToImageData } = await import('@/art/utils')
-    const imageDataArray = macPaintToImageData(arrayBuffer)
+    // Dynamically import the appropriate decoder
+    const { macPaintToImageData, expandTitlePageToImageData } = await import('@/art/utils')
     
-    // Create ImageData object (576x720 for MacPaint files)
-    const imageData = new ImageData(imageDataArray, 576, 720)
+    let imageDataArray: Uint8ClampedArray<ArrayBuffer>
+    let width: number
+    let height: number
+    
+    if (fileName === 'rsrc_261.bin') {
+      // Special decoder for compressed title page
+      imageDataArray = expandTitlePageToImageData(arrayBuffer)
+      width = 512
+      height = 342
+    } else {
+      // Standard MacPaint decoder
+      imageDataArray = macPaintToImageData(arrayBuffer)
+      width = 576
+      height = 720
+    }
+    
+    // Create ImageData object with appropriate dimensions
+    const imageData = new ImageData(imageDataArray, width, height)
     
     return { fileName, imageData }
   }

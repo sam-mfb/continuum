@@ -1,7 +1,7 @@
 import type { Middleware } from '@reduxjs/toolkit'
 import { shipSlice } from '@/ship/shipSlice'
 import { screenSlice } from '@/screen/screenSlice'
-import { planetSlice } from '@/planet/planetSlice'
+import type { planetSlice } from '@/planet/planetSlice'
 import { containShip } from './containShip'
 
 type RootState = {

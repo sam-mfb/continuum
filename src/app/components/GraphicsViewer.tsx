@@ -46,14 +46,17 @@ export const GraphicsViewer: React.FC = () => {
     )
   }
 
+  const canvasWidth = imageData.width
+  const canvasHeight = imageData.height
+
   return (
     <div className="graphics-viewer">
-      <h3>{selectedFile.replace('.mac', '').replace(/_/g, ' ').toUpperCase()}</h3>
+      <h3>{selectedFile.replace('.mac', '').replace('.bin', '').replace(/_/g, ' ').toUpperCase()}</h3>
       <div className="canvas-container">
         <canvas
           ref={canvasRef}
-          width={576}
-          height={720}
+          width={canvasWidth}
+          height={canvasHeight}
           className="graphics-canvas"
         />
       </div>

@@ -38,32 +38,37 @@ const unpackBytes = (
   bytePtr: number,
   length: number
 ): { bytePtr: number; unpackedArray: Uint8Array<ArrayBuffer> } => {
-  let unpackedBytes = []
+  let unpackedBytes: number[] = []
   
   // Process compressed data until we have enough bytes or run out of input
   while (unpackedBytes.length < length && bytePtr < intArray.length) {
     let code = intArray[bytePtr]
     bytePtr++
     
-    if (code < 128) {
+    if (code !== undefined && code < 128) {
       // Literal run: copy next (code + 1) bytes
       let numBytes = code + 1
       let endPtr = Math.min(bytePtr + numBytes, intArray.length)
       
       // Copy available bytes
       for (let i = bytePtr; i < endPtr; i++) {
-        unpackedBytes.push(intArray[i])
+        const byte = intArray[i]
+        if (byte !== undefined) {
+          unpackedBytes.push(byte)
+        }
       }
       
       bytePtr += numBytes
-    } else if (code > 128) {
+    } else if (code !== undefined && code > 128) {
       // Repeat run: repeat next byte (257 - code) times
       let repeatCount = 257 - code
       
       if (bytePtr < intArray.length) {
         const byteToCopy = intArray[bytePtr]
-        for (let i = 0; i < repeatCount; i++) {
-          unpackedBytes.push(byteToCopy)
+        if (byteToCopy !== undefined) {
+          for (let i = 0; i < repeatCount; i++) {
+            unpackedBytes.push(byteToCopy)
+          }
         }
         bytePtr++
       } else {
@@ -110,4 +115,43 @@ export function macPaintToImageData(
   macPaint: ArrayBuffer
 ): Uint8ClampedArray<ArrayBuffer> {
   return bytesToImageData(handleMacPaint(macPaint))
+}
+
+/**
+ * Decompresses the title page resource data from RSRC 261 (M_TITLEPAGE)
+ * Based on expandtitlepage() from orig/Sources/Main.c lines 1063-1086
+ * 
+ * The original function unpacks 72 bytes per line but only uses the first 64 bytes
+ * to create a 512x342 pixel bitmap (original Mac screen dimensions)
+ */
+export function expandTitlePageToImageData(
+  compressedData: ArrayBuffer
+): Uint8ClampedArray<ArrayBuffer> {
+  const lines = 342 // SCRHT from GW.h
+  const packedBytes = new Uint8Array(compressedData)
+  const unpackedBytes = new Uint8Array(lines * 64) // 64 bytes per line (512 pixels / 8)
+  let dataPtr = 0
+  
+  for (let i = 0; i < lines; i++) {
+    // Unpack 72 bytes into destbuf, then take first 64
+    const unpackedLine = unpackBytes(packedBytes, dataPtr, 72)
+    dataPtr = unpackedLine.bytePtr
+    
+    // Copy first 64 bytes to destination (ignore last 8 bytes)
+    const lineStart = i * 64
+    for (let j = 0; j < 64; j++) {
+      const byte = unpackedLine.unpackedArray[j]
+      if (byte !== undefined) {
+        unpackedBytes[lineStart + j] = byte
+      }
+    }
+    
+    // Check if we've run out of data
+    if (dataPtr >= packedBytes.length && i < lines - 1) {
+      console.warn(`Title page data ended early at line ${i + 1} of ${lines}`)
+      break
+    }
+  }
+  
+  return bytesToImageData(unpackedBytes)
 }
