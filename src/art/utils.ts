@@ -231,6 +231,7 @@ export function continuumTitlePictToImageData(
   // Start of image data after header
   let offset = 0x230
   const scanlines: Uint8Array[] = []
+  // let inRectMode = false  // Reserved for future use
   
   while (offset < data.length && scanlines.length < height) {
     if (offset >= data.length) break
@@ -240,20 +241,51 @@ export function continuumTitlePictToImageData(
       offset += 2
       // Skip rect bounds (8 bytes)
       offset += 8
+      // inRectMode = true
       continue
     }
     
     // Read single-byte length
     const lineLength = data[offset]
     if (lineLength === undefined) break
-    offset += 1
     
     // Special case: if lineLength is 0x98 (152), check if it's actually an opcode
-    if (lineLength === 0x98 && offset < data.length && data[offset] === 0x00) {
+    if (lineLength === 0x98 && offset + 1 < data.length && data[offset + 1] === 0x00) {
       // This is actually the start of 0x0098 opcode
-      offset += 1  // Skip the 0x00
+      offset += 2  // Skip both bytes
       offset += 8  // Skip rect bounds
+      // inRectMode = true
       continue
+    }
+    
+    offset += 1
+    
+    // Validate line length - PackBits for a 63-byte line shouldn't exceed ~126 bytes
+    if (lineLength > 126) {
+      // This is probably not a valid scanline length
+      // Try to find the next valid scanline
+      offset -= 1  // Back up
+      
+      // Look for a reasonable length byte
+      let found = false
+      for (let i = 0; i < 10 && offset + i < data.length; i++) {
+        const testLength = data[offset + i]
+        if (testLength !== undefined && testLength > 0 && testLength <= 126) {
+          // Check if this could produce a valid scanline
+          if (offset + i + 1 + testLength <= data.length) {
+            offset += i
+            found = true
+            break
+          }
+        }
+      }
+      
+      if (!found) {
+        offset += 1
+        continue
+      } else {
+        continue  // Re-process from the new offset
+      }
     }
     
     // Decode scanline
@@ -261,14 +293,22 @@ export function continuumTitlePictToImageData(
       const packedLine = data.slice(offset, offset + lineLength)
       const unpacked = decodePackBits(packedLine)
       
-      if (unpacked.length >= rowbytes) {
-        scanlines.push(unpacked.slice(0, rowbytes))
-      } else {
-        // Pad if needed
-        const padded = new Uint8Array(rowbytes)
-        padded.set(unpacked)
-        scanlines.push(padded)
+      // Validate unpacked length
+      if (unpacked.length > rowbytes * 2) {
+        // Something went wrong with decoding
+        offset += lineLength
+        continue
       }
+      
+      // Always take exactly rowbytes (63) bytes
+      const scanline = new Uint8Array(rowbytes)
+      for (let i = 0; i < rowbytes && i < unpacked.length; i++) {
+        const byte = unpacked[i]
+        if (byte !== undefined) {
+          scanline[i] = byte
+        }
+      }
+      scanlines.push(scanline)
       
       offset += lineLength
     } else if (lineLength === 0) {
