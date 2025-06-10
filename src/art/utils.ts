@@ -155,3 +155,13 @@ export function expandTitlePageToImageData(
   
   return bytesToImageData(unpackedBytes)
 }
+
+/**
+ * Converts raw bitmap data (uncompressed 1-bit-per-pixel) to ImageData
+ * For 512x342 screen: 64 bytes per line × 342 lines = 21,888 bytes
+ */
+export function rawBitmapToImageData(
+  rawData: ArrayBuffer
+): Uint8ClampedArray<ArrayBuffer> {
+  return bytesToImageData(new Uint8Array(rawData))
+}

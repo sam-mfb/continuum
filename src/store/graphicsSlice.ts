@@ -27,6 +27,7 @@ const initialState: GraphicsState = {
     'old_gw_figures_in_grid.mac',
     'planet_globals_docs.mac',
     'rsrc_261.bin',
+    'rsrc_261.raw',
     'startup_screen.mac',
     'title_screen_paintings.mac'
   ],
@@ -47,7 +48,7 @@ export const loadGraphicsFile = createAsyncThunk(
     const arrayBuffer = await response.arrayBuffer()
     
     // Dynamically import the appropriate decoder
-    const { macPaintToImageData, expandTitlePageToImageData } = await import('@/art/utils')
+    const { macPaintToImageData, expandTitlePageToImageData, rawBitmapToImageData } = await import('@/art/utils')
     
     let imageDataArray: Uint8ClampedArray<ArrayBuffer>
     let width: number
@@ -56,6 +57,11 @@ export const loadGraphicsFile = createAsyncThunk(
     if (fileName === 'rsrc_261.bin') {
       // Special decoder for compressed title page
       imageDataArray = expandTitlePageToImageData(arrayBuffer)
+      width = 512
+      height = 342
+    } else if (fileName === 'rsrc_261.raw' || fileName === 'startup_screen.mac') {
+      // Raw uncompressed bitmap data
+      imageDataArray = rawBitmapToImageData(arrayBuffer)
       width = 512
       height = 342
     } else {

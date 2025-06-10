@@ -15,6 +15,10 @@ export const GraphicsList: React.FC = () => {
   const getFileInfo = (fileName: string): string => {
     if (fileName === 'rsrc_261.bin') {
       return 'Compressed Resource (512x342)'
+    } else if (fileName === 'rsrc_261.raw') {
+      return 'Raw Bitmap (512x342)'
+    } else if (fileName === 'startup_screen.mac') {
+      return 'Raw Bitmap (512x342)'
     }
     return 'MacPaint (576x720)'
   }
@@ -22,8 +26,10 @@ export const GraphicsList: React.FC = () => {
   const getDisplayName = (fileName: string): string => {
     if (fileName === 'rsrc_261.bin') {
       return 'RSRC 261 (TITLE PAGE)'
+    } else if (fileName === 'rsrc_261.raw') {
+      return 'RSRC 261 (RAW)'
     }
-    return fileName.replace('.mac', '').replace(/_/g, ' ').toUpperCase()
+    return fileName.replace('.mac', '').replace('.raw', '').replace(/_/g, ' ').toUpperCase()
   }
 
   return (
