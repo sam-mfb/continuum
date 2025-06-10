@@ -11,7 +11,7 @@ type GraphicsState = {
 
 const initialState: GraphicsState = {
   availableFiles: [
-    'continuum_title_page.mac',
+    'continuum_title_page.pict',
     'gw_figures_in_grid.mac',
     'gw_figures_in_grid_paintings.mac',
     'gw_figures_paintings.mac',
@@ -46,20 +46,27 @@ export const loadGraphicsFile = createAsyncThunk(
     }
 
     const arrayBuffer = await response.arrayBuffer()
-    
+
     // Dynamically import the appropriate decoder
-    const { macPaintToImageData, expandTitlePageToImageData, rawBitmapToImageData } = await import('@/art/utils')
-    
+    const {
+      macPaintToImageData,
+      expandTitlePageToImageData,
+      rawBitmapToImageData
+    } = await import('@/art/utils')
+
     let imageDataArray: Uint8ClampedArray<ArrayBuffer>
     let width: number
     let height: number
-    
+
     if (fileName === 'rsrc_261.bin') {
       // Special decoder for compressed title page
       imageDataArray = expandTitlePageToImageData(arrayBuffer)
       width = 512
       height = 342
-    } else if (fileName === 'rsrc_261.raw' || fileName === 'startup_screen.mac') {
+    } else if (
+      fileName === 'rsrc_261.raw' ||
+      fileName === 'startup_screen.mac'
+    ) {
       // Raw uncompressed bitmap data
       imageDataArray = rawBitmapToImageData(arrayBuffer)
       width = 512
@@ -70,10 +77,10 @@ export const loadGraphicsFile = createAsyncThunk(
       width = 576
       height = 720
     }
-    
+
     // Create ImageData object with appropriate dimensions
     const imageData = new ImageData(imageDataArray, width, height)
-    
+
     return { fileName, imageData }
   }
 )
@@ -110,3 +117,4 @@ const graphicsSlice = createSlice({
 
 export const { selectFile, clearSelection } = graphicsSlice.actions
 export default graphicsSlice.reducer
+
