@@ -55,7 +55,7 @@ const decodePackBits = (data: Uint8Array): Uint8Array => {
 export function continuumTitleToImageData(rawData: ArrayBuffer): {
   image: ImageData
   packedScanlines: Uint8Array[]
-  badLines: Uint8Array[]
+  badLines: Array<[number, Uint8Array]>
 } {
   const data = new Uint8Array(rawData)
 
@@ -287,7 +287,7 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
   const imageDataArray = new Uint8ClampedArray(width * height * 4)
 
   // First pass: identify all lines without black border at pixel 500
-  const linesWithoutBorder: Uint8Array[] = []
+  const linesWithoutBorder: Array<[number, Uint8Array]> = []
   for (let row = 0; row < height; row++) {
     // Check pixel 500 (column 500)
     const col = 500
@@ -300,7 +300,7 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       // White pixel at position 500
       const packedData = packedScanlines[row]
       if (packedData) {
-        linesWithoutBorder.push(packedData)
+        linesWithoutBorder.push([row, packedData])
       }
     }
   }
