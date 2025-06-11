@@ -54,7 +54,8 @@ const decodePackBits = (data: Uint8Array): Uint8Array => {
  */
 export function continuumTitleToImageData(rawData: ArrayBuffer): {
   image: ImageData
-  badLines: number[]
+  packedScanlines: Uint8Array[]
+  badLines: Uint8Array[]
 } {
   const data = new Uint8Array(rawData)
 
@@ -66,6 +67,7 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
   // Start of image data after header
   let offset = 0x230
   const scanlines: Uint8Array[] = []
+  const packedScanlines: Uint8Array[] = []
 
   while (offset < data.length && scanlines.length < height) {
     if (offset >= data.length) break
@@ -103,6 +105,7 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
         }
       }
       scanlines.push(scanline)
+      packedScanlines.push(packedLine)
       console.log(`Pushed line ${scanlines.length}`)
 
       offset += firstByte
@@ -114,6 +117,11 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
 
   // Post-process to fix known problematic lines
   console.log(`Scanlines before fixes: ${scanlines.length}`)
+
+  // Ensure packedScanlines array is same length as scanlines
+  while (packedScanlines.length < scanlines.length) {
+    packedScanlines.push(new Uint8Array(0))
+  }
 
   // Fix lines 49-50
   if (scanlines.length > 50) {
@@ -144,6 +152,8 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
     // Replace the problematic scanlines
     scanlines[49] = firstScanline
     scanlines[50] = secondScanline
+    packedScanlines[49] = firstCompressed
+    packedScanlines[50] = secondCompressed
 
     console.log(`Line 49 replaced: ${firstDecoded.length} bytes decoded`)
     console.log(`Line 50 replaced: ${secondDecoded.length} bytes decoded`)
@@ -187,6 +197,7 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       }
     }
     scanlines[98] = line98Scanline
+    packedScanlines[98] = line98Compressed
 
     // Line 99: 56 bytes compressed at 0x122c
     const line99Compressed = data.slice(0x122c, 0x122c + 56)
@@ -199,6 +210,7 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       }
     }
     scanlines[99] = line99Scanline
+    packedScanlines[99] = line99Compressed
 
     // Line 100: 56 bytes compressed at 0x1266
     const line100Compressed = data.slice(0x1266, 0x1266 + 56)
@@ -211,6 +223,7 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       }
     }
     scanlines[100] = line100Scanline
+    packedScanlines[100] = line100Compressed
 
     console.log('Lines 98-100 replaced with white border scanlines')
   }
@@ -230,6 +243,7 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       }
     }
     scanlines[149] = line149Scanline
+    packedScanlines[149] = line149Compressed
 
     // Line 150: 54 bytes compressed at 0x18e2
     const line150Compressed = data.slice(0x18e2, 0x18e2 + 54)
@@ -242,6 +256,7 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       }
     }
     scanlines[150] = line150Scanline
+    packedScanlines[150] = line150Compressed
 
     // Line 151: 53 bytes compressed at 0x191a
     const line151Compressed = data.slice(0x191a, 0x191a + 53)
@@ -254,6 +269,7 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       }
     }
     scanlines[151] = line151Scanline
+    packedScanlines[151] = line151Compressed
 
     console.log('Lines 149-151 replaced')
   }
@@ -271,7 +287,7 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
   const imageDataArray = new Uint8ClampedArray(width * height * 4)
 
   // First pass: identify all lines without black border at pixel 500
-  const linesWithoutBorder: number[] = []
+  const linesWithoutBorder: Uint8Array[] = []
   for (let row = 0; row < height; row++) {
     // Check pixel 500 (column 500)
     const col = 500
@@ -282,13 +298,15 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
 
     if (bit === 0) {
       // White pixel at position 500
-      linesWithoutBorder.push(row)
+      const packedData = packedScanlines[row]
+      if (packedData) {
+        linesWithoutBorder.push(packedData)
+      }
     }
   }
 
   console.log(
-    `Found ${linesWithoutBorder.length} lines without black border at pixel 500:`,
-    linesWithoutBorder
+    `Found ${linesWithoutBorder.length} lines without black border at pixel 500`
   )
 
   // Second pass: render normally (black and white)
@@ -310,7 +328,7 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
 
   return {
     image: new ImageData(imageDataArray, width, height),
+    packedScanlines,
     badLines: linesWithoutBorder
   }
 }
-
