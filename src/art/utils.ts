@@ -408,6 +408,49 @@ export function continuumTitlePictToImageData(
     console.log('Lines 98-100 replaced with white border scanlines')
   }
   
+  // Fix lines 149-151 which have the 0x0098 corruption at line 144
+  if (scanlines.length > 151) {
+    console.log('Fixing lines 149-151...')
+    
+    // Line 149: 54 bytes compressed at 0x18aa
+    const line149Compressed = data.slice(0x18aa, 0x18aa + 54)
+    const line149Decoded = decodePackBits(line149Compressed)
+    const line149Scanline = new Uint8Array(rowbytes)
+    for (let i = 0; i < rowbytes && i < line149Decoded.length; i++) {
+      const byte = line149Decoded[i]
+      if (byte !== undefined) {
+        line149Scanline[i] = byte
+      }
+    }
+    scanlines[149] = line149Scanline
+    
+    // Line 150: 54 bytes compressed at 0x18e2
+    const line150Compressed = data.slice(0x18e2, 0x18e2 + 54)
+    const line150Decoded = decodePackBits(line150Compressed)
+    const line150Scanline = new Uint8Array(rowbytes)
+    for (let i = 0; i < rowbytes && i < line150Decoded.length; i++) {
+      const byte = line150Decoded[i]
+      if (byte !== undefined) {
+        line150Scanline[i] = byte
+      }
+    }
+    scanlines[150] = line150Scanline
+    
+    // Line 151: 53 bytes compressed at 0x191a
+    const line151Compressed = data.slice(0x191a, 0x191a + 53)
+    const line151Decoded = decodePackBits(line151Compressed)
+    const line151Scanline = new Uint8Array(rowbytes)
+    for (let i = 0; i < rowbytes && i < line151Decoded.length; i++) {
+      const byte = line151Decoded[i]
+      if (byte !== undefined) {
+        line151Scanline[i] = byte
+      }
+    }
+    scanlines[151] = line151Scanline
+    
+    console.log('Lines 149-151 replaced')
+  }
+  
   // Create full bitmap data
   const bitmapData = new Uint8Array(height * rowbytes)
   for (let i = 0; i < scanlines.length; i++) {
