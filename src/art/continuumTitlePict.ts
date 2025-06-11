@@ -44,20 +44,21 @@ const decodePackBits = (data: Uint8Array): Uint8Array => {
 
 /**
  * The file Continuum Title Page in the original source is either corrupted or an incredibly
- * unusual format. This function is a partially succesful attempt to decode it, that is fairly
+ * unusual format. This function is a partially successful attempt to decode it, that is fairly
  * hacky and ultimately resorts to brute forcing places where we think their should probably be
- * bits. Even with this, and even with knowing what the picture shoud look like, there are still
+ * bits. Even with this, and even with knowing what the picture should look like, there are still
  * a few missing lines. I suspect the file is corrupted.
  *
  * In any event, i was able to extract the resource used in the game itself from the games resource
  * fork and that decodes just fine.
  */
-export function continuumTitlePictToImageData(
-  pictData: ArrayBuffer
-): ImageData {
-  const data = new Uint8Array(pictData)
+export function continuumTitleToImageData(rawData: ArrayBuffer): {
+  image: ImageData
+  badLines: number[]
+} {
+  const data = new Uint8Array(rawData)
 
-  // Image dimensions from PICT header analysis
+  // Image dimensions
   const width = 504
   const height = 311
   const rowbytes = 63 // (504 + 7) / 8
@@ -69,61 +70,27 @@ export function continuumTitlePictToImageData(
   while (offset < data.length && scanlines.length < height) {
     if (offset >= data.length) break
 
-    // Check for PackBitsRect opcode (0x0098)
-    if (
-      offset + 1 < data.length &&
-      data[offset] === 0x00 &&
-      data[offset + 1] === 0x98
-    ) {
-      offset += 2
-      // Skip rect bounds (8 bytes)
-      offset += 8
-      continue
-    }
-
     // Read single-byte length
-    const lineLength = data[offset]
-    if (lineLength === undefined) break
+    const firstByte = data[offset]
+    if (firstByte === undefined) break
 
     offset += 1
 
-    // Validate line length - PackBits for a 63-byte line shouldn't exceed ~126 bytes
-    if (lineLength > 126) {
-      // This is probably not a valid scanline length
-      // Try to find the next valid scanline
-      offset -= 1 // Back up
-
-      // Look for a reasonable length byte
-      let found = false
-      for (let i = 0; i < 10 && offset + i < data.length; i++) {
-        const testLength = data[offset + i]
-        if (testLength !== undefined && testLength > 0 && testLength <= 126) {
-          // Check if this could produce a valid scanline
-          if (offset + i + 1 + testLength <= data.length) {
-            offset += i
-            found = true
-            break
-          }
-        }
-      }
-
-      if (!found) {
-        offset += 1
-        continue
-      } else {
-        continue // Re-process from the new offset
-      }
+    // for some reason skipping bytes with a value of greater than 71 eliminates problematic bytes
+    if (firstByte > 71) {
+      console.log('skipping byte')
+      continue
     }
 
     // Decode scanline
-    if (lineLength > 0 && offset + lineLength <= data.length) {
-      const packedLine = data.slice(offset, offset + lineLength)
+    if (firstByte > 0 && offset + firstByte <= data.length) {
+      const packedLine = data.slice(offset, offset + firstByte)
       const unpacked = decodePackBits(packedLine)
 
       // Validate unpacked length
       if (unpacked.length > rowbytes * 2) {
         // Something went wrong with decoding
-        offset += lineLength
+        offset += firstByte
         continue
       }
 
@@ -136,9 +103,10 @@ export function continuumTitlePictToImageData(
         }
       }
       scanlines.push(scanline)
+      console.log(`Pushed line ${scanlines.length}`)
 
-      offset += lineLength
-    } else if (lineLength === 0) {
+      offset += firstByte
+    } else if (firstByte === 0) {
       // Skip zero-length lines
       continue
     }
@@ -340,6 +308,9 @@ export function continuumTitlePictToImageData(
     }
   }
 
-  return new ImageData(imageDataArray, width, height)
+  return {
+    image: new ImageData(imageDataArray, width, height),
+    badLines: linesWithoutBorder
+  }
 }
 

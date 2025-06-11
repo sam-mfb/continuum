@@ -53,14 +53,15 @@ export const loadGraphicsFile = createAsyncThunk(
       expandTitlePageToImageData,
       rawBitmapToImageData
     } = await import('@/art/utils')
-    
-    const { continuumTitlePictToImageData } = await import('@/art/continuumTitlePict')
+
+    const { continuumTitleToImageData: continuumTitlePictToImageData } =
+      await import('@/art/continuumTitlePict')
 
     let imageData: ImageData
 
     if (fileName === 'continuum_title_page.pict') {
       // Continuum PICT variant decoder
-      imageData = continuumTitlePictToImageData(arrayBuffer)
+      imageData = continuumTitlePictToImageData(arrayBuffer).image
     } else if (fileName === 'rsrc_261.bin') {
       // Special decoder for compressed title page
       const imageDataArray = expandTitlePageToImageData(arrayBuffer)
@@ -114,4 +115,3 @@ const graphicsSlice = createSlice({
 
 export const { selectFile, clearSelection } = graphicsSlice.actions
 export default graphicsSlice.reducer
-
