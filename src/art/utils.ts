@@ -320,7 +320,28 @@ export function continuumTitlePictToImageData(
   // Convert to RGBA image data
   const imageDataArray = new Uint8ClampedArray(width * height * 4)
   
+  // First pass: identify all lines without black border at pixel 500
+  const problematicLines: number[] = []
   for (let row = 0; row < height; row++) {
+    // Check pixel 500 (column 500)
+    const col = 500
+    const byteIndex = row * rowbytes + Math.floor(col / 8)
+    const bitIndex = 7 - (col % 8)
+    const byte = bitmapData[byteIndex]
+    const bit = byte !== undefined ? (byte >> bitIndex) & 1 : 0
+    
+    if (bit === 0) { // White pixel at position 500
+      problematicLines.push(row)
+    }
+  }
+  
+  console.log(`Found ${problematicLines.length} lines without black border at pixel 500:`, problematicLines)
+  
+  // Second pass: render with colors
+  for (let row = 0; row < height; row++) {
+    const isProblematic = problematicLines.includes(row)
+    const isTenthLine = row % 10 === 0
+    
     for (let col = 0; col < width; col++) {
       const byteIndex = row * rowbytes + Math.floor(col / 8)
       const bitIndex = 7 - (col % 8)
@@ -328,11 +349,30 @@ export function continuumTitlePictToImageData(
       const bit = byte !== undefined ? (byte >> bitIndex) & 1 : 0
       
       const pixelIndex = (row * width + col) * 4
-      const value = bit ? 0 : 255 // 1 = black, 0 = white
       
-      imageDataArray[pixelIndex] = value     // R
-      imageDataArray[pixelIndex + 1] = value // G
-      imageDataArray[pixelIndex + 2] = value // B
+      if (isProblematic) {
+        // Problematic lines: red for black pixels, cyan for white pixels
+        if (bit) {
+          imageDataArray[pixelIndex] = 255     // R
+          imageDataArray[pixelIndex + 1] = 0   // G
+          imageDataArray[pixelIndex + 2] = 0   // B
+        } else {
+          imageDataArray[pixelIndex] = 0       // R
+          imageDataArray[pixelIndex + 1] = 255 // G
+          imageDataArray[pixelIndex + 2] = 255 // B
+        }
+      } else if (isTenthLine && bit) {
+        // Every 10th line: green for black pixels
+        imageDataArray[pixelIndex] = 0       // R
+        imageDataArray[pixelIndex + 1] = 255 // G
+        imageDataArray[pixelIndex + 2] = 0   // B
+      } else {
+        // Normal rendering: black and white
+        const value = bit ? 0 : 255 // 1 = black, 0 = white
+        imageDataArray[pixelIndex] = value     // R
+        imageDataArray[pixelIndex + 1] = value // G
+        imageDataArray[pixelIndex + 2] = value // B
+      }
       imageDataArray[pixelIndex + 3] = 255   // A
     }
   }
