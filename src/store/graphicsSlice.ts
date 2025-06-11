@@ -51,9 +51,10 @@ export const loadGraphicsFile = createAsyncThunk(
     const {
       macPaintToImageData,
       expandTitlePageToImageData,
-      rawBitmapToImageData,
-      continuumTitlePictToImageData
+      rawBitmapToImageData
     } = await import('@/art/utils')
+    
+    const { continuumTitlePictToImageData } = await import('@/art/continuumTitlePict')
 
     let imageData: ImageData
 
