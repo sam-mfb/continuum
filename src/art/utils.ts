@@ -361,6 +361,53 @@ export function continuumTitlePictToImageData(
     }
   }
   
+  // Fix lines 98-100 which have white border pattern
+  // The 0x0098 opcode at 0x11d4 disrupts the normal decoding
+  if (scanlines.length > 100) {
+    console.log('Fixing lines 98-100...')
+    
+    // Lines 98-100 should have massive white sections (not black like 49-50)
+    // The scanlines we found are correct:
+    
+    // Line 98: 56 bytes compressed at 0x11f2
+    const line98Compressed = data.slice(0x11f2, 0x11f2 + 56)
+    const line98Decoded = decodePackBits(line98Compressed)
+    const line98Scanline = new Uint8Array(rowbytes)
+    for (let i = 0; i < rowbytes && i < line98Decoded.length; i++) {
+      const byte = line98Decoded[i]
+      if (byte !== undefined) {
+        line98Scanline[i] = byte
+      }
+    }
+    scanlines[98] = line98Scanline
+    
+    // Line 99: 56 bytes compressed at 0x122c
+    const line99Compressed = data.slice(0x122c, 0x122c + 56)
+    const line99Decoded = decodePackBits(line99Compressed)
+    const line99Scanline = new Uint8Array(rowbytes)
+    for (let i = 0; i < rowbytes && i < line99Decoded.length; i++) {
+      const byte = line99Decoded[i]
+      if (byte !== undefined) {
+        line99Scanline[i] = byte
+      }
+    }
+    scanlines[99] = line99Scanline
+    
+    // Line 100: 56 bytes compressed at 0x1266
+    const line100Compressed = data.slice(0x1266, 0x1266 + 56)
+    const line100Decoded = decodePackBits(line100Compressed)
+    const line100Scanline = new Uint8Array(rowbytes)
+    for (let i = 0; i < rowbytes && i < line100Decoded.length; i++) {
+      const byte = line100Decoded[i]
+      if (byte !== undefined) {
+        line100Scanline[i] = byte
+      }
+    }
+    scanlines[100] = line100Scanline
+    
+    console.log('Lines 98-100 replaced with white border scanlines')
+  }
+  
   // Create full bitmap data
   const bitmapData = new Uint8Array(height * rowbytes)
   for (let i = 0; i < scanlines.length; i++) {
