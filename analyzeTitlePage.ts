@@ -28,8 +28,8 @@ console.log(`Scanlines without border: ${result.badLines.length}`)
 
 // Show packed data lengths for problematic lines
 if (result.badLines.length > 0) {
-  console.log('\nProblematic lines (line number, packed data length):')
-  result.badLines.forEach(([lineNumber, packedData]) => {
-    console.log(`  Line ${lineNumber}: ${packedData.length} bytes`)
+  console.log('\nProblematic lines (line number, prefix length, compressed length):')
+  result.badLines.forEach(([lineNumber, [prefixBytes, compressedBytes]]) => {
+    console.log(`  Line ${lineNumber}: prefix=${prefixBytes.length} bytes, compressed=${compressedBytes.length} bytes`)
   })
 }

@@ -54,8 +54,8 @@ const decodePackBits = (data: Uint8Array): Uint8Array => {
  */
 export function continuumTitleToImageData(rawData: ArrayBuffer): {
   image: ImageData
-  packedScanlines: Uint8Array[]
-  badLines: Array<[number, Uint8Array]>
+  packedScanlines: Array<[Uint8Array, Uint8Array]>
+  badLines: Array<[number, [Uint8Array, Uint8Array]]>
 } {
   const data = new Uint8Array(rawData)
 
@@ -67,7 +67,8 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
   // Start of image data after header
   let offset = 0x230
   const scanlines: Uint8Array[] = []
-  const packedScanlines: Uint8Array[] = []
+  const packedScanlines: Array<[Uint8Array, Uint8Array]> = []
+  let skippedBytes: number[] = []
 
   while (offset < data.length && scanlines.length < height) {
     if (offset >= data.length) break
@@ -81,6 +82,7 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
     // for some reason skipping bytes with a value of greater than 71 eliminates problematic bytes
     if (firstByte > 71) {
       console.log('skipping byte')
+      skippedBytes.push(firstByte)
       continue
     }
 
@@ -105,12 +107,27 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
         }
       }
       scanlines.push(scanline)
-      packedScanlines.push(packedLine)
+      
+      // Create prefix bytes array including any skipped bytes and the length byte
+      let prefixBytes: Uint8Array
+      if (skippedBytes.length > 0) {
+        // Combine skipped bytes + firstByte
+        prefixBytes = new Uint8Array(skippedBytes.length + 1)
+        prefixBytes.set(new Uint8Array(skippedBytes), 0)
+        prefixBytes[skippedBytes.length] = firstByte
+        skippedBytes = [] // Reset skipped bytes after using them
+      } else {
+        // Just the firstByte length prefix
+        prefixBytes = new Uint8Array([firstByte])
+      }
+      
+      packedScanlines.push([prefixBytes, packedLine])
       console.log(`Pushed line ${scanlines.length}`)
 
       offset += firstByte
     } else if (firstByte === 0) {
-      // Skip zero-length lines
+      // Skip zero-length lines but keep it as a skipped byte
+      skippedBytes.push(firstByte)
       continue
     }
   }
@@ -120,16 +137,17 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
 
   // Ensure packedScanlines array is same length as scanlines
   while (packedScanlines.length < scanlines.length) {
-    packedScanlines.push(new Uint8Array(0))
+    packedScanlines.push([new Uint8Array(0), new Uint8Array(0)])
   }
 
   // Fix lines 49-50
   if (scanlines.length > 50) {
     console.log('Fixing lines 49-50...')
 
-    // First scanline: 38 bytes compressed at 0x07f9
-    const firstCompressed = data.slice(0x07f9, 0x07f9 + 38)
-    const firstDecoded = decodePackBits(firstCompressed)
+    // First scanline: length byte at 0x07f8, then 38 bytes compressed at 0x07f9
+    const firstPrefixBytes = data.slice(0x07f8, 0x07f9)  // Just the length byte
+    const firstCompressedBytes = data.slice(0x07f9, 0x07f9 + 38)  // The compressed data
+    const firstDecoded = decodePackBits(firstCompressedBytes)
     const firstScanline = new Uint8Array(rowbytes)
     for (let i = 0; i < rowbytes && i < firstDecoded.length; i++) {
       const byte = firstDecoded[i]
@@ -138,9 +156,10 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       }
     }
 
-    // Second scanline: 38 bytes compressed at 0x0821
-    const secondCompressed = data.slice(0x0821, 0x0821 + 38)
-    const secondDecoded = decodePackBits(secondCompressed)
+    // Second scanline: length byte at 0x0820, then 38 bytes compressed at 0x0821
+    const secondPrefixBytes = data.slice(0x0820, 0x0821)  // Just the length byte
+    const secondCompressedBytes = data.slice(0x0821, 0x0821 + 38)  // The compressed data
+    const secondDecoded = decodePackBits(secondCompressedBytes)
     const secondScanline = new Uint8Array(rowbytes)
     for (let i = 0; i < rowbytes && i < secondDecoded.length; i++) {
       const byte = secondDecoded[i]
@@ -152,8 +171,8 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
     // Replace the problematic scanlines
     scanlines[49] = firstScanline
     scanlines[50] = secondScanline
-    packedScanlines[49] = firstCompressed
-    packedScanlines[50] = secondCompressed
+    packedScanlines[49] = [firstPrefixBytes, firstCompressedBytes]
+    packedScanlines[50] = [secondPrefixBytes, secondCompressedBytes]
 
     console.log(`Line 49 replaced: ${firstDecoded.length} bytes decoded`)
     console.log(`Line 50 replaced: ${secondDecoded.length} bytes decoded`)
@@ -186,9 +205,10 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
     // Lines 98-100 should have massive white sections (not black like 49-50)
     // The scanlines we found are correct:
 
-    // Line 98: 56 bytes compressed at 0x11f2
-    const line98Compressed = data.slice(0x11f2, 0x11f2 + 56)
-    const line98Decoded = decodePackBits(line98Compressed)
+    // Line 98: length byte at 0x11f1, then 56 bytes compressed at 0x11f2
+    const line98PrefixBytes = data.slice(0x11f1, 0x11f2)  // Just the length byte
+    const line98CompressedBytes = data.slice(0x11f2, 0x11f2 + 56)  // The compressed data
+    const line98Decoded = decodePackBits(line98CompressedBytes)
     const line98Scanline = new Uint8Array(rowbytes)
     for (let i = 0; i < rowbytes && i < line98Decoded.length; i++) {
       const byte = line98Decoded[i]
@@ -197,11 +217,12 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       }
     }
     scanlines[98] = line98Scanline
-    packedScanlines[98] = line98Compressed
+    packedScanlines[98] = [line98PrefixBytes, line98CompressedBytes]
 
-    // Line 99: 56 bytes compressed at 0x122c
-    const line99Compressed = data.slice(0x122c, 0x122c + 56)
-    const line99Decoded = decodePackBits(line99Compressed)
+    // Line 99: length byte at 0x122b, then 56 bytes compressed at 0x122c
+    const line99PrefixBytes = data.slice(0x122b, 0x122c)  // Just the length byte
+    const line99CompressedBytes = data.slice(0x122c, 0x122c + 56)  // The compressed data
+    const line99Decoded = decodePackBits(line99CompressedBytes)
     const line99Scanline = new Uint8Array(rowbytes)
     for (let i = 0; i < rowbytes && i < line99Decoded.length; i++) {
       const byte = line99Decoded[i]
@@ -210,11 +231,12 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       }
     }
     scanlines[99] = line99Scanline
-    packedScanlines[99] = line99Compressed
+    packedScanlines[99] = [line99PrefixBytes, line99CompressedBytes]
 
-    // Line 100: 56 bytes compressed at 0x1266
-    const line100Compressed = data.slice(0x1266, 0x1266 + 56)
-    const line100Decoded = decodePackBits(line100Compressed)
+    // Line 100: length byte at 0x1265, then 56 bytes compressed at 0x1266
+    const line100PrefixBytes = data.slice(0x1265, 0x1266)  // Just the length byte
+    const line100CompressedBytes = data.slice(0x1266, 0x1266 + 56)  // The compressed data
+    const line100Decoded = decodePackBits(line100CompressedBytes)
     const line100Scanline = new Uint8Array(rowbytes)
     for (let i = 0; i < rowbytes && i < line100Decoded.length; i++) {
       const byte = line100Decoded[i]
@@ -223,7 +245,7 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       }
     }
     scanlines[100] = line100Scanline
-    packedScanlines[100] = line100Compressed
+    packedScanlines[100] = [line100PrefixBytes, line100CompressedBytes]
 
     console.log('Lines 98-100 replaced with white border scanlines')
   }
@@ -232,9 +254,10 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
   if (scanlines.length > 151) {
     console.log('Fixing lines 149-151...')
 
-    // Line 149: 54 bytes compressed at 0x18aa
-    const line149Compressed = data.slice(0x18aa, 0x18aa + 54)
-    const line149Decoded = decodePackBits(line149Compressed)
+    // Line 149: length byte at 0x18a9, then 54 bytes compressed at 0x18aa
+    const line149PrefixBytes = data.slice(0x18a9, 0x18aa)  // Just the length byte
+    const line149CompressedBytes = data.slice(0x18aa, 0x18aa + 54)  // The compressed data
+    const line149Decoded = decodePackBits(line149CompressedBytes)
     const line149Scanline = new Uint8Array(rowbytes)
     for (let i = 0; i < rowbytes && i < line149Decoded.length; i++) {
       const byte = line149Decoded[i]
@@ -243,11 +266,12 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       }
     }
     scanlines[149] = line149Scanline
-    packedScanlines[149] = line149Compressed
+    packedScanlines[149] = [line149PrefixBytes, line149CompressedBytes]
 
-    // Line 150: 54 bytes compressed at 0x18e2
-    const line150Compressed = data.slice(0x18e2, 0x18e2 + 54)
-    const line150Decoded = decodePackBits(line150Compressed)
+    // Line 150: length byte at 0x18e1, then 54 bytes compressed at 0x18e2
+    const line150PrefixBytes = data.slice(0x18e1, 0x18e2)  // Just the length byte
+    const line150CompressedBytes = data.slice(0x18e2, 0x18e2 + 54)  // The compressed data
+    const line150Decoded = decodePackBits(line150CompressedBytes)
     const line150Scanline = new Uint8Array(rowbytes)
     for (let i = 0; i < rowbytes && i < line150Decoded.length; i++) {
       const byte = line150Decoded[i]
@@ -256,11 +280,12 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       }
     }
     scanlines[150] = line150Scanline
-    packedScanlines[150] = line150Compressed
+    packedScanlines[150] = [line150PrefixBytes, line150CompressedBytes]
 
-    // Line 151: 53 bytes compressed at 0x191a
-    const line151Compressed = data.slice(0x191a, 0x191a + 53)
-    const line151Decoded = decodePackBits(line151Compressed)
+    // Line 151: length byte at 0x1919, then 53 bytes compressed at 0x191a
+    const line151PrefixBytes = data.slice(0x1919, 0x191a)  // Just the length byte
+    const line151CompressedBytes = data.slice(0x191a, 0x191a + 53)  // The compressed data
+    const line151Decoded = decodePackBits(line151CompressedBytes)
     const line151Scanline = new Uint8Array(rowbytes)
     for (let i = 0; i < rowbytes && i < line151Decoded.length; i++) {
       const byte = line151Decoded[i]
@@ -269,7 +294,7 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       }
     }
     scanlines[151] = line151Scanline
-    packedScanlines[151] = line151Compressed
+    packedScanlines[151] = [line151PrefixBytes, line151CompressedBytes]
 
     console.log('Lines 149-151 replaced')
   }
