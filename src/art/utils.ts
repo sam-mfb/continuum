@@ -210,6 +210,7 @@ const decodePackBits = (data: Uint8Array): Uint8Array => {
   return new Uint8Array(result)
 }
 
+
 /**
  * Decodes Continuum Title Page PICT format
  * This is a variant PICT with:
@@ -311,14 +312,9 @@ export function continuumTitlePictToImageData(
   // Post-process to fix known problematic lines
   console.log(`Scanlines before fixes: ${scanlines.length}`)
   
-  // Fix lines 49-50
+  // Fix lines 49-50 which have the 0x0098 corruption
   if (scanlines.length > 50) {
     console.log('Fixing lines 49-50...')
-    
-    // Extract the correct scanlines from the data
-    // Based on pattern analysis, the correct scanlines that match lines 45-48 are at:
-    // Line 49: starts at 0x07f9, 38 bytes compressed
-    // Line 50: starts at 0x0821, 38 bytes compressed
     
     // First scanline: 38 bytes compressed at 0x07f9
     const firstCompressed = data.slice(0x07f9, 0x07f9 + 38)
@@ -378,7 +374,7 @@ export function continuumTitlePictToImageData(
   const imageDataArray = new Uint8ClampedArray(width * height * 4)
   
   // First pass: identify all lines without black border at pixel 500
-  const problematicLines: number[] = []
+  const linesWithoutBorder: number[] = []
   for (let row = 0; row < height; row++) {
     // Check pixel 500 (column 500)
     const col = 500
@@ -388,15 +384,15 @@ export function continuumTitlePictToImageData(
     const bit = byte !== undefined ? (byte >> bitIndex) & 1 : 0
     
     if (bit === 0) { // White pixel at position 500
-      problematicLines.push(row)
+      linesWithoutBorder.push(row)
     }
   }
   
-  console.log(`Found ${problematicLines.length} lines without black border at pixel 500:`, problematicLines)
+  console.log(`Found ${linesWithoutBorder.length} lines without black border at pixel 500:`, linesWithoutBorder)
   
   // Second pass: render with colors
   for (let row = 0; row < height; row++) {
-    const isProblematic = problematicLines.includes(row)
+    const isProblematic = linesWithoutBorder.includes(row)
     const isTenthLine = row % 10 === 0
     
     for (let col = 0; col < width; col++) {
