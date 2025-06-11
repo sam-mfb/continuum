@@ -4,13 +4,13 @@
 const decodePackBits = (data: Uint8Array): Uint8Array => {
   const result: number[] = []
   let i = 0
-  
+
   while (i < data.length) {
     const flag = data[i]
     i++
-    
+
     if (flag === undefined) break
-    
+
     if (flag === 0x80) {
       // No-op
       continue
@@ -38,57 +38,61 @@ const decodePackBits = (data: Uint8Array): Uint8Array => {
       }
     }
   }
-  
+
   return new Uint8Array(result)
 }
 
 /**
- * Decodes Continuum Title Page PICT format
- * This is a variant PICT with:
- * - Header through offset 0x22F
- * - 504x311 pixel bitmap
- * - Length-prefixed PackBits compressed scanlines
- * - Optional 0x0098 (PackBitsRect) opcodes
+ * The file Continuum Title Page in the original source is either corrupted or an incredibly
+ * unusual format. This function is a partially succesful attempt to decode it, that is fairly
+ * hacky and ultimately resorts to brute forcing places where we think their should probably be
+ * bits. Even with this, and even with knowing what the picture shoud look like, there are still
+ * a few missing lines. I suspect the file is corrupted.
+ *
+ * In any event, i was able to extract the resource used in the game itself from the games resource
+ * fork and that decodes just fine.
  */
 export function continuumTitlePictToImageData(
   pictData: ArrayBuffer
 ): ImageData {
   const data = new Uint8Array(pictData)
-  
+
   // Image dimensions from PICT header analysis
   const width = 504
   const height = 311
   const rowbytes = 63 // (504 + 7) / 8
-  
+
   // Start of image data after header
   let offset = 0x230
   const scanlines: Uint8Array[] = []
-  // let inRectMode = false  // Reserved for future use
-  
+
   while (offset < data.length && scanlines.length < height) {
     if (offset >= data.length) break
-    
+
     // Check for PackBitsRect opcode (0x0098)
-    if (offset + 1 < data.length && data[offset] === 0x00 && data[offset + 1] === 0x98) {
+    if (
+      offset + 1 < data.length &&
+      data[offset] === 0x00 &&
+      data[offset + 1] === 0x98
+    ) {
       offset += 2
       // Skip rect bounds (8 bytes)
       offset += 8
-      // inRectMode = true
       continue
     }
-    
+
     // Read single-byte length
     const lineLength = data[offset]
     if (lineLength === undefined) break
-    
+
     offset += 1
-    
+
     // Validate line length - PackBits for a 63-byte line shouldn't exceed ~126 bytes
     if (lineLength > 126) {
       // This is probably not a valid scanline length
       // Try to find the next valid scanline
-      offset -= 1  // Back up
-      
+      offset -= 1 // Back up
+
       // Look for a reasonable length byte
       let found = false
       for (let i = 0; i < 10 && offset + i < data.length; i++) {
@@ -102,27 +106,27 @@ export function continuumTitlePictToImageData(
           }
         }
       }
-      
+
       if (!found) {
         offset += 1
         continue
       } else {
-        continue  // Re-process from the new offset
+        continue // Re-process from the new offset
       }
     }
-    
+
     // Decode scanline
     if (lineLength > 0 && offset + lineLength <= data.length) {
       const packedLine = data.slice(offset, offset + lineLength)
       const unpacked = decodePackBits(packedLine)
-      
+
       // Validate unpacked length
       if (unpacked.length > rowbytes * 2) {
         // Something went wrong with decoding
         offset += lineLength
         continue
       }
-      
+
       // Always take exactly rowbytes (63) bytes
       const scanline = new Uint8Array(rowbytes)
       for (let i = 0; i < rowbytes && i < unpacked.length; i++) {
@@ -132,21 +136,21 @@ export function continuumTitlePictToImageData(
         }
       }
       scanlines.push(scanline)
-      
+
       offset += lineLength
     } else if (lineLength === 0) {
       // Skip zero-length lines
       continue
     }
   }
-  
+
   // Post-process to fix known problematic lines
   console.log(`Scanlines before fixes: ${scanlines.length}`)
-  
-  // Fix lines 49-50 which have the 0x0098 corruption
+
+  // Fix lines 49-50
   if (scanlines.length > 50) {
     console.log('Fixing lines 49-50...')
-    
+
     // First scanline: 38 bytes compressed at 0x07f9
     const firstCompressed = data.slice(0x07f9, 0x07f9 + 38)
     const firstDecoded = decodePackBits(firstCompressed)
@@ -157,7 +161,7 @@ export function continuumTitlePictToImageData(
         firstScanline[i] = byte
       }
     }
-    
+
     // Second scanline: 38 bytes compressed at 0x0821
     const secondCompressed = data.slice(0x0821, 0x0821 + 38)
     const secondDecoded = decodePackBits(secondCompressed)
@@ -168,38 +172,42 @@ export function continuumTitlePictToImageData(
         secondScanline[i] = byte
       }
     }
-    
+
     // Replace the problematic scanlines
     scanlines[49] = firstScanline
     scanlines[50] = secondScanline
-    
+
     console.log(`Line 49 replaced: ${firstDecoded.length} bytes decoded`)
     console.log(`Line 50 replaced: ${secondDecoded.length} bytes decoded`)
-    
+
     // Debug: Check pixel 500 and ending bits for both lines
     const byte62_line49 = firstScanline[62]
     if (byte62_line49 !== undefined) {
       const pixel500_line49 = (byte62_line49 >> 3) & 1
       const last3bits_line49 = byte62_line49 & 0x07
-      console.log(`Line 49 byte 62: 0x${byte62_line49.toString(16)}, pixel 500: ${pixel500_line49 ? 'black' : 'white'}, last 3 bits: ${last3bits_line49.toString(2).padStart(3, '0')}`)
+      console.log(
+        `Line 49 byte 62: 0x${byte62_line49.toString(16)}, pixel 500: ${pixel500_line49 ? 'black' : 'white'}, last 3 bits: ${last3bits_line49.toString(2).padStart(3, '0')}`
+      )
     }
-    
+
     const byte62_line50 = secondScanline[62]
     if (byte62_line50 !== undefined) {
       const pixel500_line50 = (byte62_line50 >> 3) & 1
       const last3bits_line50 = byte62_line50 & 0x07
-      console.log(`Line 50 byte 62: 0x${byte62_line50.toString(16)}, pixel 500: ${pixel500_line50 ? 'black' : 'white'}, last 3 bits: ${last3bits_line50.toString(2).padStart(3, '0')}`)
+      console.log(
+        `Line 50 byte 62: 0x${byte62_line50.toString(16)}, pixel 500: ${pixel500_line50 ? 'black' : 'white'}, last 3 bits: ${last3bits_line50.toString(2).padStart(3, '0')}`
+      )
     }
   }
-  
+
   // Fix lines 98-100 which have white border pattern
   // The 0x0098 opcode at 0x11d4 disrupts the normal decoding
   if (scanlines.length > 100) {
     console.log('Fixing lines 98-100...')
-    
+
     // Lines 98-100 should have massive white sections (not black like 49-50)
     // The scanlines we found are correct:
-    
+
     // Line 98: 56 bytes compressed at 0x11f2
     const line98Compressed = data.slice(0x11f2, 0x11f2 + 56)
     const line98Decoded = decodePackBits(line98Compressed)
@@ -211,7 +219,7 @@ export function continuumTitlePictToImageData(
       }
     }
     scanlines[98] = line98Scanline
-    
+
     // Line 99: 56 bytes compressed at 0x122c
     const line99Compressed = data.slice(0x122c, 0x122c + 56)
     const line99Decoded = decodePackBits(line99Compressed)
@@ -223,7 +231,7 @@ export function continuumTitlePictToImageData(
       }
     }
     scanlines[99] = line99Scanline
-    
+
     // Line 100: 56 bytes compressed at 0x1266
     const line100Compressed = data.slice(0x1266, 0x1266 + 56)
     const line100Decoded = decodePackBits(line100Compressed)
@@ -235,14 +243,14 @@ export function continuumTitlePictToImageData(
       }
     }
     scanlines[100] = line100Scanline
-    
+
     console.log('Lines 98-100 replaced with white border scanlines')
   }
-  
-  // Fix lines 149-151 which have the 0x0098 corruption at line 144
+
+  // Fix lines 149-151 which have corruption
   if (scanlines.length > 151) {
     console.log('Fixing lines 149-151...')
-    
+
     // Line 149: 54 bytes compressed at 0x18aa
     const line149Compressed = data.slice(0x18aa, 0x18aa + 54)
     const line149Decoded = decodePackBits(line149Compressed)
@@ -254,7 +262,7 @@ export function continuumTitlePictToImageData(
       }
     }
     scanlines[149] = line149Scanline
-    
+
     // Line 150: 54 bytes compressed at 0x18e2
     const line150Compressed = data.slice(0x18e2, 0x18e2 + 54)
     const line150Decoded = decodePackBits(line150Compressed)
@@ -266,7 +274,7 @@ export function continuumTitlePictToImageData(
       }
     }
     scanlines[150] = line150Scanline
-    
+
     // Line 151: 53 bytes compressed at 0x191a
     const line151Compressed = data.slice(0x191a, 0x191a + 53)
     const line151Decoded = decodePackBits(line151Compressed)
@@ -278,10 +286,10 @@ export function continuumTitlePictToImageData(
       }
     }
     scanlines[151] = line151Scanline
-    
+
     console.log('Lines 149-151 replaced')
   }
-  
+
   // Create full bitmap data
   const bitmapData = new Uint8Array(height * rowbytes)
   for (let i = 0; i < scanlines.length; i++) {
@@ -290,10 +298,10 @@ export function continuumTitlePictToImageData(
       bitmapData.set(scanline, i * rowbytes)
     }
   }
-  
+
   // Convert to RGBA image data
   const imageDataArray = new Uint8ClampedArray(width * height * 4)
-  
+
   // First pass: identify all lines without black border at pixel 500
   const linesWithoutBorder: number[] = []
   for (let row = 0; row < height; row++) {
@@ -303,14 +311,18 @@ export function continuumTitlePictToImageData(
     const bitIndex = 7 - (col % 8)
     const byte = bitmapData[byteIndex]
     const bit = byte !== undefined ? (byte >> bitIndex) & 1 : 0
-    
-    if (bit === 0) { // White pixel at position 500
+
+    if (bit === 0) {
+      // White pixel at position 500
       linesWithoutBorder.push(row)
     }
   }
-  
-  console.log(`Found ${linesWithoutBorder.length} lines without black border at pixel 500:`, linesWithoutBorder)
-  
+
+  console.log(
+    `Found ${linesWithoutBorder.length} lines without black border at pixel 500:`,
+    linesWithoutBorder
+  )
+
   // Second pass: render normally (black and white)
   for (let row = 0; row < height; row++) {
     for (let col = 0; col < width; col++) {
@@ -318,15 +330,16 @@ export function continuumTitlePictToImageData(
       const bitIndex = 7 - (col % 8)
       const byte = bitmapData[byteIndex]
       const bit = byte !== undefined ? (byte >> bitIndex) & 1 : 0
-      
+
       const pixelIndex = (row * width + col) * 4
       const value = bit ? 0 : 255 // 1 = black, 0 = white
-      imageDataArray[pixelIndex] = value     // R
+      imageDataArray[pixelIndex] = value // R
       imageDataArray[pixelIndex + 1] = value // G
       imageDataArray[pixelIndex + 2] = value // B
-      imageDataArray[pixelIndex + 3] = 255   // A
+      imageDataArray[pixelIndex + 3] = 255 // A
     }
   }
-  
+
   return new ImageData(imageDataArray, width, height)
 }
+
