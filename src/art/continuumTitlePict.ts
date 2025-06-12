@@ -3,6 +3,7 @@ type ScanlineData = {
   prefixBytes: Uint8Array
   compressedBytes: Uint8Array
   missingBorder: boolean
+  manuallyFixed: boolean
 }
 
 /**
@@ -123,7 +124,8 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
         lineNumber: scanlines.length - 1, // 0-indexed
         prefixBytes,
         compressedBytes: packedLine,
-        missingBorder: false // Will be determined later
+        missingBorder: false, // Will be determined later
+        manuallyFixed: false
       })
       console.log(`Pushed line ${scanlines.length}`)
 
@@ -144,7 +146,8 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       lineNumber: packedScanlines.length,
       prefixBytes: new Uint8Array(0),
       compressedBytes: new Uint8Array(0),
-      missingBorder: false
+      missingBorder: false,
+      manuallyFixed: false
     })
   }
 
@@ -183,13 +186,15 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       lineNumber: 49,
       prefixBytes: firstPrefixBytes,
       compressedBytes: firstCompressedBytes,
-      missingBorder: false
+      missingBorder: false,
+      manuallyFixed: true
     }
     packedScanlines[50] = {
       lineNumber: 50,
       prefixBytes: secondPrefixBytes,
       compressedBytes: secondCompressedBytes,
-      missingBorder: false
+      missingBorder: false,
+      manuallyFixed: true
     }
 
     console.log(`Line 49 replaced: ${firstDecoded.length} bytes decoded`)
@@ -239,7 +244,8 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       lineNumber: 98,
       prefixBytes: line98PrefixBytes,
       compressedBytes: line98CompressedBytes,
-      missingBorder: false
+      missingBorder: false,
+      manuallyFixed: true
     }
 
     // Line 99: length byte at 0x122b, then 56 bytes compressed at 0x122c
@@ -258,7 +264,8 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       lineNumber: 99,
       prefixBytes: line99PrefixBytes,
       compressedBytes: line99CompressedBytes,
-      missingBorder: false
+      missingBorder: false,
+      manuallyFixed: true
     }
 
     // Line 100: length byte at 0x1265, then 56 bytes compressed at 0x1266
@@ -277,7 +284,8 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       lineNumber: 100,
       prefixBytes: line100PrefixBytes,
       compressedBytes: line100CompressedBytes,
-      missingBorder: false
+      missingBorder: false,
+      manuallyFixed: true
     }
 
     console.log('Lines 98-100 replaced with white border scanlines')
@@ -303,7 +311,8 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       lineNumber: 149,
       prefixBytes: line149PrefixBytes,
       compressedBytes: line149CompressedBytes,
-      missingBorder: false
+      missingBorder: false,
+      manuallyFixed: true
     }
 
     // Line 150: length byte at 0x18e1, then 54 bytes compressed at 0x18e2
@@ -322,7 +331,8 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       lineNumber: 150,
       prefixBytes: line150PrefixBytes,
       compressedBytes: line150CompressedBytes,
-      missingBorder: false
+      missingBorder: false,
+      manuallyFixed: true
     }
 
     // Line 151: length byte at 0x1919, then 53 bytes compressed at 0x191a
@@ -341,7 +351,8 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       lineNumber: 151,
       prefixBytes: line151PrefixBytes,
       compressedBytes: line151CompressedBytes,
-      missingBorder: false
+      missingBorder: false,
+      manuallyFixed: true
     }
 
     console.log('Lines 149-151 replaced')
