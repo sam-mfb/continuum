@@ -96,13 +96,6 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
       const packedLine = data.slice(offset, offset + firstByte)
       const unpacked = decodePackBits(packedLine)
 
-      // Validate unpacked length
-      if (unpacked.length > rowbytes * 2) {
-        // Something went wrong with decoding
-        offset += firstByte
-        continue
-      }
-
       // Always take exactly rowbytes (63) bytes
       const scanline = new Uint8Array(rowbytes)
       for (let i = 0; i < rowbytes && i < unpacked.length; i++) {

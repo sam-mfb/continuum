@@ -79,10 +79,10 @@ if (linesWithMissingBorder.length > 0) {
 
   // Display each cluster with context
   clusters.forEach(cluster => {
-    const minLine = Math.max(0, cluster[0] - 2)
+    const minLine = Math.max(0, cluster[0] - 3)
     const maxLine = Math.min(
       result.packedScanlines.length - 1,
-      cluster[cluster.length - 1] + 2
+      cluster[cluster.length - 1] + 3
     )
 
     for (let i = minLine; i <= maxLine; i++) {
