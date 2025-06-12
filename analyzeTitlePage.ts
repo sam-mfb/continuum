@@ -2,7 +2,11 @@
 import { readFileSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
-import { continuumTitleToImageData } from './src/art/continuumTitlePict'
+import { 
+  parseScanlineData, 
+  unpackScanlinesToBitmap, 
+  checkMissingBorders 
+} from './src/art/continuumTitlePict'
 
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url)
@@ -15,25 +19,27 @@ const filePath = join(
 )
 const rawData = readFileSync(filePath)
 
-// Mock ImageData for Node.js environment
-class ImageData {
-  constructor(
-    public data: Uint8ClampedArray,
-    public width: number,
-    public height: number
-  ) {}
-}
-;(global as any).ImageData = ImageData
+// Image dimensions (same as in continuumTitlePict.ts)
+const width = 504
+const height = 311
+const startOffset = 0x230
 
-// Process the image
-const result = continuumTitleToImageData(rawData.buffer)
+// Parse scanline data directly
+const data = new Uint8Array(rawData.buffer)
+const packedScanlines = parseScanlineData(data, startOffset, height)
+
+// Unpack scanlines to bitmap
+const bitmapData = unpackScanlinesToBitmap(packedScanlines, width, height)
+
+// Check for missing borders and get updated scanlines
+const scanlinesWithBorderInfo = checkMissingBorders(packedScanlines, bitmapData, width, 500)
 
 // Report results
 console.log('\n=== Analysis Results ===')
-console.log(`Total scanlines processed: ${result.packedScanlines.length}`)
+console.log(`Total scanlines processed: ${scanlinesWithBorderInfo.length}`)
 
 // Find lines with missing border
-const linesWithMissingBorder = result.packedScanlines.filter(
+const linesWithMissingBorder = scanlinesWithBorderInfo.filter(
   line => line.missingBorder
 )
 console.log(`Scanlines without border: ${linesWithMissingBorder.length}`)
@@ -44,7 +50,7 @@ const GREEN = '\x1b[32m'
 const RESET = '\x1b[0m'
 
 // Helper function to format a line
-function formatLine(line: (typeof result.packedScanlines)[0]): string {
+function formatLine(line: (typeof scanlinesWithBorderInfo)[0]): string {
   return `Line ${line.lineNumber}: prefix=${line.prefixBytes.length} bytes, compressed=${line.compressedBytes.length} bytes`
 }
 
@@ -81,12 +87,12 @@ if (linesWithMissingBorder.length > 0) {
   clusters.forEach(cluster => {
     const minLine = Math.max(0, cluster[0] - 3)
     const maxLine = Math.min(
-      result.packedScanlines.length - 1,
+      scanlinesWithBorderInfo.length - 1,
       cluster[cluster.length - 1] + 3
     )
 
     for (let i = minLine; i <= maxLine; i++) {
-      const line = result.packedScanlines[i]
+      const line = scanlinesWithBorderInfo[i]
       if (line) {
         if (cluster.includes(i)) {
           // Problematic line - print in red
