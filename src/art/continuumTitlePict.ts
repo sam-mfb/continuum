@@ -5,8 +5,6 @@ type ScanlineData = {
   missingBorder: boolean
 }
 
-const ADDITIONAL_OFFSET = 8
-
 /**
  * Decodes PackBits compressed data
  */
@@ -218,12 +216,15 @@ const bitmapToImageData = (
 
 /**
  * The file Continuum Title Page in the original source is either corrupted or an incredibly
- * unusual format. This function is a partially successful attempt to decode it, that is fairly
- * hacky and ultimately resorts to brute forcing places where we think their should probably be
- * bits. Even with this, and even with knowing what the picture should look like, there are still
- * a few missing lines. I suspect the file is corrupted.
+ * unusual format.
  *
- * In any event, i was able to extract the resource used in the game itself from the games resource
+ * This function is a partially successful attempt to decode it. It gets it right with about 18 lines
+ * corrupted. And it's using some hacks, like skipping certain bytes and forcing the width.
+ *
+ * I hacked around with AI help and was able to pull out a few more lines by hardcoding offets, but its
+ * not worth it.
+ *
+ * Ultimately, I was able to extract the resource used in the game itself from the games resource
  * fork and that decodes just fine.
  */
 export function continuumTitleToImageData(rawData: ArrayBuffer): {
@@ -252,10 +253,7 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
   )
 
   const repaired = scanlinesWithBorderInfo.map(s => {
-    if (!s.missingBorder) {
-      return s
-    }
-    return { ...s, compressedBytes: s.compressedBytes.slice(ADDITIONAL_OFFSET) }
+    return s
   })
 
   const newBitmap = unpackScanlinesToBitmap(repaired, width, height)
