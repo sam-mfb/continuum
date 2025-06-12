@@ -5,6 +5,8 @@ type ScanlineData = {
   missingBorder: boolean
 }
 
+const ADDITIONAL_OFFSET = 8
+
 /**
  * Decodes PackBits compressed data
  */
@@ -72,7 +74,7 @@ export const parseScanlineData = (
     offset += 1
 
     // for some reason skipping bytes with a value of greater than 71 eliminates problematic bytes
-    if (firstByte > 71) {
+    if (firstByte > 127) {
       skippedBytes.push(firstByte)
       continue
     }
@@ -100,7 +102,6 @@ export const parseScanlineData = (
         compressedBytes: packedLine,
         missingBorder: false // Will be determined later
       })
-      console.log(`Pushed line ${lineNumber + 1}`)
 
       lineNumber++
       offset += firstByte
@@ -124,10 +125,10 @@ export const unpackScanlinesToBitmap = (
 ): Uint8Array => {
   const rowbytes = Math.ceil(width / 8)
   const bitmapData = new Uint8Array(height * rowbytes)
-  
+
   for (const scanlineData of packedScanlines) {
     const unpacked = decodePackBits(scanlineData.compressedBytes)
-    
+
     // Always take exactly rowbytes bytes
     const scanline = new Uint8Array(rowbytes)
     for (let i = 0; i < rowbytes && i < unpacked.length; i++) {
@@ -136,11 +137,11 @@ export const unpackScanlinesToBitmap = (
         scanline[i] = byte
       }
     }
-    
+
     // Place scanline in bitmap data
     bitmapData.set(scanline, scanlineData.lineNumber * rowbytes)
   }
-  
+
   return bitmapData
 }
 
@@ -155,7 +156,7 @@ export const checkMissingBorders = (
 ): Array<ScanlineData> => {
   const rowbytes = Math.ceil(width / 8)
   let linesWithoutBorderCount = 0
-  
+
   // Create new array with updated missingBorder flags
   const updatedScanlines = packedScanlines.map(scanlineData => {
     // Check pixel at checkColumn
@@ -177,11 +178,11 @@ export const checkMissingBorders = (
       missingBorder: hasMissingBorder
     }
   })
-  
+
   console.log(
     `Found ${linesWithoutBorderCount} lines without black border at pixel ${checkColumn}`
   )
-  
+
   return updatedScanlines
 }
 
@@ -243,10 +244,26 @@ export function continuumTitleToImageData(rawData: ArrayBuffer): {
   const bitmapData = unpackScanlinesToBitmap(packedScanlines, width, height)
 
   // Check for missing borders and get updated scanlines
-  const scanlinesWithBorderInfo = checkMissingBorders(packedScanlines, bitmapData, width, 500)
+  const scanlinesWithBorderInfo = checkMissingBorders(
+    packedScanlines,
+    bitmapData,
+    width,
+    500
+  )
+
+  const repaired = scanlinesWithBorderInfo.map(s => {
+    if (!s.missingBorder) {
+      return s
+    }
+    return { ...s, compressedBytes: s.compressedBytes.slice(ADDITIONAL_OFFSET) }
+  })
+
+  const newBitmap = unpackScanlinesToBitmap(repaired, width, height)
 
   // Convert bitmap to RGBA image data
-  const image = bitmapToImageData(bitmapData, width, height)
+  const image = bitmapToImageData(newBitmap, width, height)
+
+  checkMissingBorders(packedScanlines, newBitmap, width, 500)
 
   return {
     image,
