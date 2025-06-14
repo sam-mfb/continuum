@@ -216,7 +216,7 @@ async function runBenchmark() {
         const start = performance.now();
         
         const samples = bufferManager.requestSamples(callbackSize);
-        const float32 = convertBuffer(samples);
+        convertBuffer(samples); // Convert but don't store (simulating real use)
         
         timings.push(performance.now() - start);
       }

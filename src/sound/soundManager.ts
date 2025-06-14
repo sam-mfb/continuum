@@ -1,6 +1,6 @@
 /**
  * Sound manager that bridges Redux state with the sound engine
- * Phase 1: Simplified to just Redux bridge functionality
+ * Phase 6: Full implementation with new audio system
  */
 
 import { store } from '../store/store'
@@ -14,7 +14,7 @@ import type { SoundEngine } from './types'
 
 /**
  * Manages sound playback and lifecycle
- * Phase 1: Minimal implementation - just Redux bridge
+ * Phase 6: Integrated with new buffer-based audio system
  */
 export const createSoundManager = (): {
   initialize: () => void
@@ -22,6 +22,9 @@ export const createSoundManager = (): {
   stopSound: () => void
   setVolume: (volume: number) => void
   cleanup: () => void
+  getEngine: () => SoundEngine | null
+  start: () => void
+  stop: () => void
 } => {
   let engine: SoundEngine | null = null
   let isInitialized = false
@@ -48,13 +51,13 @@ export const createSoundManager = (): {
 
   /**
    * Start playing a sound
-   * Phase 1: Just updates Redux state
+   * Phase 6: Updates Redux state and starts audio
    */
   const startSound = (soundType: SoundType): void => {
     // Update Redux state
     store.dispatch(startSoundAction(soundType))
 
-    // Phase 1: No actual audio playback
+    // Start audio playback
     if (engine) {
       engine.start()
     }
@@ -62,15 +65,40 @@ export const createSoundManager = (): {
 
   /**
    * Stop the current sound
-   * Phase 1: Just updates Redux state
+   * Phase 6: Updates Redux state and stops audio
    */
   const stopSound = (): void => {
     store.dispatch(stopSoundAction())
 
-    // Phase 1: No actual audio to stop
+    // Stop audio playback
     if (engine) {
       engine.stop()
     }
+  }
+
+  /**
+   * Start audio engine (for test panel)
+   */
+  const start = (): void => {
+    if (engine) {
+      engine.start()
+    }
+  }
+
+  /**
+   * Stop audio engine (for test panel)
+   */
+  const stop = (): void => {
+    if (engine) {
+      engine.stop()
+    }
+  }
+
+  /**
+   * Get the sound engine instance (for test panel)
+   */
+  const getEngine = (): SoundEngine | null => {
+    return engine
   }
 
   /**
@@ -114,7 +142,10 @@ export const createSoundManager = (): {
     startSound,
     stopSound,
     setVolume,
-    cleanup
+    cleanup,
+    getEngine,
+    start,
+    stop
   }
 }
 

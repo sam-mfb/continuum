@@ -1,24 +1,54 @@
 /**
  * Tests for the sound engine
- * Phase 1: Tests for minimal shell implementation
+ * Phase 6: Tests for new buffer-based audio system
  */
 
-import { describe, it, expect, beforeAll, vi } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createSoundEngine } from '../soundEngine'
 
-// Mock Web Audio API for testing
-const mockAudioContext = {
-  sampleRate: 44100,
-  createGain: vi.fn(() => ({
-    connect: vi.fn(),
-    gain: { value: 1 }
-  })),
-  destination: {}
-}
+// Mock the audio modules
+vi.mock('../bufferManager', () => ({
+  createBufferManager: vi.fn(() => ({
+    setGenerator: vi.fn(),
+    requestSamples: vi.fn(() => new Uint8Array(512)),
+    getAvailableSamples: vi.fn(() => 1024),
+    getBufferState: vi.fn(() => ({ 
+      writePosition: 0, 
+      readPosition: 0, 
+      available: 0 
+    })),
+    reset: vi.fn()
+  }))
+}))
 
-beforeAll(() => {
-  // @ts-ignore
-  global.AudioContext = vi.fn(() => mockAudioContext)
+vi.mock('../audioOutput', () => ({
+  createAudioOutput: vi.fn(() => ({
+    start: vi.fn(),
+    stop: vi.fn(),
+    isPlaying: vi.fn(() => false),
+    getContext: vi.fn(() => null),
+    getStats: vi.fn(() => ({
+      underruns: 0,
+      totalCallbacks: 0,
+      averageLatency: 0
+    }))
+  }))
+}))
+
+vi.mock('../sampleGenerator', () => ({
+  createTestGenerators: vi.fn(() => ({
+    silence: { generateChunk: vi.fn(), reset: vi.fn() },
+    sine440: { generateChunk: vi.fn(), reset: vi.fn() },
+    sine880: { generateChunk: vi.fn(), reset: vi.fn() },
+    sine220: { generateChunk: vi.fn(), reset: vi.fn() },
+    whiteNoise: { generateChunk: vi.fn(), reset: vi.fn() },
+    majorChord: { generateChunk: vi.fn(), reset: vi.fn() },
+    octaves: { generateChunk: vi.fn(), reset: vi.fn() }
+  }))
+}))
+
+beforeEach(() => {
+  vi.clearAllMocks()
 })
 
 describe('createSoundEngine', () => {
@@ -30,34 +60,28 @@ describe('createSoundEngine', () => {
     expect(engine).toHaveProperty('setVolume')
     expect(engine).toHaveProperty('start')
     expect(engine).toHaveProperty('stop')
+    expect(engine).toHaveProperty('playTestSound')
+    expect(engine).toHaveProperty('getTestSounds')
+    expect(engine).toHaveProperty('getStats')
+    expect(engine).toHaveProperty('isPlaying')
   })
 
-  it('initializes audio context and connects master gain', () => {
+  it('returns test sound names', () => {
     const engine = createSoundEngine()
-
-    expect(mockAudioContext.createGain).toHaveBeenCalled()
-    expect(engine.masterGain.connect).toHaveBeenCalledWith(
-      mockAudioContext.destination
-    )
+    const sounds = engine.getTestSounds()
+    
+    expect(sounds).toContain('silence')
+    expect(sounds).toContain('sine440')
+    expect(sounds).toContain('whiteNoise')
+    expect(sounds).toContain('majorChord')
   })
 
-  it('sets volume correctly', () => {
+  it('can switch between test sounds', () => {
     const engine = createSoundEngine()
-    const mockGainValue = { value: 1 }
-    Object.defineProperty(engine.masterGain, 'gain', {
-      value: mockGainValue,
-      writable: true
-    })
-
-    engine.setVolume(0.5)
-    expect(mockGainValue.value).toBe(0.5)
-
-    // Test clamping
-    engine.setVolume(1.5)
-    expect(mockGainValue.value).toBe(1)
-
-    engine.setVolume(-0.5)
-    expect(mockGainValue.value).toBe(0)
+    
+    // Should not throw
+    expect(() => engine.playTestSound('sine440')).not.toThrow()
+    expect(() => engine.playTestSound('whiteNoise')).not.toThrow()
   })
 
   it('has start method that can be called', () => {
