@@ -30,13 +30,7 @@ export function convertSample(sample: number): number {
  * @returns Float32Array of converted samples (-1.0 to 1.0)
  */
 export function convertBuffer(samples: Uint8Array): Float32Array {
-  const output = new Float32Array(samples.length);
-  
-  for (let i = 0; i < samples.length; i++) {
-    output[i] = convertSample(samples[i]!);
-  }
-  
-  return output;
+  return Float32Array.from(samples, convertSample);
 }
 
 /**
