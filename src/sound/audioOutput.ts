@@ -70,22 +70,8 @@ export const createAudioOutput = (bufferManager: BufferManager): AudioOutput => 
     const callbackStart = performance.now();
     
     try {
-      // Check if we have enough samples available before requesting
-      // This is just for monitoring - requestSamples will handle generation
-      const availableBefore = bufferManager.getAvailableSamples();
-      
       // Request samples from buffer manager
       const samples = bufferManager.requestSamples(outputChannel.length);
-      
-      // Only count as underrun if we had to generate new data during callback
-      // (available was less than requested and we're past the first few callbacks)
-      if (availableBefore < outputChannel.length && totalCallbacks > 5) {
-        underruns++;
-        // Only log the first few underruns to avoid spam
-        if (underruns <= 3) {
-          console.warn(`Audio underrun #${underruns}: needed ${outputChannel.length}, had ${availableBefore} available`);
-        }
-      }
       
       // Convert 8-bit unsigned to float32 directly into output buffer
       convertBufferInPlace(samples, outputChannel);
@@ -99,6 +85,15 @@ export const createAudioOutput = (bufferManager: BufferManager): AudioOutput => 
       // Track latency
       const callbackTime = performance.now() - callbackStart;
       latencySum += callbackTime;
+      
+      // Count as underrun only if callback took too long (> 10ms is risky for real-time)
+      // This would indicate actual performance issues, not normal buffer operation
+      if (callbackTime > 10 && totalCallbacks > 5) {
+        underruns++;
+        if (underruns <= 3) {
+          console.warn(`Audio callback took too long: ${callbackTime.toFixed(2)}ms`);
+        }
+      }
       
     } catch (error) {
       console.error('Audio processing error:', error);

@@ -166,7 +166,7 @@ export const SoundTestPanel: React.FC = () => {
           <h3>Performance Statistics</h3>
           <div style={styles.stats}>
             <div>Audio Callbacks: {stats.totalCallbacks}</div>
-            <div>Underruns: <span style={{ color: stats.underruns > 0 ? 'red' : 'green' }}>
+            <div>Glitches (slow callbacks): <span style={{ color: stats.underruns > 0 ? 'red' : 'green' }}>
               {stats.underruns}
             </span></div>
             <div>Average Latency: {formatLatency(stats.averageLatency)}</div>
@@ -192,7 +192,7 @@ export const SoundTestPanel: React.FC = () => {
               <li><strong>octaves</strong>: Alternating A3-A4-A5</li>
             </ul>
           </li>
-          <li>Monitor performance stats for underruns (should be 0)</li>
+          <li>Monitor performance stats - glitches should stay at 0</li>
           <li>Test volume control and mute functionality</li>
         </ul>
       </div>
