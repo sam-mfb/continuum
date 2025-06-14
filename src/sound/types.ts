@@ -31,6 +31,7 @@ export type SoundEngine = {
   audioContext: AudioContext;           // Web Audio API context
   masterGain: GainNode;                 // Master volume control
   createThrustSound: () => PlayableSound;  // Factory for thrust sound
+  setVolume: (volume: number) => void;  // Set master volume
   // Additional sound factories will be added here
 }
 

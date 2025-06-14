@@ -41,6 +41,7 @@ describe('createSoundEngine', () => {
     expect(engine).toHaveProperty('audioContext');
     expect(engine).toHaveProperty('masterGain');
     expect(engine).toHaveProperty('createThrustSound');
+    expect(engine).toHaveProperty('setVolume');
   });
 
   it('initializes audio context and connects master gain', () => {
@@ -48,6 +49,25 @@ describe('createSoundEngine', () => {
     
     expect(mockAudioContext.createGain).toHaveBeenCalled();
     expect(engine.masterGain.connect).toHaveBeenCalledWith(mockAudioContext.destination);
+  });
+  
+  it('sets volume correctly', () => {
+    const engine = createSoundEngine();
+    const mockGainValue = { value: 1 };
+    Object.defineProperty(engine.masterGain, 'gain', {
+      value: mockGainValue,
+      writable: true
+    });
+    
+    engine.setVolume(0.5);
+    expect(mockGainValue.value).toBe(0.5);
+    
+    // Test clamping
+    engine.setVolume(1.5);
+    expect(mockGainValue.value).toBe(1);
+    
+    engine.setVolume(-0.5);
+    expect(mockGainValue.value).toBe(0);
   });
 });
 

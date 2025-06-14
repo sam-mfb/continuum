@@ -24,56 +24,62 @@ export const createSoundEngine = (): SoundEngine => {
    * Recreates the low-frequency noise pattern of the original
    */
   const createThrustSound = (): PlayableSound => {
-    // The original uses SNDBUFLEN (370 bytes) with every other byte
-    // We'll create a longer buffer for smoother looping
-    const samplesPerBuffer = SNDBUFLEN;
-    const sampleRate = audioContext.sampleRate;
+    // Original fills SNDBUFLEN (370) bytes, but uses every other byte for audio
+    // So we have 185 actual audio samples per buffer
+    const originalSamples = Math.floor(SNDBUFLEN / 2);
     
-    // Create a buffer that will loop seamlessly
-    // Use a low sample rate to match the original's low-fi sound
-    const effectiveSampleRate = 11025; // Classic Mac sample rate
-    const bufferDuration = samplesPerBuffer / effectiveSampleRate;
-    const bufferSize = Math.floor(bufferDuration * sampleRate);
+    // The original runs at 60Hz (VBL), updating the buffer each frame
+    // With 185 samples per frame, that's 185 * 60 = 11,100 Hz effective sample rate
+    const originalSampleRate = 11100;
     
-    const buffer = audioContext.createBuffer(1, bufferSize, sampleRate);
+    // Create a buffer that matches one VBL frame of the original
+    const bufferDuration = originalSamples / originalSampleRate;
+    const bufferSize = Math.floor(bufferDuration * audioContext.sampleRate);
+    
+    const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
     const data = buffer.getChannelData(0);
     
     // Implement original thrust pattern from Sound.c:184-202
-    // The assembly code shows:
-    // - Picks random starting point in thru_rands using Random() & 63
-    // - Shifts right by 1 (divides by 2)
-    // - Repeats each value 37 times for low frequency
+    // Assembly analysis:
+    // - pers = thru_rands + (Random() & 63) - start at random position
+    // - Process SNDBUFLEN/37 chunks (10 chunks of 37 bytes each)
+    // - Each chunk: read one random value, shift right 1, repeat it 37 times
     
-    const persIndex = Math.floor(Math.random() * 64); // Random() & 63
-    let dataPos = 0;
+    const startOffset = Math.floor(Math.random() * 64); // Random() & 63
+    let bufferPos = 0;
     
-    // Original uses SNDBUFLEN/37 iterations (Sound.c:187)
-    const iterations = Math.floor(SNDBUFLEN / 37);
+    // Original: SNDBUFLEN/37-1 iterations (Sound.c:187)
+    const chunks = Math.floor(SNDBUFLEN / 37);
     
-    for (let count = 0; count < iterations && dataPos < bufferSize; count++) {
-      const randIndex = (persIndex + count) % 128;
-      let value = thruRands[randIndex] ?? 0;
+    for (let chunk = 0; chunk < chunks; chunk++) {
+      // Get next value from lookup table
+      const tableIndex = (startOffset + chunk) & 127; // Wrap at 128
+      let value = thruRands[tableIndex] ?? 0;
       
-      // Original: lsr.w #1, D0 (shift right 1 = divide by 2)
-      value = value >> 1;
+      // Original: lsr.w #1, D0 (logical shift right 1 bit)
+      value = value >>> 1;
+      
+      // Original: lsl.w #8, D0 (shift left 8 to high byte of 16-bit word)
+      // This effectively multiplies by 256 for 16-bit audio
+      // For our normalized audio, we convert differently
       
       // Convert to normalized audio range (-1 to 1)
-      // Original uses unsigned bytes with 128 as center
+      // Original uses unsigned bytes, so value is now 32-95 (half of 64-191)
       const normalizedValue = (value - 64) / 64;
       
-      // Original repeats value 37 times (Sound.c:195-201)
-      // Scale repetitions based on our sample rate
-      const repetitions = Math.floor(37 * sampleRate / effectiveSampleRate);
+      // Fill 37 samples with this value (accounting for sample rate difference)
+      const samplesPerChunk = Math.floor(37 * audioContext.sampleRate / originalSampleRate);
       
-      for (let repeat = 0; repeat < repetitions && dataPos < bufferSize; repeat++) {
-        data[dataPos++] = normalizedValue;
+      for (let i = 0; i < samplesPerChunk && bufferPos < bufferSize; i++) {
+        data[bufferPos++] = normalizedValue;
       }
     }
     
-    // Fill any remaining buffer space
-    while (dataPos < bufferSize) {
-      data[dataPos] = data[dataPos % samplesPerBuffer] ?? 0;
-      dataPos++;
+    // Ensure buffer is completely filled
+    while (bufferPos < bufferSize) {
+      // Wrap around to beginning if needed
+      data[bufferPos] = data[bufferPos % (chunks * 37)] ?? 0;
+      bufferPos++;
     }
     
     return {
@@ -88,9 +94,18 @@ export const createSoundEngine = (): SoundEngine => {
     };
   };
   
+  /**
+   * Set the master volume
+   * @param volume - Volume level from 0 to 1
+   */
+  const setVolume = (volume: number): void => {
+    masterGain.gain.value = Math.max(0, Math.min(1, volume));
+  };
+  
   return {
     audioContext,
     masterGain,
     createThrustSound,
+    setVolume,
   };
 };

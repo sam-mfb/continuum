@@ -15,6 +15,9 @@ export * from './waveformGenerators';
 // Sound engine
 export * from './soundEngine';
 
+// Sound manager
+export * from './soundManager';
+
 // Redux slice
 export { default as soundReducer } from './soundSlice';
 export * from './soundSlice';
