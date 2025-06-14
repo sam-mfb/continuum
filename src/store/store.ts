@@ -4,19 +4,21 @@ import { useDispatch, useSelector } from 'react-redux'
 import uiReducer from './uiSlice'
 import galaxyReducer from './galaxySlice'
 import graphicsReducer from './graphicsSlice'
+import soundReducer from '../sound/soundSlice'
 
 export const store = configureStore({
   reducer: {
     ui: uiReducer,
     galaxy: galaxyReducer,
-    graphics: graphicsReducer
+    graphics: graphicsReducer,
+    sound: soundReducer
   },
   middleware: getDefaultMiddleware =>
     getDefaultMiddleware({
       serializableCheck: {
         // Ignore ImageData in actions and state
         ignoredActions: ['graphics/loadFile/fulfilled'],
-        ignoredPaths: ['graphics.imageData']
+        ignoredPaths: ['graphics.imageData', 'sound.activeSource']
       }
     })
 })

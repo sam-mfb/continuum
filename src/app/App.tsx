@@ -7,6 +7,7 @@ import { PlanetViewer } from './components/PlanetViewer'
 import { GraphicsList } from './components/GraphicsList'
 import { GraphicsViewer } from './components/GraphicsViewer'
 import GameView from './components/GameView'
+import { SoundTest } from './components/SoundTest'
 import { testGameLoop } from './games/testGame'
 import { shipMoveGameLoop } from './games/shipMove'
 import './App.css'
@@ -51,6 +52,12 @@ function App(): React.JSX.Element {
             onClick={() => dispatch(setCurrentView('graphics'))}
           >
             Graphics
+          </div>
+          <div
+            className={`menu-item ${currentView === 'sound' ? 'active' : ''}`}
+            onClick={() => dispatch(setCurrentView('sound'))}
+          >
+            Sound
           </div>
           <div
             className={`menu-item ${currentView === 'settings' ? 'active' : ''}`}
@@ -111,6 +118,8 @@ function App(): React.JSX.Element {
               </div>
             </div>
           )}
+
+          {currentView === 'sound' && <SoundTest />}
 
           {currentView === 'settings' && (
             <div className="settings-view">
