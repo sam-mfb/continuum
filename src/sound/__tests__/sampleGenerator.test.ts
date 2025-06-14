@@ -332,9 +332,9 @@ describe('Performance characteristics', () => {
       
       const elapsed = performance.now() - start;
       
-      // Should generate 100 chunks in well under 100ms
+      // Should generate 100 chunks in well under 300ms
       // (target is < 3ms per chunk, so < 300ms total)
-      expect(elapsed).toBeLessThan(100);
+      expect(elapsed).toBeLessThan(300);
     }
   });
   

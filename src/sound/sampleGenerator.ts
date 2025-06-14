@@ -79,7 +79,7 @@ export const buildSineWaveGenerator = (frequency: number): SampleGenerator => {
         
         // Convert to 8-bit unsigned (0-255)
         // -1.0 -> 0, 0.0 -> 128, 1.0 -> 255
-        chunk[i] = Math.round(sample * 127 + CENTER_VALUE);
+        chunk[i] = Math.round((sample + 1) * 127.5);
         
         // Advance phase
         phase += phaseIncrement;
