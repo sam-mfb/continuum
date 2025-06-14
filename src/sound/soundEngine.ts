@@ -91,76 +91,24 @@ export const createSoundEngine = (): SoundEngine => {
   }
 
   /**
-   * Factory for explosion sounds based on do_expl_sound() from Sound.c:153-177
-   * Creates noise bursts with decaying amplitude
+   * Placeholder for explosion sounds
+   * TODO: Implement based on do_expl_sound() from Sound.c:153-177
    */
   const createExplosionSound = (params: ExplosionParams): PlayableSound => {
-    // Calculate total duration based on amplitude decay
-    // Sound plays until amp > 127 (Sound.c:175)
-    const totalFrames = Math.ceil((127 - params.initialAmp) / params.ampChange)
-    const frameDuration = 1 / 60 // 60Hz VBL
-    const totalDuration = totalFrames * frameDuration
-
-    // Create buffer for the entire explosion
+    // For now, return a simple placeholder sound
+    const duration = 0.5
     const sampleRate = audioContext.sampleRate
-    const bufferSize = Math.ceil(totalDuration * sampleRate)
+    const bufferSize = Math.floor(duration * sampleRate)
+    
     const buffer = audioContext.createBuffer(1, bufferSize, sampleRate)
     const data = buffer.getChannelData(0)
-
-    // Implement explosion pattern from Sound.c:157-172
-    let dataPos = 0
-    let currentAmp = params.initialAmp
-
-    // Process each VBL frame
-    for (let frame = 0; frame < totalFrames && dataPos < bufferSize; frame++) {
-      // Pick random starting position (Sound.c:157)
-      const persIndex = Math.floor(Math.random() * 64) // Random() & 63
-
-      // Samples per frame at our sample rate
-      const samplesPerFrame = Math.floor(sampleRate / 60)
-      let frameSampleCount = 0
-
-      // Process SNDBUFLEN/2 iterations per frame (Sound.c:160)
-      const iterations = Math.floor(SNDBUFLEN / 2)
-      let iterPos = 0
-
-      // Current amplitude value (alternates positive/negative)
-      let amplitudeValue = currentAmp
-      let isPositive = true
-
-      while (
-        iterPos < iterations &&
-        frameSampleCount < samplesPerFrame &&
-        dataPos < bufferSize
-      ) {
-        // Get random run length from table (Sound.c:165-166)
-        const randIndex = (persIndex + Math.floor(iterPos / 8)) & 127
-        const runLength = (explRands[randIndex] ?? 128) >> 1 // asr.w #1, D2
-
-        // Toggle amplitude sign (Sound.c:163)
-        isPositive = !isPositive
-        const normalizedAmp =
-          (isPositive ? amplitudeValue : -amplitudeValue) / 128
-
-        // Fill samples for this run length
-        const samplesToFill = Math.min(
-          (runLength * sampleRate) / 11100, // Scale for sample rate
-          samplesPerFrame - frameSampleCount,
-          bufferSize - dataPos
-        )
-
-        for (let i = 0; i < samplesToFill; i++) {
-          data[dataPos++] = normalizedAmp
-          frameSampleCount++
-        }
-
-        iterPos += runLength
-      }
-
-      // Update amplitude for next frame (Sound.c:175)
-      currentAmp += params.ampChange
+    
+    // Simple placeholder: white noise that fades out
+    for (let i = 0; i < bufferSize; i++) {
+      const envelope = 1 - (i / bufferSize)
+      data[i] = (Math.random() * 2 - 1) * envelope * 0.3
     }
-
+    
     return {
       play: (): AudioBufferSourceNode => {
         const source = audioContext.createBufferSource()

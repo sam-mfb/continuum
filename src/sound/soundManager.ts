@@ -88,16 +88,11 @@ export const createSoundManager = (): {
         }
         break;
       
+      // Explosion sounds not yet implemented
       case SoundType.EXP1_SOUND:
       case SoundType.EXP2_SOUND:
       case SoundType.EXP3_SOUND:
-        if (engine) {
-          const params = EXPLOSION_PARAMS[soundType];
-          if (params) {
-            const explosionSound = engine.createExplosionSound(params);
-            currentSource = explosionSound.play();
-          }
-        }
+        console.warn(`Explosion sound ${soundType} not yet implemented`);
         break;
       
       case SoundType.NO_SOUND:

@@ -119,34 +119,10 @@ export const SoundTest: React.FC = () => {
               <button
                 onClick={() => handlePlaySound(SoundType.THRU_SOUND)}
                 className={`mac-button ${currentSound === SoundType.THRU_SOUND ? 'active' : ''}`}
-                style={{ width: '100%', marginBottom: '5px' }}
-                disabled={!enabled}
-              >
-                THRUST (35)
-              </button>
-              <button
-                onClick={() => handlePlaySound(SoundType.EXP1_SOUND)}
-                className={`mac-button ${currentSound === SoundType.EXP1_SOUND ? 'active' : ''}`}
-                style={{ width: '100%', marginBottom: '5px' }}
-                disabled={!enabled}
-              >
-                BUNKER EXPLOSION (90)
-              </button>
-              <button
-                onClick={() => handlePlaySound(SoundType.EXP2_SOUND)}
-                className={`mac-button ${currentSound === SoundType.EXP2_SOUND ? 'active' : ''}`}
-                style={{ width: '100%', marginBottom: '5px' }}
-                disabled={!enabled}
-              >
-                SHIP EXPLOSION (100)
-              </button>
-              <button
-                onClick={() => handlePlaySound(SoundType.EXP3_SOUND)}
-                className={`mac-button ${currentSound === SoundType.EXP3_SOUND ? 'active' : ''}`}
                 style={{ width: '100%' }}
                 disabled={!enabled}
               >
-                ALIEN EXPLOSION (50)
+                THRUST (35)
               </button>
             </div>
           </div>
@@ -157,6 +133,9 @@ export const SoundTest: React.FC = () => {
             <div className="sound-button-group">
               {[
                 SoundType.FIRE_SOUND,
+                SoundType.EXP1_SOUND,
+                SoundType.EXP2_SOUND,
+                SoundType.EXP3_SOUND,
                 SoundType.BUNK_SOUND,
                 SoundType.SOFT_SOUND,
                 SoundType.SHLD_SOUND,
