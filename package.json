@@ -13,7 +13,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "sound:perf": "tsx src/sound/scripts/performance-benchmark.ts"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.8.2",
@@ -37,6 +38,7 @@
     "globals": "^16.2.0",
     "jsdom": "^26.1.0",
     "prettier": "^3.5.3",
+    "tsx": "^4.20.3",
     "typescript": "^5.8.3",
     "vite": "^6.3.5",
     "vite-node": "^3.1.4",
