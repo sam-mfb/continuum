@@ -9,9 +9,6 @@ export * from './constants';
 // Types
 export * from './types';
 
-// Waveform generators
-export * from './waveformGenerators';
-
 // Sound engine
 export * from './soundEngine';
 

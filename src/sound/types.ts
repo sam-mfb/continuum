@@ -1,6 +1,6 @@
 /**
  * TypeScript interfaces for the sound system
- * Based on the original Continuum sound architecture
+ * Phase 1: Minimal types for Redux integration
  */
 
 import type { SoundType } from './constants';
@@ -18,38 +18,13 @@ export type SoundState = {
 }
 
 /**
- * A playable sound instance
- */
-export type PlayableSound = {
-  play: () => AudioBufferSourceNode;    // Start playing, returns source for stopping
-}
-
-/**
- * Parameters for explosion sounds
- */
-export type ExplosionParams = {
-  initialAmp: number;      // Starting amplitude (Sound.c:489,494,499)
-  ampChange: number;       // Amplitude change per frame (Sound.c:490,495,500)
-}
-
-/**
  * The main sound engine interface
+ * Phase 1: Minimal shell implementation
  */
 export type SoundEngine = {
   audioContext: AudioContext;           // Web Audio API context
   masterGain: GainNode;                 // Master volume control
-  createThrustSound: () => PlayableSound;  // Factory for thrust sound
-  createExplosionSound: (params: ExplosionParams) => PlayableSound;  // Factory for explosion sounds
   setVolume: (volume: number) => void;  // Set master volume
-  // Additional sound factories will be added here
-}
-
-/**
- * Lookup table data matching the original arrays
- */
-export type LookupTables = {
-  thruRands: Uint8Array;    // thru_rands[128] (Sound.c:63)
-  explRands?: Uint8Array;   // expl_rands[128] (Sound.c:62) - for future use
-  hissRands?: Uint8Array;   // hiss_rands[256] (Sound.c:64) - for future use
-  sineWave?: Uint8Array;    // sine_wave[256] (Sound.c:60) - for future use
+  start: () => void;                    // Start method (shell)
+  stop: () => void;                     // Stop method (shell)
 }
