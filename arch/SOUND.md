@@ -28,11 +28,35 @@ pascal void do_sound() // Sound.c:92
 ```
 
 ### 3. Waveform Data Sources
-The game used pre-calculated lookup tables:
+The game used pre-calculated lookup tables initialized at startup:
+
+#### Sine Wave Table
 - `sine_wave[256]` - Sine wave lookup table (Sound.c:60)
-- `expl_rands[128]` - Random values for explosions (Sound.c:62)
-- `thru_rands[128]` - Random values for thrust (Sound.c:63)
-- `hiss_rands[256]` - Random values for hissing sounds (Sound.c:64)
+- **Initialized**: Loaded from resource file (M_SINEWAVE resource ID) in `get_sine_wave()` (Main.c:939-945)
+- **Content**: Pre-calculated 256-byte sine wave, likely one complete period
+
+#### Random Noise Tables
+Generated at startup in `init_sound()` (Main.c:1090-1103):
+
+- **`expl_rands[128]`** - Random period values for explosions (Sound.c:62)
+  ```c
+  expl_rands[i] = (char) EXPL_LO_PER + rint(EXPL_ADD_PER);
+  // Values: 50 + random(0-205) = 50-255
+  ```
+
+- **`thru_rands[128]`** - Random amplitude values for thrust (Sound.c:63)
+  ```c
+  thru_rands[i] = (char) THRU_LO_AMP + rint(THRU_ADD_AMP);
+  // Values: 64 + random(0-127) = 64-191
+  ```
+
+- **`hiss_rands[256]`** - Random values for hissing sounds (Sound.c:64)
+  ```c
+  hiss_rands[i] = (char) rint(40) + 4;
+  // Values: random(0-39) + 4 = 4-43
+  ```
+
+These tables are used as pseudo-random sequences during sound generation, avoiding the need to call random functions during interrupt handlers.
 
 ### 4. Sound Generation Techniques
 
