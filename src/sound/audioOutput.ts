@@ -70,15 +70,22 @@ export const createAudioOutput = (bufferManager: BufferManager): AudioOutput => 
     const callbackStart = performance.now();
     
     try {
-      // Check if we have enough samples available
-      const available = bufferManager.getAvailableSamples();
-      if (available < outputChannel.length) {
-        underruns++;
-        console.warn(`Audio underrun: needed ${outputChannel.length}, available ${available}`);
-      }
+      // Check if we have enough samples available before requesting
+      // This is just for monitoring - requestSamples will handle generation
+      const availableBefore = bufferManager.getAvailableSamples();
       
       // Request samples from buffer manager
       const samples = bufferManager.requestSamples(outputChannel.length);
+      
+      // Only count as underrun if we had to generate new data during callback
+      // (available was less than requested and we're past the first few callbacks)
+      if (availableBefore < outputChannel.length && totalCallbacks > 5) {
+        underruns++;
+        // Only log the first few underruns to avoid spam
+        if (underruns <= 3) {
+          console.warn(`Audio underrun #${underruns}: needed ${outputChannel.length}, had ${availableBefore} available`);
+        }
+      }
       
       // Convert 8-bit unsigned to float32 directly into output buffer
       convertBufferInPlace(samples, outputChannel);
@@ -116,6 +123,11 @@ export const createAudioOutput = (bufferManager: BufferManager): AudioOutput => 
       if (audioContext.state === 'suspended') {
         audioContext.resume();
       }
+      
+      // Pre-fill the buffer to avoid initial underruns
+      // Generate at least 2 buffers worth of samples
+      const prefillSamples = BUFFER_SIZE * 2;
+      bufferManager.requestSamples(prefillSamples);
       
       // Create script processor for audio generation
       scriptProcessor = audioContext.createScriptProcessor(
@@ -157,6 +169,11 @@ export const createAudioOutput = (bufferManager: BufferManager): AudioOutput => 
     }
     
     isPlaying = false;
+    
+    // Reset stats for next session
+    underruns = 0;
+    totalCallbacks = 0;
+    latencySum = 0;
   };
   
   /**
