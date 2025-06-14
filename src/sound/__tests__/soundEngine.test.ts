@@ -88,7 +88,7 @@ describe('createThrustSound', () => {
     expect(mockAudioContext.createBuffer).toHaveBeenCalled();
     const callArgs = mockAudioContext.createBuffer.mock.calls[0];
     expect(callArgs?.[0]).toBe(1); // Mono
-    expect(callArgs?.[1]).toBeGreaterThan(0); // Buffer size
+    expect(callArgs?.[1]).toBe(44100); // 1 second at 44100Hz
     expect(callArgs?.[2]).toBe(44100); // Sample rate
   });
 
