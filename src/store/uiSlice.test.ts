@@ -7,7 +7,7 @@ import uiReducer, {
 
 describe('uiSlice', () => {
   const initialState = {
-    currentView: 'menu' as const,
+    currentView: 'graphics' as const,
     isGamePaused: false,
     showDebugInfo: false
   }
