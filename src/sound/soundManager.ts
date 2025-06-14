@@ -1,17 +1,17 @@
 /**
  * Sound manager that bridges Redux state with the sound engine
- * Handles sound playback lifecycle and state synchronization
+ * Phase 1: Simplified to just Redux bridge functionality
  */
 
 import { store } from '../store/store';
-import { SoundType, SOUND_PRIORITIES, EXPLOSION_PARAMS } from './constants';
+import { SoundType } from './constants';
 import { createSoundEngine } from './soundEngine';
 import { startSound as startSoundAction, stopSound as stopSoundAction } from './soundSlice';
 import type { SoundEngine } from './types';
 
 /**
  * Manages sound playback and lifecycle
- * Equivalent to the VBL interrupt handler and sound control functions in the original
+ * Phase 1: Minimal implementation - just Redux bridge
  */
 export const createSoundManager = (): {
   initialize: () => void;
@@ -21,12 +21,10 @@ export const createSoundManager = (): {
   cleanup: () => void;
 } => {
   let engine: SoundEngine | null = null;
-  let currentSource: AudioBufferSourceNode | null = null;
   let isInitialized = false;
   
   /**
    * Initialize the sound system
-   * Similar to open_sound() in Sound.c:527-559
    */
   const initialize = (): void => {
     if (isInitialized) return;
@@ -47,79 +45,29 @@ export const createSoundManager = (): {
   
   /**
    * Start playing a sound
-   * Equivalent to start_sound() in Sound.c:461-522
+   * Phase 1: Just updates Redux state
    */
   const startSound = (soundType: SoundType): void => {
-    if (!engine || !isInitialized) {
-      initialize();
-      if (!engine) return;
-    }
-    
-    const state = store.getState();
-    
-    // Check if sound is enabled
-    if (!state.sound.enabled) return;
-    
-    // Check priority (Sound.c:465)
-    const newPriority = SOUND_PRIORITIES[soundType];
-    if (newPriority <= state.sound.priority && soundType !== SoundType.NO_SOUND) {
-      return;
-    }
-    
-    // Stop current sound if playing
-    if (currentSource) {
-      try {
-        currentSource.stop();
-      } catch {
-        // Source may have already stopped
-      }
-      currentSource = null;
-    }
-    
     // Update Redux state
     store.dispatch(startSoundAction(soundType));
     
-    // Start the new sound
-    switch (soundType) {
-      case SoundType.THRU_SOUND:
-        if (engine) {
-          const thrustSound = engine.createThrustSound();
-          currentSource = thrustSound.play();
-        }
-        break;
-      
-      // Explosion sounds not yet implemented
-      case SoundType.EXP1_SOUND:
-      case SoundType.EXP2_SOUND:
-      case SoundType.EXP3_SOUND:
-        console.warn(`Explosion sound ${soundType} not yet implemented`);
-        break;
-      
-      case SoundType.NO_SOUND:
-        // Just stop current sound
-        break;
-      
-      // Additional sounds will be implemented here
-      default:
-        console.warn(`Sound type ${soundType} not yet implemented`);
+    // Phase 1: No actual audio playback
+    if (engine) {
+      engine.start();
     }
   };
   
   /**
    * Stop the current sound
-   * Equivalent to clear_sound() in Sound.c:573-580
+   * Phase 1: Just updates Redux state
    */
   const stopSound = (): void => {
-    if (currentSource) {
-      try {
-        currentSource.stop();
-      } catch {
-        // Source may have already stopped
-      }
-      currentSource = null;
-    }
-    
     store.dispatch(stopSoundAction());
+    
+    // Phase 1: No actual audio to stop
+    if (engine) {
+      engine.stop();
+    }
   };
   
   /**
@@ -133,7 +81,6 @@ export const createSoundManager = (): {
   
   /**
    * Clean up the sound system
-   * Similar to close_sound() in Sound.c:561-571
    */
   const cleanup = (): void => {
     stopSound();
@@ -151,7 +98,7 @@ export const createSoundManager = (): {
     }
     
     // Handle sound being disabled
-    if (!state.sound.enabled && currentSource) {
+    if (!state.sound.enabled && state.sound.currentSound !== SoundType.NO_SOUND) {
       stopSound();
     }
   });

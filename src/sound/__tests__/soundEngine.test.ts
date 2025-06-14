@@ -1,6 +1,6 @@
 /**
  * Tests for the sound engine
- * Verifies Web Audio API integration and sound generation
+ * Phase 1: Tests for minimal shell implementation
  */
 
 import { describe, it, expect, beforeAll, vi } from 'vitest';
@@ -12,19 +12,6 @@ const mockAudioContext = {
   createGain: vi.fn(() => ({
     connect: vi.fn(),
     gain: { value: 1 }
-  })),
-  createBuffer: vi.fn((channels, length, sampleRate) => ({
-    length,
-    sampleRate,
-    numberOfChannels: channels,
-    getChannelData: vi.fn(() => new Float32Array(length))
-  })),
-  createBufferSource: vi.fn(() => ({
-    buffer: null,
-    loop: false,
-    connect: vi.fn(),
-    start: vi.fn(),
-    stop: vi.fn()
   })),
   destination: {}
 };
@@ -40,9 +27,9 @@ describe('createSoundEngine', () => {
     
     expect(engine).toHaveProperty('audioContext');
     expect(engine).toHaveProperty('masterGain');
-    expect(engine).toHaveProperty('createThrustSound');
-    expect(engine).toHaveProperty('createExplosionSound');
     expect(engine).toHaveProperty('setVolume');
+    expect(engine).toHaveProperty('start');
+    expect(engine).toHaveProperty('stop');
   });
 
   it('initializes audio context and connects master gain', () => {
@@ -70,72 +57,14 @@ describe('createSoundEngine', () => {
     engine.setVolume(-0.5);
     expect(mockGainValue.value).toBe(0);
   });
-});
 
-describe('createThrustSound', () => {
-  it('creates playable sound with play method', () => {
+  it('has start method that can be called', () => {
     const engine = createSoundEngine();
-    const thrustSound = engine.createThrustSound();
-    
-    expect(thrustSound).toHaveProperty('play');
-    expect(typeof thrustSound.play).toBe('function');
+    expect(() => engine.start()).not.toThrow();
   });
 
-  it('creates audio buffer with correct parameters', () => {
+  it('has stop method that can be called', () => {
     const engine = createSoundEngine();
-    engine.createThrustSound();
-    
-    expect(mockAudioContext.createBuffer).toHaveBeenCalled();
-    const callArgs = mockAudioContext.createBuffer.mock.calls[0];
-    expect(callArgs?.[0]).toBe(1); // Mono
-    expect(callArgs?.[1]).toBe(44100); // 1 second at 44100Hz
-    expect(callArgs?.[2]).toBe(44100); // Sample rate
-  });
-
-  it('configures buffer source for looping when played', () => {
-    const engine = createSoundEngine();
-    const thrustSound = engine.createThrustSound();
-    
-    const source = thrustSound.play();
-    
-    expect(source.loop).toBe(true);
-    expect(source.connect).toHaveBeenCalledWith(engine.masterGain);
-    expect(source.start).toHaveBeenCalled();
-  });
-
-  it('returns audio source node for later stopping', () => {
-    const engine = createSoundEngine();
-    const thrustSound = engine.createThrustSound();
-    
-    const source = thrustSound.play();
-    
-    expect(source).toHaveProperty('stop');
-    expect(typeof source.stop).toBe('function');
-  });
-});
-
-describe('createExplosionSound', () => {
-  it('creates playable sound with play method', () => {
-    const engine = createSoundEngine();
-    const explosionSound = engine.createExplosionSound({ initialAmp: 16, ampChange: 2 });
-    
-    expect(explosionSound).toHaveProperty('play');
-    expect(typeof explosionSound.play).toBe('function');
-  });
-
-  it('creates audio buffer for explosion', () => {
-    const engine = createSoundEngine();
-    engine.createExplosionSound({ initialAmp: 16, ampChange: 2 });
-    
-    expect(mockAudioContext.createBuffer).toHaveBeenCalled();
-  });
-
-  it('does not loop explosion sounds', () => {
-    const engine = createSoundEngine();
-    const explosionSound = engine.createExplosionSound({ initialAmp: 16, ampChange: 2 });
-    
-    const source = explosionSound.play();
-    
-    expect(source.loop).toBe(false);
+    expect(() => engine.stop()).not.toThrow();
   });
 });
