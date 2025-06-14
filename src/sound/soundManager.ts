@@ -33,9 +33,9 @@ export const createSoundManager = (): {
       engine = createSoundEngine();
       isInitialized = true;
       
-      // Set initial volume from Redux state
-      const state = store.getState();
-      engine.setVolume(state.sound.volume);
+      // Apply initial volume from Redux state
+      const initialVolume = store.getState().sound.volume;
+      engine.setVolume(initialVolume);
     } catch (error) {
       console.error('Failed to initialize sound engine:', error);
       engine = null;
@@ -108,9 +108,9 @@ export const createSoundManager = (): {
     startSound,
     stopSound,
     setVolume,
-    cleanup,
+    cleanup
   };
 };
 
-// Create singleton instance
+// Create a singleton instance
 export const soundManager = createSoundManager();
