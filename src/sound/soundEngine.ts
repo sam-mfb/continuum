@@ -4,8 +4,8 @@
  */
 
 import { SNDBUFLEN } from './constants'
-import type { SoundEngine, PlayableSound, ExplosionParams } from './types'
-import { generateThruRands, generateExplRands } from './waveformGenerators'
+import type { SoundEngine, PlayableSound } from './types'
+import { generateThruRands } from './waveformGenerators'
 
 /**
  * Factory function for creating the sound engine
@@ -19,7 +19,6 @@ export const createSoundEngine = (): SoundEngine => {
 
   // Pre-generate lookup tables (like init_sound() in Main.c)
   const thruRands = generateThruRands()
-  const explRands = generateExplRands()
 
   /**
    * Create thrust sound generator
@@ -94,7 +93,7 @@ export const createSoundEngine = (): SoundEngine => {
    * Placeholder for explosion sounds
    * TODO: Implement based on do_expl_sound() from Sound.c:153-177
    */
-  const createExplosionSound = (params: ExplosionParams): PlayableSound => {
+  const createExplosionSound = (): PlayableSound => {
     // For now, return a simple placeholder sound
     const duration = 0.5
     const sampleRate = audioContext.sampleRate

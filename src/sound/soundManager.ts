@@ -4,7 +4,7 @@
  */
 
 import { store } from '../store/store';
-import { SoundType, SOUND_PRIORITIES, EXPLOSION_PARAMS } from './constants';
+import { SoundType, SOUND_PRIORITIES } from './constants';
 import { createSoundEngine } from './soundEngine';
 import { startSound as startSoundAction, stopSound as stopSoundAction } from './soundSlice';
 import type { SoundEngine } from './types';
