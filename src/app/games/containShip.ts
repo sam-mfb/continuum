@@ -114,4 +114,3 @@ export function containShip(
     dy
   }
 }
-

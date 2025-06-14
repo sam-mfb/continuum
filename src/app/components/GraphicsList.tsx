@@ -29,7 +29,11 @@ export const GraphicsList: React.FC = () => {
     } else if (fileName === 'rsrc_261.raw') {
       return 'RSRC 261 (RAW)'
     }
-    return fileName.replace('.mac', '').replace('.raw', '').replace(/_/g, ' ').toUpperCase()
+    return fileName
+      .replace('.mac', '')
+      .replace('.raw', '')
+      .replace(/_/g, ' ')
+      .toUpperCase()
   }
 
   return (
@@ -44,9 +48,7 @@ export const GraphicsList: React.FC = () => {
             onClick={() => handleSelectFile(fileName)}
           >
             <div className="graphics-item">
-              <span className="graphics-name">
-                {getDisplayName(fileName)}
-              </span>
+              <span className="graphics-name">{getDisplayName(fileName)}</span>
               <span className="graphics-info">{getFileInfo(fileName)}</span>
             </div>
           </li>

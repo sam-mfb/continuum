@@ -284,7 +284,7 @@ const GameView: React.FC<GameViewProps> = ({
         </label>
         <select
           value={selectedGameIndex}
-          onChange={(e) => setSelectedGameIndex(Number(e.target.value))}
+          onChange={e => setSelectedGameIndex(Number(e.target.value))}
           style={{
             padding: '5px 10px',
             fontFamily: 'monospace',

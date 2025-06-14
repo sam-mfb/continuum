@@ -3,11 +3,11 @@
  * Provides UI controls for playing sounds and adjusting volume
  */
 
-import React from 'react';
-import { useAppDispatch, useAppSelector } from '../../store/store';
-import { SoundType } from '../../sound/constants';
-import { soundManager } from '../../sound/soundManager';
-import { setVolume, toggleSound } from '../../sound/soundSlice';
+import React from 'react'
+import { useAppDispatch, useAppSelector } from '../../store/store'
+import { SoundType } from '../../sound/constants'
+import { soundManager } from '../../sound/soundManager'
+import { setVolume, toggleSound } from '../../sound/soundSlice'
 
 /**
  * Get human-readable name for sound type
@@ -27,45 +27,49 @@ const getSoundName = (soundType: SoundType): string => {
     [SoundType.CRACK_SOUND]: 'Mission Complete',
     [SoundType.FIZZ_SOUND]: 'Planet Fizz',
     [SoundType.ECHO_SOUND]: 'Echo Away'
-  };
-  return names[soundType] || `Unknown (${soundType})`;
-};
+  }
+  return names[soundType] || `Unknown (${soundType})`
+}
 
 export const SoundTest: React.FC = () => {
-  const dispatch = useAppDispatch();
-  const { currentSound, priority, enabled, volume } = useAppSelector(state => state.sound);
-  
+  const dispatch = useAppDispatch()
+  const { currentSound, priority, enabled, volume } = useAppSelector(
+    state => state.sound
+  )
+
   // Initialize sound system on mount
   React.useEffect(() => {
-    soundManager.initialize();
-    
+    soundManager.initialize()
+
     return (): void => {
       // Stop any playing sound when unmounting
-      soundManager.stopSound();
-    };
-  }, []);
-  
+      soundManager.stopSound()
+    }
+  }, [])
+
   const handlePlaySound = (soundType: SoundType): void => {
-    soundManager.startSound(soundType);
-  };
-  
+    soundManager.startSound(soundType)
+  }
+
   const handleStopSound = (): void => {
-    soundManager.stopSound();
-  };
-  
-  const handleVolumeChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-    const newVolume = parseFloat(event.target.value);
-    dispatch(setVolume(newVolume));
-  };
-  
+    soundManager.stopSound()
+  }
+
+  const handleVolumeChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ): void => {
+    const newVolume = parseFloat(event.target.value)
+    dispatch(setVolume(newVolume))
+  }
+
   const handleToggleSound = (): void => {
-    dispatch(toggleSound());
-  };
-  
+    dispatch(toggleSound())
+  }
+
   return (
     <div className="sound-view">
       <h2>SOUND TEST</h2>
-      
+
       {/* Master Controls */}
       <div className="mac-window-content">
         <div className="mac-group-box">
@@ -79,7 +83,7 @@ export const SoundTest: React.FC = () => {
             />
             <label htmlFor="sound-enabled">Sound Enabled</label>
           </div>
-          
+
           <div className="mac-control-group" style={{ marginTop: '10px' }}>
             <div>Volume: {Math.round(volume * 100)}%</div>
             <input
@@ -93,13 +97,13 @@ export const SoundTest: React.FC = () => {
               style={{ width: '200px', marginTop: '5px' }}
             />
           </div>
-          
+
           <div className="mac-info-line" style={{ marginTop: '10px' }}>
             Current: {getSoundName(currentSound)} (Priority: {priority})
           </div>
-          
-          <button 
-            onClick={handleStopSound} 
+
+          <button
+            onClick={handleStopSound}
             className="mac-button"
             style={{ marginTop: '10px' }}
           >
@@ -107,11 +111,18 @@ export const SoundTest: React.FC = () => {
           </button>
         </div>
       </div>
-      
+
       {/* Sound Buttons */}
       <div className="mac-window-content" style={{ marginTop: '20px' }}>
         <h3>AVAILABLE SOUNDS</h3>
-        <div className="sound-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
+        <div
+          className="sound-grid"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: '20px'
+          }}
+        >
           {/* Currently implemented sounds */}
           <div className="mac-group-box">
             <div className="mac-group-title">IMPLEMENTED</div>
@@ -126,7 +137,7 @@ export const SoundTest: React.FC = () => {
               </button>
             </div>
           </div>
-          
+
           {/* Not yet implemented sounds */}
           <div className="mac-group-box">
             <div className="mac-group-title">NOT YET IMPLEMENTED</div>
@@ -158,20 +169,23 @@ export const SoundTest: React.FC = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Instructions */}
       <div className="mac-window-content" style={{ marginTop: '20px' }}>
         <div className="mac-group-box">
           <div className="mac-group-title">INSTRUCTIONS</div>
           <div className="mac-text" style={{ padding: '10px' }}>
-            • Click on a sound button to play it<br />
-            • Higher priority sounds will interrupt lower priority ones<br />
-            • Use the volume slider to adjust the master volume<br />
-            • Uncheck "Sound Enabled" to disable all sounds<br />
-            • Numbers in parentheses indicate sound priority
+            • Click on a sound button to play it
+            <br />
+            • Higher priority sounds will interrupt lower priority ones
+            <br />
+            • Use the volume slider to adjust the master volume
+            <br />
+            • Uncheck "Sound Enabled" to disable all sounds
+            <br />• Numbers in parentheses indicate sound priority
           </div>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}

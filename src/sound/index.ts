@@ -4,17 +4,17 @@
  */
 
 // Constants
-export * from './constants';
+export * from './constants'
 
 // Types
-export * from './types';
+export * from './types'
 
 // Sound engine
-export * from './soundEngine';
+export * from './soundEngine'
 
 // Sound manager
-export * from './soundManager';
+export * from './soundManager'
 
 // Redux slice
-export { default as soundReducer } from './soundSlice';
-export * from './soundSlice';
+export { default as soundReducer } from './soundSlice'
+export * from './soundSlice'

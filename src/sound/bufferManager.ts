@@ -2,27 +2,27 @@
  * Buffer Manager for Sound System
  * Manages ring buffer of generated samples and handles misaligned requests
  * Based on Phase 4 of MIGRATION_PLAN.md
- * 
+ *
  * ## Ring Buffer Design
- * 
+ *
  * Uses a circular buffer to efficiently manage audio data without memory copies.
  * The buffer has a fixed size (8192 bytes) with read and write pointers that
  * wrap around when they reach the end.
- * 
+ *
  * ## Overflow and Underflow Handling
- * 
+ *
  * **Buffer Overflow** (write catches read):
  * - Occurs when generating data faster than consuming it
  * - Results in an error to prevent data corruption
  * - Prevention: Call getAvailableSamples() before generating to check space
- * 
+ *
  * **Buffer Underflow** (read catches write):
  * - Automatically handled by generating more chunks as needed
  * - requestSamples() will block until enough data is available
  * - Never returns partial data
- * 
+ *
  * ## Usage Guidelines
- * 
+ *
  * 1. For real-time audio, check getAvailableSamples() regularly
  * 2. Consume data frequently enough to prevent overflow
  * 3. Buffer size (8192) provides ~46ms at 22.2kHz for timing variation
@@ -35,51 +35,55 @@ export type BufferManager = {
   /**
    * Request samples from the buffer
    * Handles misaligned sizes (e.g., 512 samples from 370-byte chunks)
-   * 
+   *
    * @param sampleCount Number of samples to read
    * @returns Exactly sampleCount bytes of audio data
    * @throws Error if buffer overflow occurs during generation
-   * 
+   *
    * Note: This method blocks until enough data is available.
    * It will never return partial data.
    */
   requestSamples(sampleCount: number): Uint8Array
-  
+
   /**
    * Get the number of available samples in the buffer
-   * 
+   *
    * @returns Number of samples that can be read without triggering generation
-   * 
+   *
    * Use this to:
    * - Check buffer health (low values indicate risk of blocking)
    * - Avoid overflow (ensure space before external generation)
    * - Monitor performance (track fill level over time)
    */
   getAvailableSamples(): number
-  
+
   /**
    * Switch to a different sample generator
-   * 
+   *
    * Note: Existing buffered data remains unchanged. Only affects
    * future generation when more samples are needed.
    */
   setGenerator(generator: SampleGenerator): void
-  
+
   /**
    * Get current buffer state for debugging/testing
-   * 
+   *
    * @returns Object with read/write positions and available samples
-   * 
+   *
    * Use this to debug issues:
    * - available near 0: Risk of blocking on next read
    * - available near 8192: Risk of overflow
    * - Positions help visualize wraparound behavior
    */
-  getBufferState(): { writePosition: number; readPosition: number; available: number }
-  
+  getBufferState(): {
+    writePosition: number
+    readPosition: number
+    available: number
+  }
+
   /**
    * Reset buffer to initial state
-   * 
+   *
    * Warning: Discards all buffered data. Use with caution in real-time contexts.
    */
   reset(): void
@@ -88,10 +92,12 @@ export type BufferManager = {
 /**
  * Creates a new buffer manager instance
  */
-export const createBufferManager = (generator: SampleGenerator): BufferManager => {
+export const createBufferManager = (
+  generator: SampleGenerator
+): BufferManager => {
   const CHUNK_SIZE = 370
   const BUFFER_SIZE = 8192 // Must be power of 2 for efficient wrapping
-  
+
   const buffer = new Uint8Array(BUFFER_SIZE)
   let writePosition = 0
   let readPosition = 0
@@ -99,7 +105,7 @@ export const createBufferManager = (generator: SampleGenerator): BufferManager =
 
   /**
    * Get the number of available samples in the buffer
-   * 
+   *
    * Handles wraparound case where write position has wrapped but read hasn't.
    * For example:
    * - Normal case: write=5000, read=3000, available=2000
@@ -112,9 +118,9 @@ export const createBufferManager = (generator: SampleGenerator): BufferManager =
 
   /**
    * Generate a new chunk and add it to the buffer
-   * 
+   *
    * @throws Error if buffer overflow occurs (write position catches read position)
-   * 
+   *
    * Buffer overflow means we're trying to overwrite unread data. This is a fatal
    * error because it would corrupt audio data. To prevent overflow:
    * - Consume data more frequently (smaller, more frequent reads)
@@ -133,7 +139,7 @@ export const createBufferManager = (generator: SampleGenerator): BufferManager =
     // Copy chunk to ring buffer with wraparound
     for (let i = 0; i < chunk.length; i++) {
       buffer[writePosition] = chunk[i]!
-      
+
       // Advance write position with wraparound at buffer size
       // Using bitwise AND with (BUFFER_SIZE - 1) is equivalent to modulo
       // but faster. Works because BUFFER_SIZE is a power of 2.
@@ -144,7 +150,7 @@ export const createBufferManager = (generator: SampleGenerator): BufferManager =
       if (writePosition === readPosition) {
         throw new Error(
           'Buffer overflow: write position caught up to read position. ' +
-          'Buffer is full with unread data. Consumer needs to read more frequently.'
+            'Buffer is full with unread data. Consumer needs to read more frequently.'
         )
       }
     }
@@ -152,10 +158,10 @@ export const createBufferManager = (generator: SampleGenerator): BufferManager =
 
   /**
    * Ensure at least the requested number of samples are available
-   * 
+   *
    * This prevents buffer underflow by generating chunks until we have enough data.
    * Buffer underflow would mean trying to read data that hasn't been generated yet.
-   * 
+   *
    * Unlike overflow (which is an error), underflow is handled automatically by
    * generating more data. This means requestSamples() may block while generating,
    * which is acceptable for initialization but could cause audio glitches in
@@ -195,7 +201,11 @@ export const createBufferManager = (generator: SampleGenerator): BufferManager =
   /**
    * Get current buffer state for debugging/testing
    */
-  const getBufferState = (): { writePosition: number; readPosition: number; available: number } => {
+  const getBufferState = (): {
+    writePosition: number
+    readPosition: number
+    available: number
+  } => {
     return {
       writePosition,
       readPosition,

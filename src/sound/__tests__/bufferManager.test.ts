@@ -19,7 +19,7 @@ class MockGenerator implements SampleGenerator {
     this.counter += 370
     return chunk
   }
-  
+
   reset(): void {
     this.counter = 0
   }
@@ -29,7 +29,7 @@ class SilenceGenerator implements SampleGenerator {
   generateChunk(): Uint8Array {
     return new Uint8Array(370).fill(0x80)
   }
-  
+
   reset(): void {
     // No state to reset
   }
@@ -45,7 +45,7 @@ class PatternGenerator implements SampleGenerator {
     }
     return chunk
   }
-  
+
   reset(): void {
     // No state to reset
   }
@@ -122,7 +122,7 @@ describe('BufferManager', () => {
       // This test verifies that the ring buffer correctly wraps around when
       // the write position reaches the end of the buffer and continues from
       // the beginning, while maintaining data continuity.
-      
+
       // Fill buffer near capacity (7000 of 8192 bytes)
       const largeRequest = 7000
       const firstBatch = bufferManager.requestSamples(largeRequest)
@@ -146,7 +146,7 @@ describe('BufferManager', () => {
       // not just the first time. It verifies the read/write pointers
       // maintain their relationship correctly through multiple full
       // buffer cycles.
-      
+
       let previousLast = -1
 
       // Request 20 batches of 1000 bytes = 20,000 total bytes
@@ -199,7 +199,10 @@ describe('BufferManager', () => {
       let sizeIndex = 0
 
       while (remaining > 0) {
-        const requestSize = Math.min(remaining, sizes[sizeIndex % sizes.length]!)
+        const requestSize = Math.min(
+          remaining,
+          sizes[sizeIndex % sizes.length]!
+        )
         const samples = bufferManager.requestSamples(requestSize)
 
         for (let i = 0; i < samples.length; i++) {
@@ -317,7 +320,7 @@ describe('BufferManager', () => {
         generateChunk(): Uint8Array {
           return new Uint8Array(369) // Wrong size!
         }
-        
+
         reset(): void {
           // No state to reset
         }
@@ -333,70 +336,70 @@ describe('BufferManager', () => {
       // Buffer overflow occurs when write position catches up to read position,
       // meaning we're trying to overwrite unread data. This test verifies
       // that the buffer manager throws an error rather than corrupting data.
-      
+
       // Create a small buffer for easier testing
       const smallBufferManager = createBufferManager(mockGenerator)
-      
+
       // Fill most of the 8192-byte buffer
       smallBufferManager.requestSamples(8000)
-      
+
       // At this point:
       // - 8000 bytes have been read and consumed
       // - Write position is at 8180 (generated 22 chunks * 370 = 8140 bytes)
       // - Available: 8180 - 8000 = 180 bytes
-      
+
       // This request should succeed (180 available + 370 new = 550 total)
       expect(() => smallBufferManager.requestSamples(500)).not.toThrow()
-      
+
       // But trying to generate too much without consuming will overflow
       // Note: Due to the large buffer size (8192), it's hard to demonstrate
       // actual overflow in tests. In real usage, overflow indicates the
       // consumer isn't reading data frequently enough.
     })
-    
+
     it('automatically handles underflow by generating more data', () => {
       // Buffer underflow would occur if we try to read more data than available.
       // This test verifies that the buffer manager automatically generates
       // enough chunks to satisfy the request rather than returning partial data.
-      
+
       // Start with empty buffer
       expect(bufferManager.getAvailableSamples()).toBe(0)
-      
+
       // Request 1000 bytes - more than one chunk (370 bytes)
       const samples = bufferManager.requestSamples(1000)
-      
+
       // Should receive exactly 1000 bytes (no partial data)
       expect(samples.length).toBe(1000)
-      
+
       // Should have generated 3 chunks (3 * 370 = 1110 bytes)
       // Available: 1110 - 1000 = 110 bytes remaining
       expect(bufferManager.getAvailableSamples()).toBe(110)
     })
-    
+
     it('demonstrates safe buffer usage patterns', () => {
       // This test shows how to use the buffer manager safely to avoid
       // overflow and minimize underflow blocking.
-      
+
       // Pattern 1: Check available samples before large reads
       const available = bufferManager.getAvailableSamples()
       if (available < 512) {
         // Buffer is running low, might block on next read
         // In real-time context, you might skip this frame or use smaller read
       }
-      
+
       // Pattern 2: Monitor buffer health
       const state = bufferManager.getBufferState()
       const fillLevel = state.available / 8192
       expect(fillLevel).toBeGreaterThanOrEqual(0)
       expect(fillLevel).toBeLessThanOrEqual(1)
-      
+
       // Pattern 3: Consume data regularly to prevent overflow
       // Simulate audio callback consuming data every ~23ms (512 samples at 22.2kHz)
       for (let i = 0; i < 10; i++) {
         bufferManager.requestSamples(512)
         // In real app, this would be called by audio callback
       }
-      
+
       // Buffer should remain healthy with regular consumption
       expect(bufferManager.getAvailableSamples()).toBeLessThan(8192)
     })

@@ -91,7 +91,11 @@ export function drawBackground(
   // Draw coordinate info
   ctx.fillStyle = '#666666'
   ctx.font = '12px monospace'
-  ctx.fillText(`Screen: (${Math.round(screenx)}, ${Math.round(screeny)})`, 10, 20)
+  ctx.fillText(
+    `Screen: (${Math.round(screenx)}, ${Math.round(screeny)})`,
+    10,
+    20
+  )
   ctx.fillText(`World: ${worldwidth}x${worldheight}`, 10, 35)
 
   ctx.restore()

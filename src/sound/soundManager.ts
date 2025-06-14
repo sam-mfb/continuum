@@ -3,11 +3,14 @@
  * Phase 1: Simplified to just Redux bridge functionality
  */
 
-import { store } from '../store/store';
-import { SoundType } from './constants';
-import { createSoundEngine } from './soundEngine';
-import { startSound as startSoundAction, stopSound as stopSoundAction } from './soundSlice';
-import type { SoundEngine } from './types';
+import { store } from '../store/store'
+import { SoundType } from './constants'
+import { createSoundEngine } from './soundEngine'
+import {
+  startSound as startSoundAction,
+  stopSound as stopSoundAction
+} from './soundSlice'
+import type { SoundEngine } from './types'
 
 /**
  * Manages sound playback and lifecycle
@@ -20,9 +23,9 @@ export const createSoundManager = (): {
   setVolume: (volume: number) => void
   cleanup: () => void
 } => {
-  let engine: SoundEngine | null = null;
-  let isInitialized = false;
-  
+  let engine: SoundEngine | null = null
+  let isInitialized = false
+
   /**
    * Initialize the sound system
    */
@@ -30,12 +33,12 @@ export const createSoundManager = (): {
     if (isInitialized) return
 
     try {
-      engine = createSoundEngine();
-      isInitialized = true;
-      
+      engine = createSoundEngine()
+      isInitialized = true
+
       // Apply initial volume from Redux state
-      const initialVolume = store.getState().sound.volume;
-      engine.setVolume(initialVolume);
+      const initialVolume = store.getState().sound.volume
+      engine.setVolume(initialVolume)
     } catch (error) {
       console.error('Failed to initialize sound engine:', error)
       engine = null
@@ -49,11 +52,11 @@ export const createSoundManager = (): {
    */
   const startSound = (soundType: SoundType): void => {
     // Update Redux state
-    store.dispatch(startSoundAction(soundType));
-    
+    store.dispatch(startSoundAction(soundType))
+
     // Phase 1: No actual audio playback
     if (engine) {
-      engine.start();
+      engine.start()
     }
   }
 
@@ -62,14 +65,14 @@ export const createSoundManager = (): {
    * Phase 1: Just updates Redux state
    */
   const stopSound = (): void => {
-    store.dispatch(stopSoundAction());
-    
+    store.dispatch(stopSoundAction())
+
     // Phase 1: No actual audio to stop
     if (engine) {
-      engine.stop();
+      engine.stop()
     }
-  };
-  
+  }
+
   /**
    * Set the master volume
    */
@@ -98,8 +101,11 @@ export const createSoundManager = (): {
     }
 
     // Handle sound being disabled
-    if (!state.sound.enabled && state.sound.currentSound !== SoundType.NO_SOUND) {
-      stopSound();
+    if (
+      !state.sound.enabled &&
+      state.sound.currentSound !== SoundType.NO_SOUND
+    ) {
+      stopSound()
     }
   })
 
@@ -109,8 +115,8 @@ export const createSoundManager = (): {
     stopSound,
     setVolume,
     cleanup
-  };
-};
+  }
+}
 
 // Create a singleton instance
-export const soundManager = createSoundManager();
+export const soundManager = createSoundManager()

@@ -9,12 +9,14 @@ The sound system uses the Mac Sound Driver (deprecated API) with a VBL (Vertical
 ### Core Playback Mechanism
 
 The sound system operates on a fixed-rate, real-time generation model:
+
 - **Timing**: VBL interrupt fires at exactly 60 Hz (every 1/60th second)
 - **Buffer Size**: Each interrupt generates exactly 370 bytes of audio data
 - **Sample Rate**: 370 bytes × 60 Hz = 22,200 samples/second (22.2 kHz)
 - **Format**: 8-bit unsigned audio (0x80 = silence/center)
 
 This means:
+
 1. Every 16.67 milliseconds, a new 370-byte buffer must be generated
 2. Sound generation must complete quickly to avoid missing the next interrupt
 3. Even silence requires generating 370 bytes of 0x80 values
@@ -25,15 +27,18 @@ This fixed-rate architecture is why all sound generation functions are heavily o
 ## Game Launch Flow
 
 ### 1. Initial Entry Point
+
 - **main()** (Well.c:29) - True entry point
   - Calls **get_environment()** (Well.c:48) to determine machine type
   - Calls **main_2()** (Main.c:56) after environment setup
 
 ### 2. Main Game Loop Setup
+
 - **main_2()** (Main.c:56) - Main game loop
   - Calls **init()** (Main.c:60) for global initialization
 
 ### 3. Global Sound Initialization
+
 - **init()** (Main.c:89) - Global initialization
   - Calls **get_sine_wave()** (Main.c:939) - Loads sine wave table from resources
   - Calls **init_sound()** (Main.c:1090) - Initializes random noise arrays for sound effects
@@ -41,26 +46,32 @@ This fixed-rate architecture is why all sound generation functions are heavily o
 ## Game Start Flow
 
 ### 4. Sound System Activation
+
 When gameplay begins via **game()** (Main.c:654) or **do_cartoon()** (Main.c:699):
+
 - Calls **open_sound()** (Sound.c:527) - Main sound system initialization that performs two core operations:
-  
+
   **1. Memory Buffer Setup**
+
   - Checks system sound volume to determine if sound is enabled
   - Allocates/locates a 370-byte buffer for waveform data:
     - Mac Plus: Uses hard-coded memory location `HARDSNDBUF` at `MemTop - 0x300` (Sound.c:541)
     - Mac II: Dynamically allocates `FFSynthRec` structure (Sound.c:546)
   - Result: `soundbuffer` pointer references where waveforms will be generated
-  
+
   **2. VBL Task Setup**
+
   - Creates VBL task record pointing to **do_sound()** function (Sound.c:554-556)
   - Configures task to run at 60Hz during vertical blanking interrupts
   - Calls **show_sound()** to install the VBL task via `VInstall()`
   - Result: **do_sound()** will be automatically called every screen refresh
-  
+
 - Calls **hide_sound()** (Sound.c:583) initially to prevent sounds during loading
 
 ### 5. Level Play Loop
+
 (Main.c:675-684)
+
 - **get_planet()** loads level data
 - **show_sound()** (Sound.c:594) - Activates VBL interrupt handler
 - **planet()** - Main gameplay (from Play.c)
@@ -69,7 +80,9 @@ When gameplay begins via **game()** (Main.c:654) or **do_cartoon()** (Main.c:699
 ## During Gameplay
 
 ### 6. Sound Triggering
+
 Gameplay events trigger sounds by calling **start_sound()** (Sound.c:461):
+
 - Takes a sound type constant (e.g., `FIRE_SOUND`, `THRU_SOUND`)
 - Uses priority system to determine if new sound should override current (Sound.c:465)
 - Sets up sound-specific parameters (frequency, amplitude, etc.) (Sound.c:469-519)
@@ -79,7 +92,9 @@ Gameplay events trigger sounds by calling **start_sound()** (Sound.c:461):
   - Collisions: `EXP1_SOUND`, `EXP2_SOUND`, `EXP3_SOUND`
 
 ### 7. Sound Generation (VBL Interrupt)
+
 **do_sound()** (Sound.c:92) - Called by VBL interrupt 60 times/second:
+
 - Sets up A5 register for interrupt context (Sound.c:94)
 - Checks soundlock to avoid interrupt conflicts (Sound.c:96)
 - Calls appropriate sound generation function based on `currentsound` (Sound.c:97)
@@ -93,25 +108,30 @@ Gameplay events trigger sounds by calling **start_sound()** (Sound.c:461):
 This design isolates platform differences in `do_sound()`, allowing the sound generation functions to be platform-agnostic - they just write waveform data to `soundbuffer` without needing to know how it will be played.
 
 ### 8. Sound Generation Functions
+
 Each sound type has its own waveform generation function that must meet strict real-time constraints:
 
 **Requirements for ALL sound functions:**
+
 1. **Generate EXACTLY 370 bytes** of waveform data
 2. **Write to buffer** starting at `soundbuffer` pointer
 3. **Complete in < 16.67ms** before the next VBL interrupt
 
 **Consequences of failure:**
+
 - Too few bytes: Garbage/old data plays at the end
 - Too many bytes: Buffer overflow, memory corruption
 - Too slow: Next VBL fires during generation, causing audio glitches
 
 **Implementation details:**
+
 - All written in optimized assembly for speed
 - Use techniques like `movep.l` for fast memory moves
 - Unrolled loops to minimize overhead
 - Careful register allocation to avoid memory access
 
 **The sound generation functions:**
+
 - **do_fire_sound()** (Sound.c:124) - Ship firing, uses sine wave with decreasing frequency
 - **do_thru_sound()** (Sound.c:179) - Thrust sound, uses random noise patterns
 - **do_expl_sound()** (Sound.c:153) - Explosions, uses random pulses with fading amplitude
@@ -126,7 +146,9 @@ Each sound type has its own waveform generation function that must meet strict r
 ## Game End Flow
 
 ### 9. Cleanup
+
 **game()** cleanup (Main.c:685-694):
+
 - **normal_screen()** (Play.c:1157) - Restores screen state
 - **close_sound()** (Sound.c:561) - Complete sound cleanup:
   - Calls **hide_sound()** to remove VBL task
@@ -134,19 +156,24 @@ Each sound type has its own waveform generation function that must meet strict r
   - Deallocates buffers
 
 ### 10. Return to Main Loop
+
 Returns to **main_2()** which either:
+
 - Goes back to title screen (`NEXTTITLE`)
 - Exits via **ExitToShell()** (Main.c:84)
 
 ## Key Design Elements
 
 ### Sound Buffer
+
 - 370-byte buffer (`SNDBUFLEN`) for waveform data (Sound.c:17)
 - Double-buffered for Mac II using FFSynthRec structure
 - Direct hardware access for Mac Plus
 
 ### Priority System
+
 Priority values defined in Sound.c:19-31:
+
 - `NO_PRIOR`: 0 (no sound)
 - `SOFT_PRIOR`: 30
 - `THRU_PRIOR`: 35
@@ -162,11 +189,13 @@ Priority values defined in Sound.c:19-31:
 - `EXP2_PRIOR`: 100 (ship explosion - highest priority)
 
 ### Machine-Specific Handling
+
 - Mac Plus: Uses hard-coded memory addresses and direct hardware control
 - Mac II: Uses Sound Driver with FFSynthRec for compatibility
 - SE/30: Treated specially for performance optimization
 
 ### Interrupt Safety
+
 - `soundlock` variable prevents concurrent modification (Sound.c:49,96,464,521)
 - VBL task remains installed between levels but is temporarily disabled
 - Sound generation happens in interrupt context, requiring careful timing
