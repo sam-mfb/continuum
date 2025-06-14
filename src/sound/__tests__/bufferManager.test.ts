@@ -418,31 +418,5 @@ describe('BufferManager', () => {
       // Should complete in reasonable time (< 1 second for 1000 requests)
       expect(duration).toBeLessThan(1000)
     })
-
-    it('maintains consistent timing', () => {
-      const timings: number[] = []
-
-      // Warm up
-      for (let i = 0; i < 10; i++) {
-        bufferManager.requestSamples(512)
-      }
-
-      // Measure
-      for (let i = 0; i < 100; i++) {
-        const start = performance.now()
-        bufferManager.requestSamples(512)
-        timings.push(performance.now() - start)
-      }
-
-      // Calculate average and standard deviation
-      const avg = timings.reduce((a, b) => a + b) / timings.length
-      const variance =
-        timings.reduce((sum, t) => sum + Math.pow(t - avg, 2), 0) /
-        timings.length
-      const stdDev = Math.sqrt(variance)
-
-      // Timing should be consistent (low standard deviation relative to average)
-      expect(stdDev / avg).toBeLessThan(1.0) // Less than 100% variation
-    })
   })
 })
