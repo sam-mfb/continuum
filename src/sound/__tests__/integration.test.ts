@@ -1,14 +1,14 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest'
 import { createBufferManager } from '../bufferManager'
 import { convertBuffer } from '../formatConverter'
-import { createTestGenerators } from '../sampleGenerator'
+import { createTestSounds } from '../generators/testSounds'
 
 describe('Sound System Integration', () => {
   let bufferManager: ReturnType<typeof createBufferManager>
-  let sampleGenerators: ReturnType<typeof createTestGenerators>
+  let sampleGenerators: ReturnType<typeof createTestSounds>
 
   beforeEach(() => {
-    sampleGenerators = createTestGenerators()
+    sampleGenerators = createTestSounds()
     bufferManager = createBufferManager(sampleGenerators.silence)
     vi.clearAllMocks()
   })

@@ -8,7 +8,7 @@
  */
 
 import { createBufferManager } from '../bufferManager';
-import { createTestGenerators } from '../sampleGenerator';
+import { createTestSounds } from '../generators/testSounds';
 import { convertBuffer } from '../formatConverter';
 
 const SAMPLE_RATE = 22200;
@@ -53,7 +53,7 @@ async function runBenchmark() {
   console.log(`Target: Generate audio at least 10x faster than real-time (${SAMPLE_RATE} Hz)`);
   console.log(`Chunk size: ${CHUNK_SIZE} bytes`);
 
-  const generators = createTestGenerators();
+  const generators = createTestSounds();
   const bufferManager = createBufferManager(generators.silence);
 
   // Warm up
@@ -154,7 +154,7 @@ async function runBenchmark() {
       const start = performance.now();
       
       for (let i = 0; i < iterations; i++) {
-        generator.generateChunk();
+        (generator as any).generateChunk();
       }
       
       const elapsed = performance.now() - start;

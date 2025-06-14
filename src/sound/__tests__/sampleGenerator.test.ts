@@ -13,9 +13,9 @@ import {
   buildSilenceGenerator,
   buildSineWaveGenerator,
   buildWhiteNoiseGenerator,
-  buildMusicalIntervalGenerator,
-  createTestGenerators
+  buildMusicalIntervalGenerator
 } from '../sampleGenerator'
+import { createTestSounds } from '../generators/testSounds'
 
 describe('Constants', () => {
   test('chunk size is exactly 370 bytes', () => {
@@ -288,9 +288,9 @@ describe('buildMusicalIntervalGenerator', () => {
   })
 })
 
-describe('createTestGenerators factory', () => {
+describe('createTestSounds factory', () => {
   test('creates all expected generators', () => {
-    const generators = createTestGenerators()
+    const generators = createTestSounds()
 
     expect(generators.silence).toBeDefined()
     expect(generators.sine440).toBeDefined()
@@ -308,7 +308,7 @@ describe('createTestGenerators factory', () => {
   })
 
   test('all generators produce valid chunks', () => {
-    const generators = createTestGenerators()
+    const generators = createTestSounds()
 
     for (const generator of Object.values(generators)) {
       const chunk = generator.generateChunk()
@@ -326,7 +326,7 @@ describe('createTestGenerators factory', () => {
 
 describe('Performance characteristics', () => {
   test('generators produce chunks quickly', () => {
-    const generators = createTestGenerators()
+    const generators = createTestSounds()
 
     for (const generator of Object.values(generators)) {
       const start = performance.now()

@@ -180,16 +180,3 @@ export const buildMusicalIntervalGenerator = (
   }
 }
 
-/**
- * Factory function to create common test generators
- */
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export const createTestGenerators = () => ({
-  silence: buildSilenceGenerator(),
-  sine440: buildSineWaveGenerator(440), // A4
-  sine880: buildSineWaveGenerator(880), // A5
-  sine220: buildSineWaveGenerator(220), // A3
-  whiteNoise: buildWhiteNoiseGenerator(),
-  majorChord: buildMusicalIntervalGenerator([261.63, 329.63, 392.0], 0.5), // C4, E4, G4
-  octaves: buildMusicalIntervalGenerator([220, 440, 880], 0.25) // A3, A4, A5
-})

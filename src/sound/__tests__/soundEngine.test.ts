@@ -5,6 +5,24 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createSoundEngine } from '../soundEngine'
+import type { SoundEngine } from '../types'
+
+// Type for the extended sound engine with test methods
+type TestSoundEngine = SoundEngine & {
+  playTestSound: (soundType: string) => void
+  getTestSounds: () => string[]
+  getStats: () => {
+    underruns: number
+    totalCallbacks: number
+    averageLatency: number
+    bufferState: {
+      writePosition: number
+      readPosition: number
+      available: number
+    }
+  }
+  isPlaying: () => boolean
+}
 
 // Mock the audio modules
 vi.mock('../bufferManager', () => ({
@@ -35,8 +53,8 @@ vi.mock('../audioOutput', () => ({
   }))
 }))
 
-vi.mock('../sampleGenerator', () => ({
-  createTestGenerators: vi.fn(() => ({
+vi.mock('../generators/testSounds', () => ({
+  createTestSounds: vi.fn(() => ({
     silence: { generateChunk: vi.fn(), reset: vi.fn() },
     sine440: { generateChunk: vi.fn(), reset: vi.fn() },
     sine880: { generateChunk: vi.fn(), reset: vi.fn() },
@@ -44,6 +62,12 @@ vi.mock('../sampleGenerator', () => ({
     whiteNoise: { generateChunk: vi.fn(), reset: vi.fn() },
     majorChord: { generateChunk: vi.fn(), reset: vi.fn() },
     octaves: { generateChunk: vi.fn(), reset: vi.fn() }
+  }))
+}))
+
+vi.mock('../generators/gameSounds', () => ({
+  createGameSounds: vi.fn(() => ({
+    thruster: { generateChunk: vi.fn(), reset: vi.fn() }
   }))
 }))
 
@@ -67,21 +91,23 @@ describe('createSoundEngine', () => {
   })
 
   it('returns test sound names', () => {
-    const engine = createSoundEngine()
+    const engine = createSoundEngine() as TestSoundEngine
     const sounds = engine.getTestSounds()
     
     expect(sounds).toContain('silence')
     expect(sounds).toContain('sine440')
     expect(sounds).toContain('whiteNoise')
     expect(sounds).toContain('majorChord')
+    expect(sounds).toContain('thruster')
   })
 
   it('can switch between test sounds', () => {
-    const engine = createSoundEngine()
+    const engine = createSoundEngine() as TestSoundEngine
     
     // Should not throw
     expect(() => engine.playTestSound('sine440')).not.toThrow()
     expect(() => engine.playTestSound('whiteNoise')).not.toThrow()
+    expect(() => engine.playTestSound('thruster')).not.toThrow()
   })
 
   it('has start method that can be called', () => {

@@ -10,6 +10,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../store/store';
 import { setVolume, toggleSound } from '../sound/soundSlice';
 import { soundManager } from '../sound';
+import { createTestSounds } from '../sound/generators/testSounds';
+import { createGameSounds } from '../sound/generators/gameSounds';
 
 // Extended sound engine interface for testing
 type TestSoundEngine = {
@@ -34,7 +36,8 @@ export const SoundTestPanel: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSound, setCurrentSound] = useState<string>('silence');
   const [stats, setStats] = useState<ReturnType<TestSoundEngine['getStats']> | null>(null);
-  const [testSounds, setTestSounds] = useState<string[]>([]);
+  const [testSoundNames, setTestSoundNames] = useState<string[]>([]);
+  const [gameSoundNames, setGameSoundNames] = useState<string[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Get the sound engine with test methods
@@ -47,10 +50,13 @@ export const SoundTestPanel: React.FC = () => {
       setIsInitialized(true);
     }
     
-    if (engine && engine.getTestSounds) {
-      setTestSounds(engine.getTestSounds());
-    }
-  }, [engine, isInitialized]);
+    // Get the sound names from the generators
+    const testSounds = Object.keys(createTestSounds());
+    const gameSounds = Object.keys(createGameSounds());
+    
+    setTestSoundNames(testSounds);
+    setGameSoundNames(gameSounds);
+  }, [isInitialized]);
 
   useEffect(() => {
     // Update stats every 100ms when playing
@@ -143,13 +149,34 @@ export const SoundTestPanel: React.FC = () => {
       <div style={styles.section}>
         <h3>Test Sounds</h3>
         <div style={styles.soundGrid}>
-          {testSounds.map(sound => (
+          {testSoundNames.map(sound => (
             <button
               key={sound}
               onClick={() => handleSoundChange(sound)}
               style={{
                 ...styles.soundButton,
                 backgroundColor: currentSound === sound ? '#4488ff' : '#f0f0f0',
+                color: currentSound === sound ? 'white' : 'black'
+              }}
+              disabled={!isPlaying}
+            >
+              {sound}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Game Sounds */}
+      <div style={styles.section}>
+        <h3>Game Sounds (from Original Continuum)</h3>
+        <div style={styles.soundGrid}>
+          {gameSoundNames.map(sound => (
+            <button
+              key={sound}
+              onClick={() => handleSoundChange(sound)}
+              style={{
+                ...styles.soundButton,
+                backgroundColor: currentSound === sound ? '#44ff44' : '#f0f0f0',
                 color: currentSound === sound ? 'white' : 'black'
               }}
               disabled={!isPlaying}
@@ -181,7 +208,7 @@ export const SoundTestPanel: React.FC = () => {
         <h3>Testing Instructions</h3>
         <ul style={styles.instructions}>
           <li>Click "Start Audio" to begin playback</li>
-          <li>Select different test sounds to verify:
+          <li><strong>Test Sounds</strong> - Simple waveforms for testing:
             <ul>
               <li><strong>silence</strong>: Should produce no sound</li>
               <li><strong>sine440</strong>: A4 note (440Hz) - concert pitch</li>
@@ -190,6 +217,11 @@ export const SoundTestPanel: React.FC = () => {
               <li><strong>whiteNoise</strong>: Random static sound</li>
               <li><strong>majorChord</strong>: C-E-G chord</li>
               <li><strong>octaves</strong>: Alternating A3-A4-A5</li>
+            </ul>
+          </li>
+          <li><strong>Game Sounds</strong> - Original Continuum sounds:
+            <ul>
+              <li><strong>thruster</strong>: Ship thruster noise (random pulses)</li>
             </ul>
           </li>
           <li>Monitor performance stats - glitches should stay at 0</li>

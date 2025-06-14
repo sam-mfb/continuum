@@ -6,7 +6,8 @@
 import type { SoundEngine } from './types'
 import { createBufferManager } from './bufferManager'
 import { createAudioOutput } from './audioOutput'
-import { createTestGenerators } from './sampleGenerator'
+import { createTestSounds } from './generators/testSounds'
+import { createGameSounds } from './generators/gameSounds'
 import type { SampleGenerator } from './sampleGenerator'
 
 /**
@@ -14,17 +15,21 @@ import type { SampleGenerator } from './sampleGenerator'
  * Phase 6: Integrated with new audio pipeline
  */
 export const createSoundEngine = (): SoundEngine => {
-  // Initialize test generators
-  const generators = createTestGenerators()
+  // Initialize both test and game sound generators
+  const testSounds = createTestSounds()
+  const gameSounds = createGameSounds()
+  
+  // Combine all generators for easy access
+  const allGenerators = { ...testSounds, ...gameSounds }
   
   // Initialize buffer manager with silence
-  const bufferManager = createBufferManager(generators.silence)
+  const bufferManager = createBufferManager(testSounds.silence)
   
   // Initialize audio output
   const audioOutput = createAudioOutput(bufferManager)
   
   // Keep track of current generator
-  let currentGenerator: SampleGenerator = generators.silence
+  let currentGenerator: SampleGenerator = testSounds.silence
   
   /**
    * Get audio context from the audio output
@@ -72,8 +77,8 @@ export const createSoundEngine = (): SoundEngine => {
    * Switch to a different test sound
    * @param soundType - Name of the test sound to play
    */
-  const playTestSound = (soundType: keyof typeof generators): void => {
-    currentGenerator = generators[soundType]
+  const playTestSound = (soundType: keyof typeof allGenerators): void => {
+    currentGenerator = allGenerators[soundType]
     bufferManager.setGenerator(currentGenerator)
   }
   
@@ -81,7 +86,7 @@ export const createSoundEngine = (): SoundEngine => {
    * Get available test sounds
    */
   const getTestSounds = (): string[] => {
-    return Object.keys(generators)
+    return Object.keys(allGenerators)
   }
   
   /**
@@ -109,7 +114,7 @@ export const createSoundEngine = (): SoundEngine => {
     getStats,
     isPlaying: audioOutput.isPlaying
   } as SoundEngine & {
-    playTestSound: (soundType: keyof typeof generators) => void
+    playTestSound: (soundType: keyof typeof allGenerators) => void
     getTestSounds: () => string[]
     getStats: () => {
       underruns: number
