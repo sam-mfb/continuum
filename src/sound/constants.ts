@@ -50,3 +50,10 @@ export const SNDBUFLEN = 370;     // Buffer length
 export const FUELBEEPFREQ = 26;   // Frequency of beeps in fuel pickup (Sound.c:33)
 export const SHLD_FREQ = 50;      // Frequency of shield sound (Sound.c:34)
 export const FUELBEEPS = 3;       // Number of beeps in fuel pickup (GW.h:142)
+
+// Explosion sound parameters from Sound.c:488-501
+export const EXPLOSION_PARAMS = {
+  [SoundType.EXP1_SOUND]: { initialAmp: 16, ampChange: 2 },  // Bunker explosion
+  [SoundType.EXP2_SOUND]: { initialAmp: 1, ampChange: 1 },   // Ship explosion
+  [SoundType.EXP3_SOUND]: { initialAmp: 64, ampChange: 3 },  // Alien explosion
+};

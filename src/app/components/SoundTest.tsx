@@ -109,18 +109,56 @@ export const SoundTest: React.FC = () => {
           {/* Currently implemented sounds */}
           <div style={{ padding: '10px', border: '1px solid #0f0', backgroundColor: '#f0fff0' }}>
             <h4>Implemented</h4>
-            <button
-              onClick={() => handlePlaySound(SoundType.THRU_SOUND)}
-              style={{
-                padding: '10px',
-                width: '100%',
-                backgroundColor: currentSound === SoundType.THRU_SOUND ? '#0f0' : '#fff',
-                cursor: 'pointer'
-              }}
-              disabled={!enabled}
-            >
-              Thrust (Priority: 35)
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              <button
+                onClick={() => handlePlaySound(SoundType.THRU_SOUND)}
+                style={{
+                  padding: '10px',
+                  width: '100%',
+                  backgroundColor: currentSound === SoundType.THRU_SOUND ? '#0f0' : '#fff',
+                  cursor: 'pointer'
+                }}
+                disabled={!enabled}
+              >
+                Thrust (Priority: 35)
+              </button>
+              <button
+                onClick={() => handlePlaySound(SoundType.EXP1_SOUND)}
+                style={{
+                  padding: '10px',
+                  width: '100%',
+                  backgroundColor: currentSound === SoundType.EXP1_SOUND ? '#0f0' : '#fff',
+                  cursor: 'pointer'
+                }}
+                disabled={!enabled}
+              >
+                Bunker Explosion (Priority: 90)
+              </button>
+              <button
+                onClick={() => handlePlaySound(SoundType.EXP2_SOUND)}
+                style={{
+                  padding: '10px',
+                  width: '100%',
+                  backgroundColor: currentSound === SoundType.EXP2_SOUND ? '#0f0' : '#fff',
+                  cursor: 'pointer'
+                }}
+                disabled={!enabled}
+              >
+                Ship Explosion (Priority: 100)
+              </button>
+              <button
+                onClick={() => handlePlaySound(SoundType.EXP3_SOUND)}
+                style={{
+                  padding: '10px',
+                  width: '100%',
+                  backgroundColor: currentSound === SoundType.EXP3_SOUND ? '#0f0' : '#fff',
+                  cursor: 'pointer'
+                }}
+                disabled={!enabled}
+              >
+                Alien Explosion (Priority: 50)
+              </button>
+            </div>
           </div>
           
           {/* Not yet implemented sounds */}
@@ -129,13 +167,10 @@ export const SoundTest: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
               {[
                 SoundType.FIRE_SOUND,
-                SoundType.EXP1_SOUND,
                 SoundType.BUNK_SOUND,
                 SoundType.SOFT_SOUND,
                 SoundType.SHLD_SOUND,
                 SoundType.FUEL_SOUND,
-                SoundType.EXP2_SOUND,
-                SoundType.EXP3_SOUND,
                 SoundType.CRACK_SOUND,
                 SoundType.FIZZ_SOUND,
                 SoundType.ECHO_SOUND

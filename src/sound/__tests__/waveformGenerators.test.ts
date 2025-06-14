@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { generateThruRands } from '../waveformGenerators';
-import { THRU_LO_AMP, THRU_ADD_AMP } from '../constants';
+import { generateThruRands, generateExplRands } from '../waveformGenerators';
+import { THRU_LO_AMP, THRU_ADD_AMP, EXPL_LO_PER, EXPL_ADD_PER } from '../constants';
 
 describe('generateThruRands', () => {
   it('generates array of correct length', () => {
@@ -48,5 +48,38 @@ describe('generateThruRands', () => {
     const expectedAverage = THRU_LO_AMP + (THRU_ADD_AMP / 2);
     expect(average).toBeGreaterThan(expectedAverage - 20);
     expect(average).toBeLessThan(expectedAverage + 20);
+  });
+});
+
+describe('generateExplRands', () => {
+  it('generates array of correct length', () => {
+    const explRands = generateExplRands();
+    expect(explRands.length).toBe(128);
+  });
+
+  it('generates values in correct range', () => {
+    const explRands = generateExplRands();
+    
+    for (let i = 0; i < explRands.length; i++) {
+      const value = explRands[i];
+      // Values should be between EXPL_LO_PER (50) and EXPL_LO_PER + EXPL_ADD_PER - 1 (254)
+      expect(value).toBeGreaterThanOrEqual(EXPL_LO_PER);
+      expect(value).toBeLessThanOrEqual(EXPL_LO_PER + EXPL_ADD_PER - 1);
+    }
+  });
+
+  it('generates different sequences on each call', () => {
+    const explRands1 = generateExplRands();
+    const explRands2 = generateExplRands();
+    
+    // Arrays should be different
+    let isDifferent = false;
+    for (let i = 0; i < 128; i++) {
+      if (explRands1[i] !== explRands2[i]) {
+        isDifferent = true;
+        break;
+      }
+    }
+    expect(isDifferent).toBe(true);
   });
 });

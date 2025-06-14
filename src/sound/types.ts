@@ -25,12 +25,21 @@ export type PlayableSound = {
 }
 
 /**
+ * Parameters for explosion sounds
+ */
+export type ExplosionParams = {
+  initialAmp: number;      // Starting amplitude (Sound.c:489,494,499)
+  ampChange: number;       // Amplitude change per frame (Sound.c:490,495,500)
+}
+
+/**
  * The main sound engine interface
  */
 export type SoundEngine = {
   audioContext: AudioContext;           // Web Audio API context
   masterGain: GainNode;                 // Master volume control
   createThrustSound: () => PlayableSound;  // Factory for thrust sound
+  createExplosionSound: (params: ExplosionParams) => PlayableSound;  // Factory for explosion sounds
   setVolume: (volume: number) => void;  // Set master volume
   // Additional sound factories will be added here
 }

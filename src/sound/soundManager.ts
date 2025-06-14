@@ -4,7 +4,7 @@
  */
 
 import { store } from '../store/store';
-import { SoundType, SOUND_PRIORITIES } from './constants';
+import { SoundType, SOUND_PRIORITIES, EXPLOSION_PARAMS } from './constants';
 import { createSoundEngine } from './soundEngine';
 import { startSound as startSoundAction, stopSound as stopSoundAction } from './soundSlice';
 import type { SoundEngine } from './types';
@@ -85,6 +85,18 @@ export const createSoundManager = (): {
         if (engine) {
           const thrustSound = engine.createThrustSound();
           currentSource = thrustSound.play();
+        }
+        break;
+      
+      case SoundType.EXP1_SOUND:
+      case SoundType.EXP2_SOUND:
+      case SoundType.EXP3_SOUND:
+        if (engine) {
+          const params = EXPLOSION_PARAMS[soundType];
+          if (params) {
+            const explosionSound = engine.createExplosionSound(params);
+            currentSource = explosionSound.play();
+          }
         }
         break;
       

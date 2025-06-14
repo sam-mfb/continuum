@@ -41,6 +41,7 @@ describe('createSoundEngine', () => {
     expect(engine).toHaveProperty('audioContext');
     expect(engine).toHaveProperty('masterGain');
     expect(engine).toHaveProperty('createThrustSound');
+    expect(engine).toHaveProperty('createExplosionSound');
     expect(engine).toHaveProperty('setVolume');
   });
 
@@ -110,5 +111,31 @@ describe('createThrustSound', () => {
     
     expect(source).toHaveProperty('stop');
     expect(typeof source.stop).toBe('function');
+  });
+});
+
+describe('createExplosionSound', () => {
+  it('creates playable sound with play method', () => {
+    const engine = createSoundEngine();
+    const explosionSound = engine.createExplosionSound({ initialAmp: 16, ampChange: 2 });
+    
+    expect(explosionSound).toHaveProperty('play');
+    expect(typeof explosionSound.play).toBe('function');
+  });
+
+  it('creates audio buffer for explosion', () => {
+    const engine = createSoundEngine();
+    engine.createExplosionSound({ initialAmp: 16, ampChange: 2 });
+    
+    expect(mockAudioContext.createBuffer).toHaveBeenCalled();
+  });
+
+  it('does not loop explosion sounds', () => {
+    const engine = createSoundEngine();
+    const explosionSound = engine.createExplosionSound({ initialAmp: 16, ampChange: 2 });
+    
+    const source = explosionSound.play();
+    
+    expect(source.loop).toBe(false);
   });
 });
