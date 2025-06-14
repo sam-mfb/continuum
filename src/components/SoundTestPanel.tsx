@@ -222,6 +222,7 @@ export const SoundTestPanel: React.FC = () => {
           <li><strong>Game Sounds</strong> - Original Continuum sounds:
             <ul>
               <li><strong>thruster</strong>: Ship thruster noise (random pulses)</li>
+              <li><strong>shield</strong>: Shield activation (alternating square wave)</li>
             </ul>
           </li>
           <li>Monitor performance stats - glitches should stay at 0</li>

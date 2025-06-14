@@ -67,7 +67,8 @@ vi.mock('../generators/testSounds', () => ({
 
 vi.mock('../generators/gameSounds', () => ({
   createGameSounds: vi.fn(() => ({
-    thruster: { generateChunk: vi.fn(), reset: vi.fn() }
+    thruster: { generateChunk: vi.fn(), reset: vi.fn() },
+    shield: { generateChunk: vi.fn(), reset: vi.fn() }
   }))
 }))
 
