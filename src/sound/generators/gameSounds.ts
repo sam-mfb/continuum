@@ -7,6 +7,7 @@
 
 import { createThrusterGenerator } from './thrusterGenerator'
 import { createShieldGenerator } from './shieldGenerator'
+import { createExplosionGenerator, ExplosionType } from './explosionGenerator'
 
 /**
  * Factory function to create all game sound generators
@@ -14,11 +15,11 @@ import { createShieldGenerator } from './shieldGenerator'
 export const createGameSounds = () => ({
   thruster: createThrusterGenerator(),
   shield: createShieldGenerator(),
+  explosionBunker: createExplosionGenerator(ExplosionType.BUNKER),
+  explosionShip: createExplosionGenerator(ExplosionType.SHIP),
+  explosionAlien: createExplosionGenerator(ExplosionType.ALIEN),
   // Future game sounds will be added here:
   // fire: createFireGenerator(),
-  // explosion1: createExplosion1Generator(),
-  // explosion2: createExplosion2Generator(),
-  // explosion3: createExplosion3Generator(),
   // fuel: createFuelGenerator(),
   // bunker: createBunkerGenerator(),
   // crack: createCrackGenerator(),

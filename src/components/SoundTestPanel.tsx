@@ -223,6 +223,9 @@ export const SoundTestPanel: React.FC = () => {
             <ul>
               <li><strong>thruster</strong>: Ship thruster noise (random pulses)</li>
               <li><strong>shield</strong>: Shield activation (alternating square wave)</li>
+              <li><strong>explosionBunker</strong>: Bunker explosion (medium intensity)</li>
+              <li><strong>explosionShip</strong>: Ship explosion (slow fade, highest priority)</li>
+              <li><strong>explosionAlien</strong>: Alien explosion (loud start, fast fade)</li>
             </ul>
           </li>
           <li>Monitor performance stats - glitches should stay at 0</li>
