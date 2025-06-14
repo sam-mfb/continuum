@@ -63,25 +63,25 @@ export const SoundTest: React.FC = () => {
   };
   
   return (
-    <div style={{ padding: '20px', fontFamily: 'monospace' }}>
-      <h2>Sound Test</h2>
+    <div className="sound-view">
+      <h2>SOUND TEST</h2>
       
       {/* Master Controls */}
-      <div style={{ marginBottom: '20px', padding: '10px', border: '1px solid #ccc' }}>
-        <h3>Master Controls</h3>
-        <div style={{ marginBottom: '10px' }}>
-          <label>
+      <div className="mac-window-content">
+        <div className="mac-group-box">
+          <div className="mac-group-title">MASTER CONTROLS</div>
+          <div className="mac-checkbox">
             <input
               type="checkbox"
+              id="sound-enabled"
               checked={enabled}
               onChange={handleToggleSound}
             />
-            Sound Enabled
-          </label>
-        </div>
-        <div style={{ marginBottom: '10px' }}>
-          <label>
-            Volume: 
+            <label htmlFor="sound-enabled">Sound Enabled</label>
+          </div>
+          
+          <div className="mac-control-group" style={{ marginTop: '10px' }}>
+            <div>Volume: {Math.round(volume * 100)}%</div>
             <input
               type="range"
               min="0"
@@ -89,82 +89,72 @@ export const SoundTest: React.FC = () => {
               step="0.1"
               value={volume}
               onChange={handleVolumeChange}
-              style={{ marginLeft: '10px' }}
+              className="mac-slider"
+              style={{ width: '200px', marginTop: '5px' }}
             />
-            <span style={{ marginLeft: '10px' }}>{Math.round(volume * 100)}%</span>
-          </label>
+          </div>
+          
+          <div className="mac-info-line" style={{ marginTop: '10px' }}>
+            Current: {getSoundName(currentSound)} (Priority: {priority})
+          </div>
+          
+          <button 
+            onClick={handleStopSound} 
+            className="mac-button"
+            style={{ marginTop: '10px' }}
+          >
+            STOP ALL SOUNDS
+          </button>
         </div>
-        <div style={{ marginBottom: '10px' }}>
-          Current Sound: <strong>{getSoundName(currentSound)}</strong> (Priority: {priority})
-        </div>
-        <button onClick={handleStopSound} style={{ padding: '5px 10px' }}>
-          Stop All Sounds
-        </button>
       </div>
       
       {/* Sound Buttons */}
-      <div style={{ marginBottom: '20px' }}>
-        <h3>Available Sounds</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', maxWidth: '600px' }}>
+      <div className="mac-window-content" style={{ marginTop: '20px' }}>
+        <h3>AVAILABLE SOUNDS</h3>
+        <div className="sound-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
           {/* Currently implemented sounds */}
-          <div style={{ padding: '10px', border: '1px solid #0f0', backgroundColor: '#f0fff0' }}>
-            <h4>Implemented</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <div className="mac-group-box">
+            <div className="mac-group-title">IMPLEMENTED</div>
+            <div className="sound-button-group">
               <button
                 onClick={() => handlePlaySound(SoundType.THRU_SOUND)}
-                style={{
-                  padding: '10px',
-                  width: '100%',
-                  backgroundColor: currentSound === SoundType.THRU_SOUND ? '#0f0' : '#fff',
-                  cursor: 'pointer'
-                }}
+                className={`mac-button ${currentSound === SoundType.THRU_SOUND ? 'active' : ''}`}
+                style={{ width: '100%', marginBottom: '5px' }}
                 disabled={!enabled}
               >
-                Thrust (Priority: 35)
+                THRUST (35)
               </button>
               <button
                 onClick={() => handlePlaySound(SoundType.EXP1_SOUND)}
-                style={{
-                  padding: '10px',
-                  width: '100%',
-                  backgroundColor: currentSound === SoundType.EXP1_SOUND ? '#0f0' : '#fff',
-                  cursor: 'pointer'
-                }}
+                className={`mac-button ${currentSound === SoundType.EXP1_SOUND ? 'active' : ''}`}
+                style={{ width: '100%', marginBottom: '5px' }}
                 disabled={!enabled}
               >
-                Bunker Explosion (Priority: 90)
+                BUNKER EXPLOSION (90)
               </button>
               <button
                 onClick={() => handlePlaySound(SoundType.EXP2_SOUND)}
-                style={{
-                  padding: '10px',
-                  width: '100%',
-                  backgroundColor: currentSound === SoundType.EXP2_SOUND ? '#0f0' : '#fff',
-                  cursor: 'pointer'
-                }}
+                className={`mac-button ${currentSound === SoundType.EXP2_SOUND ? 'active' : ''}`}
+                style={{ width: '100%', marginBottom: '5px' }}
                 disabled={!enabled}
               >
-                Ship Explosion (Priority: 100)
+                SHIP EXPLOSION (100)
               </button>
               <button
                 onClick={() => handlePlaySound(SoundType.EXP3_SOUND)}
-                style={{
-                  padding: '10px',
-                  width: '100%',
-                  backgroundColor: currentSound === SoundType.EXP3_SOUND ? '#0f0' : '#fff',
-                  cursor: 'pointer'
-                }}
+                className={`mac-button ${currentSound === SoundType.EXP3_SOUND ? 'active' : ''}`}
+                style={{ width: '100%' }}
                 disabled={!enabled}
               >
-                Alien Explosion (Priority: 50)
+                ALIEN EXPLOSION (50)
               </button>
             </div>
           </div>
           
           {/* Not yet implemented sounds */}
-          <div style={{ padding: '10px', border: '1px solid #ccc', backgroundColor: '#f5f5f5' }}>
-            <h4>Not Yet Implemented</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <div className="mac-group-box">
+            <div className="mac-group-title">NOT YET IMPLEMENTED</div>
+            <div className="sound-button-group">
               {[
                 SoundType.FIRE_SOUND,
                 SoundType.BUNK_SOUND,
@@ -177,17 +167,12 @@ export const SoundTest: React.FC = () => {
               ].map(soundType => (
                 <button
                   key={soundType}
-                  onClick={() => handlePlaySound(soundType)}
-                  style={{
-                    padding: '5px',
-                    backgroundColor: '#eee',
-                    cursor: 'not-allowed',
-                    opacity: 0.5
-                  }}
+                  className="mac-button disabled"
+                  style={{ width: '100%', marginBottom: '5px', opacity: 0.5 }}
                   disabled={true}
                   title="This sound has not been implemented yet"
                 >
-                  {getSoundName(soundType)}
+                  {getSoundName(soundType).toUpperCase()}
                 </button>
               ))}
             </div>
@@ -196,15 +181,17 @@ export const SoundTest: React.FC = () => {
       </div>
       
       {/* Instructions */}
-      <div style={{ marginTop: '20px', padding: '10px', backgroundColor: '#f0f0f0' }}>
-        <h3>Instructions</h3>
-        <ul>
-          <li>Click on a sound button to play it</li>
-          <li>Higher priority sounds will interrupt lower priority ones</li>
-          <li>Use the volume slider to adjust the master volume</li>
-          <li>Uncheck "Sound Enabled" to disable all sounds</li>
-          <li>The thrust sound should produce a low-frequency rumbling noise</li>
-        </ul>
+      <div className="mac-window-content" style={{ marginTop: '20px' }}>
+        <div className="mac-group-box">
+          <div className="mac-group-title">INSTRUCTIONS</div>
+          <div className="mac-text" style={{ padding: '10px' }}>
+            • Click on a sound button to play it<br />
+            • Higher priority sounds will interrupt lower priority ones<br />
+            • Use the volume slider to adjust the master volume<br />
+            • Uncheck "Sound Enabled" to disable all sounds<br />
+            • Numbers in parentheses indicate sound priority
+          </div>
+        </div>
       </div>
     </div>
   );
