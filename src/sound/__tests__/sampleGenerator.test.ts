@@ -10,10 +10,10 @@ import {
   CHUNK_SIZE,
   CENTER_VALUE,
   SAMPLE_RATE,
-  SilenceGenerator,
-  SineWaveGenerator,
-  WhiteNoiseGenerator,
-  MusicalIntervalGenerator,
+  buildSilenceGenerator,
+  buildSineWaveGenerator,
+  buildWhiteNoiseGenerator,
+  buildMusicalIntervalGenerator,
   createTestGenerators
 } from '../sampleGenerator';
 
@@ -32,8 +32,8 @@ describe('Constants', () => {
   });
 });
 
-describe('SilenceGenerator', () => {
-  const generator = new SilenceGenerator();
+describe('buildSilenceGenerator', () => {
+  const generator = buildSilenceGenerator();
   
   test('generates exactly 370 bytes', () => {
     const chunk = generator.generateChunk();
@@ -62,16 +62,16 @@ describe('SilenceGenerator', () => {
   });
 });
 
-describe('SineWaveGenerator', () => {
+describe('buildSineWaveGenerator', () => {
   test('generates exactly 370 bytes', () => {
-    const generator = new SineWaveGenerator(440);
+    const generator = buildSineWaveGenerator(440);
     const chunk = generator.generateChunk();
     expect(chunk).toBeInstanceOf(Uint8Array);
     expect(chunk.length).toBe(370);
   });
   
   test('all values are in valid 8-bit range (0-255)', () => {
-    const generator = new SineWaveGenerator(440);
+    const generator = buildSineWaveGenerator(440);
     const chunk = generator.generateChunk();
     for (let i = 0; i < chunk.length; i++) {
       expect(chunk[i]).toBeGreaterThanOrEqual(0);
@@ -80,7 +80,7 @@ describe('SineWaveGenerator', () => {
   });
   
   test('produces oscillating values around center', () => {
-    const generator = new SineWaveGenerator(440);
+    const generator = buildSineWaveGenerator(440);
     const chunk = generator.generateChunk();
     
     let aboveCenter = 0;
@@ -98,7 +98,7 @@ describe('SineWaveGenerator', () => {
   });
   
   test('consecutive chunks continue the waveform', () => {
-    const generator = new SineWaveGenerator(440);
+    const generator = buildSineWaveGenerator(440);
     const chunk1 = generator.generateChunk();
     const chunk2 = generator.generateChunk();
     
@@ -108,7 +108,7 @@ describe('SineWaveGenerator', () => {
   });
   
   test('reset restarts the waveform', () => {
-    const generator = new SineWaveGenerator(440);
+    const generator = buildSineWaveGenerator(440);
     const chunk1 = generator.generateChunk();
     generator.reset();
     const chunk2 = generator.generateChunk();
@@ -118,8 +118,8 @@ describe('SineWaveGenerator', () => {
   });
   
   test('different frequencies produce different waveforms', () => {
-    const gen440 = new SineWaveGenerator(440);
-    const gen880 = new SineWaveGenerator(880);
+    const gen440 = buildSineWaveGenerator(440);
+    const gen880 = buildSineWaveGenerator(880);
     
     const chunk440 = gen440.generateChunk();
     const chunk880 = gen880.generateChunk();
@@ -128,7 +128,7 @@ describe('SineWaveGenerator', () => {
   });
   
   test('waveform has expected characteristics for 440Hz', () => {
-    const generator = new SineWaveGenerator(440);
+    const generator = buildSineWaveGenerator(440);
     const chunk = generator.generateChunk();
     
     // At 22.2kHz sample rate, 440Hz should have ~50.45 samples per cycle
@@ -149,8 +149,8 @@ describe('SineWaveGenerator', () => {
   });
 });
 
-describe('WhiteNoiseGenerator', () => {
-  const generator = new WhiteNoiseGenerator();
+describe('buildWhiteNoiseGenerator', () => {
+  const generator = buildWhiteNoiseGenerator();
   
   test('generates exactly 370 bytes', () => {
     const chunk = generator.generateChunk();
@@ -204,16 +204,16 @@ describe('WhiteNoiseGenerator', () => {
   });
 });
 
-describe('MusicalIntervalGenerator', () => {
+describe('buildMusicalIntervalGenerator', () => {
   test('generates exactly 370 bytes', () => {
-    const generator = new MusicalIntervalGenerator([440, 880]);
+    const generator = buildMusicalIntervalGenerator([440, 880]);
     const chunk = generator.generateChunk();
     expect(chunk).toBeInstanceOf(Uint8Array);
     expect(chunk.length).toBe(370);
   });
   
   test('all values are in valid 8-bit range', () => {
-    const generator = new MusicalIntervalGenerator([220, 440, 880]);
+    const generator = buildMusicalIntervalGenerator([220, 440, 880]);
     const chunk = generator.generateChunk();
     for (let i = 0; i < chunk.length; i++) {
       expect(chunk[i]).toBeGreaterThanOrEqual(0);
@@ -223,7 +223,7 @@ describe('MusicalIntervalGenerator', () => {
   
   test('switches between frequencies at specified intervals', () => {
     // Use very short duration for testing
-    const generator = new MusicalIntervalGenerator([440, 880], 0.01); // 10ms per note
+    const generator = buildMusicalIntervalGenerator([440, 880], 0.01); // 10ms per note
     
     // At 22.2kHz, 10ms = 222 samples
     // So in 370 samples, we should see a frequency change
@@ -257,7 +257,7 @@ describe('MusicalIntervalGenerator', () => {
   });
   
   test('reset restarts the sequence', () => {
-    const generator = new MusicalIntervalGenerator([440, 880], 0.1);
+    const generator = buildMusicalIntervalGenerator([440, 880], 0.1);
     const chunk1 = generator.generateChunk();
     generator.reset();
     const chunk2 = generator.generateChunk();
@@ -267,7 +267,7 @@ describe('MusicalIntervalGenerator', () => {
   });
   
   test('handles note transitions across chunk boundaries', () => {
-    const generator = new MusicalIntervalGenerator([440, 880], 0.008); // ~177 samples per note
+    const generator = buildMusicalIntervalGenerator([440, 880], 0.008); // ~177 samples per note
     
     // Generate multiple chunks
     const chunks = [];
@@ -286,13 +286,19 @@ describe('createTestGenerators factory', () => {
   test('creates all expected generators', () => {
     const generators = createTestGenerators();
     
-    expect(generators.silence).toBeInstanceOf(SilenceGenerator);
-    expect(generators.sine440).toBeInstanceOf(SineWaveGenerator);
-    expect(generators.sine880).toBeInstanceOf(SineWaveGenerator);
-    expect(generators.sine220).toBeInstanceOf(SineWaveGenerator);
-    expect(generators.whiteNoise).toBeInstanceOf(WhiteNoiseGenerator);
-    expect(generators.majorChord).toBeInstanceOf(MusicalIntervalGenerator);
-    expect(generators.octaves).toBeInstanceOf(MusicalIntervalGenerator);
+    expect(generators.silence).toBeDefined();
+    expect(generators.sine440).toBeDefined();
+    expect(generators.sine880).toBeDefined();
+    expect(generators.sine220).toBeDefined();
+    expect(generators.whiteNoise).toBeDefined();
+    expect(generators.majorChord).toBeDefined();
+    expect(generators.octaves).toBeDefined();
+    
+    // Verify they have the required methods
+    for (const generator of Object.values(generators)) {
+      expect(generator.generateChunk).toBeInstanceOf(Function);
+      expect(generator.reset).toBeInstanceOf(Function);
+    }
   });
   
   test('all generators produce valid chunks', () => {
@@ -333,7 +339,7 @@ describe('Performance characteristics', () => {
   });
   
   test('multiple consecutive calls maintain timing', () => {
-    const generator = new SineWaveGenerator(440);
+    const generator = buildSineWaveGenerator(440);
     const timings = [];
     
     // Generate 1000 chunks and measure timing
