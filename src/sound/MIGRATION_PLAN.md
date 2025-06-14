@@ -11,6 +11,7 @@ The new system will generate 370-byte chunks of 8-bit unsigned audio data at 22.
 **Goal**: Remove existing engine while keeping Redux integration and UI connections
 
 **Tasks**:
+
 1. Keep `soundSlice.ts` and `constants.ts` intact
 2. Gut `soundEngine.ts` - just leave shell class with start/stop methods
 3. Simplify `soundManager.ts` to just Redux bridge (no audio logic)
@@ -24,6 +25,7 @@ The new system will generate 370-byte chunks of 8-bit unsigned audio data at 22.
 **Goal**: Build the 370-byte chunk generator with unit tests
 
 **Module**: `sampleGenerator.ts`
+
 - Interface for generating exactly 370 bytes of 8-bit unsigned audio
 - Mock implementations for testing:
   - Sine wave at 440Hz
@@ -32,6 +34,7 @@ The new system will generate 370-byte chunks of 8-bit unsigned audio data at 22.
   - Musical intervals (for later browser testing)
 
 **Unit Tests**: `sampleGenerator.test.ts`
+
 - Verify exactly 370 bytes generated
 - Verify Uint8Array type
 - Verify value ranges (0-255)
@@ -45,11 +48,13 @@ The new system will generate 370-byte chunks of 8-bit unsigned audio data at 22.
 **Goal**: Build the 8-bit to float32 converter with unit tests
 
 **Module**: `formatConverter.ts`
+
 - Converts 8-bit unsigned (0-255) to float32 (-1.0 to 1.0)
 - Bridges original Mac format (center=128) to Web Audio (center=0.0)
 - Pure function, no side effects
 
 **Unit Tests**: `formatConverter.test.ts`
+
 - Verify 0x80 → 0.0 (silence)
 - Verify 0x00 → -1.0 (min)
 - Verify 0xFF → 1.0 (max)
@@ -64,12 +69,14 @@ The new system will generate 370-byte chunks of 8-bit unsigned audio data at 22.
 **Goal**: Build the ring buffer system with unit tests
 
 **Module**: `bufferManager.ts`
+
 - Manages ring buffer of generated samples
 - Handles misaligned requests (e.g., 512 samples from 370-byte chunks)
 - Calls generator as needed
 - Tracks buffer state
 
 **Unit Tests**: `bufferManager.test.ts`
+
 - Test various request sizes (256, 512, 1024, 333)
 - Test buffer wraparound
 - Test partial chunk usage
@@ -84,6 +91,7 @@ The new system will generate 370-byte chunks of 8-bit unsigned audio data at 22.
 **Goal**: Test the complete pipeline without browser
 
 **Test Suite**: `integration.test.ts`
+
 - Mock browser audio requests:
   - Various buffer sizes
   - Rapid consecutive requests
@@ -105,17 +113,19 @@ The new system will generate 370-byte chunks of 8-bit unsigned audio data at 22.
 **Goal**: Connect to Web Audio API and verify with recognizable sounds
 
 **Tasks**:
+
 1. Implement `audioOutput.ts` to connect buffer manager to Web Audio
 2. Update `soundEngine.ts` to use new system
 3. Create test page with buttons for different sounds
 4. Use musical intervals for verification:
    - 440Hz (A4)
-   - 880Hz (A5) 
+   - 880Hz (A5)
    - 220Hz (A3)
    - Major chord
    - Check pitch accuracy
 
 **Manual Tests**:
+
 - Verify no clicking/popping
 - Verify correct pitch
 - Test start/stop
@@ -129,7 +139,9 @@ The new system will generate 370-byte chunks of 8-bit unsigned audio data at 22.
 **Goal**: Implement all original game sounds
 
 **Tasks**:
+
 1. Create `generators/` directory with one file per sound type:
+
    - `fireSound.ts` - Port `do_fire_sound()`
    - `thrustSound.ts` - Port `do_thru_sound()`
    - `explosionSound.ts` - Port `do_expl_sound()`
@@ -142,10 +154,12 @@ The new system will generate 370-byte chunks of 8-bit unsigned audio data at 22.
    - `noSound.ts` - Port `do_no_sound()`
 
 2. Port lookup tables:
+
    - Sine wave table
    - Random arrays (expl_rands, thru_rands, hiss_rands)
 
 3. Implement sound state management:
+
    - Per-sound parameters
    - State transitions
    - Priority system
@@ -157,17 +171,20 @@ The new system will generate 370-byte chunks of 8-bit unsigned audio data at 22.
 ## Architecture Principles
 
 ### Loose Coupling
+
 - Generators don't know about buffers
 - Buffers don't know about Web Audio
 - Format conversion is a separate pure function
 - Each module has a single responsibility
 
 ### Browser/Node Agnostic (where possible)
+
 - Core modules use only TypedArrays and standard JS
 - Only `audioOutput.ts` knows about Web Audio
 - All tests except Phase 6 run in Node
 
 ### Testability
+
 - Each component tested in isolation
 - No audio context needed until Phase 6
 - Deterministic output from generators
@@ -176,24 +193,28 @@ The new system will generate 370-byte chunks of 8-bit unsigned audio data at 22.
 ## Implementation Notes
 
 ### Buffer Management Strategy
+
 - Ring buffer with automatic wraparound
 - Generate ceil(N/370) × 370 bytes for N samples
 - Track both byte position and sample position
 - Reuse leftover bytes from previous requests
 
 ### Sample Rate Handling
+
 - Generate at authentic 22.2kHz
 - AudioContext handles resampling to system rate
 - No manual interpolation needed
 - Browser's high-quality resampling is automatic
 
 ### Performance Considerations
+
 - 370 bytes must generate in << 16.67ms
 - Target < 3ms for safety margin
 - Use TypedArrays for efficiency
 - Minimize object allocation in hot path
 
 ### Endianness Note
+
 - Original Mac was big-endian, but since we're working with 8-bit audio samples (1 byte each), endianness doesn't affect the audio data
 - If any lookup tables or calculations use 16-bit values, we'll need to handle endianness during porting
 

@@ -5,7 +5,7 @@
 
 import { SNDBUFLEN } from './constants'
 import type { SoundEngine, PlayableSound, ExplosionParams } from './types'
-import { generateThruRands, generateExplRands } from './waveformGenerators'
+import { generateThruRands /*, generateExplRands*/ } from './waveformGenerators'
 
 /**
  * Factory function for creating the sound engine
@@ -19,7 +19,7 @@ export const createSoundEngine = (): SoundEngine => {
 
   // Pre-generate lookup tables (like init_sound() in Main.c)
   const thruRands = generateThruRands()
-  const explRands = generateExplRands()
+  // const explRands = generateExplRands() // TODO: Use when implementing explosion sounds
 
   /**
    * Create thrust sound generator
@@ -52,7 +52,11 @@ export const createSoundEngine = (): SoundEngine => {
 
     while (bufferPos < bufferSize) {
       // Process chunks like the original
-      for (let chunk = 0; chunk < chunksPerBuffer && bufferPos < bufferSize; chunk++) {
+      for (
+        let chunk = 0;
+        chunk < chunksPerBuffer && bufferPos < bufferSize;
+        chunk++
+      ) {
         // Get value from lookup table (Sound.c:189)
         const value = thruRands[tablePos & 127] ?? 0
         tablePos++
@@ -70,7 +74,9 @@ export const createSoundEngine = (): SoundEngine => {
         // Calculate samples for 37 bytes at original playback rate
         // Original plays at ~11kHz (370 bytes at 60Hz)
         const originalRate = (SNDBUFLEN * 60) / 2 // Approx 11.1kHz
-        const samplesPerChunk = Math.floor((bytesPerChunk * sampleRate) / originalRate)
+        const samplesPerChunk = Math.floor(
+          (bytesPerChunk * sampleRate) / originalRate
+        )
 
         for (let i = 0; i < samplesPerChunk && bufferPos < bufferSize; i++) {
           channelData[bufferPos++] = normalized
@@ -94,21 +100,21 @@ export const createSoundEngine = (): SoundEngine => {
    * Placeholder for explosion sounds
    * TODO: Implement based on do_expl_sound() from Sound.c:153-177
    */
-  const createExplosionSound = (params: ExplosionParams): PlayableSound => {
+  const createExplosionSound = (_params: ExplosionParams): PlayableSound => {
     // For now, return a simple placeholder sound
     const duration = 0.5
     const sampleRate = audioContext.sampleRate
     const bufferSize = Math.floor(duration * sampleRate)
-    
+
     const buffer = audioContext.createBuffer(1, bufferSize, sampleRate)
     const data = buffer.getChannelData(0)
-    
+
     // Simple placeholder: white noise that fades out
     for (let i = 0; i < bufferSize; i++) {
-      const envelope = 1 - (i / bufferSize)
+      const envelope = 1 - i / bufferSize
       data[i] = (Math.random() * 2 - 1) * envelope * 0.3
     }
-    
+
     return {
       play: (): AudioBufferSourceNode => {
         const source = audioContext.createBufferSource()
@@ -136,4 +142,3 @@ export const createSoundEngine = (): SoundEngine => {
     setVolume
   }
 }
-
