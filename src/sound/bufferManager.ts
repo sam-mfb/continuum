@@ -4,115 +4,141 @@
  * Based on Phase 4 of MIGRATION_PLAN.md
  */
 
-export type SampleGenerator = {
-  generate(): Uint8Array
-}
+import type { SampleGenerator } from './sampleGenerator'
 
-export class BufferManager {
-  private static readonly CHUNK_SIZE = 370
-  private static readonly BUFFER_SIZE = 8192 // Must be power of 2 for efficient wrapping
-
-  private buffer: Uint8Array
-  private writePosition: number = 0
-  private readPosition: number = 0
-  private generator: SampleGenerator
-
-  constructor(generator: SampleGenerator) {
-    this.generator = generator
-    this.buffer = new Uint8Array(BufferManager.BUFFER_SIZE)
-  }
-
+export type BufferManager = {
   /**
    * Request samples from the buffer
    * Handles misaligned sizes (e.g., 512 samples from 370-byte chunks)
    */
-  requestSamples(sampleCount: number): Uint8Array {
+  requestSamples(sampleCount: number): Uint8Array
+  
+  /**
+   * Get the number of available samples in the buffer
+   */
+  getAvailableSamples(): number
+  
+  /**
+   * Switch to a different sample generator
+   */
+  setGenerator(generator: SampleGenerator): void
+  
+  /**
+   * Get current buffer state for debugging/testing
+   */
+  getBufferState(): { writePosition: number; readPosition: number; available: number }
+  
+  /**
+   * Reset buffer to initial state
+   */
+  reset(): void
+}
+
+/**
+ * Creates a new buffer manager instance
+ */
+export const createBufferManager = (generator: SampleGenerator): BufferManager => {
+  const CHUNK_SIZE = 370
+  const BUFFER_SIZE = 8192 // Must be power of 2 for efficient wrapping
+  
+  const buffer = new Uint8Array(BUFFER_SIZE)
+  let writePosition = 0
+  let readPosition = 0
+  let currentGenerator = generator
+
+  /**
+   * Get the number of available samples in the buffer
+   */
+  const getAvailableSamples = (): number => {
+    const available = writePosition - readPosition
+    return available >= 0 ? available : available + BUFFER_SIZE
+  }
+
+  /**
+   * Generate a new chunk and add it to the buffer
+   */
+  const generateChunk = (): void => {
+    const chunk = currentGenerator.generateChunk()
+
+    if (chunk.length !== CHUNK_SIZE) {
+      throw new Error(
+        `Generator returned ${chunk.length} bytes, expected ${CHUNK_SIZE}`
+      )
+    }
+
+    // Copy chunk to ring buffer
+    for (let i = 0; i < chunk.length; i++) {
+      buffer[writePosition] = chunk[i]!
+      writePosition = (writePosition + 1) & (BUFFER_SIZE - 1)
+
+      // Check for buffer overflow
+      if (writePosition === readPosition) {
+        throw new Error(
+          'Buffer overflow: write position caught up to read position'
+        )
+      }
+    }
+  }
+
+  /**
+   * Ensure at least the requested number of samples are available
+   */
+  const ensureAvailable = (sampleCount: number): void => {
+    while (getAvailableSamples() < sampleCount) {
+      generateChunk()
+    }
+  }
+
+  /**
+   * Request samples from the buffer
+   */
+  const requestSamples = (sampleCount: number): Uint8Array => {
     const result = new Uint8Array(sampleCount)
 
     // Ensure we have enough samples available
-    this.ensureAvailable(sampleCount)
+    ensureAvailable(sampleCount)
 
     // Copy samples from ring buffer
     for (let i = 0; i < sampleCount; i++) {
-      result[i] = this.buffer[this.readPosition]!
-      this.readPosition =
-        (this.readPosition + 1) & (BufferManager.BUFFER_SIZE - 1)
+      result[i] = buffer[readPosition]!
+      readPosition = (readPosition + 1) & (BUFFER_SIZE - 1)
     }
 
     return result
   }
 
   /**
-   * Get the number of available samples in the buffer
-   */
-  getAvailableSamples(): number {
-    const available = this.writePosition - this.readPosition
-    return available >= 0 ? available : available + BufferManager.BUFFER_SIZE
-  }
-
-  /**
    * Switch to a different sample generator
    */
-  setGenerator(generator: SampleGenerator): void {
-    this.generator = generator
+  const setGenerator = (generator: SampleGenerator): void => {
+    currentGenerator = generator
   }
 
   /**
    * Get current buffer state for debugging/testing
    */
-  getBufferState(): {
-    writePosition: number
-    readPosition: number
-    available: number
-  } {
+  const getBufferState = (): { writePosition: number; readPosition: number; available: number } => {
     return {
-      writePosition: this.writePosition,
-      readPosition: this.readPosition,
-      available: this.getAvailableSamples()
+      writePosition,
+      readPosition,
+      available: getAvailableSamples()
     }
   }
 
   /**
    * Reset buffer to initial state
    */
-  reset(): void {
-    this.writePosition = 0
-    this.readPosition = 0
+  const reset = (): void => {
+    writePosition = 0
+    readPosition = 0
   }
 
-  /**
-   * Ensure at least the requested number of samples are available
-   */
-  private ensureAvailable(sampleCount: number): void {
-    while (this.getAvailableSamples() < sampleCount) {
-      this.generateChunk()
-    }
-  }
-
-  /**
-   * Generate a new chunk and add it to the buffer
-   */
-  private generateChunk(): void {
-    const chunk = this.generator.generate()
-
-    if (chunk.length !== BufferManager.CHUNK_SIZE) {
-      throw new Error(
-        `Generator returned ${chunk.length} bytes, expected ${BufferManager.CHUNK_SIZE}`
-      )
-    }
-
-    // Copy chunk to ring buffer
-    for (let i = 0; i < chunk.length; i++) {
-      this.buffer[this.writePosition] = chunk[i]!
-      this.writePosition =
-        (this.writePosition + 1) & (BufferManager.BUFFER_SIZE - 1)
-
-      // Check for buffer overflow
-      if (this.writePosition === this.readPosition) {
-        throw new Error(
-          'Buffer overflow: write position caught up to read position'
-        )
-      }
-    }
+  // Return the public interface
+  return {
+    requestSamples,
+    getAvailableSamples,
+    setGenerator,
+    getBufferState,
+    reset
   }
 }

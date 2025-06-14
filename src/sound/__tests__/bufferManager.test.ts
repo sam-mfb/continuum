@@ -4,12 +4,13 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest'
-import { BufferManager, type SampleGenerator } from '../bufferManager'
+import { createBufferManager, type BufferManager } from '../bufferManager'
+import type { SampleGenerator } from '../sampleGenerator'
 
 class MockGenerator implements SampleGenerator {
   private counter = 0
 
-  generate(): Uint8Array {
+  generateChunk(): Uint8Array {
     const chunk = new Uint8Array(370)
     // Fill with incrementing values for easy verification
     for (let i = 0; i < 370; i++) {
@@ -18,23 +19,35 @@ class MockGenerator implements SampleGenerator {
     this.counter += 370
     return chunk
   }
+  
+  reset(): void {
+    this.counter = 0
+  }
 }
 
 class SilenceGenerator implements SampleGenerator {
-  generate(): Uint8Array {
+  generateChunk(): Uint8Array {
     return new Uint8Array(370).fill(0x80)
+  }
+  
+  reset(): void {
+    // No state to reset
   }
 }
 
 class PatternGenerator implements SampleGenerator {
   constructor(private pattern: number[]) {}
 
-  generate(): Uint8Array {
+  generateChunk(): Uint8Array {
     const chunk = new Uint8Array(370)
     for (let i = 0; i < 370; i++) {
       chunk[i] = this.pattern[i % this.pattern.length]!
     }
     return chunk
+  }
+  
+  reset(): void {
+    // No state to reset
   }
 }
 
@@ -44,7 +57,7 @@ describe('BufferManager', () => {
 
   beforeEach(() => {
     mockGenerator = new MockGenerator()
-    bufferManager = new BufferManager(mockGenerator)
+    bufferManager = createBufferManager(mockGenerator)
   })
 
   describe('basic functionality', () => {
@@ -284,12 +297,16 @@ describe('BufferManager', () => {
   describe('error handling', () => {
     it('throws error if generator returns wrong size', () => {
       class BadGenerator implements SampleGenerator {
-        generate(): Uint8Array {
+        generateChunk(): Uint8Array {
           return new Uint8Array(369) // Wrong size!
+        }
+        
+        reset(): void {
+          // No state to reset
         }
       }
 
-      const badManager = new BufferManager(new BadGenerator())
+      const badManager = createBufferManager(new BadGenerator())
       expect(() => badManager.requestSamples(100)).toThrow(
         'Generator returned 369 bytes, expected 370'
       )
