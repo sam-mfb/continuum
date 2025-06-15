@@ -62,6 +62,7 @@ if (!bouncing)    /* to keep from running through bouncing walls */
 ```
 
 **Why gravity is disabled during bouncing:**
+
 - Prevents ship from getting stuck against walls
 - Avoids physics conflicts between bounce force and gravity
 - Ensures clean separation from walls before gravity resumes
@@ -209,7 +210,7 @@ globaly = screeny + shipy;
 ### Position Update Flow
 
 1. **Physics** (`ship_control`): Velocity (`dx`, `dy`) modified by forces
-2. **Movement** (`move_ship`): 
+2. **Movement** (`move_ship`):
    - Velocity → `xslow`/`yslow` → `shipx`/`shipy`
    - Fractional parts preserved for next frame
 3. **Camera** (`contain_ship`):
@@ -219,6 +220,7 @@ globaly = screeny + shipy;
 ### Example: Sub-pixel Movement
 
 With velocity `dx = 300` over 3 frames:
+
 ```
 Frame 1: xslow = 0 + 300 = 300
          shipx += 300 >> 8 = 1  (move 1 pixel)
@@ -270,6 +272,7 @@ The game implements a sophisticated wall bouncing system to handle ship-wall col
 ### Bounce Detection (Play.c:270-287)
 
 The `check_for_bounce()` function:
+
 1. Checks if ship overlaps with bounce-type walls (L_BOUNCE)
 2. If collision detected, calls `bounce_ship()` and sets `bouncing = TRUE`
 3. If no collision, updates `unbouncex/unbouncey` as last safe position
@@ -284,6 +287,7 @@ static int bounce_vecs[] =
 ```
 
 **Bounce Algorithm:**
+
 1. Finds closest bounce wall using `pt2line()` distance calculation
 2. Determines wall normal direction using `getstrafedir()`
 3. Calculates dot product of velocity with wall normal
@@ -291,13 +295,15 @@ static int bounce_vecs[] =
 5. Uses formula: `kick = (normal * dot) / constant`
 
 **Key Features:**
+
 - Only applies bounce if ship is moving slowly toward wall (prevents getting stuck)
-- Minimum bounce force of 10*256 units ensures clean separation
+- Minimum bounce force of 10\*256 units ensures clean separation
 - Bounce direction points toward last safe position (`unbouncex/unbouncey`)
 
 ### Interactions with Other Systems
 
 **During bouncing:**
+
 - Thrust is reduced to half strength (Play.c:482-483)
 - Gravity is completely disabled (Play.c:500-505)
 - Ship still takes damage from collisions

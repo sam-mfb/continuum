@@ -9,57 +9,70 @@ The original Continuum runs at a fixed 20 FPS (50ms per frame). All physics calc
 ## Frame-Locked Components in Play.c
 
 ### 1. Ship Thrust (lines 481-483)
+
 ```c
 dx += (bouncing ? 1 : 2) * thrustx[shiprot];
 dy += (bouncing ? 1 : 2) * thrustx[(shiprot+24) & 31];
 ```
+
 - Adds velocity based on thrust lookup table
 - Values represent velocity change per frame (per 50ms)
 
 ### 2. Friction (lines 496-497)
+
 ```c
 dx -= (dx >> 6) + (dx > 0 ? 1 : 0);
 dy -= (dy >> 6) + (dy > 0 && !cartooning ? 1 : 0);
 ```
+
 - Reduces velocity by 1/64th plus 1 each frame
 - Ensures ship eventually stops
 
 ### 3. Gravity (lines 502-504)
+
 ```c
 gravity_vector(globalx, globaly, &xgravity, &ygravity);
 dx += xgravity;
 dy += ygravity;
 ```
+
 - Adds gravity force to velocity each frame
 - Gravity strength tuned for 20 FPS
 
 ### 4. Projectile Movement (lines 858-859)
+
 ```c
 x += sp->h;  // h,v are velocity components
 y += sp->v;
 ```
+
 - Shot position updated by velocity each frame
 - Initial velocities from `shotvecs[]` table (lines 38-41)
 
 #### Shot Lifetime Counters (lines 540, 855)
+
 ```c
 sp->lifecount = SHOTLEN;  // Initial: 35 frames
 sp->lifecount--;          // Decrements each frame
 ```
+
 - Shots exist for exactly 35 frames at 20 FPS (1.75 seconds)
 
 #### Bounce Timing (Terrain.c lines 225-227)
+
 ```c
 sp->lifecount = shortest;  // Frames until wall impact
 if (sp->hitline != NULL && sp->hitline->kind == L_BOUNCE)
     sp->btime = totallife - shortest;  // Remaining frames after bounce
 ```
+
 - Both `lifecount` and `btime` are frame-based counters
 - Used for precise collision prediction and bounce lifetime preservation
 
 ### 5. Timer-Based Events
 
 #### Planet Bonus Countdown (lines 197-201)
+
 ```c
 if (!--bonuscount)  // Decrements every frame
 {
@@ -67,29 +80,37 @@ if (!--bonuscount)  // Decrements every frame
     bonuscount = 10;  // Reset to 10 frames
 }
 ```
+
 - Reduces bonus by 10 points every 10 frames (500ms)
 
 #### Mission Complete Delay (lines 194-195)
+
 ```c
 if (missioncomplete && !--micocycles)
     endofplanet = TRUE;
 ```
+
 - `MICODELAY` countdown in frames before level ends
 
 #### Death Timer (lines 203-211)
+
 ```c
 if (dead_count && !--dead_count)
     // Respawn logic
 ```
+
 - `DEAD_TIME` countdown for respawn delay
 
 #### Fuel Burn Rate (line 490)
+
 ```c
 fuel_minus(FUELBURN);
 ```
+
 - Deducts fuel each frame while thrusting
 
 #### Animation Frame Counters
+
 - Bunker rotation: `b->rotcount` (line 143)
 - Fuel depot animation: `f->figcount` (line 152)
 - Flame blinking: `flame_blink` (lines 485-488)
@@ -109,6 +130,7 @@ Where:
 ## Implementation Strategy
 
 ### Physics Values
+
 Apply timeScale to all per-frame physics changes:
 
 ```c
@@ -131,6 +153,7 @@ sp->timeRemaining = 1.75;  // 1.75 seconds instead of 35 frames
 ```
 
 ### Timer Values
+
 Convert frame counters to time-based:
 
 ```c
@@ -143,7 +166,9 @@ if (bonusTimeRemaining <= 0) {
 ```
 
 ### Integer Precision
+
 The original uses fixed-point math with 8-bit fractional precision (>> 8). When scaling:
+
 - Maintain sufficient precision for sub-pixel movement
 - Consider using floating point or higher precision fixed-point
 - Ensure rounding doesn't accumulate errors
@@ -155,6 +180,7 @@ The original uses fixed-point math with 8-bit fractional precision (>> 8). When 
 2. **Animation Timing**: Visual effects (flame blink, sprite rotation) should use actual time, not frame counts.
 
 3. **Input Polling**: The original polls input once per frame. At higher framerates, this naturally provides more responsive input. However, this introduces new challenges:
+
    - **Rotation Speed**: Ship rotation (lines 475-478) changes by 1 position per frame, so at 60 FPS the ship would rotate 3x faster than at 20 FPS. This needs time-based accumulation.
    - **Integer Precision**: With small thrust values (e.g., thrustx[i]=9) and timeScale < 1.0, integer rounding could make certain angles feel different or weaker than intended.
 
@@ -169,6 +195,7 @@ The original game polls input once per frame at 20 FPS. When adapting for variab
 ### The Challenge
 
 Simply polling at higher framerates creates several problems:
+
 - Ship rotation speed scales with framerate (3x faster at 60 FPS)
 - Quick "tap" inputs may produce inconsistent results based on timing
 - Rapid tapping for incremental thrust (a common technique) could behave differently
@@ -198,10 +225,10 @@ on_logical_frame():
     if (inputBuffer.thrustPressed):
         dx += thrustx[shiprot] * 2  // Original thrust amount
         dy += thrustx[(shiprot+24) & 31] * 2
-    
+
     if (inputBuffer.leftPressed):
         shiprot = (shiprot - 1) & 31  // Original rotation speed
-    
+
     // Clear buffer for next logical frame
     inputBuffer.clear()
 ```
@@ -218,6 +245,7 @@ This approach maintains the exact input behavior of the original game while prev
 ## Testing
 
 When implementing time scaling:
+
 1. Test at various framerates (10, 20, 40, 60 FPS)
 2. Verify ship acceleration feels identical
 3. Check that timed events occur at correct intervals

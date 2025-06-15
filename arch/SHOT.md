@@ -5,6 +5,7 @@ This document describes how the shooting system works in Continuum, based on the
 ## Overview
 
 The shooting system features:
+
 - Maximum of 6 simultaneous player bullets
 - Single shot per button press (no auto-fire)
 - Bullets inherit ship velocity
@@ -30,12 +31,14 @@ else
 ```
 
 **Key Features:**
+
 - `firing` flag prevents auto-fire - must release and press again
 - Shield blocks shooting: `if(i<NUMBULLETS && !shielding)`
 
 ## Bullet Data Structure
 
 Each bullet (`shotrec`) tracks:
+
 - `x8, y8`: Position in 8x precision (sub-pixel accuracy)
 - `x, y`: Position in pixels
 - `h, v`: Velocity components
@@ -60,10 +63,11 @@ sp->lifecount = SHOTLEN;                  // 35 frames lifetime
 ### Velocity Calculation
 
 **Base Shot Velocity** (Play.c:38-41):
+
 ```c
-int shotvecs[32]={0, 14, 27, 40, 51, 60, 67, 71, 
+int shotvecs[32]={0, 14, 27, 40, 51, 60, 67, 71,
                   72, 71, 67, 60, 51, 40, 27, 14,
-                  0, -14, -27, -40, -51, -60, -67, -71, 
+                  0, -14, -27, -40, -51, -60, -67, -71,
                   -72, -71, -67, -60, -51, -40, -27, -14};
 ```
 
@@ -74,6 +78,7 @@ int shotvecs[32]={0, 14, 27, 40, 51, 60, 67, 71,
 ### Initial Collision Check
 
 After creation, bullets immediately check for walls:
+
 ```c
 set_life(sp, NULL);
 if (sp->lifecount > 0)
@@ -101,16 +106,19 @@ The `move_shot()` function (Play.c:848-874) updates each bullet:
 The shot system uses fixed-point arithmetic for smooth sub-pixel movement:
 
 **Position Storage:**
+
 - `x8, y8`: High-precision position with 3 bits of fractional precision (1/8 pixel units)
 - `x, y`: Integer pixel position for drawing and collision detection
 
 **Initial Position Setup (Play.c:538-540):**
+
 ```c
 sp->x8 = (globalx << 3);     // Convert ship position to 1/8 pixel units
 sp->y8 = (globaly << 3);     // Multiply by 8 for sub-pixel precision
 ```
 
 **Position Update (Play.c:855-873):**
+
 ```c
 // Each frame in move_shot():
 x = sp->x8;              // Get high-precision position
@@ -127,6 +135,7 @@ sp->y = y;
 ```
 
 **Benefits of This System:**
+
 - Allows fractional pixel velocities (e.g., 5/8 pixel per frame)
 - Creates smooth diagonal trajectories
 - Prevents rounding errors from accumulating
@@ -141,6 +150,7 @@ For example, with velocity `h = 5`, the shot moves exactly 5/8 (0.625) pixels pe
 The `lifecount` and `btime` variables work together to handle wall collisions:
 
 **Normal Flight:**
+
 - `lifecount`: Counts down from 35 to 0 (remaining lifetime in frames)
 - `btime`: Set to 0 (no bounce pending)
 
@@ -160,6 +170,7 @@ This function (Terrain.c:114-230) calculates when the shot will hit a wall:
    ```
 
 **Example Bounce Scenario:**
+
 - Shot fired with `lifecount = 35`, `btime = 0`
 - `set_life()` detects bounce wall 10 frames away
 - Sets `lifecount = 10`, `btime = 25` (35 - 10)
@@ -189,6 +200,7 @@ bounce_shot(sp)
 ```
 
 **Bounce Features:**
+
 - Backs up bullet to prevent wall sticking
 - Calculates reflection using dot product with wall normal
 - Allows multiple bounces until total lifetime expires
@@ -199,15 +211,17 @@ bounce_shot(sp)
 The `move_shipshots()` function (Play.c:750-814) checks collisions:
 
 ### Bunker Collisions
+
 - Checks all bunkers within bullet's radius
 - Validates hit angle for directional bunkers
 - Hardy bunkers (DIFFBUNK type 2) require multiple hits
 - Awards points and triggers explosion effects
 
 ### Self-Damage
+
 ```c
 if (globalx > left && globalx < right &&
-    globaly > top  && globaly < bot && 
+    globaly > top  && globaly < bot &&
     xyindist(sp->x - globalx, sp->y - globaly, SCENTER) &&
     !dead_count)
 {

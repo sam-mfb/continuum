@@ -51,7 +51,13 @@ export const GraphicsViewer: React.FC = () => {
 
   return (
     <div className="graphics-viewer">
-      <h3>{selectedFile.replace('.mac', '').replace('.bin', '').replace(/_/g, ' ').toUpperCase()}</h3>
+      <h3>
+        {selectedFile
+          .replace('.mac', '')
+          .replace('.bin', '')
+          .replace(/_/g, ' ')
+          .toUpperCase()}
+      </h3>
       <div className="canvas-container">
         <canvas
           ref={canvasRef}

@@ -4,7 +4,7 @@ const SHIP_COLOR = 'white'
 /**
  * Draw the player's ship on the canvas
  * Ship is drawn as an equilateral triangle
- * 
+ *
  * @param ctx - Canvas rendering context
  * @param x - X position of ship center
  * @param y - Y position of ship center

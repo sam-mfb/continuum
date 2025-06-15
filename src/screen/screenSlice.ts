@@ -14,7 +14,10 @@ export const screenSlice = createSlice({
       state.screenx = action.payload.x
       state.screeny = action.payload.y
     },
-    updatePosition: (state, action: PayloadAction<{ x: number; y: number }>) => {
+    updatePosition: (
+      state,
+      action: PayloadAction<{ x: number; y: number }>
+    ) => {
       state.screenx = action.payload.x
       state.screeny = action.payload.y
     }
