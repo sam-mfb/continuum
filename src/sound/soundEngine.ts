@@ -67,10 +67,21 @@ export const createSoundEngine = (): SoundEngine => {
   }
 
   /**
-   * Stop audio playback
+   * Stop audio playback and reset all generators
    */
   const stop = (): void => {
     audioOutput.stop()
+
+    // Reset all generators to their initial state
+    Object.values(allGenerators).forEach(generator => {
+      if (generator && typeof generator.reset === 'function') {
+        generator.reset()
+      }
+    })
+
+    // Reset buffer manager to silence
+    currentGenerator = testSounds.silence
+    bufferManager.setGenerator(currentGenerator)
   }
 
   /**
