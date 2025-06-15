@@ -20,21 +20,11 @@
 
 import type { SampleGenerator } from '../sampleGenerator'
 import { CHUNK_SIZE, CENTER_VALUE } from '../sampleGenerator'
+import { HISS_RANDS } from './hissRandsData'
 
 // Constants from original
 const FIZZ_CYCLES = 80 // Number of cycles to play
 const FIZZ_AMP_OFFSET = 40 // Added to fizzcount for amplitude
-
-// Reuse the same hiss pattern generation as crack sound
-const generateHissRands = (): Uint8Array => {
-  const rands = new Uint8Array(256)
-  for (let i = 0; i < 256; i++) {
-    rands[i] = Math.floor(Math.random() * 40) + 4
-  }
-  return rands
-}
-
-const hissRands = generateHissRands()
 
 export const createFizzGenerator = (): SampleGenerator => {
   // State variables
@@ -72,7 +62,7 @@ export const createFizzGenerator = (): SampleGenerator => {
       // Need new random value?
       if (samplesRemaining === 0) {
         // Get next random value for sample count
-        samplesRemaining = hissRands[randIndex]!
+        samplesRemaining = HISS_RANDS[randIndex]!
         randIndex = (randIndex + 1) & 0xff // Wrap at 256
 
         // Toggle sign

@@ -20,22 +20,11 @@
 
 import type { SampleGenerator } from '../sampleGenerator'
 import { CHUNK_SIZE, CENTER_VALUE } from '../sampleGenerator'
+import { HISS_RANDS } from './hissRandsData'
 
 // Constants from original
 const CRACK_CYCLES = 6 // Number of cycles to play
 const CRACK_AMPLITUDE = 0x20 // Fixed amplitude (32)
-
-// Generate hiss_rands array like the original
-// Each value is random between 4 and 43 (rint(40) + 4)
-const generateHissRands = (): Uint8Array => {
-  const rands = new Uint8Array(256)
-  for (let i = 0; i < 256; i++) {
-    rands[i] = Math.floor(Math.random() * 40) + 4
-  }
-  return rands
-}
-
-const hissRands = generateHissRands()
 
 export const createCrackGenerator = (): SampleGenerator => {
   // State variables
@@ -70,7 +59,7 @@ export const createCrackGenerator = (): SampleGenerator => {
       // Need new random value?
       if (samplesRemaining === 0) {
         // Get next random value for sample count
-        samplesRemaining = hissRands[randIndex]!
+        samplesRemaining = HISS_RANDS[randIndex]!
         randIndex = (randIndex + 1) & 0xff // Wrap at 256
 
         // Toggle amplitude

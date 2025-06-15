@@ -13,6 +13,7 @@ import { createFireGenerator } from './fireGenerator'
 import { createCrackGenerator } from './crackGenerator'
 import { createFizzGenerator } from './fizzGenerator'
 import { createBunkerGenerator, BunkerSoundType } from './bunkerGenerator'
+import { createEchoGenerator } from './echoGenerator'
 
 /**
  * Factory function to create all game sound generators
@@ -29,9 +30,8 @@ export const createGameSounds = () =>
     bunkerNormal: createBunkerGenerator(BunkerSoundType.NORMAL),
     bunkerSoft: createBunkerGenerator(BunkerSoundType.SOFT),
     crack: createCrackGenerator(),
-    fizz: createFizzGenerator()
-    // Future game sounds will be added here:
-    // echo: createEchoGenerator(),
+    fizz: createFizzGenerator(),
+    echo: createEchoGenerator()
   }) as const
 
 export type GameSoundType = keyof ReturnType<typeof createGameSounds>
