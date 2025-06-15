@@ -34,7 +34,10 @@ export const shipSlice = createSlice({
       state.shipx = action.payload.x
       state.shipy = action.payload.y
     },
-    updatePosition: (state, action: PayloadAction<{ x: number; y: number; dx?: number; dy?: number }>) => {
+    updatePosition: (
+      state,
+      action: PayloadAction<{ x: number; y: number; dx?: number; dy?: number }>
+    ) => {
       state.shipx = action.payload.x
       state.shipy = action.payload.y
       if (action.payload.dx !== undefined) state.dx = action.payload.dx

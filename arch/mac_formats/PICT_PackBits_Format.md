@@ -30,6 +30,7 @@ Offset  Size  Description
 ```
 
 Notable patterns in the header:
+
 - Offset 0x010: `0000 0000 0000 0137 01f8` - Possible dimensions (0x137 = 311, 0x1f8 = 504)
 - Multiple fill patterns with `ffff ffff` (solid black)
 
@@ -67,6 +68,7 @@ Each PackBitsRect operation has this structure:
 ### Segment Transitions
 
 Between PackBitsRect operations, there's typically a transition pattern:
+
 - `0x01 0x08` - End of current operation marker
 - Variable padding/data
 - Next `0x00 0x98` opcode
@@ -87,7 +89,7 @@ The compressed data uses these encoding rules:
 1. **Length byte** (n): Indicates compressed data size (1-127 bytes)
 2. **Control byte** (c) in compressed data:
    - If `c < 128`: Literal run - copy next (c + 1) bytes
-   - If `c > 128`: Repeat run - repeat next byte (257 - c) times  
+   - If `c > 128`: Repeat run - repeat next byte (257 - c) times
    - If `c = 128`: No operation (rare)
 
 ### Example
@@ -105,11 +107,13 @@ Compressed: 27 FE FF 1E FD 55 7D ...
 ## Image Dimensions
 
 ### Stored Dimensions
+
 - Width: 504 pixels (0x1F8)
 - Height: 311 rows (0x137)
 - Bytes per row: 63 (504 ÷ 8)
 
 ### Display Dimensions
+
 - Width: 512 pixels (original Mac screen width)
 - Height: 342 rows (original Mac screen height)
 - Bytes per row: 64 (512 ÷ 8)
@@ -150,6 +154,7 @@ Segment  Data Start  Rows Decoded
 ```
 
 The 0x15 (21 byte) offset from PackBitsRect opcode to data includes:
+
 - 2 bytes: opcode (0x00 0x98)
 - 2 bytes: rowBytes
 - 8 bytes: bounds rectangle
@@ -166,6 +171,7 @@ The 0x15 (21 byte) offset from PackBitsRect opcode to data includes:
 ## Implementation Considerations
 
 When implementing a decoder:
+
 1. Handle both sequential decoding and segment-based approaches
 2. Account for padding bytes between segments
 3. Validate compressed length bytes (must be 1-127)

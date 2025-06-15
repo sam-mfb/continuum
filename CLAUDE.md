@@ -75,6 +75,10 @@ This is a recreation of the 68000 Mac game "Continuum" for the web, maintaining 
 - Typecheck, lint, and format after you finish editing a file
 - Commit changes to version control when you finish a task
 
+## Typescript
+
+- Don't use classes. Use factory function builder patterns.
+
 ## Test Writing
 
 - Don't use the word "should" in test names

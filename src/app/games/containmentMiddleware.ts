@@ -20,7 +20,12 @@ export const containmentMiddleware: Middleware<{}, RootState> =
     const result = next(action)
 
     // After moveShip, apply containment
-    if (typeof action === 'object' && action !== null && 'type' in action && action.type === 'ship/moveShip') {
+    if (
+      typeof action === 'object' &&
+      action !== null &&
+      'type' in action &&
+      action.type === 'ship/moveShip'
+    ) {
       const state = store.getState()
       const contained = containShip(state.ship, state.screen, state.planet)
 

@@ -1,17 +1,20 @@
 /**
  * Sound manager that bridges Redux state with the sound engine
- * Phase 1: Simplified to just Redux bridge functionality
+ * Phase 6: Full implementation with new audio system
  */
 
-import { store } from '../store/store';
-import { SoundType } from './constants';
-import { createSoundEngine } from './soundEngine';
-import { startSound as startSoundAction, stopSound as stopSoundAction } from './soundSlice';
-import type { SoundEngine } from './types';
+import { store } from '../store/store'
+import { SoundType } from './constants'
+import { createSoundEngine } from './soundEngine'
+import {
+  startSound as startSoundAction,
+  stopSound as stopSoundAction
+} from './soundSlice'
+import type { SoundEngine } from './types'
 
 /**
  * Manages sound playback and lifecycle
- * Phase 1: Minimal implementation - just Redux bridge
+ * Phase 6: Integrated with new buffer-based audio system
  */
 export const createSoundManager = (): {
   initialize: () => void
@@ -19,10 +22,13 @@ export const createSoundManager = (): {
   stopSound: () => void
   setVolume: (volume: number) => void
   cleanup: () => void
+  getEngine: () => SoundEngine | null
+  start: () => void
+  stop: () => void
 } => {
-  let engine: SoundEngine | null = null;
-  let isInitialized = false;
-  
+  let engine: SoundEngine | null = null
+  let isInitialized = false
+
   /**
    * Initialize the sound system
    */
@@ -30,12 +36,12 @@ export const createSoundManager = (): {
     if (isInitialized) return
 
     try {
-      engine = createSoundEngine();
-      isInitialized = true;
-      
+      engine = createSoundEngine()
+      isInitialized = true
+
       // Apply initial volume from Redux state
-      const initialVolume = store.getState().sound.volume;
-      engine.setVolume(initialVolume);
+      const initialVolume = store.getState().sound.volume
+      engine.setVolume(initialVolume)
     } catch (error) {
       console.error('Failed to initialize sound engine:', error)
       engine = null
@@ -45,31 +51,56 @@ export const createSoundManager = (): {
 
   /**
    * Start playing a sound
-   * Phase 1: Just updates Redux state
+   * Phase 6: Updates Redux state and starts audio
    */
   const startSound = (soundType: SoundType): void => {
     // Update Redux state
-    store.dispatch(startSoundAction(soundType));
-    
-    // Phase 1: No actual audio playback
+    store.dispatch(startSoundAction(soundType))
+
+    // Start audio playback
     if (engine) {
-      engine.start();
+      engine.start()
     }
   }
 
   /**
    * Stop the current sound
-   * Phase 1: Just updates Redux state
+   * Phase 6: Updates Redux state and stops audio
    */
   const stopSound = (): void => {
-    store.dispatch(stopSoundAction());
-    
-    // Phase 1: No actual audio to stop
+    store.dispatch(stopSoundAction())
+
+    // Stop audio playback
     if (engine) {
-      engine.stop();
+      engine.stop()
     }
-  };
-  
+  }
+
+  /**
+   * Start audio engine (for test panel)
+   */
+  const start = (): void => {
+    if (engine) {
+      engine.start()
+    }
+  }
+
+  /**
+   * Stop audio engine (for test panel)
+   */
+  const stop = (): void => {
+    if (engine) {
+      engine.stop()
+    }
+  }
+
+  /**
+   * Get the sound engine instance (for test panel)
+   */
+  const getEngine = (): SoundEngine | null => {
+    return engine
+  }
+
   /**
    * Set the master volume
    */
@@ -98,8 +129,11 @@ export const createSoundManager = (): {
     }
 
     // Handle sound being disabled
-    if (!state.sound.enabled && state.sound.currentSound !== SoundType.NO_SOUND) {
-      stopSound();
+    if (
+      !state.sound.enabled &&
+      state.sound.currentSound !== SoundType.NO_SOUND
+    ) {
+      stopSound()
     }
   })
 
@@ -108,9 +142,12 @@ export const createSoundManager = (): {
     startSound,
     stopSound,
     setVolume,
-    cleanup
-  };
-};
+    cleanup,
+    getEngine,
+    start,
+    stop
+  }
+}
 
 // Create a singleton instance
-export const soundManager = createSoundManager();
+export const soundManager = createSoundManager()
