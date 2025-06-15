@@ -18,26 +18,26 @@ export const createSoundEngine = (): SoundEngine => {
   // Initialize both test and game sound generators
   const testSounds = createTestSounds()
   const gameSounds = createGameSounds()
-  
+
   // Combine all generators for easy access
   const allGenerators = { ...testSounds, ...gameSounds }
-  
+
   // Initialize buffer manager with silence
   const bufferManager = createBufferManager(testSounds.silence)
-  
+
   // Initialize audio output
   const audioOutput = createAudioOutput(bufferManager)
-  
+
   // Keep track of current generator
   let currentGenerator: SampleGenerator = testSounds.silence
-  
+
   /**
    * Get audio context from the audio output
    */
   const getAudioContext = (): AudioContext | null => {
     return audioOutput.getContext()
   }
-  
+
   /**
    * Create a dummy gain node for compatibility
    * The new system handles volume differently, but we keep this for API compatibility
@@ -49,7 +49,7 @@ export const createSoundEngine = (): SoundEngine => {
     gain.connect(ctx.destination)
     return gain
   }
-  
+
   /**
    * Set the master volume (placeholder for now)
    * @param volume - Volume level from 0 to 1
@@ -58,21 +58,21 @@ export const createSoundEngine = (): SoundEngine => {
     // TODO: Implement volume control in the generator/buffer system
     console.log('setVolume:', volume)
   }
-  
+
   /**
    * Start audio playback
    */
   const start = (): void => {
     audioOutput.start()
   }
-  
+
   /**
    * Stop audio playback
    */
   const stop = (): void => {
     audioOutput.stop()
   }
-  
+
   /**
    * Switch to a different test sound
    * @param soundType - Name of the test sound to play
@@ -81,14 +81,14 @@ export const createSoundEngine = (): SoundEngine => {
     currentGenerator = allGenerators[soundType]
     bufferManager.setGenerator(currentGenerator)
   }
-  
+
   /**
    * Get available test sounds
    */
   const getTestSounds = (): string[] => {
     return Object.keys(allGenerators)
   }
-  
+
   /**
    * Get performance statistics
    */
@@ -100,7 +100,7 @@ export const createSoundEngine = (): SoundEngine => {
       bufferState
     }
   }
-  
+
   // Return public interface with extensions for testing
   return {
     audioContext: getAudioContext() as AudioContext,

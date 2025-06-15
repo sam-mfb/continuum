@@ -30,10 +30,10 @@ vi.mock('../bufferManager', () => ({
     setGenerator: vi.fn(),
     requestSamples: vi.fn(() => new Uint8Array(512)),
     getAvailableSamples: vi.fn(() => 1024),
-    getBufferState: vi.fn(() => ({ 
-      writePosition: 0, 
-      readPosition: 0, 
-      available: 0 
+    getBufferState: vi.fn(() => ({
+      writePosition: 0,
+      readPosition: 0,
+      available: 0
     })),
     reset: vi.fn()
   }))
@@ -97,7 +97,7 @@ describe('createSoundEngine', () => {
   it('returns test sound names', () => {
     const engine = createSoundEngine() as TestSoundEngine
     const sounds = engine.getTestSounds()
-    
+
     expect(sounds).toContain('silence')
     expect(sounds).toContain('sine440')
     expect(sounds).toContain('whiteNoise')
@@ -107,7 +107,7 @@ describe('createSoundEngine', () => {
 
   it('can switch between test sounds', () => {
     const engine = createSoundEngine() as TestSoundEngine
-    
+
     // Should not throw
     expect(() => engine.playTestSound('sine440')).not.toThrow()
     expect(() => engine.playTestSound('whiteNoise')).not.toThrow()
