@@ -12,6 +12,7 @@ import { createFuelGenerator } from './fuelGenerator'
 import { createFireGenerator } from './fireGenerator'
 import { createCrackGenerator } from './crackGenerator'
 import { createFizzGenerator } from './fizzGenerator'
+import { createBunkerGenerator, BunkerSoundType } from './bunkerGenerator'
 
 /**
  * Factory function to create all game sound generators
@@ -25,10 +26,11 @@ export const createGameSounds = () =>
     explosionAlien: createExplosionGenerator(ExplosionType.ALIEN),
     fuel: createFuelGenerator(),
     fire: createFireGenerator(),
+    bunkerNormal: createBunkerGenerator(BunkerSoundType.NORMAL),
+    bunkerSoft: createBunkerGenerator(BunkerSoundType.SOFT),
     crack: createCrackGenerator(),
     fizz: createFizzGenerator()
     // Future game sounds will be added here:
-    // bunker: createBunkerGenerator(),
     // echo: createEchoGenerator(),
   }) as const
 
