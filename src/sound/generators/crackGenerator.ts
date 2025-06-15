@@ -30,9 +30,6 @@ export const createCrackGenerator = (): SampleGenerator => {
   // State variables
   let crackcount = 0 // Countdown counter
   let isActive = false
-  let randIndex = 0 // Current position in hiss_rands
-  let currentAmplitude = CRACK_AMPLITUDE
-  let samplesRemaining = 0 // Samples left at current amplitude
 
   // Auto-start on creation for testing
   let autoStart = true
@@ -52,29 +49,34 @@ export const createCrackGenerator = (): SampleGenerator => {
       return buffer
     }
 
+    // Get random starting position in hiss_rands (& 31 limits to 0-31)
+    const randOffset = Math.floor(Math.random() * 32)
+    
+    // Fill buffer with random noise pattern
     let bufferIndex = 0
+    let randIndex = randOffset
+    // Original starts with 0x20 in D0, then ror.w #8 puts it in high byte
+    // So it starts at 0x2000 >> 8 = 0x20 (32)
+    let currentValue = CRACK_AMPLITUDE
 
-    // Fill buffer with hiss pattern
     while (bufferIndex < CHUNK_SIZE) {
-      // Need new random value?
-      if (samplesRemaining === 0) {
-        // Get next random value for sample count
-        samplesRemaining = HISS_RANDS[randIndex]!
-        randIndex = (randIndex + 1) & 0xff // Wrap at 256
-
-        // Toggle amplitude
-        currentAmplitude = -currentAmplitude
+      // Toggle between 32 and 223 (255-32) (like original eori.w #0xFF00)
+      currentValue = currentValue === CRACK_AMPLITUDE ? 255 - CRACK_AMPLITUDE : CRACK_AMPLITUDE
+      
+      // Get random value for period length (divide by 4 for crack)
+      const period = HISS_RANDS[randIndex & 0xff]! >> 2
+      
+      // Each iteration in original writes 4 bytes (2 move.w instructions)
+      // But we write 1 byte at a time, so multiply by 2 for same effect
+      const samplesPerPeriod = (period + 1) * 2
+      
+      // Fill with current value for this period
+      const count = Math.min(samplesPerPeriod, CHUNK_SIZE - bufferIndex)
+      for (let i = 0; i < count; i++) {
+        buffer[bufferIndex++] = currentValue
       }
-
-      // Fill samples with current amplitude
-      const samplesToWrite = Math.min(
-        samplesRemaining,
-        CHUNK_SIZE - bufferIndex
-      )
-      for (let i = 0; i < samplesToWrite; i++) {
-        buffer[bufferIndex++] = CENTER_VALUE + currentAmplitude
-      }
-      samplesRemaining -= samplesToWrite
+      
+      randIndex++
     }
 
     // Decrement cycle counter once per chunk
@@ -94,16 +96,7 @@ export const createCrackGenerator = (): SampleGenerator => {
     crackcount = CRACK_CYCLES
     isActive = true
     autoStart = false
-    // Random starting position (original uses Random() & 31)
-    randIndex = Math.floor(Math.random() * 32)
-    currentAmplitude = CRACK_AMPLITUDE
-    samplesRemaining = 0
-    console.log(
-      'Crack generator reset - cycles:',
-      crackcount,
-      'start index:',
-      randIndex
-    )
+    console.log('Crack generator reset - cycles:', crackcount)
   }
 
   // Start the crack sound
