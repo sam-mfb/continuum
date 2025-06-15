@@ -7,9 +7,16 @@
  * The original implementation:
  * - Uses a pre-generated table of 128 random period values (expl_rands)
  * - Each value is between 50-255 (EXPL_LO_PER to EXPL_LO_PER + EXPL_ADD_PER)
- * - Picks a random starting position in the table
- * - Generates pulses with random periods, creating an explosion effect
- * - Amplitude increases over time until it reaches 127 (fading out)
+ * - Picks a random starting position in the table (Random() & 63)
+ * - Generates noise bursts with periods from the table
+ * - Amplitude starts low and increases over time (explosion fading out)
+ * - Special case: EXP2 (ship) explosion cannot be interrupted
+ *
+ * Assembly logic:
+ * - Loads amp into high byte (asl.w #8)
+ * - Alternates between amp and 255-amp (eor.w #0xFF00)
+ * - Period values are divided by 2 (asr.w #1)
+ * - Each inner loop iteration writes 4 bytes
  *
  * Three explosion types:
  * - EXP1 (Bunker): amp=16, ampchange=2, priority=90
@@ -18,11 +25,11 @@
  */
 
 import type { SampleGenerator } from '../sampleGenerator'
+import { CHUNK_SIZE, CENTER_VALUE } from '../sampleGenerator'
 
 // Constants from original GW.h
 const EXPL_LO_PER = 50 // Minimum period value
 const EXPL_ADD_PER = 206 // Range of random values
-const CHUNK_SIZE = 370 // Samples per chunk (matches original)
 
 // Explosion types with their initial parameters
 export enum ExplosionType {
@@ -35,94 +42,155 @@ type ExplosionParams = {
   initialAmp: number
   ampChange: number
   priority: number
+  soundId: string // For debugging
 }
 
 const EXPLOSION_PARAMS: Record<ExplosionType, ExplosionParams> = {
-  [ExplosionType.BUNKER]: { initialAmp: 16, ampChange: 2, priority: 90 },
-  [ExplosionType.SHIP]: { initialAmp: 1, ampChange: 1, priority: 100 },
-  [ExplosionType.ALIEN]: { initialAmp: 64, ampChange: 3, priority: 50 }
+  [ExplosionType.BUNKER]: {
+    initialAmp: 16,
+    ampChange: 2,
+    priority: 90,
+    soundId: 'EXP1_SOUND'
+  },
+  [ExplosionType.SHIP]: {
+    initialAmp: 1,
+    ampChange: 1,
+    priority: 100,
+    soundId: 'EXP2_SOUND'
+  },
+  [ExplosionType.ALIEN]: {
+    initialAmp: 64,
+    ampChange: 3,
+    priority: 50,
+    soundId: 'EXP3_SOUND'
+  }
 }
 
-// Generate random table like the original init_sound()
-const generateRandomTable = (): Uint8Array => {
+// Generate expl_rands table like the original init_sound()
+const generateExplRands = (): Uint8Array => {
   const table = new Uint8Array(128)
-  for (let i = 0; i < 128; i++) {
-    // Random value between EXPL_LO_PER and EXPL_LO_PER + EXPL_ADD_PER - 1
-    table[i] = EXPL_LO_PER + Math.floor(Math.random() * EXPL_ADD_PER)
+
+  // Use a seeded random for consistency
+  let seed = 0x5678
+  const random = (): number => {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff
+    return seed / 0x7fffffff
   }
+
+  for (let i = 0; i < 128; i++) {
+    // Original: (char) EXPL_LO_PER + rint(EXPL_ADD_PER)
+    // rint() returns 0 to EXPL_ADD_PER-1
+    table[i] = EXPL_LO_PER + Math.floor(random() * EXPL_ADD_PER)
+  }
+
   return table
 }
 
-export const createExplosionGenerator = (
-  type: ExplosionType
-): SampleGenerator => {
-  // Pre-generate random table like the original
-  const explRands = generateRandomTable()
+// Pre-generate the explosion random table
+const EXPL_RANDS = generateExplRands()
 
-  // Get parameters for this explosion type
+export const createExplosionGenerator = (
+  type: ExplosionType = ExplosionType.BUNKER
+): SampleGenerator => {
   const params = EXPLOSION_PARAMS[type]
 
-  // Current amplitude (increases over time)
-  let amp = params.initialAmp
+  // State variables (matching original)
+  let amp = 0 // Current amplitude
+  let ampchange = 0 // Amplitude change per cycle
+  let priority = 0 // Sound priority
+  let currentsound = '' // Current sound type
+  let isActive = false
 
-  // Position in random table
-  let tablePosition = 0
-
-  // Whether explosion is still playing
-  let isPlaying = true
+  // Auto-start on creation for testing
+  let autoStart = true
 
   const generateChunk = (): Uint8Array => {
     const buffer = new Uint8Array(CHUNK_SIZE)
 
-    if (!isPlaying || amp > 127) {
-      // Explosion has finished, fill with silence
-      buffer.fill(0x80)
-      isPlaying = false
+    // Auto-start on first generation if enabled
+    if (autoStart && !isActive) {
+      start()
+      autoStart = false
+    }
+
+    if (!isActive) {
+      // Fill with silence
+      buffer.fill(CENTER_VALUE)
       return buffer
     }
 
-    // Start at a random position in the table (like Random() & 63 in original)
-    tablePosition = Math.floor(Math.random() * 64)
+    // Get random offset into expl_rands (Random() & 63 gives 0-63)
+    const randOffset = Math.floor(Math.random() * 64)
 
+    // Fill buffer using assembly logic
     let bufferIndex = 0
-    let currentPolarity = true // true = positive, false = negative
+    let randIndex = randOffset
+    let currentValue = amp // Start with amp value
 
-    // Original processes 370 bytes in groups, alternating polarity
     while (bufferIndex < CHUNK_SIZE) {
-      // Toggle polarity (eor.w #0xFF00, D0)
-      currentPolarity = !currentPolarity
+      // Toggle between amp and 255-amp (eor.w #0xFF00)
+      currentValue = currentValue === amp ? 255 - amp : amp
 
-      // Get period from random table
-      let period =
-        explRands[tablePosition + Math.floor(bufferIndex / 74)] ?? EXPL_LO_PER
-      period = period >> 1 // Original divides by 2 (asr.w #1, D2)
+      // Get period from table and divide by 2 (asr.w #1)
+      const period = EXPL_RANDS[randIndex & 0x7f]! >> 1
 
-      // Fill samples for this period
-      const samplesToWrite = Math.min(period * 4, CHUNK_SIZE - bufferIndex)
-      const amplitudeValue = currentPolarity ? amp : -amp
+      // Each iteration in original writes 4 bytes (2 move.w instructions)
+      // But we write 1 byte at a time, so multiply by 2 for same effect
+      const samplesPerPeriod = (period + 1) * 2
 
-      for (let i = 0; i < samplesToWrite && bufferIndex < CHUNK_SIZE; i++) {
-        // Convert signed amplitude to unsigned 8-bit
-        buffer[bufferIndex] = 128 + amplitudeValue
-        bufferIndex++
+      // Fill with current value for this period
+      const count = Math.min(samplesPerPeriod, CHUNK_SIZE - bufferIndex)
+      for (let i = 0; i < count; i++) {
+        buffer[bufferIndex++] = currentValue
       }
+
+      randIndex++
     }
 
-    // Increase amplitude for next chunk (explosion gets louder/fades)
-    // Note: This seems counterintuitive but matches the original
-    amp += params.ampChange
+    // Update amplitude after filling buffer
+    // Special case: don't update priority for ship explosion
+    if (currentsound !== params.soundId || type !== ExplosionType.SHIP) {
+      priority -= ampchange
+    }
+
+    amp += ampchange
+    if (amp > 127) {
+      // Explosion complete
+      console.log(`${params.soundId} complete`)
+      isActive = false
+    }
 
     return buffer
   }
 
   const reset = (): void => {
     amp = params.initialAmp
-    tablePosition = 0
-    isPlaying = true
+    ampchange = params.ampChange
+    priority = params.priority
+    currentsound = params.soundId
+    isActive = true
+    autoStart = false
+    console.log(
+      `Explosion generator (${type}) reset:`,
+      `amp=${amp}, ampchange=${ampchange}, priority=${priority}`
+    )
+  }
+
+  const start = (): void => {
+    console.log(`Starting ${type} explosion (${params.soundId})`)
+    reset()
+  }
+
+  const stop = (): void => {
+    isActive = false
+    amp = 0
   }
 
   return {
     generateChunk,
-    reset
-  }
+    reset,
+    // Extended interface
+    start,
+    stop
+  } as SampleGenerator & { start: () => void; stop: () => void }
 }

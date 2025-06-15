@@ -51,7 +51,7 @@ export const createCrackGenerator = (): SampleGenerator => {
 
     // Get random starting position in hiss_rands (& 31 limits to 0-31)
     const randOffset = Math.floor(Math.random() * 32)
-    
+
     // Fill buffer with random noise pattern
     let bufferIndex = 0
     let randIndex = randOffset
@@ -61,21 +61,24 @@ export const createCrackGenerator = (): SampleGenerator => {
 
     while (bufferIndex < CHUNK_SIZE) {
       // Toggle between 32 and 223 (255-32) (like original eori.w #0xFF00)
-      currentValue = currentValue === CRACK_AMPLITUDE ? 255 - CRACK_AMPLITUDE : CRACK_AMPLITUDE
-      
+      currentValue =
+        currentValue === CRACK_AMPLITUDE
+          ? 255 - CRACK_AMPLITUDE
+          : CRACK_AMPLITUDE
+
       // Get random value for period length (divide by 4 for crack)
       const period = HISS_RANDS[randIndex & 0xff]! >> 2
-      
+
       // Each iteration in original writes 4 bytes (2 move.w instructions)
       // But we write 1 byte at a time, so multiply by 2 for same effect
       const samplesPerPeriod = (period + 1) * 2
-      
+
       // Fill with current value for this period
       const count = Math.min(samplesPerPeriod, CHUNK_SIZE - bufferIndex)
       for (let i = 0; i < count; i++) {
         buffer[bufferIndex++] = currentValue
       }
-      
+
       randIndex++
     }
 
