@@ -81,27 +81,25 @@ export const createEchoGenerator = (): SampleGenerator => {
     // Fill buffer with random noise pattern
     let bufferIndex = 0
     let randIndex = randOffset
+    let currentValue = amp // Start with amp value
 
     while (bufferIndex < CHUNK_SIZE) {
-      // Get random value for period length
-      const period = HISS_RANDS[randIndex & 0xff]! >> 1 // Divide by 2
-
-      // Alternate between high and low values
-      const highValue = amp
-      const lowValue = 255 - amp
-
-      // Fill with high value
-      let count = Math.min(period + 1, (CHUNK_SIZE - bufferIndex) / 2)
-      for (let i = 0; i < count && bufferIndex < CHUNK_SIZE; i++) {
-        buffer[bufferIndex++] = highValue
+      // Toggle between amp and 255-amp (like original eori.w #0xFF00)
+      currentValue = currentValue === amp ? 255 - amp : amp
+      
+      // Get random value for period length (divide by 2 like original)
+      const period = HISS_RANDS[randIndex & 0xff]! >> 1
+      
+      // Each iteration in original writes 4 bytes (2 move.w instructions)
+      // But we write 1 byte at a time, so multiply by 2 for same effect
+      const samplesPerPeriod = (period + 1) * 2
+      
+      // Fill with current value for this period
+      const count = Math.min(samplesPerPeriod, CHUNK_SIZE - bufferIndex)
+      for (let i = 0; i < count; i++) {
+        buffer[bufferIndex++] = currentValue
       }
-
-      // Fill with low value
-      count = Math.min(period + 1, (CHUNK_SIZE - bufferIndex) / 2)
-      for (let i = 0; i < count && bufferIndex < CHUNK_SIZE; i++) {
-        buffer[bufferIndex++] = lowValue
-      }
-
+      
       randIndex++
     }
 
