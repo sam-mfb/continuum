@@ -88,9 +88,45 @@ export const createSoundEngine = (): SoundEngine => {
    * Switch to a different test sound
    * @param soundType - Name of the test sound to play
    */
-  const playTestSound = (soundType: keyof typeof allGenerators): void => {
-    currentGenerator = allGenerators[soundType]
+  const playTestSound = (
+    soundType: keyof typeof allGenerators | 'fizzEcho'
+  ): void => {
+    if (soundType === 'fizzEcho') {
+      // Special case: play fizz sound followed by echo
+      playFizzEchoSequence()
+    } else {
+      currentGenerator = allGenerators[soundType]
+      bufferManager.setGenerator(currentGenerator)
+    }
+  }
+
+  /**
+   * Play fizz sound followed by echo sound (like planet completion)
+   */
+  const playFizzEchoSequence = (): void => {
+    // Start with fizz sound
+    const fizzGen = allGenerators.fizz
+    if (fizzGen && 'start' in fizzGen && typeof fizzGen.start === 'function') {
+      fizzGen.start()
+    }
+    currentGenerator = fizzGen
     bufferManager.setGenerator(currentGenerator)
+
+    // Set up a timer to switch to echo when fizz completes
+    // Fizz lasts 80 cycles, at ~16.67ms per cycle = ~1333ms
+    const fizzDuration = 80 * 16.67
+    setTimeout(() => {
+      const echoGen = allGenerators.echo
+      if (
+        echoGen &&
+        'start' in echoGen &&
+        typeof echoGen.start === 'function'
+      ) {
+        echoGen.start()
+      }
+      currentGenerator = echoGen
+      bufferManager.setGenerator(currentGenerator)
+    }, fizzDuration)
   }
 
   /**

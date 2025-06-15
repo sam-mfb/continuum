@@ -191,6 +191,25 @@ export const SoundTestPanel: React.FC = () => {
         </div>
       </div>
 
+      {/* Special Sound Sequences */}
+      <div style={styles.section}>
+        <h3>Sound Sequences</h3>
+        <div style={styles.soundGrid}>
+          <button
+            onClick={() => handleSoundChange('fizzEcho')}
+            style={{
+              ...styles.soundButton,
+              backgroundColor:
+                currentSound === 'fizzEcho' ? '#ff44ff' : '#f0f0f0',
+              color: currentSound === 'fizzEcho' ? 'white' : 'black'
+            }}
+            disabled={!isPlaying}
+          >
+            Fizz + Echo (Planet Complete)
+          </button>
+        </div>
+      </div>
+
       {/* Performance Stats */}
       {stats && (
         <div style={styles.section}>

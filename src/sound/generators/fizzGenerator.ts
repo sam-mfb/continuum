@@ -30,9 +30,6 @@ export const createFizzGenerator = (): SampleGenerator => {
   // State variables
   let fizzcount = 0 // Countdown counter (also affects amplitude)
   let isActive = false
-  let randIndex = 0 // Current position in hiss_rands
-  let currentSign = 1 // Current amplitude sign (+1 or -1)
-  let samplesRemaining = 0 // Samples left at current amplitude
 
   // Auto-start on creation for testing
   let autoStart = true
@@ -53,35 +50,35 @@ export const createFizzGenerator = (): SampleGenerator => {
     }
 
     // Calculate current amplitude (decreases as fizzcount decreases)
-    const amplitude = fizzcount + FIZZ_AMP_OFFSET
+    // This is the actual sample value, not distance from center
+    const amp = fizzcount + FIZZ_AMP_OFFSET
 
+    // Get random starting position in hiss_rands (& 31 limits to 0-31)
+    const randOffset = Math.floor(Math.random() * 32)
+
+    // Fill buffer with random noise pattern
     let bufferIndex = 0
+    let randIndex = randOffset
+    let currentValue = amp // Start with amp value
 
-    // Fill buffer with hiss pattern
     while (bufferIndex < CHUNK_SIZE) {
-      // Need new random value?
-      if (samplesRemaining === 0) {
-        // Get next random value for sample count
-        samplesRemaining = HISS_RANDS[randIndex]!
-        randIndex = (randIndex + 1) & 0xff // Wrap at 256
+      // Toggle between amp and 255-amp (like original eori.w #0xFF00)
+      currentValue = currentValue === amp ? 255 - amp : amp
 
-        // Toggle sign
-        currentSign = -currentSign
+      // Get random value for period length (divide by 2 like original)
+      const period = HISS_RANDS[randIndex & 0xff]! >> 1
+
+      // Each iteration in original writes 4 bytes (2 move.w instructions)
+      // But we write 1 byte at a time, so multiply by 2 for same effect
+      const samplesPerPeriod = (period + 1) * 2
+
+      // Fill with current value for this period
+      const count = Math.min(samplesPerPeriod, CHUNK_SIZE - bufferIndex)
+      for (let i = 0; i < count; i++) {
+        buffer[bufferIndex++] = currentValue
       }
 
-      // Fill samples with current amplitude
-      const samplesToWrite = Math.min(
-        samplesRemaining,
-        CHUNK_SIZE - bufferIndex
-      )
-      const signedAmplitude = amplitude * currentSign
-
-      for (let i = 0; i < samplesToWrite; i++) {
-        // Clamp to valid range (0-255)
-        const sample = CENTER_VALUE + signedAmplitude
-        buffer[bufferIndex++] = Math.max(0, Math.min(255, sample))
-      }
-      samplesRemaining -= samplesToWrite
+      randIndex++
     }
 
     // Decrement cycle counter once per chunk
@@ -89,7 +86,7 @@ export const createFizzGenerator = (): SampleGenerator => {
 
     // Debug log periodically
     if (fizzcount % 20 === 0 || fizzcount < 5) {
-      console.log(`Fizz sound: count=${fizzcount}, amplitude=${amplitude}`)
+      console.log(`Fizz sound: count=${fizzcount}, amp=${amp}`)
     }
 
     if (fizzcount === 0) {
@@ -105,16 +102,7 @@ export const createFizzGenerator = (): SampleGenerator => {
     fizzcount = FIZZ_CYCLES
     isActive = true
     autoStart = false
-    // Random starting position (original uses Random() & 31)
-    randIndex = Math.floor(Math.random() * 32)
-    currentSign = 1
-    samplesRemaining = 0
-    console.log(
-      'Fizz generator reset - cycles:',
-      fizzcount,
-      'start index:',
-      randIndex
-    )
+    console.log('Fizz generator reset - cycles:', fizzcount)
   }
 
   // Start the fizz sound
