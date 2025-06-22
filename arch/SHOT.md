@@ -71,6 +71,18 @@ int shotvecs[32]={0, 14, 27, 40, 51, 60, 67, 71,
                   -72, -71, -67, -60, -51, -40, -27, -14};
 ```
 
+In the game's coordinate system:
+
+- shotvecs[shiprot] gives V × cos(θ) for the ship's angle
+- shotvecs[(shiprot + 24) & 31] shifts by 270° (which is -90° mod 360°)
+- This gives V × cos(θ - 90°) = V × sin(θ)
+- The `& 31` is because there are 32 rotation positions (0-31), this ensures the array
+  index always stays in bounds when accessing shotvecs[yrot]. It's
+  essentially a fast way to wrap around when rotating past position 31
+  back to position 0.
+
+General features:
+
 - Maximum speed: 72 units (at 45° angles)
 - Cardinal directions: varies from 0 (up/down) to 71 (left/right)
 - **Inherits 1/32 of ship velocity** for realistic physics
