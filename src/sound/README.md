@@ -157,4 +157,3 @@ The goal is to make the sounds indistinguishable from the original 1986 Mac vers
 ## Note on ASM code reconstructions
 
 I used LLMs to help with this. One thing I learned is that current models (June 2025) will do better if you first have them translate the assembly line by line to something modern and then try to understand what is going on. If you just ask them to explain what the assembly is doing without the interim step, they make more mistakes.
-

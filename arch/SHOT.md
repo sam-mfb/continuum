@@ -71,6 +71,18 @@ int shotvecs[32]={0, 14, 27, 40, 51, 60, 67, 71,
                   -72, -71, -67, -60, -51, -40, -27, -14};
 ```
 
+In the game's coordinate system:
+
+- shotvecs[shiprot] gives V × cos(θ) for the ship's angle
+- shotvecs[(shiprot + 24) & 31] shifts by 270° (which is -90° mod 360°)
+- This gives V × cos(θ - 90°) = V × sin(θ)
+- The `& 31` is because there are 32 rotation positions (0-31), this ensures the array
+  index always stays in bounds when accessing shotvecs[yrot]. It's
+  essentially a fast way to wrap around when rotating past position 31
+  back to position 0.
+
+General features:
+
 - Maximum speed: 72 units (at 45° angles)
 - Cardinal directions: varies from 0 (up/down) to 71 (left/right)
 - **Inherits 1/32 of ship velocity** for realistic physics
@@ -232,6 +244,57 @@ if (globalx > left && globalx < right &&
 ```
 
 Player's own bullets can hit their ship! This auto-activates shields if possible.
+
+## Bullet Update Logic
+
+The `move_shipshots()` function (Play.c:750-814) handles all player bullet updates each frame:
+
+### 1. Movement Update
+
+- Calls `move_shot()` to update position based on velocity
+- Handles world wrapping and boundary checks
+
+### 2. Collision Detection
+
+Creates a bounding box around each bullet for efficient collision testing:
+
+- Box extends `BRADIUS` pixels in all directions from bullet center
+- Bunkers are pre-sorted by x-coordinate for optimization
+
+### 3. Bunker Collisions
+
+- Skips bunkers outside the x-range of the collision box
+- For bunkers within range, checks:
+  - Bunker is alive
+  - Within y-range of collision box
+  - Within circular collision radius
+  - Shot angle is valid (can't shoot through walls) or bunker rotates
+- Hardy bunkers (`DIFFBUNK` type 2) require multiple hits
+- Successful hits destroy the bunker and award points
+
+### 4. Self-Damage Check
+
+Player's own bullets can hit their ship:
+
+- Uses ship collision radius (`SCENTER`)
+- Auto-activates shields if available
+- Prevents "friendly fire" damage
+- Only checks if ship isn't already dead
+
+### 5. Bounce Processing
+
+When a bullet expires at a wall (`lifecount == 0` but `btime > 0`):
+
+- Backs up position to prevent wall clipping
+- Applies bounce physics and restores lifetime
+
+### 6. Visual Rendering
+
+Converts world to screen coordinates and:
+
+- Starts wall strafe effects for bullets that just hit
+- Draws visible bullets as 3x3 pixel squares
+- Handles wrapped drawing for toroidal worlds
 
 ## Drawing
 

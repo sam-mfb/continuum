@@ -1,23 +1,18 @@
-import { configureStore } from '@reduxjs/toolkit'
 import type { GameLoopFunction } from '../components/GameView'
 import { drawShip } from '../drawShip'
+import { drawShot } from '../drawShot'
 import { shipSlice } from '@/ship/shipSlice'
 import { planetSlice } from '@/planet/planetSlice'
 import { screenSlice } from '@/screen/screenSlice'
+import { shotsSlice } from '@/shots/shotsSlice'
 import { ShipControl } from '@/ship/types'
-import { containmentMiddleware } from './containmentMiddleware'
 import { drawBackground } from './drawBackground'
+import { shipControl } from './shipControlThunk'
+import { buildGameStore } from './store'
+import { SCRWTH, VIEWHT } from '@/screen/constants'
 
 // Configure store with all slices and containment middleware
-const store = configureStore({
-  reducer: {
-    ship: shipSlice.reducer,
-    planet: planetSlice.reducer,
-    screen: screenSlice.reducer
-  },
-  middleware: getDefaultMiddleware =>
-    getDefaultMiddleware().concat(containmentMiddleware)
-})
+const store = buildGameStore()
 
 // Initialize game on module load
 const initializeGame = (): void => {
@@ -78,7 +73,7 @@ export const shipMoveGameLoop: GameLoopFunction = (ctx, frame, _env) => {
 
   // Handle controls
   store.dispatch(
-    shipSlice.actions.shipControl({
+    shipControl({
       controlsPressed: getPressedControls(frame.keysDown),
       gravity
     })
@@ -86,6 +81,14 @@ export const shipMoveGameLoop: GameLoopFunction = (ctx, frame, _env) => {
 
   // Move ship - containment middleware will automatically apply
   store.dispatch(shipSlice.actions.moveShip())
+
+  // Move all bullets
+  store.dispatch(
+    shotsSlice.actions.moveBullets({
+      worldwidth: state.planet.worldwidth,
+      worldwrap: state.planet.worldwrap
+    })
+  )
 
   // Get final state for drawing
   const finalState = store.getState()
@@ -106,4 +109,35 @@ export const shipMoveGameLoop: GameLoopFunction = (ctx, frame, _env) => {
     finalState.ship.shipy,
     finalState.ship.shiprot
   )
+
+  // Draw all active ship shots
+  for (const shot of finalState.shots.shipshots) {
+    if (shot.lifecount > 0) {
+      // Convert world coordinates to screen coordinates
+      const shotx = shot.x - finalState.screen.screenx
+      const shoty = shot.y - finalState.screen.screeny
+
+      // Check if shot is visible on screen (with 3 pixel margin for shot size)
+      if (
+        shotx >= -1 &&
+        shotx < SCRWTH + 1 &&
+        shoty >= -1 &&
+        shoty < VIEWHT + 1
+      ) {
+        drawShot(ctx, shotx, shoty)
+      }
+
+      // Handle world wrapping for toroidal worlds
+      if (
+        finalState.planet.worldwrap &&
+        finalState.screen.screenx > finalState.planet.worldwidth - SCRWTH
+      ) {
+        const wrappedShotx =
+          shot.x + finalState.planet.worldwidth - finalState.screen.screenx
+        if (wrappedShotx >= -1 && wrappedShotx < SCRWTH + 1) {
+          drawShot(ctx, wrappedShotx, shoty)
+        }
+      }
+    }
+  }
 }

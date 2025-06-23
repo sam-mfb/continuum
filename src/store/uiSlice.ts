@@ -29,6 +29,6 @@ export const uiSlice = createSlice({
   }
 })
 
+export const uiReducer = uiSlice.reducer
 export const { setCurrentView, toggleGamePause, toggleDebugInfo } =
   uiSlice.actions
-export default uiSlice.reducer

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import uiReducer, {
+import {
+  uiReducer,
   setCurrentView,
   toggleGamePause,
   toggleDebugInfo
