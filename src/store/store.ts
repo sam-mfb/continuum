@@ -1,7 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit'
 import type { TypedUseSelectorHook } from 'react-redux'
 import { useDispatch, useSelector } from 'react-redux'
-import uiReducer from './uiSlice'
+import { uiReducer } from './uiSlice'
 import galaxyReducer from './galaxySlice'
 import graphicsReducer from './graphicsSlice'
 import soundReducer from '../sound/soundSlice'

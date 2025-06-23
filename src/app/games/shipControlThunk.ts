@@ -2,7 +2,6 @@ import type { Action, ThunkAction } from '@reduxjs/toolkit'
 import { shipSlice } from '@/ship/shipSlice'
 import { shotsSlice } from '@/shots/shotsSlice'
 import { ShipControl } from '@/ship/types'
-import { SHOT } from '@/shots/constants'
 import type { GameState } from './store'
 
 type ControlAction = {
@@ -56,29 +55,16 @@ export const shipControl =
     if (pressed.has(ShipControl.FIRE)) {
       if (!ship.firing) {
         dispatch(shipSlice.actions.setFiring(true))
-        // for(i=0,sp=shipshots; i<NUMBULLETS && sp->lifecount; i++,sp++)
-        // 	;
-        // Find available bullet slot
-        let i = 0
-        for (
-          i = 0;
-          i < SHOT.NUMBULLETS && state.shots.shipshots[i]!.lifecount;
-          i++
-        ) {}
-
-        // if(i<NUMBULLETS && !shielding)
-        if (i < SHOT.NUMBULLETS && !ship.shielding) {
-          dispatch(
-            shotsSlice.actions.initShipshot({
-              shielding: ship.shielding,
-              shiprot: ship.shiprot,
-              dx: ship.dx,
-              dy: ship.dy,
-              globalx,
-              globaly
-            })
-          )
-        }
+        dispatch(
+          shotsSlice.actions.initShipshot({
+            shielding: ship.shielding,
+            shiprot: ship.shiprot,
+            dx: ship.dx,
+            dy: ship.dy,
+            globalx,
+            globaly
+          })
+        )
       }
     } else {
       dispatch(shipSlice.actions.setFiring(false))

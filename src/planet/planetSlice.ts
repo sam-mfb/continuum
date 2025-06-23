@@ -27,5 +27,3 @@ export const planetSlice = createSlice({
     }
   }
 })
-
-export default planetSlice.reducer

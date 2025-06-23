@@ -78,6 +78,9 @@ function moveShot(
     worldwrap: boolean
   }
 ): ShotRec {
+  if (shot.lifecount <= 0) {
+    return shot
+  }
   let worldwth8: number
   let x: number
   let y: number
