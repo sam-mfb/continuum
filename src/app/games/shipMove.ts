@@ -1,23 +1,15 @@
-import { configureStore } from '@reduxjs/toolkit'
 import type { GameLoopFunction } from '../components/GameView'
 import { drawShip } from '../drawShip'
 import { shipSlice } from '@/ship/shipSlice'
 import { planetSlice } from '@/planet/planetSlice'
 import { screenSlice } from '@/screen/screenSlice'
 import { ShipControl } from '@/ship/types'
-import { containmentMiddleware } from './containmentMiddleware'
 import { drawBackground } from './drawBackground'
+import { shipControl } from './shipControlThunk'
+import { buildGameStore } from './store'
 
 // Configure store with all slices and containment middleware
-const store = configureStore({
-  reducer: {
-    ship: shipSlice.reducer,
-    planet: planetSlice.reducer,
-    screen: screenSlice.reducer
-  },
-  middleware: getDefaultMiddleware =>
-    getDefaultMiddleware().concat(containmentMiddleware)
-})
+const store = buildGameStore()
 
 // Initialize game on module load
 const initializeGame = (): void => {
@@ -78,7 +70,7 @@ export const shipMoveGameLoop: GameLoopFunction = (ctx, frame, _env) => {
 
   // Handle controls
   store.dispatch(
-    shipSlice.actions.shipControl({
+    shipControl({
       controlsPressed: getPressedControls(frame.keysDown),
       gravity
     })

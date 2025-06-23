@@ -16,12 +16,12 @@ const initializeShot = (): ShotRec => ({
 })
 
 const initialState: ShotsState = {
-  shipshots: Array(SHOT.NUMBULLETS).map(initializeShot),
-  bunkshots: Array(SHOT.NUMSHOTS).map(initializeShot)
+  shipshots: Array.from({ length: SHOT.NUMBULLETS }, initializeShot),
+  bunkshots: Array.from({ length: SHOT.NUMSHOTS }, initializeShot)
 }
 
 export const shotsSlice = createSlice({
-  name: 'ship',
+  name: 'shots',
   initialState,
   reducers: {
     // based on Play.c:531-552
