@@ -245,6 +245,47 @@ if (globalx > left && globalx < right &&
 
 Player's own bullets can hit their ship! This auto-activates shields if possible.
 
+## Bullet Update Logic
+
+The `move_shipshots()` function (Play.c:750-814) handles all player bullet updates each frame:
+
+### 1. Movement Update
+- Calls `move_shot()` to update position based on velocity
+- Handles world wrapping and boundary checks
+
+### 2. Collision Detection
+Creates a bounding box around each bullet for efficient collision testing:
+- Box extends `BRADIUS` pixels in all directions from bullet center
+- Bunkers are pre-sorted by x-coordinate for optimization
+
+### 3. Bunker Collisions
+- Skips bunkers outside the x-range of the collision box
+- For bunkers within range, checks:
+  - Bunker is alive
+  - Within y-range of collision box
+  - Within circular collision radius
+  - Shot angle is valid (can't shoot through walls) or bunker rotates
+- Hardy bunkers (`DIFFBUNK` type 2) require multiple hits
+- Successful hits destroy the bunker and award points
+
+### 4. Self-Damage Check
+Player's own bullets can hit their ship:
+- Uses ship collision radius (`SCENTER`)
+- Auto-activates shields if available
+- Prevents "friendly fire" damage
+- Only checks if ship isn't already dead
+
+### 5. Bounce Processing
+When a bullet expires at a wall (`lifecount == 0` but `btime > 0`):
+- Backs up position to prevent wall clipping
+- Applies bounce physics and restores lifetime
+
+### 6. Visual Rendering
+Converts world to screen coordinates and:
+- Starts wall strafe effects for bullets that just hit
+- Draws visible bullets as 3x3 pixel squares
+- Handles wrapped drawing for toroidal worlds
+
 ## Drawing
 
 Bullets are drawn as simple 3x3 pixel squares when visible on screen.

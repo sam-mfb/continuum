@@ -9,7 +9,6 @@ export type ShotsState = {
  * See GW.h:229-237
  */
 export type ShotRec = {
-  id: string /* not in original*/
   /** current global x,y of shot */
   x: number
   y: number

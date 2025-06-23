@@ -59,8 +59,11 @@ export const shotsSlice = createSlice({
         state.shipshots[i] = sp
       }
     },
-    moveBullets: state => {
-      state.shipshots = state.shipshots.map(moveShot)
+    moveBullets: (
+      state,
+      action: PayloadAction<{ worldwidth: number; worldwrap: boolean }>
+    ) => {
+      state.shipshots = state.shipshots.map(s => moveShot(s, action.payload))
     },
     moveShipshots: () => {}
   }
@@ -68,8 +71,40 @@ export const shotsSlice = createSlice({
 
 function setLife() {}
 
-function moveShot(shot: ShotRec): ShotRec {
-  return shot
+function moveShot(
+  shot: ShotRec,
+  env: {
+    worldwidth: number
+    worldwrap: boolean
+  }
+): ShotRec {
+  let worldwth8: number
+  let x: number
+  let y: number
+
+  const sp = { ...shot }
+
+  worldwth8 = env.worldwidth << 3
+
+  sp.lifecount--
+  x = sp.x8
+  y = sp.y8
+  x += sp.h
+  y += sp.v
+  if (y < 0) sp.lifecount = 0
+  if (x < 0)
+    if (env.worldwrap) x += worldwth8
+    else sp.lifecount = 0
+  else if (x >= worldwth8)
+    if (env.worldwrap) x -= worldwth8
+    else sp.lifecount = 0
+  sp.x8 = x
+  sp.y8 = y
+  x >>= 3
+  y >>= 3
+  sp.x = x
+  sp.y = y
+  return sp
 }
 
 // function backupShot() {}
