@@ -41,7 +41,7 @@ export const shotsSlice = createSlice({
       for (i = 0; i < SHOT.NUMBULLETS && state.shipshots[i]!.lifecount; i++) {}
 
       if (i < SHOT.NUMBULLETS && !shielding) {
-        const sp = state.shipshots[i]!
+        const sp = { ...state.shipshots[i]! }
         const yrot = (shiprot + 24) & 31
         sp.h = SHOT.shotvecs[shiprot]! + (dx >> 5)
         sp.v = SHOT.shotvecs[yrot]! + (dy >> 5)
