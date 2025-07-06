@@ -30,10 +30,21 @@ When a level loads, the game does several preparation steps:
 
 - **Sort and merge**: All white pieces are sorted by position for efficient drawing, and overlapping pieces are merged together.
 
+- **Sort walls by position**: Crucially, walls are also sorted by their x-coordinate (left-to-right position). This sorting enables the game to quickly skip to visible walls during drawing.
+
 #### 2. **During Gameplay - Drawing Each Frame**
 
-Every time the screen updates, the game draws walls in this order:
+Every time the screen updates, the game needs to figure out which walls are visible and draw them:
 
+**Finding Visible Walls**:
+- The game knows the player's viewport position (`screenx`, `screeny`) and size (512×318 pixels)
+- Since walls are pre-sorted by x-coordinate, the game can:
+  - Quickly skip past walls that are too far left
+  - Stop checking once it reaches walls that are too far right
+- For each wall in between, it checks if any part overlaps the screen area
+- Small margins (10 pixels horizontal, 6 pixels vertical) ensure walls partially off-screen still get drawn
+
+**Drawing Visible Walls**:
 - **Phase 1 - Draw all white parts** (`white_terrain()`):
   - Draw all the white shadow pieces calculated during startup
   - Add crosshatch patterns at junction points for visual detail
@@ -42,15 +53,21 @@ Every time the screen updates, the game draws walls in this order:
 - **Phase 2 - Draw all black parts** (`black_terrain()`):
   - Draw the black top surface of each wall type
   - Process phantom walls, bouncing walls, and normal walls separately
-  - Handle screen wrapping for the cylindrical world
+  - Handle screen wrapping for the cylindrical world (draw walls twice if needed)
 
 ### Optimizations
 
-The original game had two drawing methods:
+The original game had several clever optimizations:
 
+**Drawing Methods**:
 1. **Separated method** (original): Draw ALL white parts first, then ALL black parts. Clean but slow because it touches each screen area twice.
 
 2. **Combined method** (optimized): For simple walls without junctions, draw both white and black in one pass. Faster but more complex code. For example, `east_black()` draws horizontal walls in one go.
+
+**Visibility Checks**:
+- Pre-sorting walls means the game can stop checking as soon as it finds a wall that starts beyond the right edge of the screen
+- Individual wall drawing functions clip their output to only draw the visible portion
+- This was crucial for 1980s hardware - no CPU cycles wasted on invisible pixels
 
 ### Why So Complex?
 
