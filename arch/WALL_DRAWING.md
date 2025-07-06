@@ -293,3 +293,132 @@ Special patches fix specific visual artifacts (`Junctions.c`, lines 100-103):
 2. **Clipping masks**: `LEFT_CLIP`, `RIGHT_CLIP`, `CENTER_CLIP` avoid per-pixel boundary checks
 3. **Assembly routines**: Critical drawing loops implemented in 68000 assembly
 4. **Bit manipulation**: Extensive use of bitwise operations for pattern rendering
+
+## How Drawing Actually Works: Pre-calculated vs Dynamic
+
+The wall drawing system uses a hybrid approach combining pre-calculated bit patterns with dynamic generation:
+
+### Pre-calculated Bitmaps
+
+**White Shadow Patterns**
+- 8 different shadow shapes stored for each wall direction
+- Arrays like `generictop[]`, `sbot[]`, `nebot[]` contain 6-pixel tall patterns
+- Each pattern is **16 bits wide** (one 68000 processor word)
+- Each represents the 3D underside appearance for that wall angle
+- Special "glitch fix" patterns for problematic areas (NE, ENE, ESE walls)
+
+**Junction Patches**
+- Pre-made triangular and rectangular fill patterns
+- Stored in arrays like `nepatch[]`, `sepatch[]`, `ssepatch[]`
+- Used to fill gaps where walls meet
+- Each pattern carefully crafted to match specific junction angles
+
+**Hash Pattern**
+- Single 6x6 crosshatch pattern stored in `hash_figure[]`
+- Used for decorative texture at junction points
+- Same pattern reused at all junctions
+
+**Important**: Black wall tops are NOT pre-stored as bitmaps!
+
+### Calculated On-the-Fly
+
+**Black Wall Tops**
+- Generated dynamically using bit shifting and masking operations
+- Each wall type has different algorithm based on its angle:
+  - Horizontal walls (E): Simple fill patterns
+  - Vertical walls (S): Column-based drawing
+  - Diagonal walls: Complex per-scanline bit shifting
+- Constants like `NE_MASK`, `SE_VAL` define the pattern generation rules
+- Patterns integrate with checkerboard background texture dynamically
+
+**Pattern Positioning**
+- All pre-made patterns must be shifted to align with pixel boundaries
+- Uses 68000 processor's rotate instructions for sub-16-pixel alignment
+- Clipping calculations determine visible portions at screen edges
+
+**Junction Merging**
+- When white pieces overlap: patterns AND'ed together
+- Hash patterns XOR'ed with whites to preserve texture
+- Background texture incorporated into junction patterns
+
+### The Drawing Process
+
+**Memory Layout**
+- Screen: 512×342 pixels, 1-bit per pixel (black/white)
+- Organized as 32 horizontal words (16 pixels each)
+- Drawing directly modifies screen memory buffer
+
+**Bit Operations Used**
+- **AND operations**: Create white shadows (punch holes in black background)
+- **OR operations**: Add black pixels for wall tops
+- **XOR operations**: Apply hash patterns while preserving texture
+
+**Optimization Techniques**
+- Unrolled loops for common patterns
+- 32-bit operations draw 2 words simultaneously
+- Special fast paths when no clipping needed
+- Pre-calculated shift amounts stored in tables
+
+### Why This Hybrid Approach?
+
+**Memory Constraints**
+- Storing all possible wall segments as bitmaps would exhaust memory
+- Dynamic generation allows walls of any length
+- Pre-calculated patterns kept small (6 pixels tall maximum)
+
+**Performance Balance**
+- Complex shapes (shadows, patches) pre-calculated for speed
+- Simple, repetitive patterns (black tops) generated to save memory
+- Assembly optimization focuses on inner loops
+
+**Visual Quality**
+- Pixel-perfect alignment with background texture
+- Clean junctions without gaps or overlaps
+- Consistent 3D appearance across all wall angles
+- Hand-tuned patterns ensure aesthetic quality
+
+The system essentially combines a library of small, reusable bit patterns with dynamic algorithms that stretch, position, and merge them to create complete wall graphics. This approach maximizes both performance and visual quality within the severe constraints of 1980s hardware (68000 processor, 1-bit graphics, limited memory).
+
+### White Pattern Width Details
+
+All white shadow patterns are stored as 16-bit values, but their **effective width** varies:
+
+**Example 1: South Wall Bottom (`sbot`)**
+```
+int sbot[6] = {0x803F, 0xC03F, 0xF03F, 0xFC3F, 0xFF3F, 0xFFFF}
+```
+Visual representation (█ = black/1, ░ = white/0):
+```
+Row 0: █░░░░░░░░░██████  (0x803F = 1000000000111111)
+Row 1: ██░░░░░░░░██████  (0xC03F = 1100000000111111)
+Row 2: ████░░░░░░██████  (0xF03F = 1111000000111111)
+Row 3: ██████░░░░██████  (0xFC3F = 1111110000111111)
+Row 4: ████████░░██████  (0xFF3F = 1111111100111111)
+Row 5: ████████████████  (0xFFFF = 1111111111111111)
+```
+- Effective width: 6 pixels (the middle "white" area)
+- The black pixels on sides create the 3D shadow shape
+
+**Example 2: East Wall Left End (`eleft`)**
+```
+int eleft[6] = {0xFFFF, 0xFFFF, 0xF000, 0xFC00, 0xFF00, 0xFF80}
+```
+Visual representation:
+```
+Row 0: ████████████████  (0xFFFF = all black)
+Row 1: ████████████████  (0xFFFF = all black)
+Row 2: ████░░░░░░░░░░░░  (0xF000 = 1111000000000000)
+Row 3: ██████░░░░░░░░░░  (0xFC00 = 1111110000000000)
+Row 4: ████████░░░░░░░░  (0xFF00 = 1111111100000000)
+Row 5: █████████░░░░░░░  (0xFF80 = 1111111110000000)
+```
+- Effective width: Uses full 16 bits
+- Creates a tapering white area on the right
+
+**Key Points:**
+1. **16-bit storage** allows efficient processing on 68000 processor
+2. **Effective width** varies based on the shadow shape needed
+3. **Unused bits** are set to black (1) to create the proper outline
+4. When drawn with AND operations, black bits preserve the background, white bits punch through
+
+This design allows all patterns to use the same drawing code while creating diverse shadow shapes.
