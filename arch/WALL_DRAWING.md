@@ -2,6 +2,74 @@
 
 This document explains the complex wall drawing system used in the original Continuum game, including how walls are rendered with 3D effects and how intersections (junctions) are handled.
 
+## Plain English Summary: How Wall Drawing Works
+
+Here's a step-by-step explanation of how Continuum draws its 3D-looking walls:
+
+### The Basic Idea
+
+Imagine each wall as a raised platform. To make it look 3D on a 2D screen, the game draws each wall in two layers:
+1. First, a white "shadow" underneath (like the underside of a platform)
+2. Then, a black "top surface" on top
+
+This creates the illusion that walls stick up from the playing field.
+
+### The Process
+
+#### 1. **Game Startup - Preparing the Walls**
+
+When a level loads, the game does several preparation steps:
+
+- **Organize walls by type**: The game sorts all walls into groups based on their purpose (normal walls, bouncing walls, phantom walls). This is done by `init_walls()`.
+
+- **Find intersections**: The game looks for places where walls meet or come close together (within 3 pixels). These spots are called "junctions" and need special handling to look right. Each junction's location is recorded.
+
+- **Create white pieces**: For each wall, the game creates "white pieces" - the white shadow parts that go at the wall's start and end points. Different wall angles need different shadow shapes. This is done by `norm_whites()`.
+
+- **Fix junction problems**: Where walls meet, the standard white pieces would overlap or leave gaps. The game calculates special "patch" pieces to fill these gaps cleanly. This complex process is handled by `close_whites()` and `one_close()`.
+
+- **Sort and merge**: All white pieces are sorted by position for efficient drawing, and overlapping pieces are merged together.
+
+#### 2. **During Gameplay - Drawing Each Frame**
+
+Every time the screen updates, the game draws walls in this order:
+
+- **Phase 1 - Draw all white parts** (`white_terrain()`):
+  - Draw all the white shadow pieces calculated during startup
+  - Add crosshatch patterns at junction points for visual detail
+  - Handle special cases like NNE walls that need white-only drawing
+
+- **Phase 2 - Draw all black parts** (`black_terrain()`):
+  - Draw the black top surface of each wall type
+  - Process phantom walls, bouncing walls, and normal walls separately
+  - Handle screen wrapping for the cylindrical world
+
+### Optimizations
+
+The original game had two drawing methods:
+
+1. **Separated method** (original): Draw ALL white parts first, then ALL black parts. Clean but slow because it touches each screen area twice.
+
+2. **Combined method** (optimized): For simple walls without junctions, draw both white and black in one pass. Faster but more complex code. For example, `east_black()` draws horizontal walls in one go.
+
+### Why So Complex?
+
+The complexity comes from several factors:
+
+- **Eight wall directions**: Each direction (vertical, horizontal, diagonals, and in-between angles) needs different drawing patterns
+
+- **Junction handling**: With 8 directions, there are 64 possible ways walls can meet. Each combination might need special patches to look right.
+
+- **Performance**: On 1980s hardware, every optimization mattered. The code uses assembly language and bit manipulation tricks.
+
+- **Visual quality**: The developers wanted pixel-perfect junctions with no gaps or overlaps, requiring careful hand-tuning of each case.
+
+### The Key Insight
+
+Rather than trying to calculate 3D graphics in real-time (too slow for 1980s computers), the game uses pre-made bit patterns for each wall type and junction combination. It's like having a box of perfectly-shaped puzzle pieces - the game just needs to put the right pieces in the right places.
+
+---
+
 ## Overview
 
 The wall drawing system in Continuum creates a 3D effect by rendering each wall as two components:
