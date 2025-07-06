@@ -14,46 +14,53 @@ Imagine each wall as a raised platform. To make it look 3D on a 2D screen, the g
 
 This creates the illusion that walls stick up from the playing field.
 
-### The Process
+### The Three-Step Process
 
-#### 1. **Game Startup - Preparing the Walls**
+The wall system works in three distinct steps:
 
-When a level loads, the game does several preparation steps:
+1. **Organization** (at level start) - Prepare everything for fast drawing
+2. **Selection** (each frame) - Figure out what's visible
+3. **Drawing** (each frame) - Render the visible walls efficiently
 
-- **Organize walls by type**: The game sorts all walls into groups based on their purpose (normal walls, bouncing walls, phantom walls). This is done by `init_walls()`.
+Let's look at each step in detail:
 
-- **Find intersections**: The game looks for places where walls meet or come close together (within 3 pixels). These spots are called "junctions" and need special handling to look right. Each junction's location is recorded.
+#### Step 1: **Organization** (One-time setup when level loads)
 
-- **Create white pieces**: For each wall, the game creates "white pieces" - the white shadow parts that go at the wall's start and end points. Different wall angles need different shadow shapes. This is done by `norm_whites()`.
+This step prepares all the data structures for efficient rendering:
 
-- **Fix junction problems**: Where walls meet, the standard white pieces would overlap or leave gaps. The game calculates special "patch" pieces to fill these gaps cleanly. This complex process is handled by `close_whites()` and `one_close()`.
+- **Categorize walls**: Sort walls into groups by their behavior type (normal, bouncing, phantom walls)
+- **Sort by position**: Arrange walls by x-coordinate for fast visibility checking
+- **Find all junctions**: Locate every place where walls meet or come close (within 3 pixels)
+- **Create white shadow pieces**: Generate the white "underside" pieces for each wall endpoint
+- **Calculate junction patches**: Figure out special filler pieces to make junctions look clean
+- **Identify optimization opportunities**: Mark which walls can use the faster combined drawing method
+- **Merge and sort white pieces**: Combine overlapping pieces and sort for efficient access
 
-- **Sort and merge**: All white pieces are sorted by position for efficient drawing, and overlapping pieces are merged together.
+#### Step 2: **Selection** (Every frame - find what's visible)
 
-- **Sort walls by position**: Crucially, walls are also sorted by their x-coordinate (left-to-right position). This sorting enables the game to quickly skip to visible walls during drawing.
+The game efficiently determines which walls need drawing:
 
-#### 2. **During Gameplay - Drawing Each Frame**
+- **Use viewport bounds**: Check against the player's current view area (512×318 pixels)
+- **Exploit pre-sorting**: Since walls are sorted by x-position:
+  - Skip past walls entirely to the left of the screen
+  - Stop once we reach walls that start past the right edge
+- **Check each candidate**: For walls that might be visible, verify they overlap the screen
+- **Include margins**: Add small buffers (10 pixels horizontal, 6 vertical) to catch walls partially off-screen
 
-Every time the screen updates, the game needs to figure out which walls are visible and draw them:
+#### Step 3: **Drawing** (Every frame - render the visible walls)
 
-**Finding Visible Walls**:
-- The game knows the player's viewport position (`screenx`, `screeny`) and size (512×318 pixels)
-- Since walls are pre-sorted by x-coordinate, the game can:
-  - Quickly skip past walls that are too far left
-  - Stop checking once it reaches walls that are too far right
-- For each wall in between, it checks if any part overlaps the screen area
-- Small margins (10 pixels horizontal, 6 pixels vertical) ensure walls partially off-screen still get drawn
+With the visible walls identified, render them in the correct order:
 
-**Drawing Visible Walls**:
-- **Phase 1 - Draw all white parts** (`white_terrain()`):
-  - Draw all the white shadow pieces calculated during startup
-  - Add crosshatch patterns at junction points for visual detail
-  - Handle special cases like NNE walls that need white-only drawing
+- **White phase first**:
+  - Draw all white shadow pieces for visible walls
+  - Add crosshatch patterns at junctions
+  - Handle special cases (like NNE walls that need white-only treatment)
 
-- **Phase 2 - Draw all black parts** (`black_terrain()`):
-  - Draw the black top surface of each wall type
-  - Process phantom walls, bouncing walls, and normal walls separately
-  - Handle screen wrapping for the cylindrical world (draw walls twice if needed)
+- **Black phase second**:
+  - Draw black top surfaces based on wall type
+  - Use optimized combined drawing where possible (no nearby junctions)
+  - Process each wall category separately (phantom, bouncing, normal)
+  - Handle world wrapping by drawing walls twice if needed
 
 ### Optimizations
 
