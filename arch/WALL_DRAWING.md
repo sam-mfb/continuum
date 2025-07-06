@@ -94,14 +94,6 @@ Rather than trying to calculate 3D graphics in real-time (too slow for 1980s com
 
 ---
 
-## Overview
-
-The wall drawing system in Continuum creates a 3D effect by rendering each wall as two components:
-
-1. **White part**: The "underside" or hidden face of the wall (drawn first)
-2. **Black part**: The visible top edge/face of the wall (drawn second)
-
-This two-part approach creates the illusion of depth, making walls appear three-dimensional on the 2D screen. The system is complicated by the need to handle intersections (junctions) where walls meet, which require special processing to avoid visual artifacts.
 
 ### Wall Types
 
