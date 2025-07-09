@@ -44,9 +44,30 @@ export function initWhites(
  *
  * @see Junctions.c:212-222 - Insertion sort of whites
  */
-export function sortWhitesByX(_whites: WhiteRec[]): WhiteRec[] {
-  // TODO: Implement white sorting
-  throw new Error('Not implemented')
+export function sortWhitesByX(whites: WhiteRec[]): WhiteRec[] {
+  // Insertion sort like the original
+  const sorted = [...whites]
+
+  for (let i = 1; i < sorted.length; i++) {
+    const temp = sorted[i]
+    if (!temp) continue
+    let j = i - 1
+
+    // Move elements that are greater than temp
+    while (j >= 0) {
+      const element = sorted[j]
+      if (!element) break
+      if (element.x < temp.x || (element.x === temp.x && element.y <= temp.y)) {
+        break
+      }
+      sorted[j + 1] = element
+      j--
+    }
+
+    sorted[j + 1] = temp
+  }
+
+  return sorted
 }
 
 /**
@@ -55,7 +76,54 @@ export function sortWhitesByX(_whites: WhiteRec[]): WhiteRec[] {
  *
  * @see Junctions.c:227-240 - Merge whites together
  */
-export function mergeOverlappingWhites(_whites: WhiteRec[]): WhiteRec[] {
-  // TODO: Implement white merging
-  throw new Error('Not implemented')
+export function mergeOverlappingWhites(whites: WhiteRec[]): WhiteRec[] {
+  const merged: WhiteRec[] = []
+  let i = 0
+
+  while (i < whites.length) {
+    const current = whites[i]
+    if (!current) {
+      i++
+      continue
+    }
+
+    // Check if we can merge with next white
+    if (i + 1 < whites.length) {
+      const next = whites[i + 1]
+
+      if (
+        next &&
+        current.x === next.x &&
+        current.y === next.y &&
+        current.ht === 6 &&
+        next.ht === 6 &&
+        current.data &&
+        next.data
+      ) {
+        // Merge the two whites by ANDing their data
+        const mergedData: number[] = []
+        for (let j = 0; j < 6; j++) {
+          mergedData[j] = (current.data[j] ?? 0) & (next.data[j] ?? 0)
+        }
+
+        merged.push({
+          id: current.id, // Keep first id
+          x: current.x,
+          y: current.y,
+          hasj: current.hasj || next.hasj,
+          ht: 6,
+          data: mergedData
+        })
+
+        i += 2 // Skip both whites
+        continue
+      }
+    }
+
+    // No merge, just add current
+    merged.push(current)
+    i++
+  }
+
+  return merged
 }
