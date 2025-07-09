@@ -45,15 +45,15 @@ export const ESE_GLITCH = [0x3fff, 0xcfff, 0xf3ff, 0xfdff] as const
  * null entries mean no white piece for that position
  */
 export const WHITE_PICTS = [
-  { top: null, bottom: null },           // 0: unused
-  { top: GENERIC_TOP, bottom: S_BOT },   // 1: NEW_S
-  { top: SSE_TOP, bottom: SSE_BOT },     // 2: NEW_SSE
-  { top: SE_TOP, bottom: SE_BOT },       // 3: NEW_SE
-  { top: null, bottom: ESE_RIGHT },      // 4: NEW_ESE
-  { top: E_LEFT, bottom: GENERIC_TOP },  // 5: NEW_E
+  { top: null, bottom: null }, // 0: unused
+  { top: GENERIC_TOP, bottom: S_BOT }, // 1: NEW_S
+  { top: SSE_TOP, bottom: SSE_BOT }, // 2: NEW_SSE
+  { top: SE_TOP, bottom: SE_BOT }, // 3: NEW_SE
+  { top: null, bottom: ESE_RIGHT }, // 4: NEW_ESE
+  { top: E_LEFT, bottom: GENERIC_TOP }, // 5: NEW_E
   { top: ENE_LEFT, bottom: GENERIC_TOP }, // 6: NEW_ENE
-  { top: NE_BOT, bottom: GENERIC_TOP },  // 7: NEW_NE
-  { top: NNE_BOT, bottom: GENERIC_TOP }  // 8: NEW_NNE
+  { top: NE_BOT, bottom: GENERIC_TOP }, // 7: NEW_NE
+  { top: NNE_BOT, bottom: GENERIC_TOP } // 8: NEW_NNE
 ] as const
 
 /**
