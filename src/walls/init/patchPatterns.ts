@@ -15,5 +15,8 @@ export const ssepatch = [
   0xf00f, 0xf807, 0xf807, 0xfc03, 0xfc03, 0xfe01, 0xfe01, 0xff00, 0xff00
 ]
 
-// Initialize npatch array (22 elements all set to 0x003F)
-export const npatch = new Array(22).fill(0x003f)
+// Number of elements in the npatch array
+export const NUM_NPATCH_VALUES = 22
+
+// Initialize npatch array (NUM_NPATCH_VALUES elements all set to 0x003F)
+export const npatch = new Array(NUM_NPATCH_VALUES).fill(0x003f)

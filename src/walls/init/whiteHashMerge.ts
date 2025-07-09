@@ -79,7 +79,7 @@ export function whiteHashMerge(
 
       // Create new data with hash pattern
       const newData: number[] = []
-      let rotatedBack = back
+      let rotatedBack = back & 0xffff
 
       for (let i = 0; i < 6; i++) {
         // Apply hash pattern: (back & (~data | hashFigure)) ^ hashFigure
