@@ -2,11 +2,12 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { WallsState, LineRec } from './types'
 
 const initialState: WallsState = {
-  lines: {},
-  whites: {},
+  organizedWalls: {},
+  kindPointers: {},
+  firstWhite: '',
   junctions: [],
-  kindptrs: {},
-  firstwhite: ''
+  whites: [],
+  updatedWalls: []
 }
 
 export const wallsSlice = createSlice({
@@ -66,11 +67,12 @@ export const wallsSlice = createSlice({
      * Clear all wall data (for level changes)
      */
     clearWalls: state => {
-      state.lines = {}
-      state.whites = {}
+      state.organizedWalls = {}
+      state.kindPointers = {}
+      state.firstWhite = ''
       state.junctions = []
-      state.kindptrs = {}
-      state.firstwhite = ''
+      state.whites = []
+      state.updatedWalls = []
     },
 
     /**

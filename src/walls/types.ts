@@ -94,13 +94,15 @@ export type JunctionRec = {
  */
 export type WallsState = {
   /** Map of line ID to line record for O(1) lookup */
-  lines: Record<string, LineRec>
-  /** Map of white ID to white record for O(1) lookup */
-  whites: Record<string, WhiteRec>
+  organizedWalls: Record<string, LineRec>
+  /** Map of wall kind to first line ID of that kind */
+  kindPointers: Record<LineKind, string>
+  /** ID of first white-only drawing line */
+  firstWhite: string
   /** Array of wall junctions (no IDs needed) */
   junctions: JunctionRec[]
-  /** Map of wall kind to first line ID of that kind */
-  kindptrs: Record<number, string>
-  /** ID of first white-only drawing line */
-  firstwhite: string
+  /** Map of white ID to white record for O(1) lookup */
+  whites: WhiteRec[]
+  /** Walls with updated h1/h2 optimization values */
+  updatedWalls: LineRec[]
 }
