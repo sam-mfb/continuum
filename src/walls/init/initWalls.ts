@@ -36,7 +36,7 @@ export function initWalls(walls: LineRec[]): WallsState {
  *
  * @see Junctions.c:43-53 - Loop that builds linked lists by kind
  */
-function organizeWallsByKind(walls: LineRec[]): {
+export function organizeWallsByKind(_walls: LineRec[]): {
   organizedWalls: Record<string, LineRec>
   kindPointers: Record<LineKind, string>
 } {
@@ -49,7 +49,7 @@ function organizeWallsByKind(walls: LineRec[]): {
  *
  * @see Junctions.c:54-61 - Loop that builds firstwhite list
  */
-function findFirstWhiteWalls(walls: LineRec[]): string {
+export function findFirstWhiteWalls(_walls: LineRec[]): string {
   // TODO: Implement NNE wall detection
   throw new Error('Not implemented')
 }
@@ -60,8 +60,7 @@ function findFirstWhiteWalls(walls: LineRec[]): string {
  *
  * @see Junctions.c:63-93 - Junction detection and sorting
  */
-function detectWallJunctions(walls: LineRec[]): JunctionRec[] {
+export function detectWallJunctions(_walls: LineRec[]): JunctionRec[] {
   // TODO: Implement junction detection
   throw new Error('Not implemented')
 }
-
