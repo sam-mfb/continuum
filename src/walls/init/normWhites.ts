@@ -1,24 +1,24 @@
 import type { LineRec, WhiteRec } from '../types'
 import { NEW_TYPE } from '../constants'
-import { 
-  whitepicts, 
-  neglitch, 
-  eneglitch1, 
-  eneglitch2, 
-  eseglitch 
+import {
+  whitepicts,
+  neglitch,
+  eneglitch1,
+  eneglitch2,
+  eseglitch
 } from './whitePatterns'
 
 /**
  * Generates standard white shadow pieces for each wall endpoint.
  * Also adds special glitch-fixing pieces for NE, ENE, and ESE walls.
  * Uses predefined bit patterns from whitepicts array.
- * 
+ *
  * @see Junctions.c:245-279 - norm_whites()
  */
 export function normWhites(walls: LineRec[]): WhiteRec[] {
   const whites: WhiteRec[] = []
   let whiteIdCounter = 0
-  
+
   for (const wall of walls) {
     // Add white pieces for start and end points
     for (let i = 0; i < 2; i++) {
@@ -34,7 +34,7 @@ export function normWhites(walls: LineRec[]): WhiteRec[] {
         })
       }
     }
-    
+
     // Add special glitch-fixing pieces
     switch (wall.newtype) {
       case NEW_TYPE.NE:
@@ -47,7 +47,7 @@ export function normWhites(walls: LineRec[]): WhiteRec[] {
           data: [...neglitch]
         })
         break
-        
+
       case NEW_TYPE.ENE:
         whites.push({
           id: `w${whiteIdCounter++}`,
@@ -66,7 +66,7 @@ export function normWhites(walls: LineRec[]): WhiteRec[] {
           data: [...eneglitch2]
         })
         break
-        
+
       case NEW_TYPE.ESE:
         whites.push({
           id: `w${whiteIdCounter++}`,
@@ -79,6 +79,6 @@ export function normWhites(walls: LineRec[]): WhiteRec[] {
         break
     }
   }
-  
+
   return whites
 }

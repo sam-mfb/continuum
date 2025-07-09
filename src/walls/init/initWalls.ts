@@ -42,36 +42,45 @@ function organizeWallsByKind(walls: LineRec[]): {
   kindPointers: Record<LineKind, string>
 } {
   const organizedWalls: Record<string, LineRec> = {}
-  const kindPointers: Record<LineKind, string> = {}
-  
+  const kindPointers: Partial<Record<LineKind, string>> = {}
+
   // Copy walls to organized structure
   for (const wall of walls) {
     organizedWalls[wall.id] = { ...wall }
   }
-  
+
   // Build linked lists by kind
   for (let kind = LINE_KIND.NORMAL; kind < LINE_KIND.NUMKINDS; kind++) {
     let lastId: string | null = null
-    
+
     for (const wall of walls) {
       if (wall.kind === kind) {
         if (!kindPointers[kind]) {
           kindPointers[kind] = wall.id
         }
         if (lastId) {
-          organizedWalls[lastId].nextId = wall.id
+          const lastWall = organizedWalls[lastId]
+          if (lastWall) {
+            lastWall.nextId = wall.id
+          }
         }
         lastId = wall.id
       }
     }
-    
+
     // Terminate the linked list
     if (lastId) {
-      organizedWalls[lastId].nextId = ''
+      const lastWall = organizedWalls[lastId]
+      if (lastWall) {
+        lastWall.nextId = ''
+      }
     }
   }
-  
-  return { organizedWalls, kindPointers }
+
+  return {
+    organizedWalls,
+    kindPointers: kindPointers as Record<LineKind, string>
+  }
 }
 
 /**
@@ -82,7 +91,7 @@ function organizeWallsByKind(walls: LineRec[]): {
 function findFirstWhiteWalls(walls: LineRec[]): string {
   let firstWhiteId = ''
   let lastWhiteId: string | null = null
-  
+
   // Find all NNE walls and link them
   for (const wall of walls) {
     if (wall.newtype === NEW_TYPE.NNE) {
@@ -99,7 +108,7 @@ function findFirstWhiteWalls(walls: LineRec[]): string {
       lastWhiteId = wall.id
     }
   }
-  
+
   // Terminate the linked list
   if (lastWhiteId) {
     const lastWall = walls.find(w => w.id === lastWhiteId)
@@ -107,7 +116,7 @@ function findFirstWhiteWalls(walls: LineRec[]): string {
       lastWall.nextwhId = ''
     }
   }
-  
+
   return firstWhiteId
 }
 
@@ -120,43 +129,51 @@ function findFirstWhiteWalls(walls: LineRec[]): string {
 function detectWallJunctions(walls: LineRec[]): JunctionRec[] {
   const junctions: JunctionRec[] = []
   const THRESHOLD = WALLS.JUNCTION_THRESHOLD
-  
+
   // Check each wall endpoint
   for (const wall of walls) {
     for (let i = 0; i < 2; i++) {
       const x = i ? wall.endx : wall.startx
       const y = i ? wall.endy : wall.starty
-      
+
       // Check if this point is already in junctions (within threshold)
       let found = false
       for (const junction of junctions) {
-        if (junction.x <= x + THRESHOLD && junction.x >= x - THRESHOLD &&
-            junction.y <= y + THRESHOLD && junction.y >= y - THRESHOLD) {
+        if (
+          junction.x <= x + THRESHOLD &&
+          junction.x >= x - THRESHOLD &&
+          junction.y <= y + THRESHOLD &&
+          junction.y >= y - THRESHOLD
+        ) {
           found = true
           break
         }
       }
-      
+
       // Add new junction if not found
       if (!found) {
         junctions.push({ x, y })
       }
     }
   }
-  
+
   // Sort junctions by x coordinate (insertion sort like original)
   for (let i = 1; i < junctions.length; i++) {
     const temp = junctions[i]
+    if (!temp) continue
     let j = i - 1
-    
-    while (j >= 0 && junctions[j].x > temp.x) {
-      junctions[j + 1] = junctions[j]
+
+    while (j >= 0) {
+      const junction = junctions[j]
+      if (!junction || junction.x <= temp.x) {
+        break
+      }
+      junctions[j + 1] = junction
       j--
     }
-    
+
     junctions[j + 1] = temp
   }
-  
+
   return junctions
 }
-

@@ -1,6 +1,6 @@
 /**
  * Wall initialization module exports
- * 
+ *
  * These modules handle the one-time setup of wall data structures
  * when a level is loaded, preparing for efficient real-time rendering.
  */
