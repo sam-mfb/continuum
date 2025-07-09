@@ -9,6 +9,7 @@ This document describes the functions involved in wall rendering, their purposes
 #### Initialization Functions (Called Once Per Level)
 
 **init_walls()**
+
 - Main initialization entry point
 - Organizes walls into linked lists by type (normal, bouncing, phantom)
 - Creates special firstwhite list for NNE walls only
@@ -17,6 +18,7 @@ This document describes the functions involved in wall rendering, their purposes
 - Calls init_whites() to prepare white pieces
 
 **init_whites()**
+
 - Prepares all white shadow pieces for the level
 - Calls norm_whites() to add standard white pieces
 - Calls close_whites() to calculate junction patches
@@ -25,22 +27,26 @@ This document describes the functions involved in wall rendering, their purposes
 - Calls white_hash_merge() to add crosshatch patterns
 
 **norm_whites()**
+
 - Adds standard white shadow pieces for each wall endpoint
 - Adds special glitch-fixing pieces for NE, ENE, and ESE walls
 - Uses predefined bit patterns from whitepicts array
 
 **close_whites()**
+
 - Finds walls that come within 3 pixels of each other
 - Calls one_close() for each close pair to calculate patches
 - Sets h1 and h2 values on walls to optimize drawing
 
 **one_close()**
+
 - Fills gaps in white shadow coverage where walls meet
 - Giant switch statement handling 64 possible junction combinations
 - Modifies wall h1/h2 values to avoid drawing conflicts
 - Adds triangular/rectangular patches to ensure complete coverage
 
 **white_hash_merge()**
+
 - Adds decorative 6x6 crosshatch texture at junctions
 - Makes junction seams less visually obvious
 - Converts solid white pieces to textured ones using XOR patterns
@@ -48,6 +54,7 @@ This document describes the functions involved in wall rendering, their purposes
 #### Drawing Functions (Called Each Frame)
 
 **fast_whites()**
+
 - Draws all visible white shadow pieces
 - Uses optimized assembly loop with pre-sorting
 - Calls white_wall_piece() for normal whites
@@ -55,21 +62,25 @@ This document describes the functions involved in wall rendering, their purposes
 - Handles world wrapping with two passes
 
 **white_wall_piece()**
+
 - Draws a single white piece using AND operations
 - Handles clipping at screen edges
 - Uses bit patterns to create shadow effect
 
 **eor_wall_piece()**
+
 - Draws a white piece with XOR operations
 - Used for pieces that have hash patterns
 - Preserves background texture through junction
 
 **fast_hashes()**
+
 - Draws crosshatch patterns at visible junctions
 - Uses optimized inline assembly for common cases
 - Calls draw_hash() for edge cases
 
 **draw_hash()**
+
 - Draws a single 6x6 pixel crosshatch pattern
 - Handles clipping at screen boundaries
 
@@ -105,6 +116,7 @@ Some wall types also have separate white drawing functions:
 #### Main Drawing Orchestrators
 
 **black_terrain()**
+
 - Main function for drawing black wall tops
 - Takes wall type parameter (phantom, bouncing, or normal)
 - Finds visible walls using pre-sorted lists
@@ -112,6 +124,7 @@ Some wall types also have separate white drawing functions:
 - Handles world wrapping with second pass
 
 **white_terrain()**
+
 - Main function for drawing white shadows
 - Calls fast_whites() for optimized white drawing
 - Calls fast_hashes() for junction patterns
@@ -209,6 +222,7 @@ RENDERING (Each frame)
 ### Why Separate White and Black Phases?
 
 The two-phase approach ensures proper 3D appearance:
+
 1. All white shadows are drawn first (back to front)
 2. All black tops are drawn second (also back to front)
 3. This prevents black tops from being overwritten by white shadows
@@ -216,6 +230,7 @@ The two-phase approach ensures proper 3D appearance:
 ### Why Multiple Wall Type Functions?
 
 Each of the 8 wall directions requires different bit patterns and drawing logic:
+
 - Vertical walls (S) use simple column drawing
 - Horizontal walls (E) can use optimized horizontal fills
 - Diagonal walls need complex bit shifting per scanline
@@ -224,6 +239,7 @@ Each of the 8 wall directions requires different bit patterns and drawing logic:
 ### Why Pre-sort Everything?
 
 The 1980s hardware had very limited CPU power. Pre-sorting allows:
+
 - O(n) visibility checking instead of O(n²)
 - Early loop termination when walls go off-screen
 - Efficient batching of similar operations
@@ -234,17 +250,20 @@ The 1980s hardware had very limited CPU power. Pre-sorting allows:
 While most walls use separated drawing (all whites first, then all blacks), some wall types optimize by combining both phases:
 
 **When Combined Drawing Happens:**
+
 1. **East walls** - When no junctions interfere (checked via h1/h2 values)
 2. **ENE walls** - Always combined (ene_white() called from ene_black())
 3. **NE walls** - White end pieces drawn inline with black
 4. **ESE walls** - Helper functions combine some drawing
 
 **Why These Cases?**
+
 - Performance: Touch each memory location only once
 - Geometric simplicity: Horizontal/near-horizontal patterns are simpler
 - No junction conflicts: Only when h1/h2 values indicate safe regions
 
 **The Decision Logic:**
+
 - close_whites() sets h1/h2 values on each wall
 - These values mark "safe" regions without junctions
 - Drawing functions check these to decide on optimization
@@ -254,12 +273,14 @@ While most walls use separated drawing (all whites first, then all blacks), some
 NNE (North-Northeast) walls are the only wall type that requires completely separated white drawing:
 
 **The Overlap Problem:**
+
 - NNE walls slope upward to the right
 - The white shadow needs to appear at the bottom-left
 - The black top extends down and to the left
 - This creates an overlap area where black would incorrectly cover white
 
 **Visual Example:**
+
 ```
       ██  <- Black top
      ██░  <- Overlap area (problem!)
@@ -268,6 +289,7 @@ NNE (North-Northeast) walls are the only wall type that requires completely sepa
 ```
 
 **Special Handling:**
+
 1. NNE walls are added to a separate `firstwhite` list during initialization
 2. They are the ONLY wall type in this special list
 3. Their whites are drawn during white_terrain() via nne_white()
@@ -280,6 +302,7 @@ The upward-right slope creates geometry where standard drawing would fail. By fo
 ### World Wrapping
 
 The cylindrical world requires drawing walls twice:
+
 1. First pass: Draw at normal position
 2. Second pass: Draw wrapped around if player is near world edge
-This is why most drawing functions have a second loop after `right -= worldwidth`
+   This is why most drawing functions have a second loop after `right -= worldwidth`

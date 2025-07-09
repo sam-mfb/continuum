@@ -9,6 +9,7 @@ Here's a step-by-step explanation of how Continuum draws its 3D-looking walls:
 ### The Basic Idea
 
 Imagine each wall as a raised platform. To make it look 3D on a 2D screen, the game draws each wall in two layers:
+
 1. First, a white "shadow" underneath (like the underside of a platform)
 2. Then, a black "top surface" on top
 
@@ -52,6 +53,7 @@ The game efficiently determines which walls need drawing:
 With the visible walls identified, render them in the correct order:
 
 - **White phase first**:
+
   - Draw all white shadow pieces for visible walls
   - Add crosshatch patterns at junctions
   - Handle special cases (like NNE walls that need white-only treatment)
@@ -67,11 +69,13 @@ With the visible walls identified, render them in the correct order:
 The original game had several clever optimizations:
 
 **Drawing Methods**:
+
 1. **Separated method** (original): Draw ALL white parts first, then ALL black parts. Clean but slow because it touches each screen area twice.
 
 2. **Combined method** (optimized): For simple walls without junctions, draw both white and black in one pass. Faster but more complex code. For example, `east_black()` draws horizontal walls in one go.
 
 **Visibility Checks**:
+
 - Pre-sorting walls means the game can stop checking as soon as it finds a wall that starts beyond the right edge of the screen
 - Individual wall drawing functions clip their output to only draw the visible portion
 - This was crucial for 1980s hardware - no CPU cycles wasted on invisible pixels
@@ -94,10 +98,10 @@ Rather than trying to calculate 3D graphics in real-time (too slow for 1980s com
 
 ---
 
-
 ### Wall Types
 
 The game supports 8 directional wall types based on their orientation:
+
 - **S** (South) - Vertical
 - **SSE** (South-Southeast) - Nearly vertical, slight rightward slope downward
 - **SE** (Southeast) - 45-degree diagonal downward
@@ -112,6 +116,7 @@ The game supports 8 directional wall types based on their orientation:
 Let's trace through a concrete example of two walls forming a T-junction.
 
 ### Setup
+
 - **Wall A**: Horizontal (E type) from (100, 50) to (150, 50)
 - **Wall B**: Vertical (S type) from (125, 30) to (125, 70)
 - **Junction**: Forms at (125, 50)
@@ -121,17 +126,20 @@ Let's trace through a concrete example of two walls forming a T-junction.
 During `init_walls()`:
 
 1. Wall detection and sorting:
+
    ```
    kindptrs[L_NORMAL] = Wall A → Wall B → NULL  (sorted by x)
    ```
 
 2. Junction detection:
+
    ```
    junctions[0] = {x: 125, y: 50}
    numjunctions = 1
    ```
 
 3. White initialization in `norm_whites()`:
+
    ```
    whites[0] = {x: 100, y: 50, ht: 6, data: eleft}     // Wall A start
    whites[1] = {x: 150, y: 50, ht: 6, data: eright}    // Wall A end
@@ -148,10 +156,11 @@ During `init_walls()`:
 ### Step 2: Drawing
 
 1. **White Phase** (`fast_whites()`):
+
    ```
    Draw whites[0] through whites[4]
    Result: All white undersides plus junction patch
-   
+
    Visual (simplified):
    ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  ← Wall A white
            ░░
@@ -162,6 +171,7 @@ During `init_walls()`:
    ```
 
 2. **Hash Phase** (`fast_hashes()`):
+
    ```
    At junction (125, 50), apply crosshatch pattern
    ```
@@ -176,6 +186,7 @@ During `init_walls()`:
    ```
 
 ### Final Result
+
 ```
         ████████████████████████████████  ← Black top
         ░░░░░░░░░░░██░░░░░░░░░░░░░░░░░░  ← White underside
@@ -189,6 +200,7 @@ During `init_walls()`:
 For walls without nearby junctions, the optimized combined drawing method is used. Here's how it works for a simple horizontal (East) wall:
 
 ### Setup
+
 - **Wall**: Horizontal (E type) from (50, 100) to (200, 100)
 - **No junctions nearby**: Can use fast path
 
@@ -202,20 +214,20 @@ void east_black(line, scrx, scry)
     // Step 1: Calculate visible segments
     h1 = 0;                    // Start of wall
     h2 = 16;                   // Start of main black section
-    h3 = line->h2;            // End of main black section  
+    h3 = line->h2;            // End of main black section
     h4 = line->length+1;      // End of wall
-    
+
     // Step 2: Draw white end pieces (if needed)
     if (h2 > h1)
         draw_eline(x+h1, y, h2 - h1 - 1, L_DN);  // Left white stub
     if (h4 > h3)
         draw_eline(x+h3, y, h4 - h3 - 1, L_DN);  // Right white stub
-    
+
     // Step 3: Draw main section (combined white and black)
     // Using optimized assembly for horizontal line:
     @quicklp:
         move.l  D1, (A0)        // Black pixels (top 2 lines)
-        move.l  D1, 64(A0)      
+        move.l  D1, 64(A0)
         move.l  D0, 64*2(A0)    // White pixels (bottom 4 lines)
         move.l  D0, 64*3(A0)
         move.l  D0, 64*4(A0)
@@ -226,9 +238,10 @@ void east_black(line, scrx, scry)
 ### Visual Result
 
 The function draws this pattern in one pass:
+
 ```
 ████████████████████████████████  ← Black (D1 = all 1s)
-████████████████████████████████  
+████████████████████████████████
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  ← White (D0 = all 0s)
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
@@ -252,7 +265,7 @@ void ene_black(line, scrx, scry)
     // This wall type has complex white patterns
     // So it calls the white function first
     ene_white(line, scrx, scry);
-    
+
     // Then continues with black drawing...
 }
 ```
@@ -283,6 +296,7 @@ int *whitepicts[][2] =
 ### Glitch Patches
 
 Special patches fix specific visual artifacts (`Junctions.c`, lines 100-103):
+
 - `neglitch[4]` - Fixes NE wall intersections
 - `eneglitch1[3]`, `eneglitch2[5]` - Fixes ENE wall intersections
 - `eseglitch[4]` - Fixes ESE wall intersections
@@ -301,6 +315,7 @@ The wall drawing system uses a hybrid approach combining pre-calculated bit patt
 ### Pre-calculated Bitmaps
 
 **White Shadow Patterns**
+
 - 8 different shadow shapes stored for each wall direction
 - Arrays like `generictop[]`, `sbot[]`, `nebot[]` contain 6-pixel tall patterns
 - Each pattern is **16 bits wide** (one 68000 processor word)
@@ -308,12 +323,14 @@ The wall drawing system uses a hybrid approach combining pre-calculated bit patt
 - Special "glitch fix" patterns for problematic areas (NE, ENE, ESE walls)
 
 **Junction Patches**
+
 - Pre-made triangular and rectangular fill patterns
 - Stored in arrays like `nepatch[]`, `sepatch[]`, `ssepatch[]`
 - Used to fill gaps where walls meet
 - Each pattern carefully crafted to match specific junction angles
 
 **Hash Pattern**
+
 - Single 6x6 crosshatch pattern stored in `hash_figure[]`
 - Used for decorative texture at junction points
 - Same pattern reused at all junctions
@@ -323,6 +340,7 @@ The wall drawing system uses a hybrid approach combining pre-calculated bit patt
 ### Calculated On-the-Fly
 
 **Black Wall Tops**
+
 - Generated dynamically using bit shifting and masking operations
 - Each wall type has different algorithm based on its angle:
   - Horizontal walls (E): Simple fill patterns
@@ -332,11 +350,13 @@ The wall drawing system uses a hybrid approach combining pre-calculated bit patt
 - Patterns integrate with checkerboard background texture dynamically
 
 **Pattern Positioning**
+
 - All pre-made patterns must be shifted to align with pixel boundaries
 - Uses 68000 processor's rotate instructions for sub-16-pixel alignment
 - Clipping calculations determine visible portions at screen edges
 
 **Junction Merging**
+
 - When white pieces overlap: patterns AND'ed together
 - Hash patterns XOR'ed with whites to preserve texture
 - Background texture incorporated into junction patterns
@@ -344,16 +364,19 @@ The wall drawing system uses a hybrid approach combining pre-calculated bit patt
 ### The Drawing Process
 
 **Memory Layout**
+
 - Screen: 512×342 pixels, 1-bit per pixel (black/white)
 - Organized as 32 horizontal words (16 pixels each)
 - Drawing directly modifies screen memory buffer
 
 **Bit Operations Used**
+
 - **AND operations**: Create white shadows (punch holes in black background)
 - **OR operations**: Add black pixels for wall tops
 - **XOR operations**: Apply hash patterns while preserving texture
 
 **Optimization Techniques**
+
 - Unrolled loops for common patterns
 - 32-bit operations draw 2 words simultaneously
 - Special fast paths when no clipping needed
@@ -362,16 +385,19 @@ The wall drawing system uses a hybrid approach combining pre-calculated bit patt
 ### Why This Hybrid Approach?
 
 **Memory Constraints**
+
 - Storing all possible wall segments as bitmaps would exhaust memory
 - Dynamic generation allows walls of any length
 - Pre-calculated patterns kept small (6 pixels tall maximum)
 
 **Performance Balance**
+
 - Complex shapes (shadows, patches) pre-calculated for speed
 - Simple, repetitive patterns (black tops) generated to save memory
 - Assembly optimization focuses on inner loops
 
 **Visual Quality**
+
 - Pixel-perfect alignment with background texture
 - Clean junctions without gaps or overlaps
 - Consistent 3D appearance across all wall angles
@@ -384,10 +410,13 @@ The system essentially combines a library of small, reusable bit patterns with d
 All white shadow patterns are stored as 16-bit values, but their **effective width** varies:
 
 **Example 1: South Wall Bottom (`sbot`)**
+
 ```
 int sbot[6] = {0x803F, 0xC03F, 0xF03F, 0xFC3F, 0xFF3F, 0xFFFF}
 ```
+
 Visual representation (█ = black/1, ░ = white/0):
+
 ```
 Row 0: █░░░░░░░░░██████  (0x803F = 1000000000111111)
 Row 1: ██░░░░░░░░██████  (0xC03F = 1100000000111111)
@@ -396,14 +425,18 @@ Row 3: ██████░░░░██████  (0xFC3F = 1111110000111
 Row 4: ████████░░██████  (0xFF3F = 1111111100111111)
 Row 5: ████████████████  (0xFFFF = 1111111111111111)
 ```
+
 - Effective width: 6 pixels (the middle "white" area)
 - The black pixels on sides create the 3D shadow shape
 
 **Example 2: East Wall Left End (`eleft`)**
+
 ```
 int eleft[6] = {0xFFFF, 0xFFFF, 0xF000, 0xFC00, 0xFF00, 0xFF80}
 ```
+
 Visual representation:
+
 ```
 Row 0: ████████████████  (0xFFFF = all black)
 Row 1: ████████████████  (0xFFFF = all black)
@@ -412,10 +445,12 @@ Row 3: ██████░░░░░░░░░░  (0xFC00 = 1111110000000
 Row 4: ████████░░░░░░░░  (0xFF00 = 1111111100000000)
 Row 5: █████████░░░░░░░  (0xFF80 = 1111111110000000)
 ```
+
 - Effective width: Uses full 16 bits
 - Creates a tapering white area on the right
 
 **Key Points:**
+
 1. **16-bit storage** allows efficient processing on 68000 processor
 2. **Effective width** varies based on the shadow shape needed
 3. **Unused bits** are set to black (1) to create the proper outline
