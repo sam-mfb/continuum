@@ -40,19 +40,21 @@ export const ESE_GLITCH = [0x3fff, 0xcfff, 0xf3ff, 0xfdff] as const
 /**
  * Lookup table mapping wall types to their white piece bitmaps
  * Structure matches whitepicts[][] from Junctions.c
+ * Array index corresponds to newtype value (0-8)
  * Index 0 is top/left piece, index 1 is bottom/right piece
  * null entries mean no white piece for that position
  */
-export const WHITE_PICTS = {
-  [NEW_TYPE.S]: { top: null, bottom: null },
-  [NEW_TYPE.SSE]: { top: GENERIC_TOP, bottom: S_BOT },
-  [NEW_TYPE.SE]: { top: SSE_TOP, bottom: SSE_BOT },
-  [NEW_TYPE.ESE]: { top: SE_TOP, bottom: SE_BOT },
-  [NEW_TYPE.E]: { top: null, bottom: ESE_RIGHT },
-  [NEW_TYPE.ENE]: { top: E_LEFT, bottom: GENERIC_TOP },
-  [NEW_TYPE.NE]: { top: ENE_LEFT, bottom: GENERIC_TOP },
-  [NEW_TYPE.NNE]: { top: NNE_BOT, bottom: GENERIC_TOP }
-} as const
+export const WHITE_PICTS = [
+  { top: null, bottom: null },           // 0: unused
+  { top: GENERIC_TOP, bottom: S_BOT },   // 1: NEW_S
+  { top: SSE_TOP, bottom: SSE_BOT },     // 2: NEW_SSE
+  { top: SE_TOP, bottom: SE_BOT },       // 3: NEW_SE
+  { top: null, bottom: ESE_RIGHT },      // 4: NEW_ESE
+  { top: E_LEFT, bottom: GENERIC_TOP },  // 5: NEW_E
+  { top: ENE_LEFT, bottom: GENERIC_TOP }, // 6: NEW_ENE
+  { top: NE_BOT, bottom: GENERIC_TOP },  // 7: NEW_NE
+  { top: NNE_BOT, bottom: GENERIC_TOP }  // 8: NEW_NNE
+] as const
 
 /**
  * Hash crosshatch pattern for junctions
