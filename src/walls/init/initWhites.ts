@@ -45,8 +45,25 @@ export function initWhites(
  * @see Junctions.c:212-222 - Insertion sort of whites
  */
 function sortWhitesByX(whites: WhiteRec[]): WhiteRec[] {
-  // TODO: Implement white sorting
-  throw new Error('Not implemented')
+  // Insertion sort like the original
+  const sorted = [...whites]
+  
+  for (let i = 1; i < sorted.length; i++) {
+    const temp = sorted[i]
+    let j = i - 1
+    
+    // Move elements that are greater than temp
+    while (j >= 0 && 
+           (sorted[j].x > temp.x || 
+            (sorted[j].x === temp.x && sorted[j].y > temp.y))) {
+      sorted[j + 1] = sorted[j]
+      j--
+    }
+    
+    sorted[j + 1] = temp
+  }
+  
+  return sorted
 }
 
 /**
@@ -56,6 +73,44 @@ function sortWhitesByX(whites: WhiteRec[]): WhiteRec[] {
  * @see Junctions.c:227-240 - Merge whites together
  */
 function mergeOverlappingWhites(whites: WhiteRec[]): WhiteRec[] {
-  // TODO: Implement white merging
-  throw new Error('Not implemented')
+  const merged: WhiteRec[] = []
+  let i = 0
+  
+  while (i < whites.length) {
+    const current = whites[i]
+    
+    // Check if we can merge with next white
+    if (i + 1 < whites.length) {
+      const next = whites[i + 1]
+      
+      if (current.x === next.x && 
+          current.y === next.y && 
+          current.ht === 6 && 
+          next.ht === 6) {
+        // Merge the two whites by ANDing their data
+        const mergedData: number[] = []
+        for (let j = 0; j < 6; j++) {
+          mergedData[j] = current.data[j] & next.data[j]
+        }
+        
+        merged.push({
+          id: current.id, // Keep first id
+          x: current.x,
+          y: current.y,
+          hasj: current.hasj || next.hasj,
+          ht: 6,
+          data: mergedData
+        })
+        
+        i += 2 // Skip both whites
+        continue
+      }
+    }
+    
+    // No merge, just add current
+    merged.push(current)
+    i++
+  }
+  
+  return merged
 }

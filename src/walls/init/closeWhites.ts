@@ -1,5 +1,7 @@
 import type { LineRec, WhiteRec } from '../types'
 import { oneClose } from './oneClose'
+import { simpleh1, simpleh2 } from './closeConstants'
+import { WALLS } from '../constants'
 
 /**
  * Main orchestrator for finding close walls and calculating junction patches.
@@ -11,14 +13,17 @@ export function closeWhites(walls: LineRec[]): {
   whites: WhiteRec[]
   updatedWalls: LineRec[]
 } {
-  // Step 1: Find pairs of walls that are close to each other
-  const wallPairs = findCloseWallPairs(walls)
+  // Step 1: Apply initial h1/h2 optimization values to walls
+  const wallsWithInitialOpt = updateWallOptimization(walls, [])
   
-  // Step 2: Process each close wall pair to generate patches
+  // Step 2: Find pairs of walls that are close to each other
+  const wallPairs = findCloseWallPairs(wallsWithInitialOpt)
+  
+  // Step 3: Process each close wall pair to generate patches
   const { patches, wallUpdates } = processCloseWalls(wallPairs, oneClose)
   
-  // Step 3: Apply h1/h2 optimization values to walls
-  const updatedWalls = updateWallOptimization(walls, wallUpdates)
+  // Step 4: Apply any additional h1/h2 updates from close processing
+  const updatedWalls = updateWallOptimization(wallsWithInitialOpt, wallUpdates)
   
   return {
     whites: patches,
@@ -33,8 +38,52 @@ export function closeWhites(walls: LineRec[]): {
  * @see Junctions.c:302-321 - Wall pair detection loops
  */
 function findCloseWallPairs(walls: LineRec[]): Array<[LineRec, LineRec]> {
-  // TODO: Implement close wall detection
-  throw new Error('Not implemented')
+  const pairs: Array<[LineRec, LineRec]> = []
+  const THRESHOLD = WALLS.JUNCTION_THRESHOLD
+  
+  // Sort walls by startx for optimization
+  const sortedWalls = [...walls].sort((a, b) => a.startx - b.startx)
+  
+  // Use a sliding window approach like the original
+  let firstIdx = 0
+  
+  for (let i = 0; i < sortedWalls.length; i++) {
+    const wall1 = sortedWalls[i]
+    
+    // Move firstIdx forward while walls are too far left
+    while (firstIdx < sortedWalls.length && 
+           sortedWalls[firstIdx].endx < wall1.startx - THRESHOLD) {
+      firstIdx++
+    }
+    
+    // Check both endpoints of wall1
+    for (let endpoint1 = 0; endpoint1 < 2; endpoint1++) {
+      const x1 = endpoint1 ? wall1.endx : wall1.startx
+      const y1 = endpoint1 ? wall1.endy : wall1.starty
+      
+      // Check against all walls in range
+      for (let j = firstIdx; j < sortedWalls.length && 
+           sortedWalls[j].startx < x1 + THRESHOLD; j++) {
+        if (i === j) continue // Skip self
+        
+        const wall2 = sortedWalls[j]
+        
+        // Check both endpoints of wall2
+        for (let endpoint2 = 0; endpoint2 < 2; endpoint2++) {
+          const x2 = endpoint2 ? wall2.endx : wall2.startx
+          const y2 = endpoint2 ? wall2.endy : wall2.starty
+          
+          // Check if within threshold box (offset by -3 like original)
+          if (x1 > x2 - THRESHOLD && y1 > y2 - THRESHOLD &&
+              x1 < x2 + THRESHOLD && y1 < y2 + THRESHOLD) {
+            pairs.push([wall1, wall2])
+          }
+        }
+      }
+    }
+  }
+  
+  return pairs
 }
 
 /**
@@ -56,9 +105,32 @@ function processCloseWalls(
   patches: WhiteRec[]
   wallUpdates: Array<{ wallId: string; h1?: number; h2?: number }>
 } {
-  // TODO: Implement close wall processing
-  // Will call oneCloseFn() for each wall pair
-  throw new Error('Not implemented')
+  const patches: WhiteRec[] = []
+  const wallUpdates: Array<{ wallId: string; h1?: number; h2?: number }> = []
+  
+  for (const [wall1, wall2] of wallPairs) {
+    const result = oneCloseFn(wall1, wall2)
+    
+    // Collect patches
+    patches.push(...result.patches)
+    
+    // Collect wall updates
+    if (Object.keys(result.wall1Updates).length > 0) {
+      wallUpdates.push({
+        wallId: wall1.id,
+        ...result.wall1Updates
+      })
+    }
+    
+    if (Object.keys(result.wall2Updates).length > 0) {
+      wallUpdates.push({
+        wallId: wall2.id,
+        ...result.wall2Updates
+      })
+    }
+  }
+  
+  return { patches, wallUpdates }
 }
 
 /**
@@ -71,6 +143,21 @@ function updateWallOptimization(
   walls: LineRec[],
   updates: Array<{ wallId: string; h1?: number; h2?: number }>
 ): LineRec[] {
-  // TODO: Implement wall update logic
-  throw new Error('Not implemented')
+  // First, set initial h1/h2 values based on wall type
+  const updatedWalls = walls.map(wall => ({
+    ...wall,
+    h1: simpleh1[wall.newtype],
+    h2: wall.endx - wall.startx + simpleh2[wall.newtype] // length + adjustment
+  }))
+  
+  // Then apply any specific updates from close wall processing
+  for (const update of updates) {
+    const wall = updatedWalls.find(w => w.id === update.wallId)
+    if (wall) {
+      if (update.h1 !== undefined) wall.h1 = update.h1
+      if (update.h2 !== undefined) wall.h2 = update.h2
+    }
+  }
+  
+  return updatedWalls
 }
