@@ -54,5 +54,46 @@ export const WHITE_PICTS = {
   [NEW_TYPE.NNE]: { top: NNE_BOT, bottom: GENERIC_TOP }
 } as const
 
+/**
+ * Hash crosshatch pattern for junctions
+ * 6x6 pixel pattern drawn at wall intersections
+ */
+export const HASH_FIGURE = [
+  0x8000, 0x6000, 0x1800, 0x0600, 0x0180, 0x0040
+] as const
+
+/**
+ * Junction patch patterns
+ * Used by one_close() to fill gaps where walls meet
+ */
+export const N_PATCH = [
+  0x003f, 0x003f, 0x003f, 0x003f, 0x003f, 0x003f, 0x003f, 0x003f, 0x003f,
+  0x003f, 0x003f, 0x003f, 0x003f, 0x003f, 0x003f, 0x003f, 0x003f, 0x003f,
+  0x003f, 0x003f, 0x003f, 0x003f
+] as const
+
+export const NE_PATCH = [0xe000, 0xc001, 0x8003, 0x0007] as const
+
+export const ENE_PATCH = [0xfc00, 0xf003, 0xc00f, 0x003f] as const
+
+export const E_PATCH = [0x0003, 0x0003, 0x0003, 0x0003] as const
+
+export const SE_PATCH = [
+  0x07ff, 0x83ff, 0xc1ff, 0xe0ff, 0xf07f, 0xf83f, 0xfc1f, 0xfe0f, 0xff07,
+  0xff83, 0xffc1
+] as const
+
+export const SSE_PATCH = [
+  0x00ff, 0x00ff, 0x807f, 0x807f, 0xc03f, 0xc03f, 0xe01f, 0xe01f, 0xf00f,
+  0xf00f, 0xf807, 0xf807, 0xfc03, 0xfc03, 0xfe01, 0xfe01, 0xff00, 0xff00
+] as const
+
+/**
+ * Simple h1/h2 values for walls
+ * Used to optimize white shadow drawing
+ */
+export const SIMPLE_H1 = [0, 6, 6, 6, 12, 16, 0, 1, 0] as const
+export const SIMPLE_H2 = [0, 0, 0, 0, -1, 0, -11, -5, -5] as const
+
 // Type for white bitmap data
 export type WhiteBitmapData = readonly number[]
