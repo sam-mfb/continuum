@@ -1,4 +1,5 @@
 import type { LineRec, WhiteRec } from '../types'
+import { oneClose } from './oneClose'
 
 /**
  * Main orchestrator for finding close walls and calculating junction patches.
@@ -14,7 +15,7 @@ export function closeWhites(walls: LineRec[]): {
   const wallPairs = findCloseWallPairs(walls)
   
   // Step 2: Process each close wall pair to generate patches
-  const { patches, wallUpdates } = processCloseWalls(wallPairs)
+  const { patches, wallUpdates } = processCloseWalls(wallPairs, oneClose)
   
   // Step 3: Apply h1/h2 optimization values to walls
   const updatedWalls = updateWallOptimization(walls, wallUpdates)
@@ -38,17 +39,25 @@ function findCloseWallPairs(walls: LineRec[]): Array<[LineRec, LineRec]> {
 
 /**
  * Processes each close wall pair to generate junction patches.
- * Calls oneClose for each pair and collects the results.
- * This function will call oneClose() from oneClose.ts for each wall pair.
+ * Calls the provided oneClose function for each pair and collects the results.
  * 
  * @see Junctions.c:318 - one_close() calls
+ * @param wallPairs Array of wall pairs that are close to each other
+ * @param oneCloseFn Function to calculate patches for a single wall pair
  */
-function processCloseWalls(wallPairs: Array<[LineRec, LineRec]>): {
+function processCloseWalls(
+  wallPairs: Array<[LineRec, LineRec]>,
+  oneCloseFn: (wall1: LineRec, wall2: LineRec) => {
+    patches: WhiteRec[]
+    wall1Updates: { h1?: number; h2?: number }
+    wall2Updates: { h1?: number; h2?: number }
+  }
+): {
   patches: WhiteRec[]
   wallUpdates: Array<{ wallId: string; h1?: number; h2?: number }>
 } {
   // TODO: Implement close wall processing
-  // Will call oneClose() for each wall pair
+  // Will call oneCloseFn() for each wall pair
   throw new Error('Not implemented')
 }
 
