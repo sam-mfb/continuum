@@ -1,5 +1,3 @@
-import { NEW_TYPE } from './constants'
-
 /**
  * White piece bitmap data from Junctions.c
  * Each array represents scanlines of a 16-bit bitmap pattern

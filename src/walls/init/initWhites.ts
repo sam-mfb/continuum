@@ -44,7 +44,7 @@ export function initWhites(
  *
  * @see Junctions.c:212-222 - Insertion sort of whites
  */
-function sortWhitesByX(whites: WhiteRec[]): WhiteRec[] {
+export function sortWhitesByX(whites: WhiteRec[]): WhiteRec[] {
   // Insertion sort like the original
   const sorted = [...whites]
 
@@ -76,7 +76,7 @@ function sortWhitesByX(whites: WhiteRec[]): WhiteRec[] {
  *
  * @see Junctions.c:227-240 - Merge whites together
  */
-function mergeOverlappingWhites(whites: WhiteRec[]): WhiteRec[] {
+export function mergeOverlappingWhites(whites: WhiteRec[]): WhiteRec[] {
   const merged: WhiteRec[] = []
   let i = 0
 

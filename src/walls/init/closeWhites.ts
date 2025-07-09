@@ -37,7 +37,7 @@ export function closeWhites(walls: LineRec[]): {
  *
  * @see Junctions.c:302-321 - Wall pair detection loops
  */
-function findCloseWallPairs(walls: LineRec[]): Array<[LineRec, LineRec]> {
+export function findCloseWallPairs(walls: LineRec[]): Array<[LineRec, LineRec]> {
   const pairs: Array<[LineRec, LineRec]> = []
   const THRESHOLD = WALLS.JUNCTION_THRESHOLD
 
@@ -108,7 +108,7 @@ function findCloseWallPairs(walls: LineRec[]): Array<[LineRec, LineRec]> {
  * @param wallPairs Array of wall pairs that are close to each other
  * @param oneCloseFn Function to calculate patches for a single wall pair
  */
-function processCloseWalls(
+export function processCloseWalls(
   wallPairs: Array<[LineRec, LineRec]>,
   oneCloseFn: (
     wall1: LineRec,
@@ -156,7 +156,7 @@ function processCloseWalls(
  *
  * @see Junctions.c:297-300 - Initial h1/h2 assignment
  */
-function updateWallOptimization(
+export function updateWallOptimization(
   walls: LineRec[],
   updates: Array<{ wallId: string; h1?: number; h2?: number }>
 ): LineRec[] {

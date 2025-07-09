@@ -37,7 +37,7 @@ export function initWalls(walls: LineRec[]): WallsState {
  *
  * @see Junctions.c:43-53 - Loop that builds linked lists by kind
  */
-function organizeWallsByKind(walls: LineRec[]): {
+export function organizeWallsByKind(walls: LineRec[]): {
   organizedWalls: Record<string, LineRec>
   kindPointers: Record<LineKind, string>
 } {
@@ -88,7 +88,7 @@ function organizeWallsByKind(walls: LineRec[]): {
  *
  * @see Junctions.c:54-61 - Loop that builds firstwhite list
  */
-function findFirstWhiteWalls(walls: LineRec[]): string {
+export function findFirstWhiteWalls(walls: LineRec[]): string {
   let firstWhiteId = ''
   let lastWhiteId: string | null = null
 
@@ -126,7 +126,7 @@ function findFirstWhiteWalls(walls: LineRec[]): string {
  *
  * @see Junctions.c:63-93 - Junction detection and sorting
  */
-function detectWallJunctions(walls: LineRec[]): JunctionRec[] {
+export function detectWallJunctions(walls: LineRec[]): JunctionRec[] {
   const junctions: JunctionRec[] = []
   const THRESHOLD = WALLS.JUNCTION_THRESHOLD
 

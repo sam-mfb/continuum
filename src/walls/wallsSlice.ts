@@ -1,9 +1,16 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { WallsState, LineRec } from './types'
+import { LINE_KIND } from './constants'
 
 const initialState: WallsState = {
   organizedWalls: {},
-  kindPointers: {},
+  kindPointers: {
+    [LINE_KIND.NORMAL]: '',
+    [LINE_KIND.BOUNCE]: '',
+    [LINE_KIND.GHOST]: '',
+    [LINE_KIND.EXPLODE]: '',
+    [LINE_KIND.NUMKINDS]: ''
+  },
   firstWhite: '',
   junctions: [],
   whites: [],
@@ -68,7 +75,13 @@ export const wallsSlice = createSlice({
      */
     clearWalls: state => {
       state.organizedWalls = {}
-      state.kindPointers = {}
+      state.kindPointers = {
+        [LINE_KIND.NORMAL]: '',
+        [LINE_KIND.BOUNCE]: '',
+        [LINE_KIND.GHOST]: '',
+        [LINE_KIND.EXPLODE]: '',
+        [LINE_KIND.NUMKINDS]: ''
+      }
       state.firstWhite = ''
       state.junctions = []
       state.whites = []
