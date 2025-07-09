@@ -1,5 +1,12 @@
 # Wall Drawing System in Continuum
 
+## Key Files
+
+orig/Sources/GW.h - data structures
+orig/Sources/Junctions.c - key initialization routines, bitmap constants, assembly drawing routines
+orig/Sources/Terrain.c - overall in game drawing scheme
+orig/Sources/Walls.c - specific drawing routines
+
 This document explains the complex wall drawing system used in the original Continuum game, including how walls are rendered with 3D effects and how intersections (junctions) are handled.
 
 ## Plain English Summary: How Wall Drawing Works
