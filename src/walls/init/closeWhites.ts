@@ -13,8 +13,8 @@ export function closeWhites(walls: LineRec[]): {
   whites: WhiteRec[]
   updatedWalls: LineRec[]
 } {
-  // Step 1: Apply initial h1/h2 optimization values to walls
-  const wallsWithInitialOpt = updateWallOptimization(walls, [])
+  // Step 1: Set initial h1/h2 optimization values
+  const wallsWithInitialOpt = setInitialOptimization(walls)
 
   // Step 2: Find pairs of walls that are close to each other
   const wallPairs = findCloseWallPairs(wallsWithInitialOpt)
@@ -39,8 +39,8 @@ export function closeWhites(walls: LineRec[]): {
  */
 export function findCloseWallPairs(
   walls: LineRec[]
-): Array<[LineRec, LineRec]> {
-  const pairs: Array<[LineRec, LineRec]> = []
+): Array<[LineRec, LineRec, number, number]> {
+  const pairs: Array<[LineRec, LineRec, number, number]> = []
   const THRESHOLD = WALLS.JUNCTION_THRESHOLD
 
   // Sort walls by startx for optimization
@@ -73,26 +73,32 @@ export function findCloseWallPairs(
         if (!wallToCheck || wallToCheck.startx >= x1 + THRESHOLD) {
           break
         }
-        if (i === j) continue // Skip self
+
+        // The C code naturally avoids some duplicates by only checking walls
+        // later in the array. To avoid duplicates, only process pairs where
+        // wall2 comes after wall1 in the original ordering, or if they're the
+        // same wall but endpoint2 > endpoint1
+        if (i > j) continue // Skip if wall2 comes before wall1
 
         const wall2 = sortedWalls[j]
         if (!wall2) continue
 
         // Check both endpoints of wall2
         for (let endpoint2 = 0; endpoint2 < 2; endpoint2++) {
+          // Skip if same wall and endpoint2 <= endpoint1
+          if (i === j && endpoint2 <= endpoint1) continue
+
           const x2 = endpoint2 ? wall2.endx : wall2.startx
           const y2 = endpoint2 ? wall2.endy : wall2.starty
 
-          // Check if within threshold box (offset by -3 like original)
+          // C code offsets by -3 then checks 6x6 box
           if (
             x1 > x2 - THRESHOLD &&
             y1 > y2 - THRESHOLD &&
             x1 < x2 + THRESHOLD &&
             y1 < y2 + THRESHOLD
           ) {
-            if (wall1 && wall2) {
-              pairs.push([wall1, wall2])
-            }
+            pairs.push([wall1, wall2, endpoint1, endpoint2])
           }
         }
       }
@@ -111,10 +117,12 @@ export function findCloseWallPairs(
  * @param oneCloseFn Function to calculate patches for a single wall pair
  */
 export function processCloseWalls(
-  wallPairs: Array<[LineRec, LineRec]>,
+  wallPairs: Array<[LineRec, LineRec, number, number]>,
   oneCloseFn: (
     wall1: LineRec,
-    wall2: LineRec
+    wall2: LineRec,
+    endpoint1: number,
+    endpoint2: number
   ) => {
     patches: WhiteRec[]
     wall1Updates: { h1?: number; h2?: number }
@@ -127,8 +135,8 @@ export function processCloseWalls(
   const patches: WhiteRec[] = []
   const wallUpdates: Array<{ wallId: string; h1?: number; h2?: number }> = []
 
-  for (const [wall1, wall2] of wallPairs) {
-    const result = oneCloseFn(wall1, wall2)
+  for (const [wall1, wall2, endpoint1, endpoint2] of wallPairs) {
+    const result = oneCloseFn(wall1, wall2, endpoint1, endpoint2)
 
     // Collect patches
     patches.push(...result.patches)
@@ -153,30 +161,40 @@ export function processCloseWalls(
 }
 
 /**
- * Applies h1/h2 optimization values to walls.
+ * Sets initial h1/h2 optimization values on walls based on their type.
  * These values indicate safe regions for combined white+black drawing.
  *
- * @see Junctions.c:297-300 - Initial h1/h2 assignment
+ * @see Junctions.c:297-300 - Initial h1/h2 assignment in close_whites()
+ */
+export function setInitialOptimization(walls: LineRec[]): LineRec[] {
+  return walls.map(wall => ({
+    ...wall,
+    h1: simpleh1[wall.newtype] ?? 0,
+    h2: wall.endx - wall.startx + (simpleh2[wall.newtype] ?? 0) // length + adjustment
+  }))
+}
+
+/**
+ * Applies h1/h2 optimization updates to walls.
+ * Only applies the specific updates passed, does not set initial values.
+ *
+ * @see Junctions.c:297-300 - h1/h2 updates from one_close()
  */
 export function updateWallOptimization(
   walls: LineRec[],
   updates: Array<{ wallId: string; h1?: number; h2?: number }>
 ): LineRec[] {
-  // First, set initial h1/h2 values based on wall type
-  const updatedWalls = walls.map(wall => ({
-    ...wall,
-    h1: simpleh1[wall.newtype] ?? 0,
-    h2: wall.endx - wall.startx + (simpleh2[wall.newtype] ?? 0) // length + adjustment
-  }))
+  // Create a map for efficient lookups
+  const wallMap = new Map(walls.map(w => [w.id, { ...w }]))
 
-  // Then apply any specific updates from close wall processing
+  // Apply only the specific updates
   for (const update of updates) {
-    const wall = updatedWalls.find(w => w.id === update.wallId)
+    const wall = wallMap.get(update.wallId)
     if (wall) {
       if (update.h1 !== undefined) wall.h1 = update.h1
       if (update.h2 !== undefined) wall.h2 = update.h2
     }
   }
 
-  return updatedWalls
+  return Array.from(wallMap.values())
 }

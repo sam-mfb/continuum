@@ -45,7 +45,10 @@ describe('findCloseWallPairs', () => {
     const pairs = findCloseWallPairs(walls)
 
     expect(pairs.length).toBe(1)
-    expect(pairs[0]).toEqual([walls[0], walls[1]])
+    expect(pairs[0]?.[0]).toEqual(walls[0])
+    expect(pairs[0]?.[1]).toEqual(walls[1])
+    expect(pairs[0]?.[2]).toBe(1) // endpoint1: end of wall1
+    expect(pairs[0]?.[3]).toBe(0) // endpoint2: start of wall2
   })
 
   it('checks both endpoints of each wall', () => {
@@ -310,11 +313,13 @@ describe('processCloseWalls', () => {
       wall2Updates: {}
     })
 
-    const pairs: Array<[LineRec, LineRec]> = [[wall1, wall2]]
+    const pairs: Array<[LineRec, LineRec, number, number]> = [
+      [wall1, wall2, 1, 0]
+    ]
 
     processCloseWalls(pairs, mockOneClose)
 
-    expect(mockOneClose).toHaveBeenCalledWith(wall1, wall2)
+    expect(mockOneClose).toHaveBeenCalledWith(wall1, wall2, 1, 0)
     expect(mockOneClose).toHaveBeenCalledTimes(1)
   })
 
@@ -373,7 +378,7 @@ describe('processCloseWalls', () => {
       wall2Updates: {}
     })
 
-    const pairs: Array<[LineRec, LineRec]> = [[wall1, wall2]]
+    const pairs: Array<[LineRec, LineRec, number, number]> = [[wall1, wall2, 1, 0]]
 
     const result = processCloseWalls(pairs, mockOneClose)
 
@@ -418,7 +423,7 @@ describe('processCloseWalls', () => {
       wall2Updates: { h1: 3 }
     })
 
-    const pairs: Array<[LineRec, LineRec]> = [[wall1, wall2]]
+    const pairs: Array<[LineRec, LineRec, number, number]> = [[wall1, wall2, 1, 0]]
 
     const result = processCloseWalls(pairs, mockOneClose)
 
@@ -428,7 +433,7 @@ describe('processCloseWalls', () => {
 
   it('handles empty wall pairs array', () => {
     const mockOneClose = vi.fn()
-    const pairs: Array<[LineRec, LineRec]> = []
+    const pairs: Array<[LineRec, LineRec, number, number]> = []
 
     const result = processCloseWalls(pairs, mockOneClose)
 
@@ -504,9 +509,9 @@ describe('processCloseWalls', () => {
       }
     })
 
-    const pairs: Array<[LineRec, LineRec]> = [
-      [wall1, wall2],
-      [wall1, wall3]
+    const pairs: Array<[LineRec, LineRec, number, number]> = [
+      [wall1, wall2, 0, 1],
+      [wall1, wall3, 1, 0]
     ]
 
     const result = processCloseWalls(pairs, mockOneClose)
@@ -556,7 +561,7 @@ describe('processCloseWalls', () => {
       wall2Updates: { h2: 10 }
     })
 
-    const pairs: Array<[LineRec, LineRec]> = [[wall1, wall2]]
+    const pairs: Array<[LineRec, LineRec, number, number]> = [[wall1, wall2, 1, 0]]
 
     const result = processCloseWalls(pairs, mockOneClose)
 
