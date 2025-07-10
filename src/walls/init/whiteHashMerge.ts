@@ -44,11 +44,13 @@ function noCloseWh(whites: WhiteRec[], index: number): boolean {
  * @see Junctions.c:569-614 - white_hash_merge()
  * @param whites Array of white pieces to potentially add hash patterns to
  * @param junctions Array of junction points where walls meet
+ * @param worldWidth Width of the game world (default 512)
  * @returns Updated white pieces with hash patterns where appropriate
  */
 export function whiteHashMerge(
   whites: WhiteRec[],
-  junctions: JunctionRec[]
+  junctions: JunctionRec[],
+  worldWidth: number = 512
 ): WhiteRec[] {
   const result = [...whites]
   const remainingJunctions = [...junctions]
@@ -59,11 +61,17 @@ export function whiteHashMerge(
     if (!wh) continue
 
     // Skip if not a standard 6-height piece, has close neighbors, or is at edge
-    if (wh.ht !== 6 || !noCloseWh(result, whIndex) || wh.x <= 8) {
+    // C code: wh->x < worldwidth - 8 && wh->x > 8
+    if (
+      wh.ht !== 6 ||
+      !noCloseWh(result, whIndex) ||
+      wh.x <= 8 ||
+      wh.x >= worldWidth - 8
+    ) {
       continue
     }
 
-    // Find matching junction
+    // Find EXACT matching junction (not within tolerance)
     let junctionIndex = -1
     for (let j = 0; j < remainingJunctions.length; j++) {
       const junction = remainingJunctions[j]

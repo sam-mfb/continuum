@@ -24,12 +24,12 @@ describe('whiteHashMerge', () => {
     expect(result[0]?.data).not.toEqual([0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
   })
 
-  it('finds whites within tolerance of junctions', () => {
+  it('finds whites at exact junction positions', () => {
     const whites: WhiteRec[] = [
       {
         id: 'w1',
-        x: 11,
-        y: 9,
+        x: 10,
+        y: 10,
         hasj: false,
         ht: 6,
         data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
@@ -47,7 +47,7 @@ describe('whiteHashMerge', () => {
 
     const result = whiteHashMerge(whites, junctions)
 
-    // w1 is within tolerance (distance ~1.4), w2 is not
+    // Only w1 matches exactly (same x,y as junction)
     expect(result.find(w => w.id === 'w1')?.hasj).toBe(true)
     expect(result.find(w => w.id === 'w2')?.hasj).toBe(false)
   })
@@ -169,7 +169,7 @@ describe('whiteHashMerge', () => {
         hasj: false,
         ht: 6,
         data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
-      }, // too close to left edge
+      }, // too close to left edge (x <= 8)
       {
         id: 'w2',
         x: 510,
@@ -177,29 +177,11 @@ describe('whiteHashMerge', () => {
         hasj: false,
         ht: 6,
         data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
-      }, // too close to right edge
-      {
-        id: 'w3',
-        x: 10,
-        y: 2,
-        hasj: false,
-        ht: 6,
-        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
-      }, // too close to top edge
-      {
-        id: 'w4',
-        x: 10,
-        y: 340,
-        hasj: false,
-        ht: 6,
-        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
-      } // too close to bottom edge
+      } // too close to right edge (x >= 504)
     ]
     const junctions: JunctionRec[] = [
       { x: 2, y: 10 },
-      { x: 510, y: 10 },
-      { x: 10, y: 2 },
-      { x: 10, y: 340 }
+      { x: 510, y: 10 }
     ]
 
     const result = whiteHashMerge(whites, junctions)
