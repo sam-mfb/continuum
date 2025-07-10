@@ -38,7 +38,7 @@ This step prepares all the data structures for efficient rendering:
 
 - **Categorize walls**: Sort walls into groups by their behavior type (normal, bouncing, phantom walls)
 - **Sort by position**: Arrange walls by x-coordinate for fast visibility checking
-- **Find all junctions**: Locate every place where walls meet or come close (within 3 pixels)
+- **Find all junctions**: Locate every place where walls end, deduplicating endings that are within 3px of each other
 - **Create white shadow pieces**: Generate the white "underside" pieces for each wall endpoint
 - **Calculate junction patches**: Figure out special filler pieces to make junctions look clean
 - **Identify optimization opportunities**: Mark which walls can use the faster combined drawing method

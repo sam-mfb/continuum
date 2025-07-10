@@ -13,7 +13,7 @@ This document describes the functions involved in wall rendering, their purposes
 - Main initialization entry point
 - Organizes walls into linked lists by type (normal, bouncing, phantom)
 - Creates special firstwhite list for NNE walls only
-- Detects all wall intersections (junctions)
+- Detects all wall ends (junctions)
 - Sorts junctions by x-coordinate
 - Calls init_whites() to prepare white pieces
 
