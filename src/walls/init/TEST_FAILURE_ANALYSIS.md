@@ -110,8 +110,7 @@ Fix the duplicate detection to properly check if a junction already exists withi
 const RANGE = 3 // ±3 pixels creates a 6x6 box
 let found = false
 for (const junction of junctions) {
-  if (Math.abs(junction.x - x) <= RANGE && 
-      Math.abs(junction.y - y) <= RANGE) {
+  if (Math.abs(junction.x - x) <= RANGE && Math.abs(junction.y - y) <= RANGE) {
     found = true
     break
   }
@@ -234,7 +233,7 @@ Create a separate pure function for initial h1/h2 setting and remove this logic 
 /**
  * Sets initial h1/h2 optimization values on walls based on their type.
  * These values indicate safe regions for combined white+black drawing.
- * 
+ *
  * @see Junctions.c:297-300 - Initial h1/h2 assignment in close_whites()
  */
 export function setInitialOptimization(walls: LineRec[]): LineRec[] {
@@ -326,16 +325,18 @@ Use a deep copy approach that more faithfully mimics the C code's in-place modif
 
 ```typescript
 function mergeOverlappingWhites(whites: WhiteRec[]): WhiteRec[] {
-  const result = whites.map(w => ({...w, data: [...w.data]})) // deep copy
+  const result = whites.map(w => ({ ...w, data: [...w.data] })) // deep copy
   let i = 0
   while (i < result.length - 1) {
-    if (result[i].x === result[i+1].x && 
-        result[i].y === result[i+1].y &&
-        result[i].ht === 6 && 
-        result[i+1].ht === 6) {
+    if (
+      result[i].x === result[i + 1].x &&
+      result[i].y === result[i + 1].y &&
+      result[i].ht === 6 &&
+      result[i + 1].ht === 6
+    ) {
       // Merge data by AND-ing
       for (let j = 0; j < 6; j++) {
-        result[i].data[j] = result[i].data[j] & result[i+1].data[j]
+        result[i].data[j] = result[i].data[j] & result[i + 1].data[j]
       }
       // Shift array left (remove the merged element)
       result.splice(i + 1, 1)

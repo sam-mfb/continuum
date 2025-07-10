@@ -37,7 +37,9 @@ export function closeWhites(walls: LineRec[]): {
  *
  * @see Junctions.c:302-321 - Wall pair detection loops
  */
-export function findCloseWallPairs(walls: LineRec[]): Array<[LineRec, LineRec]> {
+export function findCloseWallPairs(
+  walls: LineRec[]
+): Array<[LineRec, LineRec]> {
   const pairs: Array<[LineRec, LineRec]> = []
   const THRESHOLD = WALLS.JUNCTION_THRESHOLD
 

@@ -1,6 +1,6 @@
 import type { LineRec, JunctionRec, LineKind, WallsState } from '../types'
 import { initWhites } from './initWhites'
-import { LINE_KIND, NEW_TYPE, WALLS } from '../constants'
+import { LINE_KIND, NEW_TYPE } from '../constants'
 
 /**
  * Main initialization entry point for the wall system.
@@ -126,14 +126,15 @@ export function findFirstWhiteWalls(walls: LineRec[]): string {
 }
 
 /**
- * Detects all wall junctions (endpoints within 3 pixels of each other).
+ * Detects all wall junctions (unique wall endpoints).
+ * Creates a junction for each wall endpoint, but merges endpoints
+ * within 3 pixels of each other to avoid duplicates.
  * Sorts junctions by x-coordinate for efficient rendering.
  *
  * @see Junctions.c:63-93 - Junction detection and sorting
  */
 export function detectWallJunctions(walls: LineRec[]): JunctionRec[] {
   const junctions: JunctionRec[] = []
-  const THRESHOLD = WALLS.JUNCTION_THRESHOLD
 
   // Check each wall endpoint
   for (const wall of walls) {
@@ -142,13 +143,14 @@ export function detectWallJunctions(walls: LineRec[]): JunctionRec[] {
       const y = i ? wall.endy : wall.starty
 
       // Check if this point is already in junctions (within threshold)
+      // Exact C logic: j->x <= x+3 && j->x >= x-3 && j->y <= y+3 && j->y >= y-3
       let found = false
       for (const junction of junctions) {
         if (
-          junction.x <= x + THRESHOLD &&
-          junction.x >= x - THRESHOLD &&
-          junction.y <= y + THRESHOLD &&
-          junction.y >= y - THRESHOLD
+          junction.x <= x + 3 &&
+          junction.x >= x - 3 &&
+          junction.y <= y + 3 &&
+          junction.y >= y - 3
         ) {
           found = true
           break

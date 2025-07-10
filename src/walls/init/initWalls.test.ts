@@ -273,7 +273,7 @@ describe('organizeWallsByKind', () => {
     const result = organizeWallsByKind(walls)
 
     // Follow the chain
-    let currentId: string = result.kindPointers[LINE_KIND.NORMAL]
+    let currentId: string | null = result.kindPointers[LINE_KIND.NORMAL]
     const chain: string[] = []
     while (currentId) {
       chain.push(currentId)
@@ -552,8 +552,12 @@ describe('detectWallJunctions', () => {
 
     const junctions = detectWallJunctions(walls)
 
-    expect(junctions.length).toBe(1)
-    expect(junctions[0]).toEqual({ x: 10, y: 10 })
+    // C code creates junctions for all endpoints, merging those within 3 pixels
+    // (0,0), (10,10), and (20,20) are created; (11,11) is merged with (10,10)
+    expect(junctions.length).toBe(3)
+    expect(junctions).toContainEqual({ x: 0, y: 0 })
+    expect(junctions).toContainEqual({ x: 10, y: 10 })
+    expect(junctions).toContainEqual({ x: 20, y: 20 })
   })
 
   it('avoids duplicate junctions at same position', () => {
@@ -607,8 +611,13 @@ describe('detectWallJunctions', () => {
 
     const junctions = detectWallJunctions(walls)
 
-    expect(junctions.length).toBe(1)
-    expect(junctions[0]).toEqual({ x: 10, y: 10 })
+    // All three walls share (10,10) as a common point - should create one junction there
+    // Plus the other endpoints: (0,0), (20,20), (30,30)
+    expect(junctions.length).toBe(4)
+    expect(junctions).toContainEqual({ x: 0, y: 0 })
+    expect(junctions).toContainEqual({ x: 10, y: 10 })
+    expect(junctions).toContainEqual({ x: 20, y: 20 })
+    expect(junctions).toContainEqual({ x: 30, y: 30 })
   })
 
   it('sorts junctions by x-coordinate', () => {
@@ -677,9 +686,16 @@ describe('detectWallJunctions', () => {
 
     const junctions = detectWallJunctions(walls)
 
-    expect(junctions.length).toBe(2)
-    expect(junctions[0]?.x).toBe(10)
-    expect(junctions[1]?.x).toBe(30)
+    // Endpoints: (0,0), (10,10), (15,15), (20,0), (30,10), (40,20)
+    // (30,10) appears twice but gets merged, (10,10) appears twice but gets merged
+    expect(junctions.length).toBe(6)
+    // Should be sorted by x-coordinate
+    expect(junctions[0]?.x).toBe(0)
+    expect(junctions[1]?.x).toBe(10)
+    expect(junctions[2]?.x).toBe(15)
+    expect(junctions[3]?.x).toBe(20)
+    expect(junctions[4]?.x).toBe(30)
+    expect(junctions[5]?.x).toBe(40)
   })
 
   it('handles walls with identical endpoints', () => {
@@ -718,8 +734,11 @@ describe('detectWallJunctions', () => {
 
     const junctions = detectWallJunctions(walls)
 
-    expect(junctions.length).toBe(1)
-    expect(junctions[0]).toEqual({ x: 10, y: 10 })
+    // w1 has identical start/end at (10,10), w2 goes from (10,10) to (20,20)
+    // All three (10,10) points merge into one junction
+    expect(junctions.length).toBe(2)
+    expect(junctions).toContainEqual({ x: 10, y: 10 })
+    expect(junctions).toContainEqual({ x: 20, y: 20 })
   })
 
   it('detects junctions at both start and end points of walls', () => {
@@ -773,9 +792,13 @@ describe('detectWallJunctions', () => {
 
     const junctions = detectWallJunctions(walls)
 
-    expect(junctions.length).toBe(2)
+    // Endpoints: (0,0), (50,50), (1,1), (20,20), (30,30), (51,51)
+    // (1,1) merges with (0,0), (51,51) merges with (50,50)
+    expect(junctions.length).toBe(4)
     expect(junctions.some(j => j.x === 0 && j.y === 0)).toBe(true)
     expect(junctions.some(j => j.x === 50 && j.y === 50)).toBe(true)
+    expect(junctions.some(j => j.x === 20 && j.y === 20)).toBe(true)
+    expect(junctions.some(j => j.x === 30 && j.y === 30)).toBe(true)
   })
 
   it('handles empty wall array', () => {
@@ -786,7 +809,7 @@ describe('detectWallJunctions', () => {
     expect(junctions).toEqual([])
   })
 
-  it('handles walls with no junctions', () => {
+  it('handles walls with separate endpoints', () => {
     const walls: LineRec[] = [
       {
         id: 'w1',
@@ -822,6 +845,11 @@ describe('detectWallJunctions', () => {
 
     const junctions = detectWallJunctions(walls)
 
-    expect(junctions).toEqual([])
+    // Each wall has two endpoints, none within 3 pixels of each other
+    expect(junctions.length).toBe(4)
+    expect(junctions).toContainEqual({ x: 0, y: 0 })
+    expect(junctions).toContainEqual({ x: 10, y: 10 })
+    expect(junctions).toContainEqual({ x: 20, y: 20 })
+    expect(junctions).toContainEqual({ x: 30, y: 30 })
   })
 })
