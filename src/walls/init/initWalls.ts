@@ -39,10 +39,15 @@ export function initWalls(walls: LineRec[]): WallsState {
  */
 export function organizeWallsByKind(walls: LineRec[]): {
   organizedWalls: Record<string, LineRec>
-  kindPointers: Record<LineKind, string>
+  kindPointers: Record<LineKind, string | null>
 } {
   const organizedWalls: Record<string, LineRec> = {}
-  const kindPointers: Partial<Record<LineKind, string>> = {}
+  const kindPointers: Partial<Record<LineKind, string | null>> = {}
+
+  // Initialize all kind pointers to null (matching C code)
+  for (let kind = LINE_KIND.NORMAL; kind < LINE_KIND.NUMKINDS; kind++) {
+    kindPointers[kind] = null
+  }
 
   // Copy walls to organized structure
   for (const wall of walls) {
@@ -79,7 +84,7 @@ export function organizeWallsByKind(walls: LineRec[]): {
 
   return {
     organizedWalls,
-    kindPointers: kindPointers as Record<LineKind, string>
+    kindPointers: kindPointers as Record<LineKind, string | null>
   }
 }
 

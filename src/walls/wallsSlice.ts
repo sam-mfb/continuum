@@ -5,11 +5,11 @@ import { LINE_KIND } from './constants'
 const initialState: WallsState = {
   organizedWalls: {},
   kindPointers: {
-    [LINE_KIND.NORMAL]: '',
-    [LINE_KIND.BOUNCE]: '',
-    [LINE_KIND.GHOST]: '',
-    [LINE_KIND.EXPLODE]: '',
-    [LINE_KIND.NUMKINDS]: ''
+    [LINE_KIND.NORMAL]: null,
+    [LINE_KIND.BOUNCE]: null,
+    [LINE_KIND.GHOST]: null,
+    [LINE_KIND.EXPLODE]: null,
+    [LINE_KIND.NUMKINDS]: null
   },
   firstWhite: '',
   junctions: [],
@@ -76,11 +76,11 @@ export const wallsSlice = createSlice({
     clearWalls: state => {
       state.organizedWalls = {}
       state.kindPointers = {
-        [LINE_KIND.NORMAL]: '',
-        [LINE_KIND.BOUNCE]: '',
-        [LINE_KIND.GHOST]: '',
-        [LINE_KIND.EXPLODE]: '',
-        [LINE_KIND.NUMKINDS]: ''
+        [LINE_KIND.NORMAL]: null,
+        [LINE_KIND.BOUNCE]: null,
+        [LINE_KIND.GHOST]: null,
+        [LINE_KIND.EXPLODE]: null,
+        [LINE_KIND.NUMKINDS]: null
       }
       state.firstWhite = ''
       state.junctions = []

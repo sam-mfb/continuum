@@ -96,7 +96,7 @@ export type WallsState = {
   /** Map of line ID to line record for O(1) lookup */
   organizedWalls: Record<string, LineRec>
   /** Map of wall kind to first line ID of that kind */
-  kindPointers: Record<LineKind, string>
+  kindPointers: Record<LineKind, string | null>
   /** ID of first white-only drawing line */
   firstWhite: string
   /** Array of wall junctions (no IDs needed) */

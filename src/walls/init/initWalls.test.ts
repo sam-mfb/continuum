@@ -88,8 +88,8 @@ describe('organizeWallsByKind', () => {
     const result = organizeWallsByKind(walls)
 
     expect(result.kindPointers[LINE_KIND.GHOST]).toBe('w1')
-    expect(result.kindPointers[LINE_KIND.NORMAL]).toBe('')
-    expect(result.kindPointers[LINE_KIND.BOUNCE]).toBe('')
+    expect(result.kindPointers[LINE_KIND.NORMAL]).toBe(null)
+    expect(result.kindPointers[LINE_KIND.BOUNCE]).toBe(null)
   })
 
   it('handles empty wall array', () => {
@@ -98,9 +98,9 @@ describe('organizeWallsByKind', () => {
     const result = organizeWallsByKind(walls)
 
     expect(result.organizedWalls).toEqual({})
-    expect(result.kindPointers[LINE_KIND.NORMAL]).toBe('')
-    expect(result.kindPointers[LINE_KIND.BOUNCE]).toBe('')
-    expect(result.kindPointers[LINE_KIND.GHOST]).toBe('')
+    expect(result.kindPointers[LINE_KIND.NORMAL]).toBe(null)
+    expect(result.kindPointers[LINE_KIND.BOUNCE]).toBe(null)
+    expect(result.kindPointers[LINE_KIND.GHOST]).toBe(null)
   })
 
   it('handles walls of only one kind', () => {
@@ -140,8 +140,8 @@ describe('organizeWallsByKind', () => {
     const result = organizeWallsByKind(walls)
 
     expect(result.kindPointers[LINE_KIND.NORMAL]).toBe('w1')
-    expect(result.kindPointers[LINE_KIND.BOUNCE]).toBe('')
-    expect(result.kindPointers[LINE_KIND.GHOST]).toBe('')
+    expect(result.kindPointers[LINE_KIND.BOUNCE]).toBe(null)
+    expect(result.kindPointers[LINE_KIND.GHOST]).toBe(null)
     expect(result.organizedWalls['w1']?.nextId).toBe('w2')
     expect(result.organizedWalls['w2']?.nextId).toBe('')
   })
