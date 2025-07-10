@@ -77,53 +77,36 @@ export function sortWhitesByX(whites: WhiteRec[]): WhiteRec[] {
  * @see Junctions.c:227-240 - Merge whites together
  */
 export function mergeOverlappingWhites(whites: WhiteRec[]): WhiteRec[] {
-  const merged: WhiteRec[] = []
+  // Create a deep copy of the array so we can modify in-place
+  const result = whites.map(w => ({ ...w, data: [...(w.data ?? [])] }))
   let i = 0
 
-  while (i < whites.length) {
-    const current = whites[i]
-    if (!current) {
-      i++
-      continue
-    }
+  while (i < result.length - 1) {
+    const current = result[i]
+    const next = result[i + 1]
 
-    // Check if we can merge with next white
-    if (i + 1 < whites.length) {
-      const next = whites[i + 1]
-
-      if (
-        next &&
-        current.x === next.x &&
-        current.y === next.y &&
-        current.ht === 6 &&
-        next.ht === 6 &&
-        current.data &&
-        next.data
-      ) {
-        // Merge the two whites by ANDing their data
-        const mergedData: number[] = []
-        for (let j = 0; j < 6; j++) {
-          mergedData[j] = (current.data[j] ?? 0) & (next.data[j] ?? 0)
-        }
-
-        merged.push({
-          id: current.id, // Keep first id
-          x: current.x,
-          y: current.y,
-          hasj: current.hasj || next.hasj,
-          ht: 6,
-          data: mergedData
-        })
-
-        i += 2 // Skip both whites
-        continue
+    if (
+      current &&
+      next &&
+      current.x === next.x &&
+      current.y === next.y &&
+      current.ht === 6 &&
+      next.ht === 6
+    ) {
+      // Merge data by AND-ing
+      for (let j = 0; j < 6; j++) {
+        current.data[j] = (current.data[j] ?? 0) & (next.data[j] ?? 0)
       }
-    }
 
-    // No merge, just add current
-    merged.push(current)
-    i++
+      // Remove the merged element (like C code shifting array left)
+      result.splice(i + 1, 1)
+
+      // Don't increment i to check for multiple consecutive merges
+      // This allows merging 3+ whites at the same position
+    } else {
+      i++
+    }
   }
 
-  return merged
+  return result
 }

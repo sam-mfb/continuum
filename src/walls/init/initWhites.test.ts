@@ -212,9 +212,12 @@ describe('mergeOverlappingWhites', () => {
     const merged = mergeOverlappingWhites(whites)
 
     expect(merged.length).toBe(2)
-    // Original w1 and w2 should not exist, only the merged one
-    expect(merged.some(w => w.id === 'w1')).toBe(false)
+    // The merged white keeps the first ID (w1), w2 is removed
+    expect(merged.some(w => w.id === 'w1')).toBe(true)
     expect(merged.some(w => w.id === 'w2')).toBe(false)
     expect(merged.some(w => w.id === 'w3')).toBe(true)
+    // Verify the merged data
+    const mergedWhite = merged.find(w => w.id === 'w1')
+    expect(mergedWhite?.data[0]).toBe(0xff & 0xee)
   })
 })

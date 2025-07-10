@@ -378,7 +378,9 @@ describe('processCloseWalls', () => {
       wall2Updates: {}
     })
 
-    const pairs: Array<[LineRec, LineRec, number, number]> = [[wall1, wall2, 1, 0]]
+    const pairs: Array<[LineRec, LineRec, number, number]> = [
+      [wall1, wall2, 1, 0]
+    ]
 
     const result = processCloseWalls(pairs, mockOneClose)
 
@@ -423,7 +425,9 @@ describe('processCloseWalls', () => {
       wall2Updates: { h1: 3 }
     })
 
-    const pairs: Array<[LineRec, LineRec, number, number]> = [[wall1, wall2, 1, 0]]
+    const pairs: Array<[LineRec, LineRec, number, number]> = [
+      [wall1, wall2, 1, 0]
+    ]
 
     const result = processCloseWalls(pairs, mockOneClose)
 
@@ -561,7 +565,9 @@ describe('processCloseWalls', () => {
       wall2Updates: { h2: 10 }
     })
 
-    const pairs: Array<[LineRec, LineRec, number, number]> = [[wall1, wall2, 1, 0]]
+    const pairs: Array<[LineRec, LineRec, number, number]> = [
+      [wall1, wall2, 1, 0]
+    ]
 
     const result = processCloseWalls(pairs, mockOneClose)
 
