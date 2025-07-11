@@ -1,4 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react'
+import type {
+  BitmapRenderer,
+  BitmapToCanvasOptions,
+  MonochromeBitmap
+} from '../../bitmap'
+import {
+  createMonochromeBitmap,
+  clearBitmap,
+  bitmapToCanvas
+} from '../../bitmap'
 
 /**
  * GameView Component
@@ -51,10 +61,20 @@ export type GameLoopFunction = (
   env: GameEnvironment
 ) => void
 
-export type GameDefinition = {
+export type CanvasGameDefinition = {
+  type: 'canvas'
   name: string
   gameLoop: GameLoopFunction
 }
+
+export type BitmapGameDefinition = {
+  type: 'bitmap'
+  name: string
+  bitmapRenderer: BitmapRenderer
+  bitmapOptions?: BitmapToCanvasOptions
+}
+
+export type GameDefinition = CanvasGameDefinition | BitmapGameDefinition
 
 export type GameViewProps = {
   // Canvas configuration
@@ -93,6 +113,9 @@ const GameView: React.FC<GameViewProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationFrameRef = useRef<number>(0)
   const [selectedGameIndex, setSelectedGameIndex] = useState(defaultGameIndex)
+
+  // Bitmap ref for bitmap games
+  const bitmapRef = useRef<MonochromeBitmap | null>(null)
 
   // Timing refs
   const startTimeRef = useRef<number>(0)
@@ -196,7 +219,35 @@ const GameView: React.FC<GameViewProps> = ({
 
         // Call selected game loop
         if (games[selectedGameIndex]) {
-          games[selectedGameIndex].gameLoop(ctx, frameInfo, env)
+          const game = games[selectedGameIndex]
+
+          switch (game.type) {
+            case 'canvas':
+              // Direct canvas rendering
+              game.gameLoop(ctx, frameInfo, env)
+              break
+
+            case 'bitmap':
+              // Bitmap rendering with conversion
+              // Lazy initialize bitmap
+              if (
+                !bitmapRef.current ||
+                bitmapRef.current.width !== width ||
+                bitmapRef.current.height !== height
+              ) {
+                bitmapRef.current = createMonochromeBitmap(width, height)
+              }
+
+              // Clear bitmap
+              clearBitmap(bitmapRef.current)
+
+              // Call bitmap renderer
+              game.bitmapRenderer(bitmapRef.current, frameInfo, env)
+
+              // Convert to canvas
+              bitmapToCanvas(bitmapRef.current, ctx, game.bitmapOptions)
+              break
+          }
         }
 
         // Draw FPS counter if enabled
@@ -315,5 +366,17 @@ const GameView: React.FC<GameViewProps> = ({
     </div>
   )
 }
+
+/**
+ * Helper to convert legacy game definitions to the new discriminated union format
+ */
+export const legacyGameDefinition = (
+  name: string,
+  gameLoop: GameLoopFunction
+): CanvasGameDefinition => ({
+  type: 'canvas',
+  name,
+  gameLoop
+})
 
 export default GameView

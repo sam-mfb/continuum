@@ -6,7 +6,7 @@ import { PlanetList } from './components/PlanetList'
 import { PlanetViewer } from './components/PlanetViewer'
 import { GraphicsList } from './components/GraphicsList'
 import { GraphicsViewer } from './components/GraphicsViewer'
-import GameView from './components/GameView'
+import GameView, { legacyGameDefinition } from './components/GameView'
 import { SoundTest } from './components/SoundTest'
 import { testGameLoop } from './games/testGame'
 import { shipMoveGameLoop } from './games/shipMove'
@@ -95,8 +95,8 @@ function App(): React.JSX.Element {
           {currentView === 'game' && (
             <GameView
               games={[
-                { name: 'Test Game', gameLoop: testGameLoop },
-                { name: 'Ship Move', gameLoop: shipMoveGameLoop }
+                legacyGameDefinition('Test Game', testGameLoop),
+                legacyGameDefinition('Ship Move', shipMoveGameLoop)
               ]}
               defaultGameIndex={0}
               scale={2} // Display at 2x size (1024x684)
