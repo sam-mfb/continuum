@@ -6,10 +6,14 @@ import { PlanetList } from './components/PlanetList'
 import { PlanetViewer } from './components/PlanetViewer'
 import { GraphicsList } from './components/GraphicsList'
 import { GraphicsViewer } from './components/GraphicsViewer'
-import GameView, { legacyGameDefinition } from './components/GameView'
+import GameView, {
+  legacyGameDefinition,
+  type BitmapGameDefinition
+} from './components/GameView'
 import { SoundTest } from './components/SoundTest'
 import { testGameLoop } from './games/testGame'
 import { shipMoveGameLoop } from './games/shipMove'
+import { bitmapTestRenderer } from './games/bitmapTest'
 import './App.css'
 
 function App(): React.JSX.Element {
@@ -96,7 +100,12 @@ function App(): React.JSX.Element {
             <GameView
               games={[
                 legacyGameDefinition('Test Game', testGameLoop),
-                legacyGameDefinition('Ship Move', shipMoveGameLoop)
+                legacyGameDefinition('Ship Move', shipMoveGameLoop),
+                {
+                  type: 'bitmap',
+                  name: 'Bitmap Test (Gray Pattern)',
+                  bitmapRenderer: bitmapTestRenderer
+                } as BitmapGameDefinition
               ]}
               defaultGameIndex={0}
               scale={2} // Display at 2x size (1024x684)
