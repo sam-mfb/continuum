@@ -228,11 +228,13 @@ RENDERING (Each frame)
 MISCONCEPTION: The rendering is NOT truly separated into white and black phases!
 
 **What Actually Happens:**
+
 1. White endpoint/junction patches are drawn first (via fast_whites)
 2. Then each wall draws BOTH its white underside AND black top together
 3. Exception: NNE walls have their white undersides drawn separately
 
 This approach works because:
+
 - Endpoint patches need to be drawn before walls to avoid overwrites
 - Most walls efficiently draw white+black together using EOR masking
 - The masking technique preserves background bits for white while setting others for black
@@ -260,6 +262,7 @@ The 1980s hardware had very limited CPU power. Pre-sorting allows:
 **The Key Insight:** Most walls draw their white undersides AND black tops together in a single pass!
 
 **Standard Drawing Method (used by S, SSE, SE, ESE, NE walls):**
+
 - Use EOR operations with carefully chosen bit masks
 - The mask preserves certain bits from the gray background (creating white underside)
 - The same operation sets other bits to create the black top
@@ -268,11 +271,13 @@ The 1980s hardware had very limited CPU power. Pre-sorting allows:
   - Bits 10-11 set by XOR = black top
 
 **Special Cases:**
+
 - **EAST walls**: Can optimize further when h1/h2 indicate no junctions
 - **ENE walls**: Call ene_white() then draw black
 - **NNE walls**: Only wall type with truly separate white drawing
 
 **Why This Design?**
+
 - Single memory pass per wall = better performance
 - EOR masking elegantly creates both colors
 - Junction patches handled separately to avoid conflicts

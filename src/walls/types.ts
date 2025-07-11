@@ -106,3 +106,40 @@ export type WallsState = {
   /** Walls with updated h1/h2 optimization values */
   updatedWalls: LineRec[]
 }
+
+/**
+ * Point type for line drawing
+ */
+export type Point = {
+  x: number
+  y: number
+}
+
+/**
+ * Line data for directional drawing functions
+ */
+export type LineData = {
+  startx: number
+  starty: number
+  endx: number
+  endy: number
+}
+
+/**
+ * Wall piece data for drawing
+ */
+export type WallPiece = {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+/**
+ * Hash data for junction drawing
+ */
+export type HashData = {
+  x: number
+  y: number
+  pattern: number
+}
