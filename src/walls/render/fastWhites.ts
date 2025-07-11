@@ -2,17 +2,17 @@
  * @fileoverview Corresponds to fast_whites() from orig/Sources/Junctions.c:634
  */
 
-import type { WhiteRec } from '../types'
+import type { MonochromeBitmap, WhiteRec } from '../types'
 
 /**
  * Draws all visible white wall pieces
  * @see orig/Sources/Junctions.c:634 fast_whites()
  */
 export const fastWhites = (
-  ctx: CanvasRenderingContext2D,
+  _screen: MonochromeBitmap,
   data: {
     _whites: WhiteRec[]
-    screen: { x: number; y: number; b: number; r: number }
+    viewport: { x: number; y: number; b: number; r: number }
     worldwidth: number
   }
 ): void => {
@@ -21,10 +21,10 @@ export const fastWhites = (
    * outside visible area
    */
   const LINE_START_MARGIN = 15
-  const top = data.screen.y
-  let left = data.screen.x - LINE_START_MARGIN
-  const bot = data.screen.b
-  let right = data.screen.r
+  // const _top = data.viewport.y  // TODO: Use for vertical culling
+  let left = data.viewport.x - LINE_START_MARGIN
+  // const _bot = data.viewport.b  // TODO: Use for vertical culling
+  let right = data.viewport.r
 
   for (let i = 0; i < 2; i++) {
     // TODO: replicate original assembly
@@ -32,5 +32,7 @@ export const fastWhites = (
     // account for "donut" worlds
     left -= data.worldwidth
     right -= data.worldwidth
+
+    // TODO: Use left and right for culling
   }
 }

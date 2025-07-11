@@ -108,14 +108,6 @@ export type WallsState = {
 }
 
 /**
- * Point type for line drawing
- */
-export type Point = {
-  x: number
-  y: number
-}
-
-/**
  * Line data for directional drawing functions
  */
 export type LineData = {
@@ -126,20 +118,17 @@ export type LineData = {
 }
 
 /**
- * Wall piece data for drawing
+ * Represents the 512x342 monochrome screen bitmap
+ * Each byte holds 8 pixels (1 bit per pixel)
+ * Matches the original Macintosh display format
  */
-export type WallPiece = {
-  x: number
-  y: number
+export type MonochromeBitmap = {
+  /** Raw bitmap data - each byte holds 8 pixels */
+  data: Uint8Array
+  /** Width in pixels (512 for Mac screen) */
   width: number
+  /** Height in pixels (342 for Mac screen) */
   height: number
-}
-
-/**
- * Hash data for junction drawing
- */
-export type HashData = {
-  x: number
-  y: number
-  pattern: number
+  /** Bytes per row (width / 8) */
+  rowBytes: number
 }
