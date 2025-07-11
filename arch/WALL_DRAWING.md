@@ -15,9 +15,9 @@ Here's a step-by-step explanation of how Continuum draws its 3D-looking walls:
 
 ### The Basic Idea
 
-Imagine each wall as a raised platform. To make it look 3D on a 2D screen, the game draws each wall in two layers:
+Imagine each wall as a raised platform. To make it look 3D on a 2D screen, each wall has two parts:
 
-1. First, a white "shadow" underneath (like the underside of a platform)
+1. First, a white "underside" underneath (like the underside of a platform)
 2. Then, a black "top surface" on top
 
 This creates the illusion that walls stick up from the playing field.
@@ -41,7 +41,7 @@ This step prepares all the data structures for efficient rendering:
 - **Find all junctions**: Locate every place where walls end, deduplicating endings that are within 3px of each other
 - **Create white shadow pieces**: Generate the white "underside" pieces for each wall endpoint
 - **Calculate junction patches**: Figure out special filler pieces to make junctions look clean
-- **Identify optimization opportunities**: Mark which walls can use the faster combined drawing method
+- **Identify optimization opportunities**: Mark which parts of walls require more expensive XOR drawing and which can be drawing more simply
 - **Merge and sort white pieces**: Combine overlapping pieces and sort for efficient access
 
 #### Step 2: **Selection** (Every frame - find what's visible)
@@ -59,46 +59,14 @@ The game efficiently determines which walls need drawing:
 
 With the visible walls identified, render them in the correct order:
 
-- **White phase first**:
+- **Fast phase first**:
 
-  - Draw all white shadow pieces for visible walls
+  - Draw all pre-rendered pieces for visible walls
   - Add crosshatch patterns at junctions
   - Handle special cases (like NNE walls that need white-only treatment)
 
-- **Black phase second**:
-  - Draw black top surfaces based on wall type
-  - Use optimized combined drawing where possible (no nearby junctions)
+- **Complicated phase second**:
+  - Use optimized combined drawing where possible (no nearby junctions) that draw white and black together
+  - In areas requiring complex drawing use XOR operations
   - Process each wall category separately (phantom, bouncing, normal)
   - Handle world wrapping by drawing walls twice if needed
-
-### Optimizations
-
-The original game had several clever optimizations:
-
-**Drawing Methods**:
-
-1. **Separated method** (original): Draw ALL white parts first, then ALL black parts. Clean but slow because it touches each screen area twice.
-
-2. **Combined method** (optimized): For simple walls without junctions, draw both white and black in one pass. Faster but more complex code. For example, `east_black()` draws horizontal walls in one go.
-
-**Visibility Checks**:
-
-- Pre-sorting walls means the game can stop checking as soon as it finds a wall that starts beyond the right edge of the screen
-- Individual wall drawing functions clip their output to only draw the visible portion
-- This was crucial for 1980s hardware - no CPU cycles wasted on invisible pixels
-
-### Why So Complex?
-
-The complexity comes from several factors:
-
-- **Eight wall directions**: Each direction (vertical, horizontal, diagonals, and in-between angles) needs different drawing patterns
-
-- **Junction handling**: With 8 directions, there are 64 possible ways walls can meet. Each combination might need special patches to look right.
-
-- **Performance**: On 1980s hardware, every optimization mattered. The code uses assembly language and bit manipulation tricks.
-
-- **Visual quality**: The developers wanted pixel-perfect junctions with no gaps or overlaps, requiring careful hand-tuning of each case.
-
-### The Key Insight
-
-Rather than trying to calculate 3D graphics in real-time (too slow for 1980s computers), the game uses pre-made bit patterns for each wall type and junction combination. It's like having a box of perfectly-shaped puzzle pieces - the game just needs to put the right pieces in the right places.
