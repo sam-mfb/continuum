@@ -52,21 +52,8 @@ export const bitmapToCanvas = (
   ctx: CanvasRenderingContext2D,
   options: BitmapToCanvasOptions = {}
 ): void => {
-  const {
-    conversionMethod = 'imagedata',
-    foregroundColor = 'black',
-    backgroundColor = 'white'
-  } = options
-
-  switch (conversionMethod) {
-    case 'imagedata':
-      renderViaImageData(bitmap, ctx, options)
-      break
-
-    case 'fillrect':
-      renderViaFillRect(bitmap, ctx, foregroundColor, backgroundColor)
-      break
-  }
+  const imageData = bitmapToImageData(bitmap, options)
+  ctx.putImageData(imageData, 0, 0)
 }
 
 /**
@@ -85,49 +72,6 @@ export const canvasToBitmap = (
 }
 
 // Helper functions
-
-/**
- * Render bitmap using ImageData (fast for full-screen updates)
- */
-const renderViaImageData = (
-  bitmap: MonochromeBitmap,
-  ctx: CanvasRenderingContext2D,
-  options: BitmapToCanvasOptions
-): void => {
-  const imageData = bitmapToImageData(bitmap, options)
-  ctx.putImageData(imageData, 0, 0)
-}
-
-/**
- * Render bitmap using fillRect (useful for debugging)
- */
-const renderViaFillRect = (
-  bitmap: MonochromeBitmap,
-  ctx: CanvasRenderingContext2D,
-  foregroundColor: string,
-  backgroundColor: string
-): void => {
-  // First fill background
-  ctx.fillStyle = backgroundColor
-  ctx.fillRect(0, 0, bitmap.width, bitmap.height)
-
-  // Then draw set pixels
-  ctx.fillStyle = foregroundColor
-
-  for (let y = 0; y < bitmap.height; y++) {
-    for (let x = 0; x < bitmap.width; x++) {
-      const byteIndex = y * bitmap.rowBytes + Math.floor(x / 8)
-      const bitMask = 0x80 >> x % 8
-
-      if (
-        byteIndex < bitmap.data.length &&
-        (bitmap.data[byteIndex]! & bitMask) !== 0
-      ) {
-        ctx.fillRect(x, y, 1, 1)
-      }
-    }
-  }
-}
 
 /**
  * Parse color string to RGB

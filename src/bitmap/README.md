@@ -7,6 +7,7 @@ This module provides monochrome (1-bit) bitmap manipulation functionality, desig
 ### Core Concept
 
 The bitmap system represents pixels as individual bits, where:
+
 - **0** = White (unset pixel)
 - **1** = Black (set pixel)
 
@@ -27,18 +28,20 @@ bitmap/
 ### Key Types
 
 #### `MonochromeBitmap`
+
 The fundamental data structure representing a black-and-white bitmap:
 
 ```typescript
 type MonochromeBitmap = {
-  data: Uint8Array    // Raw bitmap data (1 bit per pixel)
-  width: number       // Width in pixels
-  height: number      // Height in pixels
-  rowBytes: number    // Bytes per row (width / 8)
+  data: Uint8Array // Raw bitmap data (1 bit per pixel)
+  width: number // Width in pixels
+  height: number // Height in pixels
+  rowBytes: number // Bytes per row (width / 8)
 }
 ```
 
 #### `BitmapRenderer`
+
 A function that draws to a monochrome bitmap:
 
 ```typescript
@@ -54,7 +57,12 @@ type BitmapRenderer = (
 ### Basic Pixel Operations
 
 ```typescript
-import { createMonochromeBitmap, setPixel, clearPixel, getPixel } from './bitmap'
+import {
+  createMonochromeBitmap,
+  setPixel,
+  clearPixel,
+  getPixel
+} from './bitmap'
 
 // Create a 512x342 bitmap (Mac screen size)
 const bitmap = createMonochromeBitmap(512, 342)
@@ -108,7 +116,7 @@ import { setPixel } from '../bitmap'
 // Define a bitmap renderer
 const myRenderer: BitmapRenderer = (bitmap, frame, env) => {
   // Clear bitmap (already done automatically)
-  
+
   // Draw your graphics
   for (let x = 0; x < bitmap.width; x++) {
     const y = Math.sin(x * 0.1 + frame.totalTime * 0.001) * 50 + bitmap.height / 2
@@ -123,8 +131,7 @@ const myBitmapGame: BitmapGameDefinition = {
   bitmapRenderer: myRenderer,
   bitmapOptions: {
     foregroundColor: 'black',
-    backgroundColor: 'white',
-    conversionMethod: 'imagedata'
+    backgroundColor: 'white'
   }
 }
 
@@ -143,8 +150,7 @@ import { bitmapToCanvas, canvasToBitmap, bitmapToImageData } from './bitmap'
 const ctx = canvas.getContext('2d')
 bitmapToCanvas(bitmap, ctx, {
   foregroundColor: 'black',
-  backgroundColor: 'white',
-  conversionMethod: 'imagedata' // or 'fillrect' for debugging
+  backgroundColor: 'white'
 })
 
 // Convert canvas content to bitmap (with threshold)
@@ -160,16 +166,19 @@ const imageData = bitmapToImageData(bitmap, {
 ## Performance Considerations
 
 ### Bit Operations
+
 - Pixel operations work directly on bytes using bit masks
 - Byte-aligned operations (x coordinates that are multiples of 8) are fastest
 - The MSB-first bit order matches the original Macintosh format
 
 ### Memory Layout
+
 - Each row is padded to byte boundaries
 - Total memory usage: `rowBytes * height` bytes
 - For 512x342: 64 bytes/row × 342 rows = 21,888 bytes
 
 ### Optimization Tips
+
 1. **Batch Operations**: Modify multiple pixels in the same byte together
 2. **Row-wise Access**: Process pixels row by row for better cache locality
 3. **Avoid Repeated Conversions**: Convert to canvas only once per frame
@@ -180,7 +189,7 @@ const imageData = bitmapToImageData(bitmap, {
 Create a gray appearance using alternating pixels:
 
 ```typescript
-const grayPattern: BitmapRenderer = (bitmap) => {
+const grayPattern: BitmapRenderer = bitmap => {
   // Floyd-Steinberg dithering pattern
   const pattern = [
     [0, 1, 0, 1],
@@ -188,7 +197,7 @@ const grayPattern: BitmapRenderer = (bitmap) => {
     [0, 1, 0, 1],
     [1, 0, 1, 0]
   ]
-  
+
   for (let y = 0; y < bitmap.height; y++) {
     for (let x = 0; x < bitmap.width; x++) {
       if (pattern[y % 4][x % 4]) {
@@ -202,6 +211,7 @@ const grayPattern: BitmapRenderer = (bitmap) => {
 ## Compatibility
 
 This module is designed to closely match the original Macintosh bitmap format:
+
 - 1 bit per pixel (monochrome)
 - MSB-first bit ordering
 - Row-based memory layout

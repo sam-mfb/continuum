@@ -37,8 +37,6 @@ export type BitmapToCanvasOptions = {
   foregroundColor?: string // Default: 'black'
   /** Color for unset pixels (0s) */
   backgroundColor?: string // Default: 'white'
-  /** Conversion method to use */
-  conversionMethod?: 'imagedata' | 'fillrect' // Default: 'imagedata'
 }
 
 /**
