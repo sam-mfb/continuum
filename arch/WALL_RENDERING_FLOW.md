@@ -49,7 +49,8 @@ This document describes the functions involved in wall rendering, their purposes
 
 - Adds decorative 6x6 crosshatch texture at junctions
 - Makes junction seams less visually obvious
-- Converts solid white pieces to textured ones using XOR patterns
+- Sets the `hasj` field to TRUE for white pieces at junctions
+- Modifies white data to include hash patterns mixed with background
 
 #### Drawing Functions (Called Each Frame)
 
@@ -57,21 +58,24 @@ This document describes the functions involved in wall rendering, their purposes
 
 - Draws ONLY white endpoint patches and junction pieces (NOT the main white undersides)
 - Uses optimized assembly loop with pre-sorting
-- Calls white_wall_piece() for normal whites
-- Calls eor_wall_piece() for whites with hash patterns
+- Decision logic based on `hasj` field in whiterec structure:
+  - If `hasj` is FALSE: Calls white_wall_piece() for normal AND drawing
+  - If `hasj` is TRUE: Calls eor_wall_piece() for XOR drawing (junction pieces with hash patterns)
 - Handles world wrapping with two passes
 
 **white_wall_piece()**
 
 - Draws a single white piece using AND operations
+- Used for regular white pieces where `hasj` is FALSE
 - Handles clipping at screen edges
-- Uses bit patterns for endpoint/junction patches
+- Uses bit patterns for endpoint patches
 
 **eor_wall_piece()**
 
-- Draws a white piece with XOR operations
-- Used for pieces that have hash patterns
-- Preserves background texture through junction
+- Draws a white piece with XOR (EOR) operations
+- Used for junction pieces where `hasj` is TRUE
+- Required because these pieces have pre-mixed hash patterns
+- XOR blending preserves background texture through junction
 
 **fast_hashes()**
 
@@ -163,7 +167,7 @@ INITIALIZATION (Once per level)
                   ├─> Merge overlapping whites
                   │
                   └─> ┌────────────────────┐
-                      │ white_hash_merge() │ -> Add hash patterns
+                      │ white_hash_merge() │ -> Add hash patterns, set hasj flags
                       └────────────────────┘
 
 RENDERING (Each frame)
