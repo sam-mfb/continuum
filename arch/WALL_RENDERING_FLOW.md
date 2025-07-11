@@ -19,7 +19,7 @@ This document describes the functions involved in wall rendering, their purposes
 
 **init_whites()**
 
-- Prepares all white shadow pieces for the level
+- Prepares all white underside pieces for the level (endpoints and junction patches only)
 - Calls norm_whites() to add standard white pieces
 - Calls close_whites() to calculate junction patches
 - Sorts white pieces by x-coordinate
@@ -28,7 +28,7 @@ This document describes the functions involved in wall rendering, their purposes
 
 **norm_whites()**
 
-- Adds standard white shadow pieces for each wall endpoint
+- Adds standard white endpoint pieces for each wall endpoint
 - Adds special glitch-fixing pieces for NE, ENE, and ESE walls
 - Uses predefined bit patterns from whitepicts array
 
@@ -36,11 +36,11 @@ This document describes the functions involved in wall rendering, their purposes
 
 - Finds walls that come within 3 pixels of each other
 - Calls one_close() for each close pair to calculate patches
-- Sets h1 and h2 values on walls to optimize drawing
+- Sets h1 and h2 values on walls to mark areas where junctions affect drawing
 
 **one_close()**
 
-- Fills gaps in white shadow coverage where walls meet
+- Fills gaps in white underside coverage where walls meet
 - Giant switch statement handling 64 possible junction combinations
 - Modifies wall h1/h2 values to avoid drawing conflicts
 - Adds triangular/rectangular patches to ensure complete coverage
@@ -55,7 +55,7 @@ This document describes the functions involved in wall rendering, their purposes
 
 **fast_whites()**
 
-- Draws all visible white shadow pieces
+- Draws ONLY white endpoint patches and junction pieces (NOT the main white undersides)
 - Uses optimized assembly loop with pre-sorting
 - Calls white_wall_piece() for normal whites
 - Calls eor_wall_piece() for whites with hash patterns
@@ -65,7 +65,7 @@ This document describes the functions involved in wall rendering, their purposes
 
 - Draws a single white piece using AND operations
 - Handles clipping at screen edges
-- Uses bit patterns to create shadow effect
+- Uses bit patterns for endpoint/junction patches
 
 **eor_wall_piece()**
 
@@ -88,21 +88,21 @@ This document describes the functions involved in wall rendering, their purposes
 
 #### Wall Type Drawing Functions
 
-Each wall type has a black drawing function that renders the top surface:
+Each wall type has a drawing function that renders BOTH the white underside AND black top surface:
 
-**south_black()** - Draws vertical walls
-**sse_black()** - Draws nearly vertical walls with slight slope
-**se_black()** - Draws 45-degree diagonal walls
-**ese_black()** - Draws mostly horizontal walls with slight slope
+**south_black()** - Draws vertical walls (white underside via EOR masking + black top)
+**sse_black()** - Draws nearly vertical walls with slight slope (white underside via EOR masking + black top)
+**se_black()** - Draws 45-degree diagonal walls (white underside via EOR masking + black top)
+**ese_black()** - Draws mostly horizontal walls with slight slope (white underside via EOR masking + black top)
 **east_black()** - Draws horizontal walls (uses combined white+black when no junctions)
 **ene_black()** - Draws mostly horizontal walls with upward slope (always calls ene_white() first)
-**ne_black()** - Draws 45-degree diagonal upward walls (combines white end pieces)
-**nne_black()** - Draws nearly vertical walls with upward slope
+**ne_black()** - Draws 45-degree diagonal upward walls (white underside via EOR masking + black top)
+**nne_black()** - Draws nearly vertical walls with upward slope (black only - white drawn separately)
 
-Some wall types also have separate white drawing functions:
+Some wall types have separate white drawing functions for their main undersides:
 
-**nne_white()** - Special white drawing for NNE walls
-**ene_white()** - White drawing for ENE walls (called from ene_black)
+**nne_white()** - Draws the main white underside for NNE walls (called separately)
+**ene_white()** - Draws the main white underside for ENE walls (called from ene_black)
 
 #### Helper Functions
 
@@ -125,10 +125,10 @@ Some wall types also have separate white drawing functions:
 
 **white_terrain()**
 
-- Main function for drawing white shadows
-- Calls fast_whites() for optimized white drawing
+- Main function for drawing white elements
+- Calls fast_whites() to draw endpoint and junction patches only
 - Calls fast_hashes() for junction patterns
-- Draws special NNE whites that need separate handling
+- Calls nne_white() for each visible NNE wall to draw its main white underside
 - Handles world wrapping
 
 ## Rendering Flow Diagram
@@ -148,7 +148,7 @@ INITIALIZATION (Once per level)
            └──────┬───────┘
                   │
                   ├─> ┌──────────────┐
-                  │   │ norm_whites()│ -> Add standard white pieces
+                  │   │ norm_whites()│ -> Add white endpoint pieces
                   │   └──────────────┘
                   │
                   ├─> ┌───────────────┐
@@ -178,7 +178,7 @@ RENDERING (Each frame)
          │   └────────┬─────────┘
          │            │
          │            ├─> ┌──────────────┐
-         │            │   │ fast_whites()│ -> Draw all white pieces
+         │            │   │ fast_whites()│ -> Draw endpoint/junction patches
          │            │   └──────┬───────┘
          │            │          │
          │            │          ├─> white_wall_piece() [normal]
@@ -190,7 +190,7 @@ RENDERING (Each frame)
          │            │          │
          │            │          └─> draw_hash() [edge cases]
          │            │
-         │            └─> Draw special NNE whites
+         │            └─> Draw NNE wall undersides via nne_white()
          │
          ├─> ┌────────────────────────┐
          │   │ black_terrain(PHANTOM) │ -> Draw phantom walls
@@ -221,11 +221,17 @@ RENDERING (Each frame)
 
 ### Why Separate White and Black Phases?
 
-The two-phase approach ensures proper 3D appearance:
+MISCONCEPTION: The rendering is NOT truly separated into white and black phases!
 
-1. All white shadows are drawn first (back to front)
-2. All black tops are drawn second (also back to front)
-3. This prevents black tops from being overwritten by white shadows
+**What Actually Happens:**
+1. White endpoint/junction patches are drawn first (via fast_whites)
+2. Then each wall draws BOTH its white underside AND black top together
+3. Exception: NNE walls have their white undersides drawn separately
+
+This approach works because:
+- Endpoint patches need to be drawn before walls to avoid overwrites
+- Most walls efficiently draw white+black together using EOR masking
+- The masking technique preserves background bits for white while setting others for black
 
 ### Why Multiple Wall Type Functions?
 
@@ -245,25 +251,24 @@ The 1980s hardware had very limited CPU power. Pre-sorting allows:
 - Efficient batching of similar operations
 - Predictable memory access patterns
 
-### Combined White+Black Drawing
+### How Wall Drawing Actually Works
 
-While most walls use separated drawing (all whites first, then all blacks), some wall types optimize by combining both phases:
+**The Key Insight:** Most walls draw their white undersides AND black tops together in a single pass!
 
-**When Combined Drawing Happens:**
+**Standard Drawing Method (used by S, SSE, SE, ESE, NE walls):**
+- Use EOR operations with carefully chosen bit masks
+- The mask preserves certain bits from the gray background (creating white underside)
+- The same operation sets other bits to create the black top
+- Example: `eor = (background & 0xFFC00000) ^ 0xC0000000`
+  - Top 10 bits preserved from background = white underside
+  - Bits 10-11 set by XOR = black top
 
-1. **East walls** - When no junctions interfere (checked via h1/h2 values)
-2. **ENE walls** - Always combined (ene_white() called from ene_black())
-3. **NE walls** - White end pieces drawn inline with black
-4. **ESE walls** - Helper functions combine some drawing
+**Special Cases:**
+- **EAST walls**: Can optimize further when h1/h2 indicate no junctions
+- **ENE walls**: Call ene_white() then draw black
+- **NNE walls**: Only wall type with truly separate white drawing
 
-**Why These Cases?**
-
-- Performance: Touch each memory location only once
-- Geometric simplicity: Horizontal/near-horizontal patterns are simpler
-- No junction conflicts: Only when h1/h2 values indicate safe regions
-
-**The Decision Logic:**
-
-- close_whites() sets h1/h2 values on each wall
-- These values mark "safe" regions without junctions
-- Drawing functions check these to decide on optimization
+**Why This Design?**
+- Single memory pass per wall = better performance
+- EOR masking elegantly creates both colors
+- Junction patches handled separately to avoid conflicts
