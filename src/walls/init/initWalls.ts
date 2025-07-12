@@ -77,7 +77,7 @@ export function organizeWallsByKind(walls: LineRec[]): {
     if (lastId) {
       const lastWall = organizedWalls[lastId]
       if (lastWall) {
-        lastWall.nextId = ''
+        lastWall.nextId = null
       }
     }
   }

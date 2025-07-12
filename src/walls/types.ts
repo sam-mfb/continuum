@@ -49,9 +49,9 @@ export type LineRec = {
   /** new type including up-down */
   newtype: NewType
   /** ID of next line of this kind */
-  nextId: string
+  nextId: string | null
   /** ID of next line with white-only drawing */
-  nextwhId: string
+  nextwhId: string | null
 }
 
 /**

@@ -22,8 +22,8 @@ describe('organizeWallsByKind', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w2',
@@ -37,8 +37,8 @@ describe('organizeWallsByKind', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w3',
@@ -52,8 +52,8 @@ describe('organizeWallsByKind', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       }
     ]
 
@@ -62,8 +62,8 @@ describe('organizeWallsByKind', () => {
     expect(result.kindPointers[LINE_KIND.NORMAL]).toBe('w1')
     expect(result.kindPointers[LINE_KIND.BOUNCE]).toBe('w2')
     expect(result.organizedWalls['w1']?.nextId).toBe('w3')
-    expect(result.organizedWalls['w3']?.nextId).toBe('')
-    expect(result.organizedWalls['w2']?.nextId).toBe('')
+    expect(result.organizedWalls['w3']?.nextId).toBe(null)
+    expect(result.organizedWalls['w2']?.nextId).toBe(null)
   })
 
   it('creates correct kindPointers for each wall type', () => {
@@ -80,8 +80,8 @@ describe('organizeWallsByKind', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       }
     ]
 
@@ -117,8 +117,8 @@ describe('organizeWallsByKind', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w2',
@@ -132,8 +132,8 @@ describe('organizeWallsByKind', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       }
     ]
 
@@ -143,7 +143,7 @@ describe('organizeWallsByKind', () => {
     expect(result.kindPointers[LINE_KIND.BOUNCE]).toBe(null)
     expect(result.kindPointers[LINE_KIND.GHOST]).toBe(null)
     expect(result.organizedWalls['w1']?.nextId).toBe('w2')
-    expect(result.organizedWalls['w2']?.nextId).toBe('')
+    expect(result.organizedWalls['w2']?.nextId).toBe(null)
   })
 
   it('maintains linked list order within each kind', () => {
@@ -160,8 +160,8 @@ describe('organizeWallsByKind', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w2',
@@ -175,8 +175,8 @@ describe('organizeWallsByKind', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w3',
@@ -190,8 +190,8 @@ describe('organizeWallsByKind', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w4',
@@ -205,8 +205,8 @@ describe('organizeWallsByKind', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       }
     ]
 
@@ -214,11 +214,11 @@ describe('organizeWallsByKind', () => {
 
     // Normal walls: w1 -> w3
     expect(result.organizedWalls['w1']?.nextId).toBe('w3')
-    expect(result.organizedWalls['w3']?.nextId).toBe('')
+    expect(result.organizedWalls['w3']?.nextId).toBe(null)
 
     // Bouncing walls: w2 -> w4
     expect(result.organizedWalls['w2']?.nextId).toBe('w4')
-    expect(result.organizedWalls['w4']?.nextId).toBe('')
+    expect(result.organizedWalls['w4']?.nextId).toBe(null)
   })
 
   it('creates proper nextId chains for each kind', () => {
@@ -235,8 +235,8 @@ describe('organizeWallsByKind', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w2',
@@ -250,8 +250,8 @@ describe('organizeWallsByKind', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w3',
@@ -265,8 +265,8 @@ describe('organizeWallsByKind', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       }
     ]
 
@@ -277,7 +277,7 @@ describe('organizeWallsByKind', () => {
     const chain: string[] = []
     while (currentId) {
       chain.push(currentId)
-      currentId = result.organizedWalls[currentId]?.nextId || ''
+      currentId = result.organizedWalls[currentId]?.nextId || null
     }
 
     expect(chain).toEqual(['w1', 'w2', 'w3'])
@@ -299,8 +299,8 @@ describe('findFirstWhiteWalls', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.NNE,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w2',
@@ -314,8 +314,8 @@ describe('findFirstWhiteWalls', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w3',
@@ -329,8 +329,8 @@ describe('findFirstWhiteWalls', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.NNE,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       }
     ]
 
@@ -353,8 +353,8 @@ describe('findFirstWhiteWalls', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.NNE,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w2',
@@ -368,8 +368,8 @@ describe('findFirstWhiteWalls', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.NNE,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       }
     ]
 
@@ -393,8 +393,8 @@ describe('findFirstWhiteWalls', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       }
     ]
 
@@ -417,8 +417,8 @@ describe('findFirstWhiteWalls', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.NNE,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w2',
@@ -432,8 +432,8 @@ describe('findFirstWhiteWalls', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w3',
@@ -447,8 +447,8 @@ describe('findFirstWhiteWalls', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.NNE,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       }
     ]
 
@@ -472,8 +472,8 @@ describe('findFirstWhiteWalls', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.E,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w2',
@@ -487,8 +487,8 @@ describe('findFirstWhiteWalls', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.NNE,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w3',
@@ -502,8 +502,8 @@ describe('findFirstWhiteWalls', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.NNE,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       }
     ]
 
@@ -530,8 +530,8 @@ describe('detectWallJunctions', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w2',
@@ -545,8 +545,8 @@ describe('detectWallJunctions', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       }
     ]
 
@@ -574,8 +574,8 @@ describe('detectWallJunctions', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w2',
@@ -589,8 +589,8 @@ describe('detectWallJunctions', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w3',
@@ -604,8 +604,8 @@ describe('detectWallJunctions', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       }
     ]
 
@@ -634,8 +634,8 @@ describe('detectWallJunctions', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w2',
@@ -649,8 +649,8 @@ describe('detectWallJunctions', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w3',
@@ -664,8 +664,8 @@ describe('detectWallJunctions', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w4',
@@ -679,8 +679,8 @@ describe('detectWallJunctions', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       }
     ]
 
@@ -712,8 +712,8 @@ describe('detectWallJunctions', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w2',
@@ -727,8 +727,8 @@ describe('detectWallJunctions', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       }
     ]
 
@@ -755,8 +755,8 @@ describe('detectWallJunctions', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w2',
@@ -770,8 +770,8 @@ describe('detectWallJunctions', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w3',
@@ -785,8 +785,8 @@ describe('detectWallJunctions', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       }
     ]
 
@@ -823,8 +823,8 @@ describe('detectWallJunctions', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       },
       {
         id: 'w2',
@@ -838,8 +838,8 @@ describe('detectWallJunctions', () => {
         h1: 0,
         h2: 0,
         newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
+        nextId: null,
+        nextwhId: null
       }
     ]
 
