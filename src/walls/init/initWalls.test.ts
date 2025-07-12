@@ -286,7 +286,7 @@ describe('organizeWallsByKind', () => {
 
 describe('findFirstWhiteWalls', () => {
   it('identifies all NNE walls', () => {
-    const walls: LineRec[] = [
+    const originalWalls: LineRec[] = [
       {
         id: 'w1',
         startx: 0,
@@ -333,14 +333,20 @@ describe('findFirstWhiteWalls', () => {
         nextwhId: null
       }
     ]
+    
+    const originalWallsCopy = JSON.parse(JSON.stringify(originalWalls))
+    const result = findFirstWhiteWalls(originalWalls)
 
-    const firstWhiteId = findFirstWhiteWalls(walls)
-
-    expect(firstWhiteId).toBe('w1')
+    expect(result.firstWhiteId).toBe('w1')
+    expect(result.updatedWalls['w1']?.nextwhId).toBe('w3')
+    expect(result.updatedWalls['w3']?.nextwhId).toBe(null)
+    
+    // Verify the original array was not mutated
+    expect(originalWalls).toEqual(originalWallsCopy)
   })
 
   it('creates linked list of NNE walls via nextwhId', () => {
-    const walls: LineRec[] = [
+    const originalWalls: LineRec[] = [
       {
         id: 'w1',
         startx: 0,
@@ -372,15 +378,23 @@ describe('findFirstWhiteWalls', () => {
         nextwhId: null
       }
     ]
+    
+    // Deep copy to check for mutations
+    const originalWallsCopy = JSON.parse(JSON.stringify(originalWalls))
 
-    findFirstWhiteWalls(walls)
+    const result = findFirstWhiteWalls(originalWalls)
 
-    expect(walls[0]?.nextwhId).toBe('w2')
-    expect(walls[1]?.nextwhId).toBe('')
+    // Check the returned values
+    expect(result.firstWhiteId).toBe('w1')
+    expect(result.updatedWalls['w1']?.nextwhId).toBe('w2')
+    expect(result.updatedWalls['w2']?.nextwhId).toBe(null)
+    
+    // Verify the original array was not mutated
+    expect(originalWalls).toEqual(originalWallsCopy)
   })
 
   it('returns empty string when no NNE walls exist', () => {
-    const walls: LineRec[] = [
+    const originalWalls: LineRec[] = [
       {
         id: 'w1',
         startx: 0,
@@ -397,14 +411,19 @@ describe('findFirstWhiteWalls', () => {
         nextwhId: null
       }
     ]
+    
+    const originalWallsCopy = JSON.parse(JSON.stringify(originalWalls))
+    const result = findFirstWhiteWalls(originalWalls)
 
-    const firstWhiteId = findFirstWhiteWalls(walls)
-
-    expect(firstWhiteId).toBe('')
+    expect(result.firstWhiteId).toBe('')
+    expect(Object.keys(result.updatedWalls).length).toBe(1) // Only w1, unchanged
+    
+    // Verify the original array was not mutated
+    expect(originalWalls).toEqual(originalWallsCopy)
   })
 
   it('maintains order of NNE walls in linked list', () => {
-    const walls: LineRec[] = [
+    const originalWalls: LineRec[] = [
       {
         id: 'w1',
         startx: 0,
@@ -451,15 +470,20 @@ describe('findFirstWhiteWalls', () => {
         nextwhId: null
       }
     ]
+    
+    const originalWallsCopy = JSON.parse(JSON.stringify(originalWalls))
+    const result = findFirstWhiteWalls(originalWalls)
 
-    findFirstWhiteWalls(walls)
-
-    expect(walls[0]?.nextwhId).toBe('w3')
-    expect(walls[2]?.nextwhId).toBe('')
+    expect(result.firstWhiteId).toBe('w1')
+    expect(result.updatedWalls['w1']?.nextwhId).toBe('w3')
+    expect(result.updatedWalls['w3']?.nextwhId).toBe(null)
+    
+    // Verify the original array was not mutated
+    expect(originalWalls).toEqual(originalWallsCopy)
   })
 
   it('handles mixed wall types correctly', () => {
-    const walls: LineRec[] = [
+    const originalWalls: LineRec[] = [
       {
         id: 'w1',
         startx: 0,
@@ -506,12 +530,16 @@ describe('findFirstWhiteWalls', () => {
         nextwhId: null
       }
     ]
+    
+    const originalWallsCopy = JSON.parse(JSON.stringify(originalWalls))
+    const result = findFirstWhiteWalls(originalWalls)
 
-    const firstWhiteId = findFirstWhiteWalls(walls)
-
-    expect(firstWhiteId).toBe('w2')
-    expect(walls[1]?.nextwhId).toBe('w3')
-    expect(walls[2]?.nextwhId).toBe('')
+    expect(result.firstWhiteId).toBe('w2')
+    expect(result.updatedWalls['w2']?.nextwhId).toBe('w3')
+    expect(result.updatedWalls['w3']?.nextwhId).toBe(null)
+    
+    // Verify the original array was not mutated
+    expect(originalWalls).toEqual(originalWallsCopy)
   })
 })
 

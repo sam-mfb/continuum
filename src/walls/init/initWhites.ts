@@ -11,11 +11,16 @@ import { whiteHashMerge } from './whiteHashMerge'
  */
 export function initWhites(
   walls: LineRec[],
-  junctions: JunctionRec[]
+  junctions: JunctionRec[],
+  firstWhiteId: string
 ): {
   whites: WhiteRec[]
   updatedWalls: LineRec[]
 } {
+  // TODO: Use firstWhiteId when implementing the full white initialization logic
+  // For now, suppress the unused variable warning
+  void firstWhiteId
+  
   // Step 1: Generate normal white pieces
   let whites = normWhites(walls)
 

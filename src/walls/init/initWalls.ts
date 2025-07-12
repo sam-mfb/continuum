@@ -13,18 +13,36 @@ export function initWalls(walls: LineRec[]): WallsState {
   const { organizedWalls, kindPointers } = organizeWallsByKind(walls)
 
   // Step 2: Find first white walls (NNE walls)
-  const firstWhite = findFirstWhiteWalls(walls)
+  const { firstWhiteId, updatedWalls: wallsWithWhiteLinks } = findFirstWhiteWalls(walls)
 
-  // Step 3: Detect wall junctions
+  // Step 3: Detect wall junctions - use walls array since we only need endpoint info
   const junctions = detectWallJunctions(walls)
 
-  // Step 4: Initialize whites
-  const { whites, updatedWalls } = initWhites(walls, junctions)
+  // Step 4: Initialize whites - pass the walls with white links
+  const { whites, updatedWalls } = initWhites(
+    Object.values(wallsWithWhiteLinks),
+    junctions,
+    firstWhiteId
+  )
+
+  // Merge the organized walls with the white links to maintain consistency
+  const finalOrganizedWalls: Record<string, LineRec> = {}
+  for (const [id, wall] of Object.entries(organizedWalls)) {
+    const wallWithLinks = wallsWithWhiteLinks[id]
+    if (wallWithLinks) {
+      finalOrganizedWalls[id] = {
+        ...wall,
+        nextwhId: wallWithLinks.nextwhId
+      }
+    } else {
+      finalOrganizedWalls[id] = wall
+    }
+  }
 
   return {
-    organizedWalls,
+    organizedWalls: finalOrganizedWalls,
     kindPointers,
-    firstWhite,
+    firstWhite: firstWhiteId,
     junctions,
     whites,
     updatedWalls
@@ -93,9 +111,18 @@ export function organizeWallsByKind(walls: LineRec[]): {
  *
  * @see Junctions.c:54-61 - Loop that builds firstwhite list
  */
-export function findFirstWhiteWalls(walls: LineRec[]): string {
+export function findFirstWhiteWalls(walls: LineRec[]): {
+  firstWhiteId: string
+  updatedWalls: Record<string, LineRec>
+} {
   let firstWhiteId = ''
   let lastWhiteId: string | null = null
+  
+  // Create a copy of walls as a record for immutability
+  const updatedWalls: Record<string, LineRec> = {}
+  for (const wall of walls) {
+    updatedWalls[wall.id] = { ...wall }
+  }
 
   // Find all NNE walls and link them
   for (const wall of walls) {
@@ -104,8 +131,8 @@ export function findFirstWhiteWalls(walls: LineRec[]): string {
         firstWhiteId = wall.id
       }
       if (lastWhiteId) {
-        // Find the wall and update its nextwhId
-        const lastWall = walls.find(w => w.id === lastWhiteId)
+        // Update the nextwhId in our copy
+        const lastWall = updatedWalls[lastWhiteId]
         if (lastWall) {
           lastWall.nextwhId = wall.id
         }
@@ -116,13 +143,16 @@ export function findFirstWhiteWalls(walls: LineRec[]): string {
 
   // Terminate the linked list
   if (lastWhiteId) {
-    const lastWall = walls.find(w => w.id === lastWhiteId)
+    const lastWall = updatedWalls[lastWhiteId]
     if (lastWall) {
-      lastWall.nextwhId = ''
+      lastWall.nextwhId = null
     }
   }
 
-  return firstWhiteId
+  return {
+    firstWhiteId,
+    updatedWalls
+  }
 }
 
 /**
