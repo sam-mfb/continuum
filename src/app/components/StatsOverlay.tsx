@@ -90,8 +90,11 @@ export const StatsOverlay: React.FC<StatsOverlayProps> = ({
   }
 
   if (showKeys && frameInfo.keysDown.size > 0) {
-    const keys = Array.from(frameInfo.keysDown).join(', ')
-    stats.push({ label: 'Keys', value: keys })
+    const keys = Array.from(frameInfo.keysDown)
+    // Limit to first 3 keys and add "..." if more
+    const displayKeys =
+      keys.length > 3 ? keys.slice(0, 3).join(', ') + '...' : keys.join(', ')
+    stats.push({ label: 'Keys', value: displayKeys })
   }
 
   if (showCustomStats && customStats) {
@@ -118,11 +121,20 @@ export const StatsOverlay: React.FC<StatsOverlayProps> = ({
         opacity,
         pointerEvents: 'none', // Don't interfere with canvas interactions
         userSelect: 'none',
-        zIndex: 10
+        zIndex: 10,
+        minWidth: '200px', // Fixed minimum width to prevent resizing
+        maxWidth: '300px' // Maximum width for very long content
       }}
     >
       {stats.map((stat, index) => (
-        <div key={index} style={{ whiteSpace: 'nowrap' }}>
+        <div
+          key={index}
+          style={{
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}
+        >
           <span style={{ fontWeight: 'bold' }}>{stat.label}:</span>{' '}
           <span>{stat.value}</span>
         </div>

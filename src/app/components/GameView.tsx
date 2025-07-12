@@ -220,6 +220,9 @@ const GameView: React.FC<GameViewProps> = ({
     startTimeRef.current = Date.now()
     lastFrameTimeRef.current = startTimeRef.current
 
+    // Track next frame time for fixed-step timing
+    let nextFrameTime = startTimeRef.current + targetDelta
+
     // Call init hook if provided
     if (onInit) {
       onInit(ctx, env)
@@ -227,10 +230,10 @@ const GameView: React.FC<GameViewProps> = ({
 
     const renderLoop = (_timestamp: DOMHighResTimeStamp) => {
       const now = Date.now()
-      const elapsed = now - lastFrameTimeRef.current
 
-      // Check if it's time for a new frame
-      if (elapsed >= targetDelta) {
+      // Check if it's time for a new frame using fixed-step timing
+      if (now >= nextFrameTime) {
+        // Calculate actual delta from last frame execution
         const deltaTime = now - lastFrameTimeRef.current
         const totalTime = now - startTimeRef.current
 
@@ -304,9 +307,19 @@ const GameView: React.FC<GameViewProps> = ({
         keysPressedRef.current.clear()
         keysReleasedRef.current.clear()
 
-        // Update timing
+        // Update timing with fixed-step
         lastFrameTimeRef.current = now
         frameCountRef.current++
+
+        // Schedule next frame at fixed interval
+        // This prevents drift and maintains exact FPS
+        nextFrameTime += targetDelta
+
+        // Handle case where we're running behind
+        // Skip frames if we're more than one frame behind
+        if (now > nextFrameTime) {
+          nextFrameTime = now + targetDelta
+        }
       }
 
       // Continue the loop
