@@ -53,55 +53,127 @@ const whitePatterns: Record<number, { start: number[] | null; end: number[] | nu
 function createSampleWhites(): WhiteRec[] {
   const whites: WhiteRec[] = []
   
-  // Just test a single South line, 25 pixels long
-  const startX = 256  // Center of screen
-  const startY = 150
+  // Test all 8 directional lines, 25 pixels long each
   const lineLength = 25
+  const spacing = 80  // Space between lines
   
-  // South line patterns from whitepicts[NEW_TYPE.S]
-  const patterns = whitePatterns[NEW_TYPE.S]
-  if (!patterns) {
-    return whites
-  }
-  
-  // Add white piece at start (top) of line - generictop pattern
-  if (patterns.start) {
-    const startData: number[] = []
-    for (const word of patterns.start) {
-      startData.push((word >>> 8) & 0xFF)  // High byte
-      startData.push(word & 0xFF)          // Low byte
+  // Helper function to add white pieces for a line type
+  function addLineWhites(type: number, baseX: number, baseY: number) {
+    const patterns = whitePatterns[type]
+    if (!patterns) return
+    
+    // Calculate end position based on direction
+    let endX = baseX
+    let endY = baseY + lineLength
+    
+    switch (type) {
+      case NEW_TYPE.S:
+        // Straight down (already set above)
+        break
+      case NEW_TYPE.SSE:
+        // 22.5 degrees from vertical
+        endX = baseX + Math.round(lineLength * Math.sin(22.5 * Math.PI / 180))  // ~10 pixels
+        endY = baseY + Math.round(lineLength * Math.cos(22.5 * Math.PI / 180))  // ~23 pixels
+        break
+      case NEW_TYPE.SE:
+        // 45 degrees (diagonal)
+        endX = baseX + Math.round(lineLength * Math.sin(45 * Math.PI / 180))  // ~18 pixels
+        endY = baseY + Math.round(lineLength * Math.cos(45 * Math.PI / 180))  // ~18 pixels
+        break
+      case NEW_TYPE.ESE:
+        // 67.5 degrees from vertical
+        endX = baseX + Math.round(lineLength * Math.sin(67.5 * Math.PI / 180))  // ~23 pixels
+        endY = baseY + Math.round(lineLength * Math.cos(67.5 * Math.PI / 180))  // ~10 pixels
+        break
+      case NEW_TYPE.E:
+        // Horizontal (90 degrees)
+        endX = baseX + lineLength
+        endY = baseY
+        break
+      case NEW_TYPE.ENE:
+        // 112.5 degrees from vertical (going up and right)
+        endX = baseX + Math.round(lineLength * Math.sin(67.5 * Math.PI / 180))  // ~23 pixels
+        endY = baseY - Math.round(lineLength * Math.cos(67.5 * Math.PI / 180))  // ~-10 pixels
+        break
+      case NEW_TYPE.NE:
+        // 135 degrees from vertical (45 degrees going up)
+        endX = baseX + Math.round(lineLength * Math.sin(45 * Math.PI / 180))  // ~18 pixels
+        endY = baseY - Math.round(lineLength * Math.cos(45 * Math.PI / 180))  // ~-18 pixels
+        break
+      case NEW_TYPE.NNE:
+        // 157.5 degrees from vertical
+        endX = baseX + Math.round(lineLength * Math.sin(22.5 * Math.PI / 180))  // ~10 pixels
+        endY = baseY - Math.round(lineLength * Math.cos(22.5 * Math.PI / 180))  // ~-23 pixels
+        break
     }
     
-    whites.push({
-      id: 'white_start',
-      x: startX,
-      y: startY,
-      hasj: false,
-      ht: 6,
-      data: startData
-    })
-  }
-  
-  // Add white piece at end (bottom) of line - sbot pattern
-  if (patterns.end) {
-    const endData: number[] = []
-    for (const word of patterns.end) {
-      endData.push((word >>> 8) & 0xFF)  // High byte
-      endData.push(word & 0xFF)          // Low byte
+    // Add white piece at start of line
+    if (patterns.start) {
+      const startData: number[] = []
+      for (const word of patterns.start) {
+        startData.push((word >>> 8) & 0xFF)  // High byte
+        startData.push(word & 0xFF)          // Low byte
+      }
+      
+      whites.push({
+        id: `white_${type}_start`,
+        x: baseX,
+        y: baseY,
+        hasj: false,
+        ht: 6,
+        data: startData
+      })
     }
     
-    const endX = startX  // Same X for vertical line
-    const endY = startY + lineLength
-    
-    whites.push({
-      id: 'white_end',
-      x: endX,
-      y: endY,
-      hasj: false,
-      ht: 6,
-      data: endData
-    })
+    // Add white piece at end of line
+    if (patterns.end) {
+      const endData: number[] = []
+      for (const word of patterns.end) {
+        endData.push((word >>> 8) & 0xFF)  // High byte
+        endData.push(word & 0xFF)          // Low byte
+      }
+      
+      whites.push({
+        id: `white_${type}_end`,
+        x: endX,
+        y: endY,
+        hasj: false,
+        ht: 6,
+        data: endData
+      })
+    }
   }
+  
+  // First row - downward directions
+  const startX = 40
+  const startY = 100
+  
+  // Add S line (vertical)
+  addLineWhites(NEW_TYPE.S, startX, startY)
+  
+  // Add SSE line (22.5 degrees from vertical)
+  addLineWhites(NEW_TYPE.SSE, startX + spacing, startY)
+  
+  // Add SE line (45 degrees diagonal)
+  addLineWhites(NEW_TYPE.SE, startX + spacing * 2, startY)
+  
+  // Add ESE line (67.5 degrees from vertical)
+  addLineWhites(NEW_TYPE.ESE, startX + spacing * 3, startY)
+  
+  // Second row - horizontal and upward directions
+  const row2Y = startY + 80
+  
+  // Add E line (horizontal)
+  addLineWhites(NEW_TYPE.E, startX, row2Y)
+  
+  // Add ENE line (112.5 degrees)
+  addLineWhites(NEW_TYPE.ENE, startX + spacing, row2Y)
+  
+  // Add NE line (135 degrees - diagonal up)
+  addLineWhites(NEW_TYPE.NE, startX + spacing * 2, row2Y)
+  
+  // Add NNE line (157.5 degrees)
+  addLineWhites(NEW_TYPE.NNE, startX + spacing * 3, row2Y)
 
   // Add sentinel value (required by original algorithm)
   whites.push({

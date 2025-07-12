@@ -8,7 +8,7 @@ type UIState = {
 }
 
 const initialState: UIState = {
-  currentView: 'graphics',
+  currentView: 'game',
   isGamePaused: false,
   showDebugInfo: false
 }
