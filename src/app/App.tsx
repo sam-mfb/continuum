@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState } from '../store/store'
 import { setCurrentView, toggleDebugInfo } from '../store/uiSlice'
@@ -21,6 +22,7 @@ function App(): React.JSX.Element {
     (state: RootState) => state.ui
   )
   const dispatch = useDispatch()
+  const [showGameStats, setShowGameStats] = useState(false)
 
   return (
     <div className="app">
@@ -110,7 +112,20 @@ function App(): React.JSX.Element {
               defaultGameIndex={0}
               scale={2} // Display at 2x size (1024x684)
               pixelated={true} // Keep pixels sharp
-              showFps={showDebugInfo}
+              statsConfig={
+                showGameStats
+                  ? {
+                      showFps: true,
+                      showFrameCount: true,
+                      showTime: true,
+                      showKeys: true,
+                      position: 'top-right',
+                      opacity: 0.8
+                    }
+                  : undefined
+              }
+              showGameStats={showGameStats}
+              onShowGameStatsChange={setShowGameStats}
               onInit={(_ctx, env) => {
                 console.log(
                   `Game initialized: ${env.width}x${env.height} @ ${env.fps}fps`

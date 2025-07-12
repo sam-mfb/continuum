@@ -9,6 +9,11 @@ import {
   clearBitmap,
   bitmapToCanvas
 } from '../../bitmap'
+import {
+  StatsOverlay,
+  type StatsConfig,
+  type CustomStats
+} from './StatsOverlay'
 
 /**
  * GameView Component
@@ -86,11 +91,21 @@ export type GameViewProps = {
   backgroundColor?: string // Canvas background (default: '#000000')
   pixelated?: boolean // Enable pixel-perfect rendering (default: true)
   scale?: number // Display scale factor (default: 1)
-  showFps?: boolean // Show FPS counter overlay (default: false)
+
+  // Stats overlay
+  statsConfig?: StatsConfig
+  getCustomStats?: (
+    frameInfo: GameFrameInfo,
+    env: GameEnvironment
+  ) => CustomStats
 
   // Game logic
   games: GameDefinition[]
   defaultGameIndex?: number
+
+  // Stats control
+  showGameStats?: boolean
+  onShowGameStatsChange?: (show: boolean) => void
 
   // Optional lifecycle hooks
   onInit?: (ctx: CanvasRenderingContext2D, env: GameEnvironment) => void
@@ -104,15 +119,28 @@ const GameView: React.FC<GameViewProps> = ({
   backgroundColor = '#000000',
   pixelated = true,
   scale = 1,
-  showFps = false,
+  statsConfig,
+  getCustomStats,
   games,
   defaultGameIndex = 0,
+  showGameStats,
+  onShowGameStatsChange,
   onInit,
   onCleanup
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationFrameRef = useRef<number>(0)
   const [selectedGameIndex, setSelectedGameIndex] = useState(defaultGameIndex)
+  const [currentFps, setCurrentFps] = useState(0)
+  const [currentFrameInfo, setCurrentFrameInfo] = useState<GameFrameInfo>({
+    frameCount: 0,
+    deltaTime: 0,
+    totalTime: 0,
+    targetDelta: 1000 / fps,
+    keysDown: new Set(),
+    keysPressed: new Set(),
+    keysReleased: new Set()
+  })
 
   // Bitmap ref for bitmap games
   const bitmapRef = useRef<MonochromeBitmap | null>(null)
@@ -129,7 +157,19 @@ const GameView: React.FC<GameViewProps> = ({
 
   // FPS tracking for debug display
   const fpsHistoryRef = useRef<number[]>([])
-  const lastFpsUpdateRef = useRef<number>(0)
+
+  // Reset frame count and timing when game changes
+  useEffect(() => {
+    frameCountRef.current = 0
+    startTimeRef.current = Date.now()
+    lastFrameTimeRef.current = startTimeRef.current
+    setCurrentFrameInfo(prev => ({
+      ...prev,
+      frameCount: 0,
+      totalTime: 0,
+      deltaTime: 0
+    }))
+  }, [selectedGameIndex])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -194,12 +234,17 @@ const GameView: React.FC<GameViewProps> = ({
         const deltaTime = now - lastFrameTimeRef.current
         const totalTime = now - startTimeRef.current
 
-        // Update FPS tracking for debug display
-        if (showFps) {
+        // Update FPS tracking
+        if (statsConfig?.showFps) {
           fpsHistoryRef.current.push(1000 / deltaTime)
           if (fpsHistoryRef.current.length > 30) {
             fpsHistoryRef.current.shift()
           }
+          // Calculate average FPS
+          const avgFps =
+            fpsHistoryRef.current.reduce((a, b) => a + b, 0) /
+            fpsHistoryRef.current.length
+          setCurrentFps(avgFps)
         }
 
         // Create frame info
@@ -212,6 +257,9 @@ const GameView: React.FC<GameViewProps> = ({
           keysPressed: new Set(keysPressedRef.current),
           keysReleased: new Set(keysReleasedRef.current)
         }
+
+        // Update frame info state for overlay
+        setCurrentFrameInfo(frameInfo)
 
         // Clear background
         ctx.fillStyle = backgroundColor
@@ -250,21 +298,7 @@ const GameView: React.FC<GameViewProps> = ({
           }
         }
 
-        // Draw FPS counter if enabled
-        if (showFps && now - lastFpsUpdateRef.current > 500) {
-          lastFpsUpdateRef.current = now
-          const avgFps =
-            fpsHistoryRef.current.reduce((a, b) => a + b, 0) /
-            fpsHistoryRef.current.length
-          ctx.save()
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
-          ctx.fillRect(width - 100, 0, 100, 30)
-          ctx.fillStyle = '#00FF00'
-          ctx.font = '12px monospace'
-          ctx.textAlign = 'right'
-          ctx.fillText(`FPS: ${avgFps.toFixed(1)}`, width - 5, 20)
-          ctx.restore()
-        }
+        // No longer draw FPS counter here - handled by StatsOverlay
 
         // Clear per-frame key events
         keysPressedRef.current.clear()
@@ -300,7 +334,7 @@ const GameView: React.FC<GameViewProps> = ({
     backgroundColor,
     pixelated,
     scale,
-    showFps,
+    statsConfig,
     games,
     selectedGameIndex,
     onInit,
@@ -326,43 +360,94 @@ const GameView: React.FC<GameViewProps> = ({
       <div
         style={{
           display: 'flex',
-          gap: '10px',
+          gap: '20px',
           alignItems: 'center'
         }}
       >
-        <label style={{ color: '#fff', fontFamily: 'monospace' }}>
-          Select Game:
-        </label>
-        <select
-          value={selectedGameIndex}
-          onChange={e => setSelectedGameIndex(Number(e.target.value))}
+        <div
           style={{
-            padding: '5px 10px',
-            fontFamily: 'monospace',
-            fontSize: '14px',
-            backgroundColor: '#222',
-            color: '#fff',
-            border: '1px solid #666',
-            borderRadius: '4px'
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'center'
           }}
         >
-          {games.map((game, index) => (
-            <option key={index} value={index}>
-              {game.name}
-            </option>
-          ))}
-        </select>
+          <label style={{ color: '#fff', fontFamily: 'monospace' }}>
+            Select Game:
+          </label>
+          <select
+            value={selectedGameIndex}
+            onChange={e => setSelectedGameIndex(Number(e.target.value))}
+            style={{
+              padding: '5px 10px',
+              fontFamily: 'monospace',
+              fontSize: '14px',
+              backgroundColor: '#222',
+              color: '#fff',
+              border: '1px solid #666',
+              borderRadius: '4px'
+            }}
+          >
+            {games.map((game, index) => (
+              <option key={index} value={index}>
+                {game.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        {onShowGameStatsChange && (
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              color: '#fff',
+              fontFamily: 'monospace',
+              fontSize: '14px',
+              cursor: 'pointer'
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={showGameStats || false}
+              onChange={e => onShowGameStatsChange(e.target.checked)}
+              style={{ cursor: 'pointer' }}
+            />
+            Show Stats
+          </label>
+        )}
       </div>
-      <canvas
-        ref={canvasRef}
+      <div
         style={{
+          position: 'relative',
           width: `${displayWidth}px`,
           height: `${displayHeight}px`,
-          border: '1px solid #666',
-          imageRendering: pixelated ? 'pixelated' : 'auto',
-          background: backgroundColor
+          border: '1px solid #666'
         }}
-      />
+      >
+        <canvas
+          ref={canvasRef}
+          style={{
+            width: `${displayWidth}px`,
+            height: `${displayHeight}px`,
+            imageRendering: pixelated ? 'pixelated' : 'auto',
+            background: backgroundColor
+          }}
+        />
+        {statsConfig && (
+          <StatsOverlay
+            config={statsConfig}
+            frameInfo={currentFrameInfo}
+            customStats={
+              getCustomStats
+                ? getCustomStats(currentFrameInfo, { width, height, fps })
+                : undefined
+            }
+            width={displayWidth}
+            height={displayHeight}
+            currentFps={currentFps}
+          />
+        )}
+      </div>
     </div>
   )
 }
