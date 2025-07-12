@@ -582,10 +582,15 @@ describe('detectWallJunctions', () => {
 
     // C code creates junctions for all endpoints, merging those within 3 pixels
     // (0,0), (10,10), and (20,20) are created; (11,11) is merged with (10,10)
-    expect(junctions.length).toBe(3)
-    expect(junctions).toContainEqual({ x: 0, y: 0 })
-    expect(junctions).toContainEqual({ x: 10, y: 10 })
-    expect(junctions).toContainEqual({ x: 20, y: 20 })
+    // Plus 18 sentinel values with x=20000 at the end
+    expect(junctions.length).toBe(21) // 3 actual + 18 sentinels
+    expect(junctions.slice(0, 3)).toContainEqual({ x: 0, y: 0 })
+    expect(junctions.slice(0, 3)).toContainEqual({ x: 10, y: 10 })
+    expect(junctions.slice(0, 3)).toContainEqual({ x: 20, y: 20 })
+    // Check sentinel values
+    for (let i = 3; i < 21; i++) {
+      expect(junctions[i]).toEqual({ x: 20000, y: 0 })
+    }
   })
 
   it('avoids duplicate junctions at same position', () => {
@@ -641,11 +646,16 @@ describe('detectWallJunctions', () => {
 
     // All three walls share (10,10) as a common point - should create one junction there
     // Plus the other endpoints: (0,0), (20,20), (30,30)
-    expect(junctions.length).toBe(4)
-    expect(junctions).toContainEqual({ x: 0, y: 0 })
-    expect(junctions).toContainEqual({ x: 10, y: 10 })
-    expect(junctions).toContainEqual({ x: 20, y: 20 })
-    expect(junctions).toContainEqual({ x: 30, y: 30 })
+    // Plus 18 sentinel values with x=20000
+    expect(junctions.length).toBe(22) // 4 actual + 18 sentinels
+    expect(junctions.slice(0, 4)).toContainEqual({ x: 0, y: 0 })
+    expect(junctions.slice(0, 4)).toContainEqual({ x: 10, y: 10 })
+    expect(junctions.slice(0, 4)).toContainEqual({ x: 20, y: 20 })
+    expect(junctions.slice(0, 4)).toContainEqual({ x: 30, y: 30 })
+    // Check sentinel values
+    for (let i = 4; i < 22; i++) {
+      expect(junctions[i]).toEqual({ x: 20000, y: 0 })
+    }
   })
 
   it('sorts junctions by x-coordinate', () => {
@@ -716,7 +726,8 @@ describe('detectWallJunctions', () => {
 
     // Endpoints: (0,0), (10,10), (15,15), (20,0), (30,10), (40,20)
     // (30,10) appears twice but gets merged, (10,10) appears twice but gets merged
-    expect(junctions.length).toBe(6)
+    // Plus 18 sentinel values with x=20000
+    expect(junctions.length).toBe(24) // 6 actual + 18 sentinels
     // Should be sorted by x-coordinate
     expect(junctions[0]?.x).toBe(0)
     expect(junctions[1]?.x).toBe(10)
@@ -724,6 +735,10 @@ describe('detectWallJunctions', () => {
     expect(junctions[3]?.x).toBe(20)
     expect(junctions[4]?.x).toBe(30)
     expect(junctions[5]?.x).toBe(40)
+    // Check sentinel values
+    for (let i = 6; i < 24; i++) {
+      expect(junctions[i]).toEqual({ x: 20000, y: 0 })
+    }
   })
 
   it('handles walls with identical endpoints', () => {
@@ -764,9 +779,14 @@ describe('detectWallJunctions', () => {
 
     // w1 has identical start/end at (10,10), w2 goes from (10,10) to (20,20)
     // All three (10,10) points merge into one junction
-    expect(junctions.length).toBe(2)
-    expect(junctions).toContainEqual({ x: 10, y: 10 })
-    expect(junctions).toContainEqual({ x: 20, y: 20 })
+    // Plus 18 sentinel values with x=20000
+    expect(junctions.length).toBe(20) // 2 actual + 18 sentinels
+    expect(junctions.slice(0, 2)).toContainEqual({ x: 10, y: 10 })
+    expect(junctions.slice(0, 2)).toContainEqual({ x: 20, y: 20 })
+    // Check sentinel values
+    for (let i = 2; i < 20; i++) {
+      expect(junctions[i]).toEqual({ x: 20000, y: 0 })
+    }
   })
 
   it('detects junctions at both start and end points of walls', () => {
@@ -822,11 +842,16 @@ describe('detectWallJunctions', () => {
 
     // Endpoints: (0,0), (50,50), (1,1), (20,20), (30,30), (51,51)
     // (1,1) merges with (0,0), (51,51) merges with (50,50)
-    expect(junctions.length).toBe(4)
-    expect(junctions.some(j => j.x === 0 && j.y === 0)).toBe(true)
-    expect(junctions.some(j => j.x === 50 && j.y === 50)).toBe(true)
-    expect(junctions.some(j => j.x === 20 && j.y === 20)).toBe(true)
-    expect(junctions.some(j => j.x === 30 && j.y === 30)).toBe(true)
+    // Plus 18 sentinel values with x=20000
+    expect(junctions.length).toBe(22) // 4 actual + 18 sentinels
+    expect(junctions.slice(0, 4).some(j => j.x === 0 && j.y === 0)).toBe(true)
+    expect(junctions.slice(0, 4).some(j => j.x === 50 && j.y === 50)).toBe(true)
+    expect(junctions.slice(0, 4).some(j => j.x === 20 && j.y === 20)).toBe(true)
+    expect(junctions.slice(0, 4).some(j => j.x === 30 && j.y === 30)).toBe(true)
+    // Check sentinel values
+    for (let i = 4; i < 22; i++) {
+      expect(junctions[i]).toEqual({ x: 20000, y: 0 })
+    }
   })
 
   it('handles empty wall array', () => {
@@ -834,7 +859,11 @@ describe('detectWallJunctions', () => {
 
     const junctions = detectWallJunctions(walls)
 
-    expect(junctions).toEqual([])
+    // Even with no walls, C code adds 18 sentinel values
+    expect(junctions.length).toBe(18)
+    for (let i = 0; i < 18; i++) {
+      expect(junctions[i]).toEqual({ x: 20000, y: 0 })
+    }
   })
 
   it('handles walls with separate endpoints', () => {
@@ -874,10 +903,125 @@ describe('detectWallJunctions', () => {
     const junctions = detectWallJunctions(walls)
 
     // Each wall has two endpoints, none within 3 pixels of each other
-    expect(junctions.length).toBe(4)
-    expect(junctions).toContainEqual({ x: 0, y: 0 })
-    expect(junctions).toContainEqual({ x: 10, y: 10 })
-    expect(junctions).toContainEqual({ x: 20, y: 20 })
-    expect(junctions).toContainEqual({ x: 30, y: 30 })
+    // Plus 18 sentinel values with x=20000
+    expect(junctions.length).toBe(22) // 4 actual + 18 sentinels
+    expect(junctions.slice(0, 4)).toContainEqual({ x: 0, y: 0 })
+    expect(junctions.slice(0, 4)).toContainEqual({ x: 10, y: 10 })
+    expect(junctions.slice(0, 4)).toContainEqual({ x: 20, y: 20 })
+    expect(junctions.slice(0, 4)).toContainEqual({ x: 30, y: 30 })
+    // Check sentinel values
+    for (let i = 4; i < 22; i++) {
+      expect(junctions[i]).toEqual({ x: 20000, y: 0 })
+    }
+  })
+
+  it('ensures insertion sort maintains stability and correctness', () => {
+    // Create a challenging test case with many junctions that need sorting
+    const walls: LineRec[] = [
+      {
+        id: 'w1',
+        startx: 100,
+        starty: 0,
+        endx: 200,
+        endy: 0,
+        up_down: LINE_DIR.DN,
+        type: LINE_TYPE.N,
+        kind: LINE_KIND.NORMAL,
+        h1: 0,
+        h2: 0,
+        newtype: NEW_TYPE.S,
+        nextId: null,
+        nextwhId: null
+      },
+      {
+        id: 'w2',
+        startx: 50,
+        starty: 0,
+        endx: 150,
+        endy: 0,
+        up_down: LINE_DIR.DN,
+        type: LINE_TYPE.N,
+        kind: LINE_KIND.NORMAL,
+        h1: 0,
+        h2: 0,
+        newtype: NEW_TYPE.S,
+        nextId: null,
+        nextwhId: null
+      },
+      {
+        id: 'w3',
+        startx: 25,
+        starty: 0,
+        endx: 75,
+        endy: 0,
+        up_down: LINE_DIR.DN,
+        type: LINE_TYPE.N,
+        kind: LINE_KIND.NORMAL,
+        h1: 0,
+        h2: 0,
+        newtype: NEW_TYPE.S,
+        nextId: null,
+        nextwhId: null
+      },
+      {
+        id: 'w4',
+        startx: 300,
+        starty: 0,
+        endx: 10,
+        endy: 0,
+        up_down: LINE_DIR.DN,
+        type: LINE_TYPE.N,
+        kind: LINE_KIND.NORMAL,
+        h1: 0,
+        h2: 0,
+        newtype: NEW_TYPE.S,
+        nextId: null,
+        nextwhId: null
+      },
+      {
+        id: 'w5',
+        startx: 175,
+        starty: 0,
+        endx: 125,
+        endy: 0,
+        up_down: LINE_DIR.DN,
+        type: LINE_TYPE.N,
+        kind: LINE_KIND.NORMAL,
+        h1: 0,
+        h2: 0,
+        newtype: NEW_TYPE.S,
+        nextId: null,
+        nextwhId: null
+      }
+    ]
+
+    const junctions = detectWallJunctions(walls)
+
+    // Expected junctions at x: 10, 25, 50, 75, 100, 125, 150, 175, 200, 300
+    // Plus 18 sentinel values
+    expect(junctions.length).toBe(28) // 10 actual + 18 sentinels
+    
+    // Verify proper sorting by x-coordinate
+    const actualJunctions = junctions.slice(0, 10)
+    expect(actualJunctions[0]?.x).toBe(10)
+    expect(actualJunctions[1]?.x).toBe(25)
+    expect(actualJunctions[2]?.x).toBe(50)
+    expect(actualJunctions[3]?.x).toBe(75)
+    expect(actualJunctions[4]?.x).toBe(100)
+    expect(actualJunctions[5]?.x).toBe(125)
+    expect(actualJunctions[6]?.x).toBe(150)
+    expect(actualJunctions[7]?.x).toBe(175)
+    expect(actualJunctions[8]?.x).toBe(200)
+    expect(actualJunctions[9]?.x).toBe(300)
+    
+    // Verify the array is strictly sorted
+    for (let i = 1; i < 10; i++) {
+      expect(actualJunctions[i]!.x).toBeGreaterThan(actualJunctions[i-1]!.x)
+    }
+    
+    // Check sentinel values
+    for (let i = 10; i < 28; i++) {
+      expect(junctions[i]).toEqual({ x: 20000, y: 0 })
+    }
   })
 })

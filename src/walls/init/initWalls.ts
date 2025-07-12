@@ -211,5 +211,11 @@ export function detectWallJunctions(walls: LineRec[]): JunctionRec[] {
     junctions[j + 1] = temp
   }
 
+  // Add 18 sentinel values with x = 20000
+  // @see Junctions.c:92-93 - padding to prevent out-of-bounds reads
+  for (let i = 0; i < 18; i++) {
+    junctions.push({ x: 20000, y: 0 })
+  }
+
   return junctions
 }
