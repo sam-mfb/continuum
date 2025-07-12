@@ -4,7 +4,8 @@ import { LINE_KIND, LINE_TYPE, LINE_DIR, NEW_TYPE } from '../constants'
 import {
   findCloseWallPairs,
   processCloseWalls,
-  updateWallOptimization
+  updateWallOptimization,
+  setInitialOptimization
 } from './closeWhites'
 
 describe('findCloseWallPairs', () => {
@@ -750,6 +751,63 @@ describe('processCloseWalls', () => {
 })
 
 describe('setInitialOptimization', () => {
+  it('correctly sets h1 values based on newtype', () => {
+    const walls: LineRec[] = [
+      {
+        id: 'w1',
+        startx: 0,
+        starty: 0,
+        endx: 10,
+        endy: 0,
+        up_down: LINE_DIR.DN,
+        type: LINE_TYPE.N,
+        kind: LINE_KIND.NORMAL,
+        h1: 999, // Should be overwritten
+        h2: 999, // Should be overwritten
+        newtype: NEW_TYPE.S,
+        nextId: '',
+        nextwhId: ''
+      },
+      {
+        id: 'w2',
+        startx: 20,
+        starty: 0,
+        endx: 30,
+        endy: 0,
+        up_down: LINE_DIR.DN,
+        type: LINE_TYPE.N,
+        kind: LINE_KIND.NORMAL,
+        h1: 999,
+        h2: 999,
+        newtype: NEW_TYPE.ESE,
+        nextId: '',
+        nextwhId: ''
+      },
+      {
+        id: 'w3',
+        startx: 40,
+        starty: 0,
+        endx: 50,
+        endy: 0,
+        up_down: LINE_DIR.DN,
+        type: LINE_TYPE.N,
+        kind: LINE_KIND.NORMAL,
+        h1: 999,
+        h2: 999,
+        newtype: NEW_TYPE.E,
+        nextId: '',
+        nextwhId: ''
+      }
+    ]
+
+    const result = setInitialOptimization(walls)
+
+    // Check h1 values from simpleh1 array
+    expect(result[0]?.h1).toBe(6)  // NEW_TYPE.S -> simpleh1[1] = 6
+    expect(result[1]?.h1).toBe(12) // NEW_TYPE.ESE -> simpleh1[4] = 12
+    expect(result[2]?.h1).toBe(16) // NEW_TYPE.E -> simpleh1[5] = 16
+  })
+
   it('correctly calculates h2 for horizontal walls', () => {
     const walls: LineRec[] = [
       {
@@ -769,13 +827,41 @@ describe('setInitialOptimization', () => {
       }
     ]
 
-    findCloseWallPairs(walls)
-    // This test verifies that the implementation works for horizontal walls
-    expect(true).toBe(true)
+    const result = setInitialOptimization(walls)
+
+    // For horizontal wall: length = 50, simpleh2[NEW_TYPE.S] = 0
+    // h2 = length + simpleh2 = 50 + 0 = 50
+    expect(result[0]?.h2).toBe(50)
   })
 
-  it('correctly calculates h2 for diagonal walls', () => {
-    const diagonalWalls: LineRec[] = [
+  it('correctly calculates h2 for vertical walls', () => {
+    const walls: LineRec[] = [
+      {
+        id: 'w1',
+        startx: 10,
+        starty: 10,
+        endx: 10,
+        endy: 70,
+        up_down: LINE_DIR.DN,
+        type: LINE_TYPE.N,
+        kind: LINE_KIND.NORMAL,
+        h1: 0,
+        h2: 0,
+        newtype: NEW_TYPE.SSE,
+        nextId: '',
+        nextwhId: ''
+      }
+    ]
+
+    const result = setInitialOptimization(walls)
+
+    // For vertical wall: length = 60, simpleh2[NEW_TYPE.SSE] = 0
+    // h2 = length + simpleh2 = 60 + 0 = 60
+    expect(result[0]?.h2).toBe(60)
+  })
+
+  it('correctly calculates h2 for diagonal walls using Pythagorean theorem', () => {
+    const walls: LineRec[] = [
       {
         id: 'w1',
         startx: 0,
@@ -790,14 +876,341 @@ describe('setInitialOptimization', () => {
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
+      },
+      {
+        id: 'w2',
+        startx: 100,
+        starty: 100,
+        endx: 103,
+        endy: 104,  // 3-4-5 triangle, actual length is 5
+        up_down: LINE_DIR.DN,
+        type: LINE_TYPE.N,
+        kind: LINE_KIND.NORMAL,
+        h1: 0,
+        h2: 0,
+        newtype: NEW_TYPE.ESE,
+        nextId: '',
+        nextwhId: ''
       }
     ]
 
-    // The setInitialOptimization is called internally by closeWhites
-    // We need to check the h2 value after initialization
-    // Since simpleh2[NEW_TYPE.S] is 0, h2 should be length + 0 = 50
-    findCloseWallPairs(diagonalWalls)
-    expect(true).toBe(true)
+    const result = setInitialOptimization(walls)
+
+    // Wall 1: length = sqrt(30^2 + 40^2) = sqrt(900 + 1600) = sqrt(2500) = 50
+    // simpleh2[NEW_TYPE.S] = 0, so h2 = 50 + 0 = 50
+    expect(result[0]?.h2).toBe(50)
+
+    // Wall 2: length = sqrt(3^2 + 4^2) = sqrt(9 + 16) = sqrt(25) = 5
+    // simpleh2[NEW_TYPE.ESE] = -1, so h2 = 5 + (-1) = 4
+    expect(result[1]?.h2).toBe(4)
+  })
+
+  it('correctly applies negative h2 adjustments', () => {
+    const walls: LineRec[] = [
+      {
+        id: 'w1',
+        startx: 0,
+        starty: 0,
+        endx: 20,
+        endy: 0,
+        up_down: LINE_DIR.DN,
+        type: LINE_TYPE.N,
+        kind: LINE_KIND.NORMAL,
+        h1: 0,
+        h2: 0,
+        newtype: NEW_TYPE.ENE,
+        nextId: '',
+        nextwhId: ''
+      },
+      {
+        id: 'w2',
+        startx: 30,
+        starty: 0,
+        endx: 60,
+        endy: 0,
+        up_down: LINE_DIR.DN,
+        type: LINE_TYPE.N,
+        kind: LINE_KIND.NORMAL,
+        h1: 0,
+        h2: 0,
+        newtype: NEW_TYPE.NE,
+        nextId: '',
+        nextwhId: ''
+      },
+      {
+        id: 'w3',
+        startx: 70,
+        starty: 0,
+        endx: 110,
+        endy: 0,
+        up_down: LINE_DIR.DN,
+        type: LINE_TYPE.N,
+        kind: LINE_KIND.NORMAL,
+        h1: 0,
+        h2: 0,
+        newtype: NEW_TYPE.NNE,
+        nextId: '',
+        nextwhId: ''
+      }
+    ]
+
+    const result = setInitialOptimization(walls)
+
+    // Wall 1: length = 20, simpleh2[NEW_TYPE.ENE] = -11
+    // h2 = 20 + (-11) = 9
+    expect(result[0]?.h2).toBe(9)
+
+    // Wall 2: length = 30, simpleh2[NEW_TYPE.NE] = -5
+    // h2 = 30 + (-5) = 25
+    expect(result[1]?.h2).toBe(25)
+
+    // Wall 3: length = 40, simpleh2[NEW_TYPE.NNE] = -5
+    // h2 = 40 + (-5) = 35
+    expect(result[2]?.h2).toBe(35)
+  })
+
+  it('handles all NEW_TYPE values correctly', () => {
+    // Test all 8 direction types (index 0 is not used, types 1-8)
+    const testCases = [
+      { newtype: NEW_TYPE.S, expectedH1: 6, h2Adjustment: 0 },
+      { newtype: NEW_TYPE.SSE, expectedH1: 6, h2Adjustment: 0 },
+      { newtype: NEW_TYPE.SE, expectedH1: 6, h2Adjustment: 0 },
+      { newtype: NEW_TYPE.ESE, expectedH1: 12, h2Adjustment: -1 },
+      { newtype: NEW_TYPE.E, expectedH1: 16, h2Adjustment: 0 },
+      { newtype: NEW_TYPE.ENE, expectedH1: 0, h2Adjustment: -11 },
+      { newtype: NEW_TYPE.NE, expectedH1: 1, h2Adjustment: -5 },
+      { newtype: NEW_TYPE.NNE, expectedH1: 0, h2Adjustment: -5 }
+    ]
+
+    const walls = testCases.map((tc, idx) => ({
+      id: `w${idx}`,
+      startx: idx * 20,
+      starty: 0,
+      endx: idx * 20 + 10,
+      endy: 0,
+      up_down: LINE_DIR.DN,
+      type: LINE_TYPE.N,
+      kind: LINE_KIND.NORMAL,
+      h1: 999,
+      h2: 999,
+      newtype: tc.newtype,
+      nextId: '',
+      nextwhId: ''
+    }))
+
+    const result = setInitialOptimization(walls)
+
+    testCases.forEach((tc, idx) => {
+      expect(result[idx]?.h1).toBe(tc.expectedH1)
+      expect(result[idx]?.h2).toBe(10 + tc.h2Adjustment) // length=10 + adjustment
+    })
+  })
+
+  it('preserves all other wall properties unchanged', () => {
+    const wall: LineRec = {
+      id: 'unique-id',
+      startx: 123,
+      starty: 456,
+      endx: 789,
+      endy: 987,
+      up_down: LINE_DIR.UP,
+      type: LINE_TYPE.NNE,
+      kind: LINE_KIND.BOUNCE,
+      h1: 0,
+      h2: 0,
+      newtype: NEW_TYPE.S,
+      nextId: 'next-wall',
+      nextwhId: 'next-white'
+    }
+
+    const result = setInitialOptimization([wall])
+
+    // Check that only h1 and h2 were modified
+    expect(result[0]).toEqual({
+      ...wall,
+      h1: 6, // simpleh1[NEW_TYPE.S]
+      h2: Math.sqrt((789-123)**2 + (987-456)**2) + 0 // calculated length + simpleh2[NEW_TYPE.S]
+    })
+    
+    // Verify specific properties weren't changed
+    expect(result[0]?.id).toBe('unique-id')
+    expect(result[0]?.startx).toBe(123)
+    expect(result[0]?.starty).toBe(456)
+    expect(result[0]?.endx).toBe(789)
+    expect(result[0]?.endy).toBe(987)
+    expect(result[0]?.up_down).toBe(LINE_DIR.UP)
+    expect(result[0]?.type).toBe(LINE_TYPE.NNE)
+    expect(result[0]?.kind).toBe(LINE_KIND.BOUNCE)
+    expect(result[0]?.nextId).toBe('next-wall')
+    expect(result[0]?.nextwhId).toBe('next-white')
+  })
+
+  it('handles empty wall array', () => {
+    const result = setInitialOptimization([])
+    expect(result).toEqual([])
+  })
+
+  it('creates new wall objects (immutability)', () => {
+    const walls: LineRec[] = [
+      {
+        id: 'w1',
+        startx: 0,
+        starty: 0,
+        endx: 10,
+        endy: 0,
+        up_down: LINE_DIR.DN,
+        type: LINE_TYPE.N,
+        kind: LINE_KIND.NORMAL,
+        h1: 0,
+        h2: 0,
+        newtype: NEW_TYPE.S,
+        nextId: '',
+        nextwhId: ''
+      }
+    ]
+
+    const result = setInitialOptimization(walls)
+
+    // Verify it returns new objects
+    expect(result[0]).not.toBe(walls[0])
+    expect(result).not.toBe(walls)
+
+    // Verify original is unchanged
+    expect(walls[0]?.h1).toBe(0)
+    expect(walls[0]?.h2).toBe(0)
+
+    // Verify new values are set
+    expect(result[0]?.h1).toBe(6)
+    expect(result[0]?.h2).toBe(10)
+  })
+
+  it('handles walls with zero length', () => {
+    const walls: LineRec[] = [
+      {
+        id: 'w1',
+        startx: 50,
+        starty: 50,
+        endx: 50,
+        endy: 50, // Same start and end point
+        up_down: LINE_DIR.DN,
+        type: LINE_TYPE.N,
+        kind: LINE_KIND.NORMAL,
+        h1: 0,
+        h2: 0,
+        newtype: NEW_TYPE.S,
+        nextId: '',
+        nextwhId: ''
+      }
+    ]
+
+    const result = setInitialOptimization(walls)
+
+    // Length = 0, simpleh2[NEW_TYPE.S] = 0
+    expect(result[0]?.h1).toBe(6)
+    expect(result[0]?.h2).toBe(0)
+  })
+
+  it('handles walls with negative coordinates', () => {
+    const walls: LineRec[] = [
+      {
+        id: 'w1',
+        startx: -30,
+        starty: -40,
+        endx: 0,
+        endy: 0,
+        up_down: LINE_DIR.DN,
+        type: LINE_TYPE.N,
+        kind: LINE_KIND.NORMAL,
+        h1: 0,
+        h2: 0,
+        newtype: NEW_TYPE.S,
+        nextId: '',
+        nextwhId: ''
+      }
+    ]
+
+    const result = setInitialOptimization(walls)
+
+    // Length = sqrt(30^2 + 40^2) = 50
+    expect(result[0]?.h1).toBe(6)
+    expect(result[0]?.h2).toBe(50)
+  })
+
+  it('correctly calculates length for walls going in any direction', () => {
+    const walls: LineRec[] = [
+      // Right and down
+      {
+        id: 'w1',
+        startx: 0,
+        starty: 0,
+        endx: 3,
+        endy: 4,
+        up_down: LINE_DIR.DN,
+        type: LINE_TYPE.N,
+        kind: LINE_KIND.NORMAL,
+        h1: 0,
+        h2: 0,
+        newtype: NEW_TYPE.S,
+        nextId: '',
+        nextwhId: ''
+      },
+      // Left and down (negative dx)
+      {
+        id: 'w2',
+        startx: 10,
+        starty: 0,
+        endx: 7,
+        endy: 4,
+        up_down: LINE_DIR.DN,
+        type: LINE_TYPE.N,
+        kind: LINE_KIND.NORMAL,
+        h1: 0,
+        h2: 0,
+        newtype: NEW_TYPE.S,
+        nextId: '',
+        nextwhId: ''
+      },
+      // Right and up (negative dy)
+      {
+        id: 'w3',
+        startx: 20,
+        starty: 10,
+        endx: 23,
+        endy: 6,
+        up_down: LINE_DIR.UP,
+        type: LINE_TYPE.N,
+        kind: LINE_KIND.NORMAL,
+        h1: 0,
+        h2: 0,
+        newtype: NEW_TYPE.S,
+        nextId: '',
+        nextwhId: ''
+      },
+      // Left and up (both negative)
+      {
+        id: 'w4',
+        startx: 30,
+        starty: 10,
+        endx: 27,
+        endy: 6,
+        up_down: LINE_DIR.UP,
+        type: LINE_TYPE.N,
+        kind: LINE_KIND.NORMAL,
+        h1: 0,
+        h2: 0,
+        newtype: NEW_TYPE.S,
+        nextId: '',
+        nextwhId: ''
+      }
+    ]
+
+    const result = setInitialOptimization(walls)
+
+    // All should have length 5 (3-4-5 triangle)
+    expect(result[0]?.h2).toBe(5)
+    expect(result[1]?.h2).toBe(5)
+    expect(result[2]?.h2).toBe(5)
+    expect(result[3]?.h2).toBe(5)
   })
 })
 
