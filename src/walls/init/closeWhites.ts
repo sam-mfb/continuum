@@ -81,12 +81,7 @@ export function findCloseWallPairs(
           const y2 = (j ? line2.endy : line2.starty) - THRESHOLD
 
           // C code: if (x1 > x2 && y1 > y2 && x1 < x2 + 6 && y1 < y2 + 6)
-          if (
-            x1 > x2 &&
-            y1 > y2 &&
-            x1 < x2 + 6 &&
-            y1 < y2 + 6
-          ) {
+          if (x1 > x2 && y1 > y2 && x1 < x2 + 6 && y1 < y2 + 6) {
             pairs.push([line, line2, i, j])
           }
         }
@@ -161,7 +156,7 @@ export function setInitialOptimization(walls: LineRec[]): LineRec[] {
     const dx = wall.endx - wall.startx
     const dy = wall.endy - wall.starty
     const length = Math.sqrt(dx * dx + dy * dy)
-    
+
     return {
       ...wall,
       h1: simpleh1[wall.newtype] ?? 0,

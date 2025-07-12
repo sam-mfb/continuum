@@ -13,7 +13,8 @@ export function initWalls(walls: LineRec[]): WallsState {
   const { organizedWalls, kindPointers } = organizeWallsByKind(walls)
 
   // Step 2: Find first white walls (NNE walls)
-  const { firstWhiteId, updatedWalls: wallsWithWhiteLinks } = findFirstWhiteWalls(walls)
+  const { firstWhiteId, updatedWalls: wallsWithWhiteLinks } =
+    findFirstWhiteWalls(walls)
 
   // Step 3: Detect wall junctions - use walls array since we only need endpoint info
   const junctions = detectWallJunctions(walls)
@@ -116,7 +117,7 @@ export function findFirstWhiteWalls(walls: LineRec[]): {
 } {
   let firstWhiteId = ''
   let lastWhiteId: string | null = null
-  
+
   // Create a copy of walls as a record for immutability
   const updatedWalls: Record<string, LineRec> = {}
   for (const wall of walls) {

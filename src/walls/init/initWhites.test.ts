@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import type { WhiteRec } from '../types'
-import { sortWhitesByX, mergeOverlappingWhites, addSentinelWhites } from './initWhites'
+import {
+  sortWhitesByX,
+  mergeOverlappingWhites,
+  addSentinelWhites
+} from './initWhites'
 
 describe('sortWhitesByX', () => {
   it('sorts whites by x-coordinate ascending', () => {

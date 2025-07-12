@@ -123,7 +123,7 @@ export function mergeOverlappingWhites(whites: WhiteRec[]): WhiteRec[] {
  */
 export function addSentinelWhites(whites: WhiteRec[]): WhiteRec[] {
   const result = [...whites]
-  
+
   for (let i = 0; i < 18; i++) {
     result.push({
       id: `sentinel${i}`,
@@ -134,6 +134,6 @@ export function addSentinelWhites(whites: WhiteRec[]): WhiteRec[] {
       data: []
     })
   }
-  
+
   return result
 }

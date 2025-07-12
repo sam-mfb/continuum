@@ -11,15 +11,15 @@ import {
 /**
  * Adds a white piece to the array and maintains a running sentinel.
  * This mimics the C add_white function which sets wh->x = 20000 after each addition.
- * 
+ *
  * NOTE: This running sentinel is redundant in our implementation because:
  * 1. JavaScript arrays have proper bounds checking unlike C arrays
  * 2. The final sentinel padding is added by addSentinelWhites in initWhites
  * 3. We maintain this behavior solely for faithfulness to the original C code
- * 
+ *
  * The sentinel gets overwritten by the next add_white call, except for the last one
  * which remains and gets overwritten by the final sentinel padding in init_whites.
- * 
+ *
  * @see Junctions.c:144-158 - add_white() function
  */
 function addWhiteWithSentinel(
@@ -32,7 +32,7 @@ function addWhiteWithSentinel(
 ): void {
   // This overwrites any previous sentinel at this position
   const currentIndex = whites.length > 0 ? whites.length - 1 : 0
-  
+
   // If there's a sentinel at current position, overwrite it
   if (whites[currentIndex]?.id === 'sentinel_running') {
     whites[currentIndex] = {
@@ -54,7 +54,7 @@ function addWhiteWithSentinel(
       data: [...data] // Clone the pattern
     })
   }
-  
+
   // Always add sentinel at next position (mimics wh++; wh->x = 20000)
   whites.push({
     id: `sentinel_running`,

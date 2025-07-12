@@ -10,21 +10,24 @@ import { NEW_TYPE } from '../../walls/constants'
 
 // White pattern data from orig/Sources/Junctions.c:105-115
 // These are 16-bit patterns, 6 rows each
-const generictop = [0xFFFF, 0x3FFF, 0x0FFF, 0x03FF, 0x00FF, 0x007F]
-const sbot = [0x803F, 0xC03F, 0xF03F, 0xFC3F, 0xFF3F, 0xFFFF]
-const ssetop = [0xFFFF, 0xBFFF, 0xCFFF, 0xC3FF, 0xE0FF, 0xE03F]
-const ssebot = [0x80FF, 0xC07F, 0xF07F, 0xFC3F, 0xFF3F, 0xFFFF]
-const setop = [0xFFFF, 0xFFFF, 0xEFFF, 0xF3FF, 0xF8FF, 0xFC3F]
-const sebot = [0x87FF, 0xC3FF, 0xF1FF, 0xFCFF, 0xFF7F, 0xFFFF]
-const eseright = [0xFFFF, 0x3FFF, 0x8FFF, 0xE3FF, 0xF8FF, 0xFE7F]
-const eleft = [0xFFFF, 0xFFFF, 0xF000, 0xFC00, 0xFF00, 0xFF80]
-const eneleft = [0x8000, 0xC000, 0xF000, 0xFC01, 0xFF07, 0xFFDF]
-const nebot = [0x8001, 0xC003, 0xF007, 0xFC0F, 0xFF1F, 0xFFFF]
-const nnebot = [0x800F, 0xC01F, 0xF01F, 0xFC3F, 0xFF3F, 0xFFFF]
+const generictop = [0xffff, 0x3fff, 0x0fff, 0x03ff, 0x00ff, 0x007f]
+const sbot = [0x803f, 0xc03f, 0xf03f, 0xfc3f, 0xff3f, 0xffff]
+const ssetop = [0xffff, 0xbfff, 0xcfff, 0xc3ff, 0xe0ff, 0xe03f]
+const ssebot = [0x80ff, 0xc07f, 0xf07f, 0xfc3f, 0xff3f, 0xffff]
+const setop = [0xffff, 0xffff, 0xefff, 0xf3ff, 0xf8ff, 0xfc3f]
+const sebot = [0x87ff, 0xc3ff, 0xf1ff, 0xfcff, 0xff7f, 0xffff]
+const eseright = [0xffff, 0x3fff, 0x8fff, 0xe3ff, 0xf8ff, 0xfe7f]
+const eleft = [0xffff, 0xffff, 0xf000, 0xfc00, 0xff00, 0xff80]
+const eneleft = [0x8000, 0xc000, 0xf000, 0xfc01, 0xff07, 0xffdf]
+const nebot = [0x8001, 0xc003, 0xf007, 0xfc0f, 0xff1f, 0xffff]
+const nnebot = [0x800f, 0xc01f, 0xf01f, 0xfc3f, 0xff3f, 0xffff]
 
 // Map from NEW_TYPE to white patterns for start/end of lines
 // Based on whitepicts array from orig/Sources/Junctions.c:118-127
-const whitePatterns: Record<number, { start: number[] | null; end: number[] | null }> = {
+const whitePatterns: Record<
+  number,
+  { start: number[] | null; end: number[] | null }
+> = {
   [NEW_TYPE.S]: { start: generictop, end: sbot },
   [NEW_TYPE.SSE]: { start: ssetop, end: ssebot },
   [NEW_TYPE.SE]: { start: setop, end: sebot },
@@ -52,38 +55,38 @@ const whitePatterns: Record<number, { start: number[] | null; end: number[] | nu
  */
 function createSampleWhites(): WhiteRec[] {
   const whites: WhiteRec[] = []
-  
+
   // Test all 8 directional lines, 25 pixels long each
   const lineLength = 25
-  const spacing = 80  // Space between lines
-  
+  const spacing = 80 // Space between lines
+
   // Helper function to add white pieces for a line type
   function addLineWhites(type: number, baseX: number, baseY: number) {
     const patterns = whitePatterns[type]
     if (!patterns) return
-    
+
     // Calculate end position based on direction
     let endX = baseX
     let endY = baseY + lineLength
-    
+
     switch (type) {
       case NEW_TYPE.S:
         // Straight down (already set above)
         break
       case NEW_TYPE.SSE:
         // 22.5 degrees from vertical
-        endX = baseX + Math.round(lineLength * Math.sin(22.5 * Math.PI / 180))  // ~10 pixels
-        endY = baseY + Math.round(lineLength * Math.cos(22.5 * Math.PI / 180))  // ~23 pixels
+        endX = baseX + Math.round(lineLength * Math.sin((22.5 * Math.PI) / 180)) // ~10 pixels
+        endY = baseY + Math.round(lineLength * Math.cos((22.5 * Math.PI) / 180)) // ~23 pixels
         break
       case NEW_TYPE.SE:
         // 45 degrees (diagonal)
-        endX = baseX + Math.round(lineLength * Math.sin(45 * Math.PI / 180))  // ~18 pixels
-        endY = baseY + Math.round(lineLength * Math.cos(45 * Math.PI / 180))  // ~18 pixels
+        endX = baseX + Math.round(lineLength * Math.sin((45 * Math.PI) / 180)) // ~18 pixels
+        endY = baseY + Math.round(lineLength * Math.cos((45 * Math.PI) / 180)) // ~18 pixels
         break
       case NEW_TYPE.ESE:
         // 67.5 degrees from vertical
-        endX = baseX + Math.round(lineLength * Math.sin(67.5 * Math.PI / 180))  // ~23 pixels
-        endY = baseY + Math.round(lineLength * Math.cos(67.5 * Math.PI / 180))  // ~10 pixels
+        endX = baseX + Math.round(lineLength * Math.sin((67.5 * Math.PI) / 180)) // ~23 pixels
+        endY = baseY + Math.round(lineLength * Math.cos((67.5 * Math.PI) / 180)) // ~10 pixels
         break
       case NEW_TYPE.E:
         // Horizontal (90 degrees)
@@ -92,29 +95,29 @@ function createSampleWhites(): WhiteRec[] {
         break
       case NEW_TYPE.ENE:
         // 112.5 degrees from vertical (going up and right)
-        endX = baseX + Math.round(lineLength * Math.sin(67.5 * Math.PI / 180))  // ~23 pixels
-        endY = baseY - Math.round(lineLength * Math.cos(67.5 * Math.PI / 180))  // ~-10 pixels
+        endX = baseX + Math.round(lineLength * Math.sin((67.5 * Math.PI) / 180)) // ~23 pixels
+        endY = baseY - Math.round(lineLength * Math.cos((67.5 * Math.PI) / 180)) // ~-10 pixels
         break
       case NEW_TYPE.NE:
         // 135 degrees from vertical (45 degrees going up)
-        endX = baseX + Math.round(lineLength * Math.sin(45 * Math.PI / 180))  // ~18 pixels
-        endY = baseY - Math.round(lineLength * Math.cos(45 * Math.PI / 180))  // ~-18 pixels
+        endX = baseX + Math.round(lineLength * Math.sin((45 * Math.PI) / 180)) // ~18 pixels
+        endY = baseY - Math.round(lineLength * Math.cos((45 * Math.PI) / 180)) // ~-18 pixels
         break
       case NEW_TYPE.NNE:
         // 157.5 degrees from vertical
-        endX = baseX + Math.round(lineLength * Math.sin(22.5 * Math.PI / 180))  // ~10 pixels
-        endY = baseY - Math.round(lineLength * Math.cos(22.5 * Math.PI / 180))  // ~-23 pixels
+        endX = baseX + Math.round(lineLength * Math.sin((22.5 * Math.PI) / 180)) // ~10 pixels
+        endY = baseY - Math.round(lineLength * Math.cos((22.5 * Math.PI) / 180)) // ~-23 pixels
         break
     }
-    
+
     // Add white piece at start of line
     if (patterns.start) {
       const startData: number[] = []
       for (const word of patterns.start) {
-        startData.push((word >>> 8) & 0xFF)  // High byte
-        startData.push(word & 0xFF)          // Low byte
+        startData.push((word >>> 8) & 0xff) // High byte
+        startData.push(word & 0xff) // Low byte
       }
-      
+
       whites.push({
         id: `white_${type}_start`,
         x: baseX,
@@ -124,15 +127,15 @@ function createSampleWhites(): WhiteRec[] {
         data: startData
       })
     }
-    
+
     // Add white piece at end of line
     if (patterns.end) {
       const endData: number[] = []
       for (const word of patterns.end) {
-        endData.push((word >>> 8) & 0xFF)  // High byte
-        endData.push(word & 0xFF)          // Low byte
+        endData.push((word >>> 8) & 0xff) // High byte
+        endData.push(word & 0xff) // Low byte
       }
-      
+
       whites.push({
         id: `white_${type}_end`,
         x: endX,
@@ -143,35 +146,35 @@ function createSampleWhites(): WhiteRec[] {
       })
     }
   }
-  
+
   // First row - downward directions
   const startX = 40
   const startY = 100
-  
+
   // Add S line (vertical)
   addLineWhites(NEW_TYPE.S, startX, startY)
-  
+
   // Add SSE line (22.5 degrees from vertical)
   addLineWhites(NEW_TYPE.SSE, startX + spacing, startY)
-  
+
   // Add SE line (45 degrees diagonal)
   addLineWhites(NEW_TYPE.SE, startX + spacing * 2, startY)
-  
+
   // Add ESE line (67.5 degrees from vertical)
   addLineWhites(NEW_TYPE.ESE, startX + spacing * 3, startY)
-  
+
   // Second row - horizontal and upward directions
   const row2Y = startY + 80
-  
+
   // Add E line (horizontal)
   addLineWhites(NEW_TYPE.E, startX, row2Y)
-  
+
   // Add ENE line (112.5 degrees)
   addLineWhites(NEW_TYPE.ENE, startX + spacing, row2Y)
-  
+
   // Add NE line (135 degrees - diagonal up)
   addLineWhites(NEW_TYPE.NE, startX + spacing * 2, row2Y)
-  
+
   // Add NNE line (157.5 degrees)
   addLineWhites(NEW_TYPE.NNE, startX + spacing * 3, row2Y)
 
@@ -212,15 +215,15 @@ export const wallWhiteTestRenderer: BitmapRenderer = (bitmap, _frame, _env) => {
   const viewport = {
     x: 0,
     y: 0,
-    b: bitmap.height,  // bottom
-    r: bitmap.width    // right
+    b: bitmap.height, // bottom
+    r: bitmap.width // right
   }
 
   // Call fastWhites to render the white pieces
   const renderedBitmap = fastWhites(bitmap, {
     whites: whites,
     viewport: viewport,
-    worldwidth: bitmap.width  // No wrapping needed for this test
+    worldwidth: bitmap.width // No wrapping needed for this test
   })
 
   // Copy rendered bitmap data back to original
