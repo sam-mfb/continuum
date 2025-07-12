@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import type { WhiteRec, JunctionRec } from '../types'
 import { whiteHashMerge } from './whiteHashMerge'
+import { hashFigure } from './whitePatterns'
 
 describe('whiteHashMerge', () => {
   it('adds hash patterns to whites at junction positions', () => {
@@ -240,5 +241,146 @@ describe('whiteHashMerge', () => {
 
     // Whites should be unchanged
     expect(result).toEqual(whites)
+  })
+
+  it('only uses a junction once when processing multiple whites', () => {
+    // This test verifies the C code behavior where a junction is "consumed"
+    // after being used, preventing it from hashing multiple whites.
+    // Note: whites must not be close neighbors, or they'll be skipped
+    const whites: WhiteRec[] = [
+      {
+        id: 'w1',
+        x: 20,
+        y: 20,
+        hasj: false,
+        ht: 6,
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+      },
+      {
+        id: 'w2',
+        x: 20,
+        y: 20 + 10, // Far enough away to not be a close neighbor
+        hasj: false,
+        ht: 6,
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+      }
+    ]
+    // Only one junction at the first white's position
+    const junctions: JunctionRec[] = [{ x: 20, y: 20 }]
+    const originalJunctions = JSON.parse(JSON.stringify(junctions))
+
+    const result = whiteHashMerge(whites, junctions)
+
+    // Only the first white should have been hashed
+    expect(result[0]?.hasj).toBe(true)
+    expect(result[1]?.hasj).toBe(false)
+
+    // The original junctions array should be untouched (immutability)
+    expect(junctions).toEqual(originalJunctions)
+  })
+
+  it('skips whites at the same position due to close neighbor check', () => {
+    // When two whites are at the exact same position, they are close neighbors
+    // to each other, so neither gets hashed even if there's a junction there
+    const whites: WhiteRec[] = [
+      {
+        id: 'w1',
+        x: 20,
+        y: 20,
+        hasj: false,
+        ht: 6,
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+      },
+      {
+        id: 'w2',
+        x: 20,
+        y: 20,
+        hasj: false,
+        ht: 6,
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+      }
+    ]
+    const junctions: JunctionRec[] = [{ x: 20, y: 20 }]
+
+    const result = whiteHashMerge(whites, junctions)
+
+    // Neither white should be hashed because they're close neighbors
+    expect(result[0]?.hasj).toBe(false)
+    expect(result[1]?.hasj).toBe(false)
+    expect(result).toEqual(whites)
+  })
+
+  it('skips whites that have close neighbors', () => {
+    // The C code uses no_close_wh() to skip whites that have neighbors within 3 pixels
+    const whites: WhiteRec[] = [
+      {
+        id: 'w1',
+        x: 20,
+        y: 20,
+        hasj: false,
+        ht: 6,
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+      },
+      {
+        id: 'w2',
+        x: 22, // Only 2 pixels away horizontally (within 3)
+        y: 21, // And 1 pixel away vertically (within 3)
+        hasj: false,
+        ht: 6,
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+      }
+    ]
+    const junctions: JunctionRec[] = [
+      { x: 20, y: 20 },
+      { x: 22, y: 21 }
+    ]
+
+    const result = whiteHashMerge(whites, junctions)
+
+    // Both whites should remain unchanged because they have close neighbors
+    expect(result[0]?.hasj).toBe(false)
+    expect(result[1]?.hasj).toBe(false)
+    expect(result).toEqual(whites)
+  })
+
+  it('calculates hash pattern correctly using XOR operations', () => {
+    // This test verifies the exact hash pattern calculation
+    // Based on C code: (back & (~data | hashFigure)) ^ hashFigure
+    const whites: WhiteRec[] = [
+      {
+        id: 'w1',
+        x: 10,
+        y: 10,
+        hasj: false,
+        ht: 6,
+        data: [0xffff, 0x0000, 0xf0f0, 0x0f0f, 0xaaaa, 0x5555]
+      }
+    ]
+    const junctions: JunctionRec[] = [{ x: 10, y: 10 }]
+
+    const result = whiteHashMerge(whites, junctions)
+
+    // For position (10,10), (x+y) & 1 = 0, so we use backgr1 = 0xaaaaaaaa
+    // Lower 16 bits of backgr1 = 0xaaaa
+
+    // Let's manually calculate what each result should be:
+    // Formula: (back & (~data | hashFigure)) ^ hashFigure
+    const backgr1 = 0xaaaa // initial value
+    const expectedData: number[] = []
+
+    // Calculate expected values
+    let rotatedBack = backgr1
+    const whiteData = whites[0]?.data ?? []
+    for (let i = 0; i < 6; i++) {
+      const dataValue = whiteData[i] ?? 0
+      const hashValue = hashFigure[i] ?? 0
+      expectedData[i] = (rotatedBack & (~dataValue | hashValue)) ^ hashValue
+      // Rotate left by 1 bit
+      rotatedBack = ((rotatedBack << 1) | (rotatedBack >>> 15)) & 0xffff
+    }
+
+    const modified = result[0]
+    expect(modified?.hasj).toBe(true)
+    expect(modified?.data).toEqual(expectedData)
   })
 })
