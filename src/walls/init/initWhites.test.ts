@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { WhiteRec } from '../types'
-import { sortWhitesByX, mergeOverlappingWhites } from './initWhites'
+import { sortWhitesByX, mergeOverlappingWhites, addSentinelWhites } from './initWhites'
 
 describe('sortWhitesByX', () => {
   it('sorts whites by x-coordinate ascending', () => {
@@ -219,5 +219,77 @@ describe('mergeOverlappingWhites', () => {
     // Verify the merged data
     const mergedWhite = merged.find(w => w.id === 'w1')
     expect(mergedWhite?.data[0]).toBe(0xff & 0xee)
+  })
+})
+
+describe('addSentinelWhites', () => {
+  it('adds exactly 18 sentinel values', () => {
+    const whites: WhiteRec[] = [
+      { id: 'w1', x: 10, y: 10, hasj: false, ht: 6, data: [0xff] }
+    ]
+
+    const result = addSentinelWhites(whites)
+
+    expect(result.length).toBe(19) // 1 original + 18 sentinels
+    const sentinels = result.slice(1)
+    expect(sentinels.length).toBe(18)
+    expect(sentinels.every(s => s.x === 20000)).toBe(true)
+  })
+
+  it('preserves original whites unchanged', () => {
+    const whites: WhiteRec[] = [
+      { id: 'w1', x: 10, y: 10, hasj: false, ht: 6, data: [0xff] },
+      { id: 'w2', x: 20, y: 20, hasj: true, ht: 4, data: [0xee] }
+    ]
+    const originalCopy = JSON.parse(JSON.stringify(whites))
+
+    const result = addSentinelWhites(whites)
+
+    // Original array should not be mutated
+    expect(whites).toEqual(originalCopy)
+    // First two elements should match originals
+    expect(result[0]).toEqual(whites[0])
+    expect(result[1]).toEqual(whites[1])
+  })
+
+  it('sets correct properties for sentinel values', () => {
+    const whites: WhiteRec[] = []
+
+    const result = addSentinelWhites(whites)
+
+    expect(result.length).toBe(18)
+    result.forEach((sentinel, i) => {
+      expect(sentinel).toEqual({
+        id: `sentinel${i}`,
+        x: 20000,
+        y: 0,
+        hasj: false,
+        ht: 0,
+        data: []
+      })
+    })
+  })
+
+  it('appends sentinels to the end of the array', () => {
+    const whites: WhiteRec[] = [
+      { id: 'w1', x: 100, y: 100, hasj: false, ht: 6, data: [0xff] },
+      { id: 'w2', x: 200, y: 200, hasj: false, ht: 6, data: [0xee] },
+      { id: 'w3', x: 300, y: 300, hasj: false, ht: 6, data: [0xdd] }
+    ]
+
+    const result = addSentinelWhites(whites)
+
+    // First 3 should be originals
+    expect(result.slice(0, 3).map(w => w.id)).toEqual(['w1', 'w2', 'w3'])
+    // Last 18 should be sentinels
+    expect(result.slice(3).every(w => w.x === 20000)).toBe(true)
+    expect(result.slice(3).length).toBe(18)
+  })
+
+  it('handles empty input array', () => {
+    const result = addSentinelWhites([])
+
+    expect(result.length).toBe(18)
+    expect(result.every(w => w.x === 20000 && w.y === 0)).toBe(true)
   })
 })

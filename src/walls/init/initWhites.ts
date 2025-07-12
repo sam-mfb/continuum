@@ -32,6 +32,9 @@ export function initWhites(
   // Step 5: Add hash patterns at junctions
   whites = whiteHashMerge(whites, junctions)
 
+  // Step 6: Add sentinel values
+  whites = addSentinelWhites(whites)
+
   return {
     whites,
     updatedWalls
@@ -108,5 +111,29 @@ export function mergeOverlappingWhites(whites: WhiteRec[]): WhiteRec[] {
     }
   }
 
+  return result
+}
+
+/**
+ * Adds 18 sentinel white pieces with x=20000 to the end of the whites array.
+ * These sentinels ensure that loops searching through the array have a
+ * guaranteed termination point and don't run off the end.
+ *
+ * @see Junctions.c:224-225 - Sentinel padding for array termination
+ */
+export function addSentinelWhites(whites: WhiteRec[]): WhiteRec[] {
+  const result = [...whites]
+  
+  for (let i = 0; i < 18; i++) {
+    result.push({
+      id: `sentinel${i}`,
+      x: 20000,
+      y: 0,
+      hasj: false,
+      ht: 0,
+      data: []
+    })
+  }
+  
   return result
 }
