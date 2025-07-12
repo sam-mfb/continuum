@@ -48,6 +48,8 @@ export type LineRec = {
   h2: number
   /** new type including up-down */
   newtype: NewType
+  /** length of the line (calculated via Pythagorean theorem) */
+  length: number
   /** ID of next line of this kind */
   nextId: string | null
   /** ID of next line with white-only drawing */

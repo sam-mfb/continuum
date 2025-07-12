@@ -59,7 +59,7 @@ export function oneClose(
 
   // Giant switch statement
   let i: number, j: number
-  const length1 = wall1.endx - wall1.startx
+  const length1 = wall1.length
 
   switch (dir1) {
     case 0:
@@ -81,7 +81,8 @@ export function oneClose(
       j = wall1.h2
       if (length1 - i > j) return { patches, wall1Updates, wall2Updates }
 
-      // Add or replace white
+      // C code: replace_white_2(startx, starty+j, endx, endy-i, i, npatch)
+      // For now we just add at the target position (endx, endy-i)
       addWhite(wall1.endx, wall1.endy - i, i, npatch)
       wall1Updates.h2 = length1 - i
       break
@@ -209,8 +210,17 @@ export function oneClose(
         wall1Updates.h2 = j
       }
 
-      // Execute case 11 logic with the i10 value
-      const i11 = i10
+      // Fall through to case 11 - but case 11 calculates its own i value
+      // based on dir2, not reusing i10
+      let i11: number | undefined
+      if (dir2 === 9) {
+        i11 = 2
+      } else if ((dir2 as number) === 10) {
+        i11 = 4
+      }
+      if (i11 === undefined) {
+        break // No case 11 logic for other dir2 values
+      }
       for (j = 0; j < 8 * i11; j += 8) {
         if (wall1.h2 >= length1 - 11 - j) {
           addWhite(wall1.endx - 18 - j, wall1.endy + 6 + (j >> 1), 4, enepatch)
@@ -267,6 +277,8 @@ export function oneClose(
       j = wall1.h2
       if (j <= length1 - i) return { patches, wall1Updates, wall2Updates }
 
+      // C code: replace_white_2(startx+j, starty+j, endx-i, endy-i, i, sepatch)
+      // For now we just add at the target position (endx-i, endy-i)
       addWhite(wall1.endx - i, wall1.endy - i, i, sepatch)
       wall1Updates.h2 = length1 - i
       break
@@ -290,6 +302,8 @@ export function oneClose(
       j = wall1.h2
       if (j <= length1 - i) return { patches, wall1Updates, wall2Updates }
 
+      // C code: replace_white_2(startx+(j>>1), starty+j, endx-(i>>1), endy-i, i, ssepatch)
+      // For now we just add at the target position (endx-(i>>1), endy-i)
       addWhite(wall1.endx - (i >> 1), wall1.endy - i, i, ssepatch)
       wall1Updates.h2 = length1 - i
       break

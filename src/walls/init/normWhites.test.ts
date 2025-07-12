@@ -17,6 +17,7 @@ describe('normWhites', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 28,
         newtype: NEW_TYPE.NE,
         nextId: null,
         nextwhId: null
@@ -28,16 +29,16 @@ describe('normWhites', () => {
     // Should have whites for start and end points plus one glitch piece
     // But no running sentinels (they are excluded by slice)
     expect(whites.every(w => w.id !== 'sentinel_running')).toBe(true)
-    
+
     // Check that we have the expected whites
     const startWhite = whites.find(w => w.x === 10 && w.y === 20)
     expect(startWhite).toBeDefined()
     expect(startWhite?.ht).toBe(6)
-    
+
     const endWhite = whites.find(w => w.x === 30 && w.y === 40)
     expect(endWhite).toBeDefined()
     expect(endWhite?.ht).toBe(6)
-    
+
     // NE walls get a glitch piece at endx-4, endy+2
     const glitchWhite = whites.find(w => w.x === 26 && w.y === 42)
     expect(glitchWhite).toBeDefined()
@@ -57,6 +58,7 @@ describe('normWhites', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -72,6 +74,7 @@ describe('normWhites', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.NE,
         nextId: null,
         nextwhId: null
@@ -83,7 +86,7 @@ describe('normWhites', () => {
     // Should not include any sentinels in the returned array
     expect(whites.every(w => w.id !== 'sentinel_running')).toBe(true)
     expect(whites.every(w => w.x !== 20000)).toBe(true)
-    
+
     // Should have exactly the expected number of whites
     // w1: start + end from S type
     // w2: start + end + glitch from NE type
@@ -103,6 +106,7 @@ describe('normWhites', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 141,
         newtype: NEW_TYPE.ENE,
         nextId: null,
         nextwhId: null
@@ -113,12 +117,12 @@ describe('normWhites', () => {
 
     // ENE walls get: start white, end white, and two glitch pieces
     expect(whites.length).toBe(4)
-    
+
     // First glitch at startx+16, starty
     const glitch1 = whites.find(w => w.x === 116 && w.y === 100)
     expect(glitch1).toBeDefined()
     expect(glitch1?.ht).toBe(3)
-    
+
     // Second glitch at endx-10, endy+1
     const glitch2 = whites.find(w => w.x === 190 && w.y === 201)
     expect(glitch2).toBeDefined()
@@ -138,6 +142,7 @@ describe('normWhites', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: 0 as any, // Use 0 which has [null, null] in whitepicts
         nextId: null,
         nextwhId: null
@@ -163,6 +168,7 @@ describe('normWhites', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.SSE,
         nextId: null,
         nextwhId: null
@@ -196,6 +202,7 @@ describe('normWhites', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.NE,
         nextId: null,
         nextwhId: null
@@ -211,6 +218,7 @@ describe('normWhites', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.ENE,
         nextId: null,
         nextwhId: null
@@ -219,12 +227,12 @@ describe('normWhites', () => {
 
     const whites = normWhites(walls)
     const ids = whites.map(w => w.id)
-    
+
     // All IDs should be unique
     expect(new Set(ids).size).toBe(ids.length)
-    
+
     // All IDs should follow the pattern w0, w1, w2, etc.
-    ids.forEach((id) => {
+    ids.forEach(id => {
       expect(id).toMatch(/^w\d+$/)
     })
   })

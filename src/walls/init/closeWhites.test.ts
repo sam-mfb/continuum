@@ -22,6 +22,7 @@ describe('findCloseWallPairs', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -37,6 +38,7 @@ describe('findCloseWallPairs', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 13,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -49,11 +51,10 @@ describe('findCloseWallPairs', () => {
     // It processes both walls and checks all endpoints
     // The filtering/deduplication happens in one_close
     expect(pairs.length).toBeGreaterThan(0)
-    
+
     // Check that the expected pair is found
-    const hasExpectedPair = pairs.some(p => 
-      p[0].id === 'w1' && p[1].id === 'w2' && 
-      p[2] === 1 && p[3] === 0
+    const hasExpectedPair = pairs.some(
+      p => p[0].id === 'w1' && p[1].id === 'w2' && p[2] === 1 && p[3] === 0
     )
     expect(hasExpectedPair).toBe(true)
   })
@@ -71,6 +72,7 @@ describe('findCloseWallPairs', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 141,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -86,6 +88,7 @@ describe('findCloseWallPairs', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 72,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -96,11 +99,10 @@ describe('findCloseWallPairs', () => {
 
     // The C code finds all matching pairs
     expect(pairs.length).toBeGreaterThan(0)
-    
+
     // Should find a pair where end of w1 is close to end of w2
-    const hasEndToEndPair = pairs.some(p => 
-      p[0].id === 'w1' && p[1].id === 'w2' && 
-      p[2] === 1 && p[3] === 1
+    const hasEndToEndPair = pairs.some(
+      p => p[0].id === 'w1' && p[1].id === 'w2' && p[2] === 1 && p[3] === 1
     )
     expect(hasEndToEndPair).toBe(true)
   })
@@ -118,6 +120,7 @@ describe('findCloseWallPairs', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -133,6 +136,7 @@ describe('findCloseWallPairs', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -144,11 +148,10 @@ describe('findCloseWallPairs', () => {
     // The C code processes each wall as 'line' and checks against others
     // This can find multiple pairs including self-pairs
     expect(pairs.length).toBeGreaterThan(0)
-    
+
     // Verify specific pairs exist
-    const hasW1ToW2 = pairs.some(p => 
-      p[0].id === 'w1' && p[1].id === 'w2' && 
-      p[2] === 1 && p[3] === 0  // end of w1 to start of w2
+    const hasW1ToW2 = pairs.some(
+      p => p[0].id === 'w1' && p[1].id === 'w2' && p[2] === 1 && p[3] === 0 // end of w1 to start of w2
     )
     expect(hasW1ToW2).toBe(true)
   })
@@ -166,6 +169,7 @@ describe('findCloseWallPairs', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -182,6 +186,7 @@ describe('findCloseWallPairs', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 11,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -192,10 +197,9 @@ describe('findCloseWallPairs', () => {
 
     // Check that the 6x6 box logic finds the pair
     expect(pairs.length).toBeGreaterThan(0)
-    
-    const hasExpectedPair = pairs.some(p => 
-      p[0].id === 'w1' && p[1].id === 'w2' && 
-      p[2] === 1 && p[3] === 0  // end of w1 to start of w2
+
+    const hasExpectedPair = pairs.some(
+      p => p[0].id === 'w1' && p[1].id === 'w2' && p[2] === 1 && p[3] === 0 // end of w1 to start of w2
     )
     expect(hasExpectedPair).toBe(true)
   })
@@ -213,6 +217,7 @@ describe('findCloseWallPairs', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -228,6 +233,7 @@ describe('findCloseWallPairs', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -243,6 +249,7 @@ describe('findCloseWallPairs', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -253,25 +260,26 @@ describe('findCloseWallPairs', () => {
 
     // The C code finds all pairs that match the box check
     expect(pairs.length).toBeGreaterThan(0)
-    
+
     // Check for specific close pairs based on the 6x6 box logic
-    // w1 start (5,5) and w2 end (10,10): 
+    // w1 start (5,5) and w2 end (10,10):
     // x1=5, y1=5, x2=10-3=7, y2=10-3=7
     // 5 > 7 = false, so no match
-    
+
     // w1 end (15,15) and w3 start (10,10):
-    // x1=15, y1=15, x2=10-3=7, y2=10-3=7  
+    // x1=15, y1=15, x2=10-3=7, y2=10-3=7
     // 15 > 7 && 15 > 7 && 15 < 13 = false, so no match
-    
+
     // w2 end (10,10) and w3 start (10,10):
     // x1=10, y1=10, x2=10-3=7, y2=10-3=7
     // 10 > 7 && 10 > 7 && 10 < 13 && 10 < 13 = true, match!
-    
-    const hasW2W3Pair = pairs.some(p => 
-      (p[0].id === 'w2' && p[1].id === 'w3') || 
-      (p[0].id === 'w3' && p[1].id === 'w2')
+
+    const hasW2W3Pair = pairs.some(
+      p =>
+        (p[0].id === 'w2' && p[1].id === 'w3') ||
+        (p[0].id === 'w3' && p[1].id === 'w2')
     )
-    
+
     expect(hasW2W3Pair).toBe(true)
   })
 
@@ -288,6 +296,7 @@ describe('findCloseWallPairs', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -303,6 +312,7 @@ describe('findCloseWallPairs', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -313,12 +323,13 @@ describe('findCloseWallPairs', () => {
 
     // Walls that are far apart should not form pairs
     // Check that no pairs exist between w1 and w2
-    const hasW1W2Pair = pairs.some(p => 
-      (p[0].id === 'w1' && p[1].id === 'w2') || 
-      (p[0].id === 'w2' && p[1].id === 'w1')
+    const hasW1W2Pair = pairs.some(
+      p =>
+        (p[0].id === 'w1' && p[1].id === 'w2') ||
+        (p[0].id === 'w2' && p[1].id === 'w1')
     )
     expect(hasW1W2Pair).toBe(false)
-    
+
     // But self-pairs might still exist
     expect(pairs.length).toBeGreaterThanOrEqual(0)
   })
@@ -344,6 +355,7 @@ describe('findCloseWallPairs', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -359,6 +371,7 @@ describe('findCloseWallPairs', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -368,12 +381,13 @@ describe('findCloseWallPairs', () => {
     const pairs = findCloseWallPairs(walls)
 
     // No pairs between w1 and w2 as they are far apart
-    const hasInterWallPair = pairs.some(p => 
-      (p[0].id === 'w1' && p[1].id === 'w2') || 
-      (p[0].id === 'w2' && p[1].id === 'w1')
+    const hasInterWallPair = pairs.some(
+      p =>
+        (p[0].id === 'w1' && p[1].id === 'w2') ||
+        (p[0].id === 'w2' && p[1].id === 'w1')
     )
     expect(hasInterWallPair).toBe(false)
-    
+
     // The C code may still find self-pairs
     const hasSelfPairs = pairs.some(p => p[0].id === p[1].id)
     if (hasSelfPairs) {
@@ -396,6 +410,7 @@ describe('findCloseWallPairs', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 10,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -411,6 +426,7 @@ describe('findCloseWallPairs', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 8,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -426,6 +442,7 @@ describe('findCloseWallPairs', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 10,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -435,14 +452,13 @@ describe('findCloseWallPairs', () => {
     const pairs = findCloseWallPairs(walls)
 
     // Check that close pairs are found
-    const hasW1W2Pair = pairs.some(p => 
-      p[0].id === 'w1' && p[1].id === 'w2' && 
-      p[2] === 1 && p[3] === 0  // w1 end to w2 start
+    const hasW1W2Pair = pairs.some(
+      p => p[0].id === 'w1' && p[1].id === 'w2' && p[2] === 1 && p[3] === 0 // w1 end to w2 start
     )
-    const hasW2W3Pair = pairs.some(p => 
-      p[0].id === 'w2' && p[1].id === 'w3'  // any endpoints
+    const hasW2W3Pair = pairs.some(
+      p => p[0].id === 'w2' && p[1].id === 'w3' // any endpoints
     )
-    
+
     expect(hasW1W2Pair).toBe(true)
     expect(hasW2W3Pair).toBe(true)
   })
@@ -461,6 +477,7 @@ describe('processCloseWalls', () => {
       kind: LINE_KIND.NORMAL,
       h1: 0,
       h2: 0,
+      length: 14,
       newtype: NEW_TYPE.S,
       nextId: '',
       nextwhId: ''
@@ -476,6 +493,7 @@ describe('processCloseWalls', () => {
       kind: LINE_KIND.NORMAL,
       h1: 0,
       h2: 0,
+      length: 14,
       newtype: NEW_TYPE.S,
       nextId: '',
       nextwhId: ''
@@ -509,6 +527,7 @@ describe('processCloseWalls', () => {
       kind: LINE_KIND.NORMAL,
       h1: 0,
       h2: 0,
+      length: 14,
       newtype: NEW_TYPE.S,
       nextId: '',
       nextwhId: ''
@@ -524,6 +543,7 @@ describe('processCloseWalls', () => {
       kind: LINE_KIND.NORMAL,
       h1: 0,
       h2: 0,
+      length: 14,
       newtype: NEW_TYPE.S,
       nextId: '',
       nextwhId: ''
@@ -573,6 +593,7 @@ describe('processCloseWalls', () => {
       kind: LINE_KIND.NORMAL,
       h1: 0,
       h2: 0,
+      length: 14,
       newtype: NEW_TYPE.S,
       nextId: '',
       nextwhId: ''
@@ -588,6 +609,7 @@ describe('processCloseWalls', () => {
       kind: LINE_KIND.NORMAL,
       h1: 0,
       h2: 0,
+      length: 14,
       newtype: NEW_TYPE.S,
       nextId: '',
       nextwhId: ''
@@ -632,6 +654,7 @@ describe('processCloseWalls', () => {
       kind: LINE_KIND.NORMAL,
       h1: 0,
       h2: 0,
+      length: 14,
       newtype: NEW_TYPE.S,
       nextId: '',
       nextwhId: ''
@@ -647,6 +670,7 @@ describe('processCloseWalls', () => {
       kind: LINE_KIND.NORMAL,
       h1: 0,
       h2: 0,
+      length: 14,
       newtype: NEW_TYPE.S,
       nextId: '',
       nextwhId: ''
@@ -662,6 +686,7 @@ describe('processCloseWalls', () => {
       kind: LINE_KIND.NORMAL,
       h1: 0,
       h2: 0,
+      length: 8,
       newtype: NEW_TYPE.S,
       nextId: '',
       nextwhId: ''
@@ -713,6 +738,7 @@ describe('processCloseWalls', () => {
       kind: LINE_KIND.NORMAL,
       h1: 0,
       h2: 0,
+      length: 14,
       newtype: NEW_TYPE.S,
       nextId: '',
       nextwhId: ''
@@ -728,6 +754,7 @@ describe('processCloseWalls', () => {
       kind: LINE_KIND.NORMAL,
       h1: 0,
       h2: 0,
+      length: 14,
       newtype: NEW_TYPE.S,
       nextId: '',
       nextwhId: ''
@@ -763,7 +790,8 @@ describe('setInitialOptimization', () => {
         type: LINE_TYPE.N,
         kind: LINE_KIND.NORMAL,
         h1: 999, // Should be overwritten
-        h2: 999, // Should be overwritten
+        h2: 999,
+        length: 10, // Should be overwritten
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -779,6 +807,7 @@ describe('setInitialOptimization', () => {
         kind: LINE_KIND.NORMAL,
         h1: 999,
         h2: 999,
+        length: 10,
         newtype: NEW_TYPE.ESE,
         nextId: '',
         nextwhId: ''
@@ -794,6 +823,7 @@ describe('setInitialOptimization', () => {
         kind: LINE_KIND.NORMAL,
         h1: 999,
         h2: 999,
+        length: 10,
         newtype: NEW_TYPE.E,
         nextId: '',
         nextwhId: ''
@@ -803,7 +833,7 @@ describe('setInitialOptimization', () => {
     const result = setInitialOptimization(walls)
 
     // Check h1 values from simpleh1 array
-    expect(result[0]?.h1).toBe(6)  // NEW_TYPE.S -> simpleh1[1] = 6
+    expect(result[0]?.h1).toBe(6) // NEW_TYPE.S -> simpleh1[1] = 6
     expect(result[1]?.h1).toBe(12) // NEW_TYPE.ESE -> simpleh1[4] = 12
     expect(result[2]?.h1).toBe(16) // NEW_TYPE.E -> simpleh1[5] = 16
   })
@@ -821,6 +851,7 @@ describe('setInitialOptimization', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 50,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -847,6 +878,7 @@ describe('setInitialOptimization', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 60,
         newtype: NEW_TYPE.SSE,
         nextId: '',
         nextwhId: ''
@@ -867,12 +899,13 @@ describe('setInitialOptimization', () => {
         startx: 0,
         starty: 0,
         endx: 30,
-        endy: 40,  // 3-4-5 triangle, actual length is 50
+        endy: 40, // 3-4-5 triangle, actual length is 50
         up_down: LINE_DIR.DN,
         type: LINE_TYPE.N,
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 50,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -882,12 +915,13 @@ describe('setInitialOptimization', () => {
         startx: 100,
         starty: 100,
         endx: 103,
-        endy: 104,  // 3-4-5 triangle, actual length is 5
+        endy: 104, // 3-4-5 triangle, actual length is 5
         up_down: LINE_DIR.DN,
         type: LINE_TYPE.N,
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 5,
         newtype: NEW_TYPE.ESE,
         nextId: '',
         nextwhId: ''
@@ -918,6 +952,7 @@ describe('setInitialOptimization', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 20,
         newtype: NEW_TYPE.ENE,
         nextId: '',
         nextwhId: ''
@@ -933,6 +968,7 @@ describe('setInitialOptimization', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 30,
         newtype: NEW_TYPE.NE,
         nextId: '',
         nextwhId: ''
@@ -948,6 +984,7 @@ describe('setInitialOptimization', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 40,
         newtype: NEW_TYPE.NNE,
         nextId: '',
         nextwhId: ''
@@ -993,6 +1030,7 @@ describe('setInitialOptimization', () => {
       kind: LINE_KIND.NORMAL,
       h1: 999,
       h2: 999,
+      length: 10,
       newtype: tc.newtype,
       nextId: '',
       nextwhId: ''
@@ -1018,6 +1056,7 @@ describe('setInitialOptimization', () => {
       kind: LINE_KIND.BOUNCE,
       h1: 0,
       h2: 0,
+      length: 852,
       newtype: NEW_TYPE.S,
       nextId: 'next-wall',
       nextwhId: 'next-white'
@@ -1029,9 +1068,9 @@ describe('setInitialOptimization', () => {
     expect(result[0]).toEqual({
       ...wall,
       h1: 6, // simpleh1[NEW_TYPE.S]
-      h2: Math.sqrt((789-123)**2 + (987-456)**2) + 0 // calculated length + simpleh2[NEW_TYPE.S]
+      h2: Math.sqrt((789 - 123) ** 2 + (987 - 456) ** 2) + 0 // calculated length + simpleh2[NEW_TYPE.S]
     })
-    
+
     // Verify specific properties weren't changed
     expect(result[0]?.id).toBe('unique-id')
     expect(result[0]?.startx).toBe(123)
@@ -1063,6 +1102,7 @@ describe('setInitialOptimization', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 10,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -1097,6 +1137,7 @@ describe('setInitialOptimization', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 0,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -1123,6 +1164,7 @@ describe('setInitialOptimization', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 50,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -1150,6 +1192,7 @@ describe('setInitialOptimization', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 5,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -1166,6 +1209,7 @@ describe('setInitialOptimization', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 5,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -1182,6 +1226,7 @@ describe('setInitialOptimization', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 5,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -1198,6 +1243,7 @@ describe('setInitialOptimization', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 5,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -1228,6 +1274,7 @@ describe('updateWallOptimization', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -1243,6 +1290,7 @@ describe('updateWallOptimization', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -1275,6 +1323,7 @@ describe('updateWallOptimization', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -1290,6 +1339,7 @@ describe('updateWallOptimization', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -1317,6 +1367,7 @@ describe('updateWallOptimization', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -1348,6 +1399,7 @@ describe('updateWallOptimization', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -1374,6 +1426,7 @@ describe('updateWallOptimization', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: '',
         nextwhId: ''
@@ -1402,6 +1455,7 @@ describe('updateWallOptimization', () => {
         kind: LINE_KIND.BOUNCE,
         h1: 0,
         h2: 0,
+        length: 283,
         newtype: NEW_TYPE.NNE,
         nextId: 'w2',
         nextwhId: 'w3'

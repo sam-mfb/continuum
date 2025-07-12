@@ -21,6 +21,7 @@ describe('organizeWallsByKind', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -36,6 +37,7 @@ describe('organizeWallsByKind', () => {
         kind: LINE_KIND.BOUNCE,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -51,6 +53,7 @@ describe('organizeWallsByKind', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -79,6 +82,7 @@ describe('organizeWallsByKind', () => {
         kind: LINE_KIND.GHOST,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -116,6 +120,7 @@ describe('organizeWallsByKind', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -131,6 +136,7 @@ describe('organizeWallsByKind', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -159,6 +165,7 @@ describe('organizeWallsByKind', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -174,6 +181,7 @@ describe('organizeWallsByKind', () => {
         kind: LINE_KIND.BOUNCE,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -189,6 +197,7 @@ describe('organizeWallsByKind', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -204,6 +213,7 @@ describe('organizeWallsByKind', () => {
         kind: LINE_KIND.BOUNCE,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -234,6 +244,7 @@ describe('organizeWallsByKind', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -249,6 +260,7 @@ describe('organizeWallsByKind', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -264,6 +276,7 @@ describe('organizeWallsByKind', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -298,6 +311,7 @@ describe('findFirstWhiteWalls', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.NNE,
         nextId: null,
         nextwhId: null
@@ -313,6 +327,7 @@ describe('findFirstWhiteWalls', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -328,19 +343,20 @@ describe('findFirstWhiteWalls', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.NNE,
         nextId: null,
         nextwhId: null
       }
     ]
-    
+
     const originalWallsCopy = JSON.parse(JSON.stringify(originalWalls))
     const result = findFirstWhiteWalls(originalWalls)
 
     expect(result.firstWhiteId).toBe('w1')
     expect(result.updatedWalls['w1']?.nextwhId).toBe('w3')
     expect(result.updatedWalls['w3']?.nextwhId).toBe(null)
-    
+
     // Verify the original array was not mutated
     expect(originalWalls).toEqual(originalWallsCopy)
   })
@@ -358,6 +374,7 @@ describe('findFirstWhiteWalls', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.NNE,
         nextId: null,
         nextwhId: null
@@ -373,12 +390,13 @@ describe('findFirstWhiteWalls', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.NNE,
         nextId: null,
         nextwhId: null
       }
     ]
-    
+
     // Deep copy to check for mutations
     const originalWallsCopy = JSON.parse(JSON.stringify(originalWalls))
 
@@ -388,7 +406,7 @@ describe('findFirstWhiteWalls', () => {
     expect(result.firstWhiteId).toBe('w1')
     expect(result.updatedWalls['w1']?.nextwhId).toBe('w2')
     expect(result.updatedWalls['w2']?.nextwhId).toBe(null)
-    
+
     // Verify the original array was not mutated
     expect(originalWalls).toEqual(originalWallsCopy)
   })
@@ -406,18 +424,19 @@ describe('findFirstWhiteWalls', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
       }
     ]
-    
+
     const originalWallsCopy = JSON.parse(JSON.stringify(originalWalls))
     const result = findFirstWhiteWalls(originalWalls)
 
     expect(result.firstWhiteId).toBe('')
     expect(Object.keys(result.updatedWalls).length).toBe(1) // Only w1, unchanged
-    
+
     // Verify the original array was not mutated
     expect(originalWalls).toEqual(originalWallsCopy)
   })
@@ -435,6 +454,7 @@ describe('findFirstWhiteWalls', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.NNE,
         nextId: null,
         nextwhId: null
@@ -450,6 +470,7 @@ describe('findFirstWhiteWalls', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -465,19 +486,20 @@ describe('findFirstWhiteWalls', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.NNE,
         nextId: null,
         nextwhId: null
       }
     ]
-    
+
     const originalWallsCopy = JSON.parse(JSON.stringify(originalWalls))
     const result = findFirstWhiteWalls(originalWalls)
 
     expect(result.firstWhiteId).toBe('w1')
     expect(result.updatedWalls['w1']?.nextwhId).toBe('w3')
     expect(result.updatedWalls['w3']?.nextwhId).toBe(null)
-    
+
     // Verify the original array was not mutated
     expect(originalWalls).toEqual(originalWallsCopy)
   })
@@ -495,6 +517,7 @@ describe('findFirstWhiteWalls', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.E,
         nextId: null,
         nextwhId: null
@@ -510,6 +533,7 @@ describe('findFirstWhiteWalls', () => {
         kind: LINE_KIND.BOUNCE,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.NNE,
         nextId: null,
         nextwhId: null
@@ -525,19 +549,20 @@ describe('findFirstWhiteWalls', () => {
         kind: LINE_KIND.GHOST,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.NNE,
         nextId: null,
         nextwhId: null
       }
     ]
-    
+
     const originalWallsCopy = JSON.parse(JSON.stringify(originalWalls))
     const result = findFirstWhiteWalls(originalWalls)
 
     expect(result.firstWhiteId).toBe('w2')
     expect(result.updatedWalls['w2']?.nextwhId).toBe('w3')
     expect(result.updatedWalls['w3']?.nextwhId).toBe(null)
-    
+
     // Verify the original array was not mutated
     expect(originalWalls).toEqual(originalWallsCopy)
   })
@@ -557,6 +582,7 @@ describe('detectWallJunctions', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -572,6 +598,7 @@ describe('detectWallJunctions', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 13,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -606,6 +633,7 @@ describe('detectWallJunctions', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -621,6 +649,7 @@ describe('detectWallJunctions', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -636,6 +665,7 @@ describe('detectWallJunctions', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 28,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -671,6 +701,7 @@ describe('detectWallJunctions', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -686,6 +717,7 @@ describe('detectWallJunctions', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -701,6 +733,7 @@ describe('detectWallJunctions', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -716,6 +749,7 @@ describe('detectWallJunctions', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 7,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -754,6 +788,7 @@ describe('detectWallJunctions', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 0,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -769,6 +804,7 @@ describe('detectWallJunctions', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -802,6 +838,7 @@ describe('detectWallJunctions', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 71,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -817,6 +854,7 @@ describe('detectWallJunctions', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 27,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -832,6 +870,7 @@ describe('detectWallJunctions', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 30,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -879,6 +918,7 @@ describe('detectWallJunctions', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -894,6 +934,7 @@ describe('detectWallJunctions', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 14,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -929,6 +970,7 @@ describe('detectWallJunctions', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 100,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -944,6 +986,7 @@ describe('detectWallJunctions', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 100,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -959,6 +1002,7 @@ describe('detectWallJunctions', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 50,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -974,6 +1018,7 @@ describe('detectWallJunctions', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 290,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -989,6 +1034,7 @@ describe('detectWallJunctions', () => {
         kind: LINE_KIND.NORMAL,
         h1: 0,
         h2: 0,
+        length: 50,
         newtype: NEW_TYPE.S,
         nextId: null,
         nextwhId: null
@@ -1000,7 +1046,7 @@ describe('detectWallJunctions', () => {
     // Expected junctions at x: 10, 25, 50, 75, 100, 125, 150, 175, 200, 300
     // Plus 18 sentinel values
     expect(junctions.length).toBe(28) // 10 actual + 18 sentinels
-    
+
     // Verify proper sorting by x-coordinate
     const actualJunctions = junctions.slice(0, 10)
     expect(actualJunctions[0]?.x).toBe(10)
@@ -1013,12 +1059,12 @@ describe('detectWallJunctions', () => {
     expect(actualJunctions[7]?.x).toBe(175)
     expect(actualJunctions[8]?.x).toBe(200)
     expect(actualJunctions[9]?.x).toBe(300)
-    
+
     // Verify the array is strictly sorted
     for (let i = 1; i < 10; i++) {
-      expect(actualJunctions[i]!.x).toBeGreaterThan(actualJunctions[i-1]!.x)
+      expect(actualJunctions[i]!.x).toBeGreaterThan(actualJunctions[i - 1]!.x)
     }
-    
+
     // Check sentinel values
     for (let i = 10; i < 28; i++) {
       expect(junctions[i]).toEqual({ x: 20000, y: 0 })
