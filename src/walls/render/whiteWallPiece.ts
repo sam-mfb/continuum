@@ -3,16 +3,8 @@
  */
 
 import type { MonochromeBitmap } from '../types'
-
-// Constants from the original
-const VIEWHT = 318  // View height (342 - 24 status bar)
-const SBARHT = 24   // Status bar height
-const SCRWTH = 512  // Screen width
-
-// Clipping masks from orig/Sources/Junctions.c:25-27
-const LEFT_CLIP = 0x0000FFFF
-const RIGHT_CLIP = 0xFFFF0000
-const CENTER_CLIP = 0xFFFFFFFF
+import { VIEWHT, SBARHT, SCRWTH } from '../../screen/constants'
+import { LEFT_CLIP, RIGHT_CLIP, CENTER_CLIP } from './constants'
 
 /**
  * Draws a single white wall piece

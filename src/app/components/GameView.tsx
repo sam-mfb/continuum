@@ -189,7 +189,7 @@ const GameView: React.FC<GameViewProps> = ({
     const targetDelta = 1000 / fps
 
     // Set up keyboard event handlers
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
       const code = e.code
       if (!keysDownRef.current.has(code)) {
         keysDownRef.current.add(code)
@@ -205,7 +205,7 @@ const GameView: React.FC<GameViewProps> = ({
       }
     }
 
-    const handleKeyUp = (e: KeyboardEvent) => {
+    const handleKeyUp = (e: KeyboardEvent): void => {
       const code = e.code
       if (keysDownRef.current.has(code)) {
         keysDownRef.current.delete(code)
@@ -228,7 +228,7 @@ const GameView: React.FC<GameViewProps> = ({
       onInit(ctx, env)
     }
 
-    const renderLoop = (_timestamp: DOMHighResTimeStamp) => {
+    const renderLoop = (_timestamp: DOMHighResTimeStamp): void => {
       const now = Date.now()
 
       // Check if it's time for a new frame using fixed-step timing
@@ -330,7 +330,7 @@ const GameView: React.FC<GameViewProps> = ({
     animationFrameRef.current = requestAnimationFrame(renderLoop)
 
     // Cleanup
-    return () => {
+    return (): void => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current)
       }
