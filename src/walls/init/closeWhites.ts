@@ -43,62 +43,51 @@ export function findCloseWallPairs(
   const pairs: Array<[LineRec, LineRec, number, number]> = []
   const THRESHOLD = WALLS.JUNCTION_THRESHOLD
 
-  // Sort walls by startx for optimization
-  const sortedWalls = [...walls].sort((a, b) => a.startx - b.startx)
-
-  // Use a sliding window approach like the original
+  // The C code processes walls in their original order, not sorted
+  // It uses a sliding "first" pointer that advances based on endx
   let firstIdx = 0
 
-  for (let i = 0; i < sortedWalls.length; i++) {
-    const wall1 = sortedWalls[i]
-    if (!wall1) continue
+  for (let lineIdx = 0; lineIdx < walls.length; lineIdx++) {
+    const line = walls[lineIdx]
+    if (!line) continue
 
     // Move firstIdx forward while walls are too far left
-    while (firstIdx < sortedWalls.length) {
-      const firstWall = sortedWalls[firstIdx]
-      if (!firstWall || firstWall.endx >= wall1.startx - THRESHOLD) {
+    // C: while (first->endx < line->startx - 3)
+    while (firstIdx < walls.length) {
+      const first = walls[firstIdx]
+      if (!first || first.endx >= line.startx - THRESHOLD) {
         break
       }
       firstIdx++
     }
 
-    // Check both endpoints of wall1
-    for (let endpoint1 = 0; endpoint1 < 2; endpoint1++) {
-      const x1 = endpoint1 ? wall1.endx : wall1.startx
-      const y1 = endpoint1 ? wall1.endy : wall1.starty
+    // Check both endpoints of line
+    for (let i = 0; i < 2; i++) {
+      const x1 = i ? line.endx : line.startx
+      const y1 = i ? line.endy : line.starty
 
-      // Check against all walls in range
-      for (let j = firstIdx; j < sortedWalls.length; j++) {
-        const wallToCheck = sortedWalls[j]
-        if (!wallToCheck || wallToCheck.startx >= x1 + THRESHOLD) {
+      // Check against all walls starting from firstIdx
+      // C: for (line2=first; line2->startx < x1 + 3; line2++)
+      for (let line2Idx = firstIdx; line2Idx < walls.length; line2Idx++) {
+        const line2 = walls[line2Idx]
+        if (!line2 || line2.startx >= x1 + THRESHOLD) {
           break
         }
 
-        // The C code naturally avoids some duplicates by only checking walls
-        // later in the array. To avoid duplicates, only process pairs where
-        // wall2 comes after wall1 in the original ordering, or if they're the
-        // same wall but endpoint2 > endpoint1
-        if (i > j) continue // Skip if wall2 comes before wall1
+        // Check both endpoints of line2
+        for (let j = 0; j < 2; j++) {
+          // C code: x2 = (j ? line2->endx : line2->startx) - 3
+          const x2 = (j ? line2.endx : line2.startx) - THRESHOLD
+          const y2 = (j ? line2.endy : line2.starty) - THRESHOLD
 
-        const wall2 = sortedWalls[j]
-        if (!wall2) continue
-
-        // Check both endpoints of wall2
-        for (let endpoint2 = 0; endpoint2 < 2; endpoint2++) {
-          // Skip if same wall and endpoint2 <= endpoint1
-          if (i === j && endpoint2 <= endpoint1) continue
-
-          const x2 = endpoint2 ? wall2.endx : wall2.startx
-          const y2 = endpoint2 ? wall2.endy : wall2.starty
-
-          // C code offsets by -3 then checks 6x6 box
+          // C code: if (x1 > x2 && y1 > y2 && x1 < x2 + 6 && y1 < y2 + 6)
           if (
-            x1 > x2 - THRESHOLD &&
-            y1 > y2 - THRESHOLD &&
-            x1 < x2 + THRESHOLD &&
-            y1 < y2 + THRESHOLD
+            x1 > x2 &&
+            y1 > y2 &&
+            x1 < x2 + 6 &&
+            y1 < y2 + 6
           ) {
-            pairs.push([wall1, wall2, endpoint1, endpoint2])
+            pairs.push([line, line2, i, j])
           }
         }
       }
@@ -167,11 +156,18 @@ export function processCloseWalls(
  * @see Junctions.c:297-300 - Initial h1/h2 assignment in close_whites()
  */
 export function setInitialOptimization(walls: LineRec[]): LineRec[] {
-  return walls.map(wall => ({
-    ...wall,
-    h1: simpleh1[wall.newtype] ?? 0,
-    h2: wall.endx - wall.startx + (simpleh2[wall.newtype] ?? 0) // length + adjustment
-  }))
+  return walls.map(wall => {
+    // Calculate the actual length of the wall using Pythagorean theorem
+    const dx = wall.endx - wall.startx
+    const dy = wall.endy - wall.starty
+    const length = Math.sqrt(dx * dx + dy * dy)
+    
+    return {
+      ...wall,
+      h1: simpleh1[wall.newtype] ?? 0,
+      h2: length + (simpleh2[wall.newtype] ?? 0) // length + adjustment
+    }
+  })
 }
 
 /**
