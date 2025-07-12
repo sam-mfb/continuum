@@ -65,9 +65,15 @@ export const eorWallPiece = (
     const patternWord = (data[dataOffset]! << 8) | data[dataOffset + 1]!
     dataOffset += 2
 
-    // Shift pattern to align with x position and apply clipping
-    let pattern = (patternWord << 16) >>> (32 - bitShift)  // Shift into 32-bit position
-    pattern = (pattern & clip) >>> 0  // Apply clipping mask (AND with clip)
+    // Create 32-bit pattern matching the original assembly:
+    // moveq #0, D0 sets all bits to 0, then move.w loads pattern into lower 16 bits  
+    let pattern = patternWord  // Only the pattern word, upper bits stay 0
+    
+    // Rotate left to align with x position (matching rol.l x, D0)
+    pattern = ((pattern << bitShift) | (pattern >>> (32 - bitShift))) >>> 0
+    
+    // Apply clipping mask (AND with clip for eor operation)
+    pattern = (pattern & clip) >>> 0
 
     // Calculate screen position
     const screenY = adjustedY + row
