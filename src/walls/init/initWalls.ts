@@ -21,8 +21,7 @@ export function initWalls(walls: LineRec[]): WallsState {
   // Step 4: Initialize whites - pass the walls with white links
   const { whites, updatedWalls } = initWhites(
     Object.values(wallsWithWhiteLinks),
-    junctions,
-    firstWhiteId
+    junctions
   )
 
   // Merge the organized walls with the white links to maintain consistency
