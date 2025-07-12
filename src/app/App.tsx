@@ -8,7 +8,7 @@ import { PlanetViewer } from './components/PlanetViewer'
 import { GraphicsList } from './components/GraphicsList'
 import { GraphicsViewer } from './components/GraphicsViewer'
 import GameView, {
-  legacyGameDefinition,
+  type CanvasGameDefinition,
   type BitmapGameDefinition
 } from './components/GameView'
 import { SoundTest } from './components/SoundTest'
@@ -101,8 +101,16 @@ function App(): React.JSX.Element {
           {currentView === 'game' && (
             <GameView
               games={[
-                legacyGameDefinition('Test Game', testGameLoop),
-                legacyGameDefinition('Ship Move', shipMoveGameLoop),
+                {
+                  type: 'canvas',
+                  name: 'Test Game',
+                  gameLoop: testGameLoop
+                } as CanvasGameDefinition,
+                {
+                  type: 'canvas',
+                  name: 'Ship Move',
+                  gameLoop: shipMoveGameLoop
+                } as CanvasGameDefinition,
                 {
                   type: 'bitmap',
                   name: 'Bitmap Test (Gray Pattern)',

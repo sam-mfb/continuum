@@ -465,16 +465,4 @@ const GameView: React.FC<GameViewProps> = ({
   )
 }
 
-/**
- * Helper to convert legacy game definitions to the new discriminated union format
- */
-export const legacyGameDefinition = (
-  name: string,
-  gameLoop: GameLoopFunction
-): CanvasGameDefinition => ({
-  type: 'canvas',
-  name,
-  gameLoop
-})
-
 export default GameView
