@@ -17,6 +17,9 @@ import {
  * 2. The final sentinel padding is added by addSentinelWhites in initWhites
  * 3. We maintain this behavior solely for faithfulness to the original C code
  * 
+ * The sentinel gets overwritten by the next add_white call, except for the last one
+ * which remains and gets overwritten by the final sentinel padding in init_whites.
+ * 
  * @see Junctions.c:144-158 - add_white() function
  */
 function addWhiteWithSentinel(
@@ -27,19 +30,34 @@ function addWhiteWithSentinel(
   ht: number,
   data: number[]
 ): void {
-  // Add the actual white
-  whites.push({
-    id: `w${whiteIdCounter}`,
-    x,
-    y,
-    hasj: false,
-    ht,
-    data: [...data] // Clone the pattern
-  })
+  // This overwrites any previous sentinel at this position
+  const currentIndex = whites.length > 0 ? whites.length - 1 : 0
   
-  // Add running sentinel (will be overwritten by next add or removed later)
+  // If there's a sentinel at current position, overwrite it
+  if (whites[currentIndex]?.id === 'sentinel_running') {
+    whites[currentIndex] = {
+      id: `w${whiteIdCounter}`,
+      x,
+      y,
+      hasj: false,
+      ht,
+      data: [...data] // Clone the pattern
+    }
+  } else {
+    // First white, just push
+    whites.push({
+      id: `w${whiteIdCounter}`,
+      x,
+      y,
+      hasj: false,
+      ht,
+      data: [...data] // Clone the pattern
+    })
+  }
+  
+  // Always add sentinel at next position (mimics wh++; wh->x = 20000)
   whites.push({
-    id: `sentinel_temp`,
+    id: `sentinel_running`,
     x: 20000,
     y: 0,
     hasj: false,
@@ -58,6 +76,7 @@ function addWhiteWithSentinel(
 export function normWhites(walls: LineRec[]): WhiteRec[] {
   const whites: WhiteRec[] = []
   let whiteIdCounter = 0
+  let numWhites = 0
 
   for (const wall of walls) {
     // Add white pieces for start and end points
@@ -72,6 +91,7 @@ export function normWhites(walls: LineRec[]): WhiteRec[] {
           6,
           pattern
         )
+        numWhites++
       }
     }
 
@@ -86,6 +106,7 @@ export function normWhites(walls: LineRec[]): WhiteRec[] {
           4,
           neglitch
         )
+        numWhites++
         break
 
       case NEW_TYPE.ENE:
@@ -97,6 +118,7 @@ export function normWhites(walls: LineRec[]): WhiteRec[] {
           3,
           eneglitch1
         )
+        numWhites++
         addWhiteWithSentinel(
           whites,
           whiteIdCounter++,
@@ -105,6 +127,7 @@ export function normWhites(walls: LineRec[]): WhiteRec[] {
           5,
           eneglitch2
         )
+        numWhites++
         break
 
       case NEW_TYPE.ESE:
@@ -116,11 +139,12 @@ export function normWhites(walls: LineRec[]): WhiteRec[] {
           4,
           eseglitch
         )
+        numWhites++
         break
     }
   }
 
-  // Remove all temporary sentinels (they all have id 'sentinel_temp')
-  // The last one might still be there if we added any whites
-  return whites.filter(w => w.id !== 'sentinel_temp')
+  // Return only the actual whites, not including the final running sentinel
+  // This matches the C behavior where operations use numwhites count
+  return whites.slice(0, numWhites)
 }

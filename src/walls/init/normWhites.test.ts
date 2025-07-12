@@ -26,8 +26,8 @@ describe('normWhites', () => {
     const whites = normWhites(walls)
 
     // Should have whites for start and end points plus one glitch piece
-    // But no temporary sentinels
-    expect(whites.every(w => w.id !== 'sentinel_temp')).toBe(true)
+    // But no running sentinels (they are excluded by slice)
+    expect(whites.every(w => w.id !== 'sentinel_running')).toBe(true)
     
     // Check that we have the expected whites
     const startWhite = whites.find(w => w.x === 10 && w.y === 20)
@@ -44,7 +44,7 @@ describe('normWhites', () => {
     expect(glitchWhite?.ht).toBe(4)
   })
 
-  it('removes all temporary sentinels from final output', () => {
+  it('returns only actual whites without the running sentinel', () => {
     const walls: LineRec[] = [
       {
         id: 'w1',
@@ -80,9 +80,14 @@ describe('normWhites', () => {
 
     const whites = normWhites(walls)
 
-    // Verify no temporary sentinels remain
-    expect(whites.every(w => w.id !== 'sentinel_temp')).toBe(true)
-    expect(whites.every(w => w.x !== 20000 || w.id.startsWith('sentinel'))).toBe(true)
+    // Should not include any sentinels in the returned array
+    expect(whites.every(w => w.id !== 'sentinel_running')).toBe(true)
+    expect(whites.every(w => w.x !== 20000)).toBe(true)
+    
+    // Should have exactly the expected number of whites
+    // w1: start + end from S type
+    // w2: start + end + glitch from NE type
+    expect(whites.length).toBe(5)
   })
 
   it('handles ENE walls with two glitch pieces', () => {
