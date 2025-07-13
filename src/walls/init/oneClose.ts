@@ -7,6 +7,7 @@ import {
   ssepatch,
   npatch
 } from './patchPatterns'
+import { patternToByteArray } from './utils'
 
 // Helper to get h1 with default value
 function getH1(wall: LineRec): number {
@@ -22,6 +23,10 @@ function getH2(wall: LineRec): number {
  * Calculates junction patches for a pair of close walls.
  * Contains the giant switch statement (64 possible combinations) that handles
  * each type of wall junction differently.
+ *
+ * NOTE: Patch patterns (nepatch, sepatch, etc.) are defined as 16-bit big-endian
+ * values from the original 68K Mac code. They are converted to byte arrays when
+ * creating whites to maintain the correct byte order for bitmap rendering.
  *
  * @see Junctions.c:334-565 - one_close()
  * @param wall1 First wall in the close pair
@@ -64,7 +69,7 @@ export function oneClose(
       y,
       hasj: false,
       ht,
-      data: [...data]
+      data: patternToByteArray(data)
     })
   }
 
@@ -105,7 +110,7 @@ export function oneClose(
           x,
           y,
           ht,
-          data: [...data],
+          data: patternToByteArray(data),
           hasj: oldWhite.hasj
         }
         currentWhites = [

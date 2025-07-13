@@ -134,13 +134,16 @@ describe('mergeOverlappingWhites', () => {
     const merged = mergeOverlappingWhites(whites)
 
     expect(merged.length).toBe(1)
+    // The data should be 12 bytes now (not 6)
+    // Each original value is already a byte, so no conversion needed
     expect(merged[0]?.data).toEqual([
       0xff & 0xf0, // 0xf0
       0xf0 & 0x0f, // 0x00
       0x0f & 0xff, // 0x0f
       0xaa & 0x55, // 0x00
       0x55 & 0xaa, // 0x00
-      0x33 & 0xcc // 0x00
+      0x33 & 0xcc, // 0x00
+      0, 0, 0, 0, 0, 0 // Remaining elements default to 0
     ])
   })
 

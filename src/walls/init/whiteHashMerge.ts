@@ -1,5 +1,6 @@
 import type { WhiteRec, JunctionRec } from '../types'
 import { hashFigure } from './whitePatterns'
+import { patternToByteArray } from './utils'
 
 // Background patterns from Play.c:61-62
 const backgr1 = 0xaaaaaaaa
@@ -85,19 +86,31 @@ export function whiteHashMerge(
       // Choose background pattern based on position
       const back = (wh.x + wh.y) & 1 ? backgr2 : backgr1
 
-      // Create new data with hash pattern
-      const newData: number[] = []
+      // First, reconstruct 16-bit values from byte pairs
+      // NOTE: Data is stored as big-endian bytes, so high byte comes first
+      const data16bit: number[] = []
+      for (let i = 0; i < 6; i++) {
+        const highByte = wh.data[i * 2] ?? 0
+        const lowByte = wh.data[i * 2 + 1] ?? 0
+        data16bit[i] = (highByte << 8) | lowByte
+      }
+
+      // Apply hash pattern using 16-bit operations
+      const newData16bit: number[] = []
       let rotatedBack = back & 0xffff
 
       for (let i = 0; i < 6; i++) {
         // Apply hash pattern: (back & (~data | hashFigure)) ^ hashFigure
-        const dataValue = wh.data[i] ?? 0
+        const dataValue = data16bit[i] ?? 0
         const hashValue = hashFigure[i] ?? 0
-        newData[i] = (rotatedBack & (~dataValue | hashValue)) ^ hashValue
+        newData16bit[i] = (rotatedBack & (~dataValue | hashValue)) ^ hashValue
 
         // Rotate left by 1 bit (simulate asm rol.w)
         rotatedBack = ((rotatedBack << 1) | (rotatedBack >>> 15)) & 0xffff
       }
+
+      // Convert back to byte array
+      const newData = patternToByteArray(newData16bit)
 
       // Update white piece
       result[whIndex] = {

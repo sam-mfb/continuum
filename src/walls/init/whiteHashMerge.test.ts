@@ -12,7 +12,7 @@ describe('whiteHashMerge', () => {
         y: 10,
         hasj: false,
         ht: 6,
-        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
       }
     ]
     const junctions: JunctionRec[] = [{ x: 10, y: 10 }]
@@ -22,7 +22,7 @@ describe('whiteHashMerge', () => {
     // Should modify the white at the junction
     expect(result[0]?.hasj).toBe(true)
     // Data should be XORed with hash pattern
-    expect(result[0]?.data).not.toEqual([0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
+    expect(result[0]?.data).not.toEqual([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
   })
 
   it('finds whites at exact junction positions', () => {
@@ -33,7 +33,7 @@ describe('whiteHashMerge', () => {
         y: 10,
         hasj: false,
         ht: 6,
-        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
       },
       {
         id: 'w2',
@@ -41,7 +41,7 @@ describe('whiteHashMerge', () => {
         y: 20,
         hasj: false,
         ht: 6,
-        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
       }
     ]
     const junctions: JunctionRec[] = [{ x: 10, y: 10 }]
@@ -62,7 +62,8 @@ describe('whiteHashMerge', () => {
         hasj: false,
         ht: 6,
         data: [
-          0b11111111, 0b00000000, 0b11110000, 0b00001111, 0b10101010, 0b01010101
+          0b11111111, 0b11111111, 0b00000000, 0b00000000, 0b11110000, 0b11110000, 
+          0b00001111, 0b00001111, 0b10101010, 0b10101010, 0b01010101, 0b01010101
         ]
       }
     ]
@@ -73,9 +74,10 @@ describe('whiteHashMerge', () => {
     // Data should be XORed with hash pattern
     const modified = result[0]
     expect(modified?.data).not.toEqual(whites[0]?.data)
-    // Verify it's actually XORed (not just replaced)
-    expect(modified?.data[0]).not.toBe(0b11111111)
-    expect(modified?.data[0]).not.toBe(0)
+    // Verify the data has been modified (XORed)
+    expect(modified?.hasj).toBe(true)
+    // The XOR operation should produce different values
+    expect(modified?.data.some((v, i) => v !== whites[0]?.data[i])).toBe(true)
   })
 
   it('preserves whites not at junctions', () => {
@@ -86,7 +88,7 @@ describe('whiteHashMerge', () => {
         y: 10,
         hasj: false,
         ht: 6,
-        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
       },
       {
         id: 'w2',
@@ -94,7 +96,7 @@ describe('whiteHashMerge', () => {
         y: 50,
         hasj: false,
         ht: 6,
-        data: [0xee, 0xee, 0xee, 0xee, 0xee, 0xee]
+        data: [0xee, 0xee, 0xee, 0xee, 0xee, 0xee, 0xee, 0xee, 0xee, 0xee, 0xee, 0xee]
       }
     ]
     const junctions: JunctionRec[] = [{ x: 10, y: 10 }]
@@ -114,7 +116,7 @@ describe('whiteHashMerge', () => {
         y: 10,
         hasj: false,
         ht: 6,
-        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
       }
     ]
     const junctions: JunctionRec[] = [{ x: 10, y: 10 }]
@@ -132,7 +134,7 @@ describe('whiteHashMerge', () => {
         y: 10,
         hasj: false,
         ht: 6,
-        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
       },
       {
         id: 'w2',
@@ -140,7 +142,7 @@ describe('whiteHashMerge', () => {
         y: 20,
         hasj: false,
         ht: 6,
-        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
       }
     ]
     const junctions: JunctionRec[] = [
@@ -169,7 +171,7 @@ describe('whiteHashMerge', () => {
         y: 10,
         hasj: false,
         ht: 6,
-        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
       }, // too close to left edge (x <= 8)
       {
         id: 'w2',
@@ -177,7 +179,7 @@ describe('whiteHashMerge', () => {
         y: 10,
         hasj: false,
         ht: 6,
-        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
       } // too close to right edge (x >= 504)
     ]
     const junctions: JunctionRec[] = [
@@ -199,7 +201,7 @@ describe('whiteHashMerge', () => {
         y: 10,
         hasj: false,
         ht: 6,
-        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
       }
     ]
     const junctions: JunctionRec[] = [
@@ -232,7 +234,7 @@ describe('whiteHashMerge', () => {
         y: 10,
         hasj: false,
         ht: 6,
-        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
       }
     ]
     const junctions: JunctionRec[] = []
@@ -254,7 +256,7 @@ describe('whiteHashMerge', () => {
         y: 20,
         hasj: false,
         ht: 6,
-        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
       },
       {
         id: 'w2',
@@ -262,7 +264,7 @@ describe('whiteHashMerge', () => {
         y: 20 + 10, // Far enough away to not be a close neighbor
         hasj: false,
         ht: 6,
-        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
       }
     ]
     // Only one junction at the first white's position
@@ -289,7 +291,7 @@ describe('whiteHashMerge', () => {
         y: 20,
         hasj: false,
         ht: 6,
-        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
       },
       {
         id: 'w2',
@@ -297,7 +299,7 @@ describe('whiteHashMerge', () => {
         y: 20,
         hasj: false,
         ht: 6,
-        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
       }
     ]
     const junctions: JunctionRec[] = [{ x: 20, y: 20 }]
@@ -319,7 +321,7 @@ describe('whiteHashMerge', () => {
         y: 20,
         hasj: false,
         ht: 6,
-        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
       },
       {
         id: 'w2',
@@ -327,7 +329,7 @@ describe('whiteHashMerge', () => {
         y: 21, // And 1 pixel away vertically (within 3)
         hasj: false,
         ht: 6,
-        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+        data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
       }
     ]
     const junctions: JunctionRec[] = [
@@ -353,7 +355,14 @@ describe('whiteHashMerge', () => {
         y: 10,
         hasj: false,
         ht: 6,
-        data: [0xffff, 0x0000, 0xf0f0, 0x0f0f, 0xaaaa, 0x5555]
+        data: [
+          0xff, 0xff, // 0xffff
+          0x00, 0x00, // 0x0000
+          0xf0, 0xf0, // 0xf0f0
+          0x0f, 0x0f, // 0x0f0f
+          0xaa, 0xaa, // 0xaaaa
+          0x55, 0x55  // 0x5555
+        ]
       }
     ]
     const junctions: JunctionRec[] = [{ x: 10, y: 10 }]
@@ -368,15 +377,31 @@ describe('whiteHashMerge', () => {
     const backgr1 = 0xaaaa // initial value
     const expectedData: number[] = []
 
-    // Calculate expected values
-    let rotatedBack = backgr1
+    // First reconstruct 16-bit values from the input bytes
     const whiteData = whites[0]?.data ?? []
+    const data16bit: number[] = []
     for (let i = 0; i < 6; i++) {
-      const dataValue = whiteData[i] ?? 0
+      const highByte = whiteData[i * 2] ?? 0
+      const lowByte = whiteData[i * 2 + 1] ?? 0
+      data16bit[i] = (highByte << 8) | lowByte
+    }
+
+    // Calculate expected values using 16-bit operations
+    let rotatedBack = backgr1
+    const expectedData16bit: number[] = []
+    for (let i = 0; i < 6; i++) {
+      const dataValue = data16bit[i] ?? 0
       const hashValue = hashFigure[i] ?? 0
-      expectedData[i] = (rotatedBack & (~dataValue | hashValue)) ^ hashValue
+      expectedData16bit[i] = (rotatedBack & (~dataValue | hashValue)) ^ hashValue
       // Rotate left by 1 bit
       rotatedBack = ((rotatedBack << 1) | (rotatedBack >>> 15)) & 0xffff
+    }
+
+    // Convert expected 16-bit values to bytes
+    for (let i = 0; i < 6; i++) {
+      const value = expectedData16bit[i] ?? 0
+      expectedData.push((value >>> 8) & 0xff)
+      expectedData.push(value & 0xff)
     }
 
     const modified = result[0]

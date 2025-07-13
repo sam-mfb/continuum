@@ -7,6 +7,7 @@ import {
   eneglitch2,
   eseglitch
 } from './whitePatterns'
+import { patternToByteArray } from './utils'
 
 /**
  * Adds a white piece to the array and maintains a running sentinel.
@@ -41,7 +42,7 @@ function addWhiteWithSentinel(
       y,
       hasj: false,
       ht,
-      data: [...data] // Clone the pattern
+      data: patternToByteArray(data) // Convert to byte array
     }
   } else {
     // First white, just push
@@ -51,7 +52,7 @@ function addWhiteWithSentinel(
       y,
       hasj: false,
       ht,
-      data: [...data] // Clone the pattern
+      data: patternToByteArray(data) // Convert to byte array
     })
   }
 
@@ -70,6 +71,10 @@ function addWhiteWithSentinel(
  * Generates standard white shadow pieces for each wall endpoint.
  * Also adds special glitch-fixing pieces for NE, ENE, and ESE walls.
  * Uses predefined bit patterns from whitepicts array.
+ *
+ * NOTE: White patterns are defined as 16-bit big-endian values (from 68K Mac)
+ * but are converted to byte arrays for rendering. This maintains the original
+ * byte order regardless of the JavaScript runtime's endianness.
  *
  * @see Junctions.c:245-279 - norm_whites()
  */

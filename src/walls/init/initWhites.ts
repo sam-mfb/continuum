@@ -96,8 +96,8 @@ export function mergeOverlappingWhites(whites: WhiteRec[]): WhiteRec[] {
       current.ht === 6 &&
       next.ht === 6
     ) {
-      // Merge data by AND-ing
-      for (let j = 0; j < 6; j++) {
+      // Merge data by AND-ing (now operating on bytes, so 12 elements instead of 6)
+      for (let j = 0; j < 12; j++) {
         current.data[j] = (current.data[j] ?? 0) & (next.data[j] ?? 0)
       }
 

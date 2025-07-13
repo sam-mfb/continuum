@@ -34,19 +34,6 @@ const sampleLines: LineRec[] = [
 // Initialize walls on module load
 store.dispatch(wallsActions.initWalls({ walls: sampleLines }))
 
-/**
- * Converts 16-bit integer array to byte array format expected by rendering
- * Each 16-bit value becomes two bytes: high byte, then low byte
- */
-function convertWhiteData(data: number[]): number[] {
-  const bytes: number[] = []
-  for (const word of data) {
-    bytes.push((word >>> 8) & 0xff) // High byte
-    bytes.push(word & 0xff) // Low byte
-  }
-  return bytes
-}
-
 
 /**
  * Renderer that displays white wall pieces using fastWhites
@@ -65,12 +52,8 @@ export const wallWhiteTestRenderer: BitmapRenderer = (bitmap, _frame, _env) => {
     }
   }
 
-  // Get whites from Redux state and convert data format
-  const stateWhites = store.getState().walls.whites
-  const whites = stateWhites.map(white => ({
-    ...white,
-    data: convertWhiteData(white.data)
-  }))
+  // Get whites from Redux state
+  const whites = store.getState().walls.whites
 
   // Set up viewport (static, centered)
   const viewport = {
