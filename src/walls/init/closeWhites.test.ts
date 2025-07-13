@@ -4,7 +4,6 @@ import { LINE_KIND, LINE_TYPE, LINE_DIR, NEW_TYPE } from '../constants'
 import {
   findCloseWallPairs,
   processCloseWalls,
-  updateWallOptimization,
   setInitialOptimization
 } from './closeWhites'
 
@@ -509,7 +508,8 @@ describe('processCloseWalls', () => {
       [wall1, wall2, 1, 0]
     ]
 
-    processCloseWalls(pairs, mockOneClose)
+    const walls = [wall1, wall2]
+    processCloseWalls(walls, pairs, mockOneClose)
 
     expect(mockOneClose).toHaveBeenCalledWith(wall1, wall2, 1, 0, [])
     expect(mockOneClose).toHaveBeenCalledTimes(1)
@@ -576,7 +576,8 @@ describe('processCloseWalls', () => {
       [wall1, wall2, 1, 0]
     ]
 
-    const result = processCloseWalls(pairs, mockOneClose)
+    const walls = [wall1, wall2]
+    const result = processCloseWalls(walls, pairs, mockOneClose)
 
     expect(result.patches).toEqual([patch1, patch2])
   })
@@ -625,21 +626,27 @@ describe('processCloseWalls', () => {
       [wall1, wall2, 1, 0]
     ]
 
-    const result = processCloseWalls(pairs, mockOneClose)
+    const walls = [wall1, wall2]
+    const result = processCloseWalls(walls, pairs, mockOneClose)
 
-    expect(result.wallUpdates).toContainEqual({ wallId: 'w1', h1: 5, h2: 10 })
-    expect(result.wallUpdates).toContainEqual({ wallId: 'w2', h1: 3 })
+    // Now we check finalWalls have the updates applied
+    const w1 = result.finalWalls.find(w => w.id === 'w1')
+    const w2 = result.finalWalls.find(w => w.id === 'w2')
+    expect(w1?.h1).toBe(5)
+    expect(w1?.h2).toBe(10)
+    expect(w2?.h1).toBe(3)
   })
 
   it('handles empty wall pairs array', () => {
     const mockOneClose = vi.fn()
     const pairs: Array<[LineRec, LineRec, number, number]> = []
+    const walls: LineRec[] = []
 
-    const result = processCloseWalls(pairs, mockOneClose)
+    const result = processCloseWalls(walls, pairs, mockOneClose)
 
     expect(mockOneClose).not.toHaveBeenCalled()
     expect(result.patches).toEqual([])
-    expect(result.wallUpdates).toEqual([])
+    expect(result.finalWalls).toEqual([])
   })
 
   it('aggregates updates for same wall from multiple junctions', () => {
@@ -717,13 +724,13 @@ describe('processCloseWalls', () => {
       [wall1, wall3, 1, 0]
     ]
 
-    const result = processCloseWalls(pairs, mockOneClose)
+    const walls = [wall1, wall2, wall3]
+    const result = processCloseWalls(walls, pairs, mockOneClose)
 
-    // Should have aggregated updates for w1
-    const w1Updates = result.wallUpdates.filter(u => u.wallId === 'w1')
-    expect(w1Updates.length).toBe(2)
-    expect(w1Updates).toContainEqual({ wallId: 'w1', h1: 5 })
-    expect(w1Updates).toContainEqual({ wallId: 'w1', h2: 8 })
+    // Should have applied all updates to w1 in finalWalls
+    const w1 = result.finalWalls.find(w => w.id === 'w1')
+    expect(w1?.h1).toBe(5)
+    expect(w1?.h2).toBe(8)
   })
 
   it('maintains wall ID references in updates', () => {
@@ -770,10 +777,13 @@ describe('processCloseWalls', () => {
       [wall1, wall2, 1, 0]
     ]
 
-    const result = processCloseWalls(pairs, mockOneClose)
+    const walls = [wall1, wall2]
+    const result = processCloseWalls(walls, pairs, mockOneClose)
 
-    expect(result.wallUpdates).toContainEqual({ wallId: 'custom-id-1', h1: 5 })
-    expect(result.wallUpdates).toContainEqual({ wallId: 'custom-id-2', h2: 10 })
+    const w1 = result.finalWalls.find(w => w.id === 'custom-id-1')
+    const w2 = result.finalWalls.find(w => w.id === 'custom-id-2')
+    expect(w1?.h1).toBe(5)
+    expect(w2?.h2).toBe(10)
   })
 })
 
@@ -1260,216 +1270,310 @@ describe('setInitialOptimization', () => {
   })
 })
 
-describe('updateWallOptimization', () => {
-  it('applies h1/h2 updates to correct walls by ID', () => {
-    const walls: LineRec[] = [
-      {
-        id: 'w1',
-        startx: 0,
-        starty: 0,
-        endx: 10,
-        endy: 10,
-        up_down: LINE_DIR.DN,
-        type: LINE_TYPE.N,
-        kind: LINE_KIND.NORMAL,
-        h1: 0,
-        h2: 0,
-        length: 14,
-        newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
-      },
-      {
-        id: 'w2',
-        startx: 10,
-        starty: 10,
-        endx: 20,
-        endy: 20,
-        up_down: LINE_DIR.DN,
-        type: LINE_TYPE.N,
-        kind: LINE_KIND.NORMAL,
-        h1: 0,
-        h2: 0,
-        length: 14,
-        newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
-      }
-    ]
+// Tests moved from updateWallOptimization
+it('applies h1/h2 updates from multiple pairs - batched at end', () => {
+  const wall1: LineRec = {
+    id: 'w1',
+    startx: 0,
+    starty: 0,
+    endx: 10,
+    endy: 10,
+    up_down: LINE_DIR.DN,
+    type: LINE_TYPE.N,
+    kind: LINE_KIND.NORMAL,
+    h1: 0,
+    h2: 0,
+    length: 14,
+    newtype: NEW_TYPE.S,
+    nextId: '',
+    nextwhId: ''
+  }
+  const wall2: LineRec = {
+    id: 'w2',
+    startx: 10,
+    starty: 10,
+    endx: 20,
+    endy: 20,
+    up_down: LINE_DIR.DN,
+    type: LINE_TYPE.N,
+    kind: LINE_KIND.NORMAL,
+    h1: 0,
+    h2: 0,
+    length: 14,
+    newtype: NEW_TYPE.S,
+    nextId: '',
+    nextwhId: ''
+  }
 
-    const updates = [
-      { wallId: 'w1', h1: 5, h2: 10 },
-      { wallId: 'w2', h2: 15 }
-    ]
-
-    const result = updateWallOptimization(walls, updates)
-
-    expect(result[0]?.h1).toBe(5)
-    expect(result[0]?.h2).toBe(10)
-    expect(result[1]?.h1).toBe(0) // unchanged
-    expect(result[1]?.h2).toBe(15)
-  })
-
-  it('preserves walls without updates', () => {
-    const walls: LineRec[] = [
-      {
-        id: 'w1',
-        startx: 0,
-        starty: 0,
-        endx: 10,
-        endy: 10,
-        up_down: LINE_DIR.DN,
-        type: LINE_TYPE.N,
-        kind: LINE_KIND.NORMAL,
-        h1: 0,
-        h2: 0,
-        length: 14,
-        newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
-      },
-      {
-        id: 'w2',
-        startx: 10,
-        starty: 10,
-        endx: 20,
-        endy: 20,
-        up_down: LINE_DIR.DN,
-        type: LINE_TYPE.N,
-        kind: LINE_KIND.NORMAL,
-        h1: 0,
-        h2: 0,
-        length: 14,
-        newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
-      }
-    ]
-
-    const updates = [{ wallId: 'w1', h1: 5 }]
-
-    const result = updateWallOptimization(walls, updates)
-
-    expect(result[0]?.h1).toBe(5)
-    expect(result[1]).toEqual(walls[1]) // unchanged
-  })
-
-  it('handles multiple updates to same wall', () => {
-    const walls: LineRec[] = [
-      {
-        id: 'w1',
-        startx: 0,
-        starty: 0,
-        endx: 10,
-        endy: 10,
-        up_down: LINE_DIR.DN,
-        type: LINE_TYPE.N,
-        kind: LINE_KIND.NORMAL,
-        h1: 0,
-        h2: 0,
-        length: 14,
-        newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
-      }
-    ]
-
-    const updates = [
-      { wallId: 'w1', h1: 5 },
-      { wallId: 'w1', h2: 10 },
-      { wallId: 'w1', h1: 8 } // later update should override
-    ]
-
-    const result = updateWallOptimization(walls, updates)
-
-    expect(result[0]?.h1).toBe(8) // last update wins
-    expect(result[0]?.h2).toBe(10)
-  })
-
-  it('handles empty updates array', () => {
-    const walls: LineRec[] = [
-      {
-        id: 'w1',
-        startx: 0,
-        starty: 0,
-        endx: 10,
-        endy: 10,
-        up_down: LINE_DIR.DN,
-        type: LINE_TYPE.N,
-        kind: LINE_KIND.NORMAL,
-        h1: 0,
-        h2: 0,
-        length: 14,
-        newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
-      }
-    ]
-
-    const updates: Array<{ wallId: string; h1?: number; h2?: number }> = []
-
-    const result = updateWallOptimization(walls, updates)
-
-    expect(result).toEqual(walls)
-  })
-
-  it('creates new wall objects (immutability)', () => {
-    const walls: LineRec[] = [
-      {
-        id: 'w1',
-        startx: 0,
-        starty: 0,
-        endx: 10,
-        endy: 10,
-        up_down: LINE_DIR.DN,
-        type: LINE_TYPE.N,
-        kind: LINE_KIND.NORMAL,
-        h1: 0,
-        h2: 0,
-        length: 14,
-        newtype: NEW_TYPE.S,
-        nextId: '',
-        nextwhId: ''
-      }
-    ]
-
-    const updates = [{ wallId: 'w1', h1: 5 }]
-
-    const result = updateWallOptimization(walls, updates)
-
-    expect(result[0]).not.toBe(walls[0]) // different object
-    expect(result[0]?.h1).toBe(5)
-    expect(walls[0]?.h1).toBe(0) // original unchanged
-  })
-
-  it('maintains all other wall properties', () => {
-    const walls: LineRec[] = [
-      {
-        id: 'w1',
-        startx: 100,
-        starty: 200,
-        endx: 300,
-        endy: 400,
-        up_down: LINE_DIR.UP,
-        type: LINE_TYPE.NNE,
-        kind: LINE_KIND.BOUNCE,
-        h1: 0,
-        h2: 0,
-        length: 283,
-        newtype: NEW_TYPE.NNE,
-        nextId: 'w2',
-        nextwhId: 'w3'
-      }
-    ]
-
-    const updates = [{ wallId: 'w1', h1: 5, h2: 10 }]
-
-    const result = updateWallOptimization(walls, updates)
-
-    expect(result[0]).toEqual({
-      ...walls[0],
-      h1: 5,
-      h2: 10
+  const mockOneClose = vi
+    .fn()
+    .mockReturnValueOnce({
+      newWhites: [],
+      wall1Updates: { h1: 5, h2: 10 },
+      wall2Updates: {}
     })
+    .mockReturnValueOnce({
+      newWhites: [],
+      wall1Updates: { h2: 15 }, // wall2 is passed as wall1 in second call
+      wall2Updates: {} // wall1 is passed as wall2 in second call
+    })
+
+  const pairs: Array<[LineRec, LineRec, number, number]> = [
+    [wall1, wall2, 0, 0],
+    [wall2, wall1, 0, 0]
+  ]
+  const walls = [wall1, wall2]
+
+  const result = processCloseWalls(walls, pairs, mockOneClose)
+
+  const w1 = result.finalWalls.find(w => w.id === 'w1')
+  const w2 = result.finalWalls.find(w => w.id === 'w2')
+  expect(w1?.h1).toBe(5)
+  expect(w1?.h2).toBe(10) // from first call
+  expect(w2?.h1).toBe(0) // unchanged
+  expect(w2?.h2).toBe(15) // from second call where wall2 is in wall1 position
+})
+
+it('preserves walls without updates in finalWalls', () => {
+  const wall1: LineRec = {
+    id: 'w1',
+    startx: 0,
+    starty: 0,
+    endx: 10,
+    endy: 10,
+    up_down: LINE_DIR.DN,
+    type: LINE_TYPE.N,
+    kind: LINE_KIND.NORMAL,
+    h1: 0,
+    h2: 0,
+    length: 14,
+    newtype: NEW_TYPE.S,
+    nextId: '',
+    nextwhId: ''
+  }
+  const wall2: LineRec = {
+    id: 'w2',
+    startx: 10,
+    starty: 10,
+    endx: 20,
+    endy: 20,
+    up_down: LINE_DIR.DN,
+    type: LINE_TYPE.N,
+    kind: LINE_KIND.NORMAL,
+    h1: 0,
+    h2: 0,
+    length: 14,
+    newtype: NEW_TYPE.S,
+    nextId: '',
+    nextwhId: ''
+  }
+
+  const mockOneClose = vi.fn().mockReturnValue({
+    newWhites: [],
+    wall1Updates: { h1: 5 },
+    wall2Updates: {}
+  })
+
+  const pairs: Array<[LineRec, LineRec, number, number]> = [
+    [wall1, wall2, 0, 0]
+  ]
+  const walls = [wall1, wall2]
+
+  const result = processCloseWalls(walls, pairs, mockOneClose)
+
+  const w1 = result.finalWalls.find(w => w.id === 'w1')
+  const w2 = result.finalWalls.find(w => w.id === 'w2')
+  expect(w1?.h1).toBe(5)
+  expect(w2).toEqual(wall2) // unchanged
+})
+
+it('handles multiple updates to same wall - last update wins', () => {
+  const wall1: LineRec = {
+    id: 'w1',
+    startx: 0,
+    starty: 0,
+    endx: 10,
+    endy: 10,
+    up_down: LINE_DIR.DN,
+    type: LINE_TYPE.N,
+    kind: LINE_KIND.NORMAL,
+    h1: 0,
+    h2: 0,
+    length: 14,
+    newtype: NEW_TYPE.S,
+    nextId: '',
+    nextwhId: ''
+  }
+  const wall2: LineRec = {
+    id: 'w2',
+    startx: 10,
+    starty: 10,
+    endx: 20,
+    endy: 20,
+    up_down: LINE_DIR.DN,
+    type: LINE_TYPE.N,
+    kind: LINE_KIND.NORMAL,
+    h1: 0,
+    h2: 0,
+    length: 14,
+    newtype: NEW_TYPE.S,
+    nextId: '',
+    nextwhId: ''
+  }
+  const wall3: LineRec = {
+    id: 'w3',
+    startx: 20,
+    starty: 20,
+    endx: 30,
+    endy: 30,
+    up_down: LINE_DIR.DN,
+    type: LINE_TYPE.N,
+    kind: LINE_KIND.NORMAL,
+    h1: 0,
+    h2: 0,
+    length: 14,
+    newtype: NEW_TYPE.S,
+    nextId: '',
+    nextwhId: ''
+  }
+
+  const mockOneClose = vi
+    .fn()
+    .mockReturnValueOnce({
+      newWhites: [],
+      wall1Updates: { h1: 5 },
+      wall2Updates: {}
+    })
+    .mockReturnValueOnce({
+      newWhites: [],
+      wall1Updates: { h2: 10 },
+      wall2Updates: {}
+    })
+    .mockReturnValueOnce({
+      newWhites: [],
+      wall1Updates: { h1: 8 }, // later update should override
+      wall2Updates: {}
+    })
+
+  const pairs: Array<[LineRec, LineRec, number, number]> = [
+    [wall1, wall2, 0, 0],
+    [wall1, wall3, 0, 0],
+    [wall1, wall2, 1, 1]
+  ]
+  const walls = [wall1, wall2, wall3]
+
+  const result = processCloseWalls(walls, pairs, mockOneClose)
+
+  const w1 = result.finalWalls.find(w => w.id === 'w1')
+  expect(w1?.h1).toBe(8) // last update wins
+  expect(w1?.h2).toBe(10)
+})
+
+it('returns walls unchanged when no updates are made', () => {
+  const wall1: LineRec = {
+    id: 'w1',
+    startx: 0,
+    starty: 0,
+    endx: 10,
+    endy: 10,
+    up_down: LINE_DIR.DN,
+    type: LINE_TYPE.N,
+    kind: LINE_KIND.NORMAL,
+    h1: 0,
+    h2: 0,
+    length: 14,
+    newtype: NEW_TYPE.S,
+    nextId: '',
+    nextwhId: ''
+  }
+
+  const mockOneClose = vi.fn().mockReturnValue({
+    newWhites: [],
+    wall1Updates: {},
+    wall2Updates: {}
+  })
+
+  const pairs: Array<[LineRec, LineRec, number, number]> = [
+    [wall1, wall1, 0, 1]
+  ]
+  const walls = [wall1]
+
+  const result = processCloseWalls(walls, pairs, mockOneClose)
+
+  expect(result.finalWalls).toEqual(walls)
+})
+
+it('creates new wall objects (immutability) in finalWalls', () => {
+  const wall1: LineRec = {
+    id: 'w1',
+    startx: 0,
+    starty: 0,
+    endx: 10,
+    endy: 10,
+    up_down: LINE_DIR.DN,
+    type: LINE_TYPE.N,
+    kind: LINE_KIND.NORMAL,
+    h1: 0,
+    h2: 0,
+    length: 14,
+    newtype: NEW_TYPE.S,
+    nextId: '',
+    nextwhId: ''
+  }
+
+  const mockOneClose = vi.fn().mockReturnValue({
+    newWhites: [],
+    wall1Updates: { h1: 5 },
+    wall2Updates: {}
+  })
+
+  const pairs: Array<[LineRec, LineRec, number, number]> = [
+    [wall1, wall1, 0, 1]
+  ]
+  const walls = [wall1]
+
+  const result = processCloseWalls(walls, pairs, mockOneClose)
+
+  const w1 = result.finalWalls.find(w => w.id === 'w1')
+  expect(w1).not.toBe(wall1) // different object
+  expect(w1?.h1).toBe(5)
+  expect(wall1.h1).toBe(0) // original unchanged
+})
+
+it('maintains all other wall properties when applying updates', () => {
+  const wall1: LineRec = {
+    id: 'w1',
+    startx: 100,
+    starty: 200,
+    endx: 300,
+    endy: 400,
+    up_down: LINE_DIR.UP,
+    type: LINE_TYPE.NNE,
+    kind: LINE_KIND.BOUNCE,
+    h1: 0,
+    h2: 0,
+    length: 283,
+    newtype: NEW_TYPE.NNE,
+    nextId: 'w2',
+    nextwhId: 'w3'
+  }
+
+  const mockOneClose = vi.fn().mockReturnValue({
+    newWhites: [],
+    wall1Updates: { h1: 5, h2: 10 },
+    wall2Updates: {}
+  })
+
+  const pairs: Array<[LineRec, LineRec, number, number]> = [
+    [wall1, wall1, 0, 1]
+  ]
+  const walls = [wall1]
+
+  const result = processCloseWalls(walls, pairs, mockOneClose)
+
+  expect(result.finalWalls[0]).toEqual({
+    ...wall1,
+    h1: 5,
+    h2: 10
   })
 })

@@ -212,4 +212,3 @@ export function processCloseWalls(
 - The key insight is that `wallPairs` contains references to the original walls, but we need to look up the current version with updates
 - This maintains immutability while achieving the immediate update behavior of the C code
 - The fix should only affect scenarios where multiple wall pairs share a wall and later pairs make decisions based on h1/h2 values
-

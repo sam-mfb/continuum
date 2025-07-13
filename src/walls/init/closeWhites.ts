@@ -20,14 +20,15 @@ export function closeWhites(walls: LineRec[]): {
   const wallPairs = findCloseWallPairs(wallsWithInitialOpt)
 
   // Step 3: Process each close wall pair to generate patches
-  const { patches, wallUpdates } = processCloseWalls(wallPairs, oneClose)
-
-  // Step 4: Apply any additional h1/h2 updates from close processing
-  const updatedWalls = updateWallOptimization(wallsWithInitialOpt, wallUpdates)
+  const { patches, finalWalls } = processCloseWalls(
+    wallsWithInitialOpt,
+    wallPairs,
+    oneClose
+  )
 
   return {
     whites: patches,
-    updatedWalls
+    updatedWalls: finalWalls
   }
 }
 
@@ -97,10 +98,12 @@ export function findCloseWallPairs(
  * Calls the provided oneClose function for each pair and collects the results.
  *
  * @see Junctions.c:318 - one_close() calls
+ * @param walls Array of walls with initial optimization values
  * @param wallPairs Array of wall pairs that are close to each other
  * @param oneCloseFn Function to calculate patches for a single wall pair
  */
 export function processCloseWalls(
+  walls: LineRec[],
   wallPairs: Array<[LineRec, LineRec, number, number]>,
   oneCloseFn: (
     wall1: LineRec,
@@ -115,34 +118,61 @@ export function processCloseWalls(
   }
 ): {
   patches: WhiteRec[]
-  wallUpdates: Array<{ wallId: string; h1?: number; h2?: number }>
+  finalWalls: LineRec[]
 } {
+  let currentWalls = walls
   let patches: WhiteRec[] = []
-  const wallUpdates: Array<{ wallId: string; h1?: number; h2?: number }> = []
 
   for (const [wall1, wall2, endpoint1, endpoint2] of wallPairs) {
-    const result = oneCloseFn(wall1, wall2, endpoint1, endpoint2, patches)
+    // Get current versions with any previous updates
+    const currentWall1 = currentWalls.find(w => w.id === wall1.id) || wall1
+    const currentWall2 = currentWalls.find(w => w.id === wall2.id) || wall2
 
-    // Update patches
+    const result = oneCloseFn(
+      currentWall1,
+      currentWall2,
+      endpoint1,
+      endpoint2,
+      patches
+    )
     patches = result.newWhites
 
-    // Collect wall updates
+    // Apply updates immediately after each oneClose
+    const updates: Array<{ wallId: string; h1?: number; h2?: number }> = []
     if (Object.keys(result.wall1Updates).length > 0) {
-      wallUpdates.push({
-        wallId: wall1.id,
-        ...result.wall1Updates
-      })
+      updates.push({ wallId: wall1.id, ...result.wall1Updates })
+    }
+    if (Object.keys(result.wall2Updates).length > 0) {
+      updates.push({ wallId: wall2.id, ...result.wall2Updates })
     }
 
-    if (Object.keys(result.wall2Updates).length > 0) {
-      wallUpdates.push({
-        wallId: wall2.id,
-        ...result.wall2Updates
-      })
+    if (updates.length > 0) {
+      currentWalls = applyWallUpdates(currentWalls, updates)
     }
   }
 
-  return { patches, wallUpdates }
+  return { patches, finalWalls: currentWalls }
+}
+
+/**
+ * Helper function to apply h1/h2 updates to walls immediately.
+ * Creates new wall objects to maintain immutability.
+ */
+function applyWallUpdates(
+  walls: LineRec[],
+  updates: Array<{ wallId: string; h1?: number; h2?: number }>
+): LineRec[] {
+  const wallMap = new Map(walls.map(w => [w.id, { ...w }]))
+
+  for (const update of updates) {
+    const wall = wallMap.get(update.wallId)
+    if (wall) {
+      if (update.h1 !== undefined) wall.h1 = update.h1
+      if (update.h2 !== undefined) wall.h2 = update.h2
+    }
+  }
+
+  return Array.from(wallMap.values())
 }
 
 /**
@@ -159,29 +189,4 @@ export function setInitialOptimization(walls: LineRec[]): LineRec[] {
       h2: wall.length + (simpleh2[wall.newtype] ?? 0) // length + adjustment
     }
   })
-}
-
-/**
- * Applies h1/h2 optimization updates to walls.
- * Only applies the specific updates passed, does not set initial values.
- *
- * @see Junctions.c:297-300 - h1/h2 updates from one_close()
- */
-export function updateWallOptimization(
-  walls: LineRec[],
-  updates: Array<{ wallId: string; h1?: number; h2?: number }>
-): LineRec[] {
-  // Create a map for efficient lookups
-  const wallMap = new Map(walls.map(w => [w.id, { ...w }]))
-
-  // Apply only the specific updates
-  for (const update of updates) {
-    const wall = wallMap.get(update.wallId)
-    if (wall) {
-      if (update.h1 !== undefined) wall.h1 = update.h1
-      if (update.h2 !== undefined) wall.h2 = update.h2
-    }
-  }
-
-  return Array.from(wallMap.values())
 }
