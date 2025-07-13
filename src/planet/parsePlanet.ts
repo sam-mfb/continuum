@@ -5,7 +5,9 @@
 // Constants from: GW.h (PLANSIZE=1540, PLANHEAD=30, NUMLINES=125, etc.)
 
 import { createBigEnd } from '@/asm/bigEnd'
-import type { Bunker, Crater, Fuel, Line, PlanetState } from '@/planet/types'
+import type { Bunker, Crater, Fuel, PlanetState } from '@/planet/types'
+import type { LineRec, LineDir, LineType, LineKind, NewType } from '@/shared/types/line'
+import { generateLineId } from '@/shared/types/line'
 
 export function parsePlanet(
   planetsBuffer: ArrayBuffer,
@@ -58,7 +60,7 @@ export function parsePlanet(
   //'up' (i.e., in the northeast quadrant) or 'down" (i.e., in the southeast quadrant).
   //In the latter case, the lines are really going (S, SSE, SE, etc.).  Whether a line is
   //'up' or 'down' is represented by 'up_down', which is -1 for up and 1 for down.
-  const lines: Line[] = []
+  const lines: LineRec[] = []
   let garbage = false
   for (let i = 0; i < maxLines; i++) {
     let startx = iterator.nextWord()
@@ -101,15 +103,19 @@ export function parsePlanet(
     garbage = startx === 10000 ? true : garbage
     if (!garbage)
       lines.push({
+        id: generateLineId(lines.length),
         startx,
         starty,
         length,
-        up_down,
-        type,
-        kind,
         endx,
         endy,
-        newType
+        up_down: up_down as LineDir,
+        type: type as LineType,
+        kind: kind as LineKind,
+        newtype: newType as NewType,
+        nextId: null,
+        nextwhId: null
+        // h1 and h2 are optional and not set during planet loading
       })
   }
 

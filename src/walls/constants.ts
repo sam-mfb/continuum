@@ -1,49 +1,11 @@
-/**
- * Wall direction types
- * See GW.h:211
- */
-export const LINE_TYPE = {
-  N: 1,
-  NNE: 2,
-  NE: 3,
-  ENE: 4,
-  E: 5
-} as const
+// Re-export line constants from shared module
+export { LINE_TYPE, LINE_KIND, NEW_TYPE, LINE_DIR } from '../shared/types/line'
 
-/**
- * Wall kinds
- * See GW.h:218
- */
-export const LINE_KIND = {
-  NORMAL: 0,
-  BOUNCE: 1,
-  GHOST: 2,
-  EXPLODE: 3,
+// Wall-specific extension to LINE_KIND (not in shared module)
+import { LINE_KIND as SHARED_LINE_KIND } from '../shared/types/line'
+export const LINE_KIND_EXT = {
+  ...SHARED_LINE_KIND,
   NUMKINDS: 4
-} as const
-
-/**
- * Combined wall type (direction + up/down)
- * See GW.h:221
- */
-export const NEW_TYPE = {
-  S: 1,
-  SSE: 2,
-  SE: 3,
-  ESE: 4,
-  E: 5,
-  ENE: 6,
-  NE: 7,
-  NNE: 8
-} as const
-
-/**
- * Up/down direction constants
- * See GW.h:214-215
- */
-export const LINE_DIR = {
-  UP: -1,
-  DN: 1
 } as const
 
 /**

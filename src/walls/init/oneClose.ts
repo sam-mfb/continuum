@@ -8,6 +8,16 @@ import {
   npatch
 } from './patchPatterns'
 
+// Helper to get h1 with default value
+function getH1(wall: LineRec): number {
+  return wall.h1 ?? 0
+}
+
+// Helper to get h2 with default value
+function getH2(wall: LineRec): number {
+  return wall.h2 ?? wall.length
+}
+
 /**
  * Calculates junction patches for a pair of close walls.
  * Contains the giant switch statement (64 possible combinations) that handles
@@ -141,7 +151,7 @@ export function oneClose(
         default:
           return { newWhites: currentWhites, wall1Updates, wall2Updates }
       }
-      j = wall1.h2
+      j = getH2(wall1)
       if (length1 - i > j)
         return { newWhites: currentWhites, wall1Updates, wall2Updates }
 
@@ -192,13 +202,13 @@ export function oneClose(
           return { newWhites: currentWhites, wall1Updates, wall2Updates }
       }
       for (j = 0; j < 4 * i; j += 4) {
-        if (wall1.h1 < 5 + j) {
+        if (getH1(wall1) < 5 + j) {
           addWhite(wall1.startx + 3 + j, wall1.starty - 4 - j, 4, nepatch)
         }
       }
       i--
       j = 5 + 4 * i
-      if (wall1.h1 < j) {
+      if (getH1(wall1) < j) {
         wall1Updates.h1 = j
       }
       break
@@ -216,11 +226,11 @@ export function oneClose(
       } else {
         return { newWhites: currentWhites, wall1Updates, wall2Updates }
       }
-      if (wall1.h1 >= 6 + i)
+      if (getH1(wall1) >= 6 + i)
         return { newWhites: currentWhites, wall1Updates, wall2Updates }
 
       // C code: (*(line->h1 > 6 ? replace_white : add_white))
-      if (wall1.h1 > 6) {
+      if (getH1(wall1) > 6) {
         replaceWhite(wall1.startx + 6, wall1.starty + 6, i, sepatch)
       } else {
         addWhite(wall1.startx + 6, wall1.starty + 6, i, sepatch)
@@ -238,10 +248,10 @@ export function oneClose(
       } else {
         return { newWhites: currentWhites, wall1Updates, wall2Updates }
       }
-      if (wall1.h1 >= 6 + i)
+      if (getH1(wall1) >= 6 + i)
         return { newWhites: currentWhites, wall1Updates, wall2Updates }
 
-      if (wall1.h1 > 6) {
+      if (getH1(wall1) > 6) {
         replaceWhite(wall1.startx + 3, wall1.starty + 6, i, ssepatch)
       } else {
         addWhite(wall1.startx + 3, wall1.starty + 6, i, ssepatch)
@@ -265,10 +275,10 @@ export function oneClose(
         default:
           return { newWhites: currentWhites, wall1Updates, wall2Updates }
       }
-      if (i + 6 < wall1.h1)
+      if (i + 6 < getH1(wall1))
         return { newWhites: currentWhites, wall1Updates, wall2Updates }
 
-      if (wall1.h1 > 6) {
+      if (getH1(wall1) > 6) {
         replaceWhite(wall1.startx, wall1.starty + 6, i, npatch)
       } else {
         addWhite(wall1.startx, wall1.starty + 6, i, npatch)
@@ -298,13 +308,13 @@ export function oneClose(
           return { newWhites: currentWhites, wall1Updates, wall2Updates }
       }
       for (j = 0; j < 4 * i10; j += 4) {
-        if (wall1.h2 > length1 - 9 - j) {
+        if (getH2(wall1) > length1 - 9 - j) {
           addWhite(wall1.endx - 7 - j, wall1.endy + 6 + j, 4, nepatch)
         }
       }
       i10--
       j = length1 - 9 - 4 * i10
-      if (wall1.h2 > j) {
+      if (getH2(wall1) > j) {
         wall1Updates.h2 = j
       }
     }
@@ -319,20 +329,20 @@ export function oneClose(
         return { newWhites: currentWhites, wall1Updates, wall2Updates }
       }
       for (j = 0; j < 8 * i11; j += 8) {
-        if (wall1.h2 >= length1 - 11 - j) {
+        if (getH2(wall1) >= length1 - 11 - j) {
           addWhite(wall1.endx - 18 - j, wall1.endy + 6 + (j >> 1), 4, enepatch)
           addWhite(wall1.endx - 8 - j, wall1.endy + 6 + (j >> 1), 4, enepatch)
         }
       }
       j = length1 - 11 - 8 * i11
-      if (wall1.h2 > j) {
+      if (getH2(wall1) > j) {
         wall1Updates.h2 = j
       }
       break
     }
 
     case 12:
-      if (dir2 > 8 && dir2 < 12 && wall1.h2 === length1) {
+      if (dir2 > 8 && dir2 < 12 && getH2(wall1) === length1) {
         addWhite(wall1.endx - 14, wall1.endy + 2, 4, epatch)
         wall1Updates.h2 = length1 - 14
       }
@@ -349,7 +359,7 @@ export function oneClose(
       } else {
         return { newWhites: currentWhites, wall1Updates, wall2Updates }
       }
-      j = wall1.h2
+      j = getH2(wall1)
       if (j <= length1 - i)
         return { newWhites: currentWhites, wall1Updates, wall2Updates }
 
@@ -391,7 +401,7 @@ export function oneClose(
         default:
           return { newWhites: currentWhites, wall1Updates, wall2Updates }
       }
-      j = wall1.h2
+      j = getH2(wall1)
       if (j <= length1 - i)
         return { newWhites: currentWhites, wall1Updates, wall2Updates }
 

@@ -1,6 +1,6 @@
 import type { LineRec, JunctionRec, LineKind, WallsState } from '../types'
 import { initWhites } from './initWhites'
-import { LINE_KIND, NEW_TYPE } from '../constants'
+import { LINE_KIND_EXT, NEW_TYPE } from '../constants'
 
 /**
  * Main initialization entry point for the wall system.
@@ -63,7 +63,7 @@ export function organizeWallsByKind(walls: LineRec[]): {
   const kindPointers: Partial<Record<LineKind, string | null>> = {}
 
   // Initialize all kind pointers to null (matching C code)
-  for (let kind = LINE_KIND.NORMAL; kind < LINE_KIND.NUMKINDS; kind++) {
+  for (let kind = LINE_KIND_EXT.NORMAL; kind < LINE_KIND_EXT.NUMKINDS; kind++) {
     kindPointers[kind] = null
   }
 
@@ -73,7 +73,7 @@ export function organizeWallsByKind(walls: LineRec[]): {
   }
 
   // Build linked lists by kind
-  for (let kind = LINE_KIND.NORMAL; kind < LINE_KIND.NUMKINDS; kind++) {
+  for (let kind = LINE_KIND_EXT.NORMAL; kind < LINE_KIND_EXT.NUMKINDS; kind++) {
     let lastId: string | null = null
 
     for (const wall of walls) {

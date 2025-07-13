@@ -55,8 +55,8 @@ describe('parsePlanet', () => {
       expect(line.type).toBeGreaterThanOrEqual(1)
       expect(line.type).toBeLessThanOrEqual(5)
       expect([1, -1]).toContain(line.up_down)
-      expect(line.newType).toBeGreaterThanOrEqual(1)
-      expect(line.newType).toBeLessThanOrEqual(8)
+      expect(line.newtype).toBeGreaterThanOrEqual(1)
+      expect(line.newtype).toBeLessThanOrEqual(8)
     })
   })
 

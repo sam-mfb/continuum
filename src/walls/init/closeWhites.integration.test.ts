@@ -234,15 +234,7 @@ describe('closeWhites integration tests', () => {
     const central = result.updatedWalls.find(w => w.id === 'central')
     expect(central).toBeDefined()
 
-    // Group patches by position to see pattern
-    const patchesByPosition = result.whites.reduce(
-      (acc, patch) => {
-        const key = `${patch.x},${patch.y}`
-        acc[key] = (acc[key] || 0) + 1
-        return acc
-      },
-      {} as Record<string, number>
-    )
+    // Patches are grouped by position in the actual implementation
 
     // With batched updates (current), all junctions see h1=0
     // With immediate updates (fixed), later junctions see updated h1
