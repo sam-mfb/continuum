@@ -500,7 +500,7 @@ describe('processCloseWalls', () => {
     }
 
     const mockOneClose = vi.fn().mockReturnValue({
-      patches: [],
+      newWhites: [],
       wall1Updates: {},
       wall2Updates: {}
     })
@@ -511,7 +511,7 @@ describe('processCloseWalls', () => {
 
     processCloseWalls(pairs, mockOneClose)
 
-    expect(mockOneClose).toHaveBeenCalledWith(wall1, wall2, 1, 0)
+    expect(mockOneClose).toHaveBeenCalledWith(wall1, wall2, 1, 0, [])
     expect(mockOneClose).toHaveBeenCalledTimes(1)
   })
 
@@ -567,7 +567,7 @@ describe('processCloseWalls', () => {
     }
 
     const mockOneClose = vi.fn().mockReturnValue({
-      patches: [patch1, patch2],
+      newWhites: [patch1, patch2],
       wall1Updates: {},
       wall2Updates: {}
     })

@@ -24,16 +24,17 @@ export function oneClose(
   wall1: LineRec,
   wall2: LineRec,
   endpoint1: number,
-  endpoint2: number
+  endpoint2: number,
+  whites: WhiteRec[]
 ): {
-  patches: WhiteRec[]
+  newWhites: WhiteRec[]
   wall1Updates: { h1?: number; h2?: number }
   wall2Updates: { h1?: number; h2?: number }
 } {
-  const patches: WhiteRec[] = []
   const wall1Updates: { h1?: number; h2?: number } = {}
   const wall2Updates: { h1?: number; h2?: number } = {}
   let whiteIdCounter = 1000 // Start at 1000 to avoid conflicts
+  let currentWhites = [...whites]
 
   // Calculate directions based on newtype and endpoint
   let dir1 = 9 - wall1.newtype
@@ -43,11 +44,10 @@ export function oneClose(
   if (endpoint2) dir2 = (dir2 + 8) & 15
 
   // Skip if same direction
-  if (dir1 === dir2) return { patches, wall1Updates, wall2Updates }
+  if (dir1 === dir2) return { newWhites: currentWhites, wall1Updates, wall2Updates }
 
-  // Helper function to add a white piece
   const addWhite = (x: number, y: number, ht: number, data: number[]): void => {
-    patches.push({
+    currentWhites.push({
       id: `p${whiteIdCounter++}`,
       x,
       y,
@@ -55,6 +55,68 @@ export function oneClose(
       ht,
       data: [...data]
     })
+  }
+
+  const replaceWhite = (
+    targetX: number,
+    targetY: number,
+    ht: number,
+    data: number[]
+  ) => {
+    const index = currentWhites.findIndex(
+      wh => wh.x === targetX && wh.y === targetY && wh.ht < ht
+    )
+    if (index !== -1) {
+      replaceWhite2(targetX, targetY, targetX, targetY, ht, data)
+    } else {
+      addWhite(targetX, targetY, ht, data)
+    }
+  }
+
+  const replaceWhite2 = (
+    targetX: number,
+    targetY: number,
+    x: number,
+    y: number,
+    ht: number,
+    data: number[]
+  ) => {
+    // C code: for (wh=whites; wh < whites + numwhites && (wh->y != targety || wh->x != targetx || wh->ht >= ht); wh++);
+    const index = currentWhites.findIndex(
+      wh => wh.x === targetX && wh.y === targetY && wh.ht < ht
+    )
+
+    if (index !== -1) {
+      const oldWhite = currentWhites[index]
+      if (oldWhite) {
+        const newWhite: WhiteRec = {
+          id: oldWhite.id,
+          x,
+          y,
+          ht,
+          data: [...data],
+          hasj: oldWhite.hasj
+        }
+        currentWhites = [
+          ...currentWhites.slice(0, index),
+          newWhite,
+          ...currentWhites.slice(index + 1)
+        ]
+      }
+    } else {
+      addWhite(x, y, ht, data)
+    }
+  }
+
+  const addWhite2 = (
+    _dummyX: number,
+    _dummyY: number,
+    x: number,
+    y: number,
+    ht: number,
+    data: number[]
+  ) => {
+    addWhite(x, y, ht, data)
   }
 
   // Giant switch statement
@@ -76,14 +138,32 @@ export function oneClose(
           i = 6
           break
         default:
-          return { patches, wall1Updates, wall2Updates }
+          return { newWhites: currentWhites, wall1Updates, wall2Updates }
       }
       j = wall1.h2
-      if (length1 - i > j) return { patches, wall1Updates, wall2Updates }
+      if (length1 - i > j)
+        return { newWhites: currentWhites, wall1Updates, wall2Updates }
 
-      // C code: replace_white_2(startx, starty+j, endx, endy-i, i, npatch)
-      // For now we just add at the target position (endx, endy-i)
-      addWhite(wall1.endx, wall1.endy - i, i, npatch)
+      // C code: (*(j < line->length ? replace_white_2 : add_white_2))
+      if (j < length1) {
+        replaceWhite2(
+          wall1.startx,
+          wall1.starty + j,
+          wall1.endx,
+          wall1.endy - i,
+          i,
+          npatch
+        )
+      } else {
+        addWhite2(
+          wall1.startx,
+          wall1.starty + j,
+          wall1.endx,
+          wall1.endy - i,
+          i,
+          npatch
+        )
+      }
       wall1Updates.h2 = length1 - i
       break
 
@@ -108,7 +188,7 @@ export function oneClose(
           i = 2
           break
         default:
-          return { patches, wall1Updates, wall2Updates }
+          return { newWhites: currentWhites, wall1Updates, wall2Updates }
       }
       for (j = 0; j < 4 * i; j += 4) {
         if (wall1.h1 < 5 + j) {
@@ -133,11 +213,17 @@ export function oneClose(
       } else if (dir2 > 7 && dir2 < 12) {
         i = 5
       } else {
-        return { patches, wall1Updates, wall2Updates }
+        return { newWhites: currentWhites, wall1Updates, wall2Updates }
       }
-      if (wall1.h1 >= 6 + i) return { patches, wall1Updates, wall2Updates }
+      if (wall1.h1 >= 6 + i)
+        return { newWhites: currentWhites, wall1Updates, wall2Updates }
 
-      addWhite(wall1.startx + 6, wall1.starty + 6, i, sepatch)
+      // C code: (*(line->h1 > 6 ? replace_white : add_white))
+      if (wall1.h1 > 6) {
+        replaceWhite(wall1.startx + 6, wall1.starty + 6, i, sepatch)
+      } else {
+        addWhite(wall1.startx + 6, wall1.starty + 6, i, sepatch)
+      }
       wall1Updates.h1 = 6 + i
       break
 
@@ -149,11 +235,16 @@ export function oneClose(
       } else if (dir2 > 9 && dir2 < 12) {
         i = 6
       } else {
-        return { patches, wall1Updates, wall2Updates }
+        return { newWhites: currentWhites, wall1Updates, wall2Updates }
       }
-      if (wall1.h1 >= 6 + i) return { patches, wall1Updates, wall2Updates }
+      if (wall1.h1 >= 6 + i)
+        return { newWhites: currentWhites, wall1Updates, wall2Updates }
 
-      addWhite(wall1.startx + 3, wall1.starty + 6, i, ssepatch)
+      if (wall1.h1 > 6) {
+        replaceWhite(wall1.startx + 3, wall1.starty + 6, i, ssepatch)
+      } else {
+        addWhite(wall1.startx + 3, wall1.starty + 6, i, ssepatch)
+      }
       wall1Updates.h1 = 6 + i
       break
 
@@ -171,11 +262,16 @@ export function oneClose(
           i = 20
           break
         default:
-          return { patches, wall1Updates, wall2Updates }
+          return { newWhites: currentWhites, wall1Updates, wall2Updates }
       }
-      if (i + 6 < wall1.h1) return { patches, wall1Updates, wall2Updates }
+      if (i + 6 < wall1.h1)
+        return { newWhites: currentWhites, wall1Updates, wall2Updates }
 
-      addWhite(wall1.startx, wall1.starty + 6, i, npatch)
+      if (wall1.h1 > 6) {
+        replaceWhite(wall1.startx, wall1.starty + 6, i, npatch)
+      } else {
+        addWhite(wall1.startx, wall1.starty + 6, i, npatch)
+      }
       wall1Updates.h1 = i + 6
       break
 
@@ -197,7 +293,7 @@ export function oneClose(
           i10 = 4
           break
         default:
-          return { patches, wall1Updates, wall2Updates }
+          return { newWhites: currentWhites, wall1Updates, wall2Updates }
       }
       for (j = 0; j < 4 * i10; j += 4) {
         if (wall1.h2 > length1 - 9 - j) {
@@ -241,7 +337,7 @@ export function oneClose(
       } else if (dir2 === 10) {
         i11 = 4
       } else {
-        return { patches, wall1Updates, wall2Updates }
+        return { newWhites: currentWhites, wall1Updates, wall2Updates }
       }
       for (j = 0; j < 8 * i11; j += 8) {
         if (wall1.h2 >= length1 - 11 - j) {
@@ -272,14 +368,31 @@ export function oneClose(
       } else if (dir2 < 4 || dir2 === 13) {
         i = 5
       } else {
-        return { patches, wall1Updates, wall2Updates }
+        return { newWhites: currentWhites, wall1Updates, wall2Updates }
       }
       j = wall1.h2
-      if (j <= length1 - i) return { patches, wall1Updates, wall2Updates }
+      if (j <= length1 - i)
+        return { newWhites: currentWhites, wall1Updates, wall2Updates }
 
-      // C code: replace_white_2(startx+j, starty+j, endx-i, endy-i, i, sepatch)
-      // For now we just add at the target position (endx-i, endy-i)
-      addWhite(wall1.endx - i, wall1.endy - i, i, sepatch)
+      if (j < length1) {
+        replaceWhite2(
+          wall1.startx + j,
+          wall1.starty + j,
+          wall1.endx - i,
+          wall1.endy - i,
+          i,
+          sepatch
+        )
+      } else {
+        addWhite2(
+          wall1.startx + j,
+          wall1.starty + j,
+          wall1.endx - i,
+          wall1.endy - i,
+          i,
+          sepatch
+        )
+      }
       wall1Updates.h2 = length1 - i
       break
 
@@ -297,14 +410,31 @@ export function oneClose(
           i = 5
           break
         default:
-          return { patches, wall1Updates, wall2Updates }
+          return { newWhites: currentWhites, wall1Updates, wall2Updates }
       }
       j = wall1.h2
-      if (j <= length1 - i) return { patches, wall1Updates, wall2Updates }
+      if (j <= length1 - i)
+        return { newWhites: currentWhites, wall1Updates, wall2Updates }
 
-      // C code: replace_white_2(startx+(j>>1), starty+j, endx-(i>>1), endy-i, i, ssepatch)
-      // For now we just add at the target position (endx-(i>>1), endy-i)
-      addWhite(wall1.endx - (i >> 1), wall1.endy - i, i, ssepatch)
+      if (j < length1) {
+        replaceWhite2(
+          wall1.startx + (j >> 1),
+          wall1.starty + j,
+          wall1.endx - (i >> 1),
+          wall1.endy - i,
+          i,
+          ssepatch
+        )
+      } else {
+        addWhite2(
+          wall1.startx + (j >> 1),
+          wall1.starty + j,
+          wall1.endx - (i >> 1),
+          wall1.endy - i,
+          i,
+          ssepatch
+        )
+      }
       wall1Updates.h2 = length1 - i
       break
 
@@ -312,5 +442,5 @@ export function oneClose(
       break
   }
 
-  return { patches, wall1Updates, wall2Updates }
+  return { newWhites: currentWhites, wall1Updates, wall2Updates }
 }

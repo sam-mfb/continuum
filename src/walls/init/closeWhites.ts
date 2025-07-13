@@ -106,9 +106,10 @@ export function processCloseWalls(
     wall1: LineRec,
     wall2: LineRec,
     endpoint1: number,
-    endpoint2: number
+    endpoint2: number,
+    whites: WhiteRec[]
   ) => {
-    patches: WhiteRec[]
+    newWhites: WhiteRec[]
     wall1Updates: { h1?: number; h2?: number }
     wall2Updates: { h1?: number; h2?: number }
   }
@@ -116,14 +117,14 @@ export function processCloseWalls(
   patches: WhiteRec[]
   wallUpdates: Array<{ wallId: string; h1?: number; h2?: number }>
 } {
-  const patches: WhiteRec[] = []
+  let patches: WhiteRec[] = []
   const wallUpdates: Array<{ wallId: string; h1?: number; h2?: number }> = []
 
   for (const [wall1, wall2, endpoint1, endpoint2] of wallPairs) {
-    const result = oneCloseFn(wall1, wall2, endpoint1, endpoint2)
+    const result = oneCloseFn(wall1, wall2, endpoint1, endpoint2, patches)
 
-    // Collect patches
-    patches.push(...result.patches)
+    // Update patches
+    patches = result.newWhites
 
     // Collect wall updates
     if (Object.keys(result.wall1Updates).length > 0) {
