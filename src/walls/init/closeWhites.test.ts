@@ -1068,7 +1068,7 @@ describe('setInitialOptimization', () => {
     expect(result[0]).toEqual({
       ...wall,
       h1: 6, // simpleh1[NEW_TYPE.S]
-      h2: Math.sqrt((789 - 123) ** 2 + (987 - 456) ** 2) + 0 // calculated length + simpleh2[NEW_TYPE.S]
+      h2: wall.length + 0 // calculated length + simpleh2[NEW_TYPE.S]
     })
 
     // Verify specific properties weren't changed

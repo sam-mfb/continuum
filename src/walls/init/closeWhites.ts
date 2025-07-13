@@ -153,15 +153,10 @@ export function processCloseWalls(
  */
 export function setInitialOptimization(walls: LineRec[]): LineRec[] {
   return walls.map(wall => {
-    // Calculate the actual length of the wall using Pythagorean theorem
-    const dx = wall.endx - wall.startx
-    const dy = wall.endy - wall.starty
-    const length = Math.sqrt(dx * dx + dy * dy)
-
     return {
       ...wall,
       h1: simpleh1[wall.newtype] ?? 0,
-      h2: length + (simpleh2[wall.newtype] ?? 0) // length + adjustment
+      h2: wall.length + (simpleh2[wall.newtype] ?? 0) // length + adjustment
     }
   })
 }
