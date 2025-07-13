@@ -9,7 +9,7 @@ const initialState: WallsState = {
     [LINE_KIND.NORMAL]: null,
     [LINE_KIND.BOUNCE]: null,
     [LINE_KIND.GHOST]: null,
-    [LINE_KIND.EXPLODE]: null,
+    [LINE_KIND.EXPLODE]: null
   },
   firstWhite: '',
   junctions: [],
@@ -29,21 +29,6 @@ export const wallsSlice = createSlice({
     },
 
     /**
-     * Update which walls are visible based on screen position
-     */
-    updateWallVisibility: (
-      _state,
-      _action: PayloadAction<{
-        screenLeft: number
-        screenRight: number
-        worldWidth: number
-      }>
-    ) => {
-      // TODO: Mark visible walls for current frame
-      // TODO: Handle world wrapping
-    },
-
-    /**
      * Clear all wall data (for level changes)
      */
     clearWalls: state => {
@@ -52,8 +37,8 @@ export const wallsSlice = createSlice({
         [LINE_KIND.NORMAL]: null,
         [LINE_KIND.BOUNCE]: null,
         [LINE_KIND.GHOST]: null,
-        [LINE_KIND.EXPLODE]: null,
-          }
+        [LINE_KIND.EXPLODE]: null
+      }
       state.firstWhite = ''
       state.junctions = []
       state.whites = []
@@ -62,5 +47,4 @@ export const wallsSlice = createSlice({
   }
 })
 
-export const { initWalls, updateWallVisibility, clearWalls } =
-  wallsSlice.actions
+export const wallsActions = wallsSlice.actions
