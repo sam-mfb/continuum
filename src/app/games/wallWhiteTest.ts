@@ -13,19 +13,125 @@ import { LINE_TYPE, LINE_DIR, LINE_KIND, NEW_TYPE } from '../../walls/types'
 // Create store instance
 const store = buildGameStore()
 
-// Test with just a single S line (vertical down)
+// Test with examples of all 8 NEW_TYPE values, each 25px long and well-spaced
 const sampleLines: LineRec[] = [
+  // NEW_TYPE.S (1) - South (vertical down)
   {
     id: 'line-0',
-    startx: 100,
-    starty: 50,
-    endx: 100,
-    endy: 150,
-    length: 100,
+    startx: 50,
+    starty: 30,
+    endx: 50,
+    endy: 55,
+    length: 25,
     type: LINE_TYPE.N,
     up_down: LINE_DIR.DN,
     kind: LINE_KIND.NORMAL,
     newtype: NEW_TYPE.S,
+    nextId: null,
+    nextwhId: null
+  },
+  // NEW_TYPE.SSE (2) - South-Southeast
+  {
+    id: 'line-1',
+    startx: 120,
+    starty: 30,
+    endx: 132,
+    endy: 55,
+    length: 25,
+    type: LINE_TYPE.NNE,
+    up_down: LINE_DIR.DN,
+    kind: LINE_KIND.NORMAL,
+    newtype: NEW_TYPE.SSE,
+    nextId: null,
+    nextwhId: null
+  },
+  // NEW_TYPE.SE (3) - Southeast (diagonal down-right)
+  {
+    id: 'line-2',
+    startx: 190,
+    starty: 30,
+    endx: 208,
+    endy: 48,
+    length: 25,
+    type: LINE_TYPE.NE,
+    up_down: LINE_DIR.DN,
+    kind: LINE_KIND.NORMAL,
+    newtype: NEW_TYPE.SE,
+    nextId: null,
+    nextwhId: null
+  },
+  // NEW_TYPE.ESE (4) - East-Southeast
+  {
+    id: 'line-3',
+    startx: 260,
+    starty: 30,
+    endx: 285,
+    endy: 42,
+    length: 25,
+    type: LINE_TYPE.ENE,
+    up_down: LINE_DIR.DN,
+    kind: LINE_KIND.NORMAL,
+    newtype: NEW_TYPE.ESE,
+    nextId: null,
+    nextwhId: null
+  },
+  // NEW_TYPE.E (5) - East (horizontal right)
+  {
+    id: 'line-4',
+    startx: 50,
+    starty: 90,
+    endx: 75,
+    endy: 90,
+    length: 25,
+    type: LINE_TYPE.E,
+    up_down: LINE_DIR.DN,
+    kind: LINE_KIND.NORMAL,
+    newtype: NEW_TYPE.E,
+    nextId: null,
+    nextwhId: null
+  },
+  // NEW_TYPE.ENE (6) - East-Northeast
+  {
+    id: 'line-5',
+    startx: 120,
+    starty: 102,
+    endx: 145,
+    endy: 90,
+    length: 25,
+    type: LINE_TYPE.ENE,
+    up_down: LINE_DIR.UP,
+    kind: LINE_KIND.NORMAL,
+    newtype: NEW_TYPE.ENE,
+    nextId: null,
+    nextwhId: null
+  },
+  // NEW_TYPE.NE (7) - Northeast (diagonal up-right)
+  {
+    id: 'line-6',
+    startx: 190,
+    starty: 108,
+    endx: 208,
+    endy: 90,
+    length: 25,
+    type: LINE_TYPE.NE,
+    up_down: LINE_DIR.UP,
+    kind: LINE_KIND.NORMAL,
+    newtype: NEW_TYPE.NE,
+    nextId: null,
+    nextwhId: null
+  },
+  // NEW_TYPE.NNE (8) - North-Northeast
+  {
+    id: 'line-7',
+    startx: 260,
+    starty: 108,
+    endx: 272,
+    endy: 83,
+    length: 25,
+    type: LINE_TYPE.NNE,
+    up_down: LINE_DIR.UP,
+    kind: LINE_KIND.NORMAL,
+    newtype: NEW_TYPE.NNE,
     nextId: null,
     nextwhId: null
   }
