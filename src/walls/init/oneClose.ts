@@ -44,7 +44,8 @@ export function oneClose(
   if (endpoint2) dir2 = (dir2 + 8) & 15
 
   // Skip if same direction
-  if (dir1 === dir2) return { newWhites: currentWhites, wall1Updates, wall2Updates }
+  if (dir1 === dir2)
+    return { newWhites: currentWhites, wall1Updates, wall2Updates }
 
   const addWhite = (x: number, y: number, ht: number, data: number[]): void => {
     currentWhites.push({
@@ -278,6 +279,7 @@ export function oneClose(
     case 9:
       break
 
+    //@ts-expect-error - this is an intentional fallthrough to match C code
     case 10: {
       let i10: number
       switch (dir2) {
@@ -305,29 +307,6 @@ export function oneClose(
       if (wall1.h2 > j) {
         wall1Updates.h2 = j
       }
-
-      // Fall through to case 11 - but case 11 calculates its own i value
-      // based on dir2, not reusing i10
-      let i11: number | undefined
-      if (dir2 === 9) {
-        i11 = 2
-      } else if ((dir2 as number) === 10) {
-        i11 = 4
-      }
-      if (i11 === undefined) {
-        break // No case 11 logic for other dir2 values
-      }
-      for (j = 0; j < 8 * i11; j += 8) {
-        if (wall1.h2 >= length1 - 11 - j) {
-          addWhite(wall1.endx - 18 - j, wall1.endy + 6 + (j >> 1), 4, enepatch)
-          addWhite(wall1.endx - 8 - j, wall1.endy + 6 + (j >> 1), 4, enepatch)
-        }
-      }
-      j = length1 - 11 - 8 * i11
-      if (wall1.h2 > j) {
-        wall1Updates.h2 = j
-      }
-      break
     }
 
     case 11: {
