@@ -84,9 +84,6 @@ describe('closeWhites integration tests', () => {
 
     // The exact number of patches depends on timing
     // With immediate updates, we expect different behavior
-    console.log('Number of white patches generated:', result.whites.length)
-    console.log('Wall1 final h1 value:', w1!.h1)
-
     // This test currently passes but demonstrates the issue:
     // The h1 value used in later junctions depends on when updates are applied
   })
@@ -156,9 +153,6 @@ describe('closeWhites integration tests', () => {
     const w1 = result.updatedWalls.find(w => w.id === 'w1')
     expect(w1).toBeDefined()
     expect(w1!.h2).toBeLessThan(30) // Should be reduced
-
-    console.log('Number of white patches generated:', result.whites.length)
-    console.log('Wall1 final h2 value:', w1!.h2)
   })
 
   it('demonstrates different patch generation with immediate vs batched updates', () => {
@@ -237,12 +231,8 @@ describe('closeWhites integration tests', () => {
 
     const result = closeWhites(walls)
 
-    // Log results for analysis
-    console.log('\nPatch generation test results:')
-    console.log('Total patches generated:', result.whites.length)
-
     const central = result.updatedWalls.find(w => w.id === 'central')
-    console.log('Central wall final h1:', central!.h1)
+    expect(central).toBeDefined()
 
     // Group patches by position to see pattern
     const patchesByPosition = result.whites.reduce(
@@ -253,12 +243,6 @@ describe('closeWhites integration tests', () => {
       },
       {} as Record<string, number>
     )
-
-    console.log(
-      'Unique patch positions:',
-      Object.keys(patchesByPosition).length
-    )
-    console.log('Patch distribution:', patchesByPosition)
 
     // With batched updates (current), all junctions see h1=0
     // With immediate updates (fixed), later junctions see updated h1
@@ -345,9 +329,6 @@ describe('closeWhites integration tests', () => {
     const sePatchCount = result.whites.filter(
       w => w.x === 100 && w.y === 100
     ).length
-
-    console.log('SE wall patches at (100,100):', sePatchCount)
-    console.log('Total patches:', result.whites.length)
 
     // With immediate updates, we expect fewer patches
     // because the second junction is skipped
