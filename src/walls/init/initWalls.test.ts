@@ -4,7 +4,8 @@ import { LINE_KIND, LINE_TYPE, LINE_DIR, NEW_TYPE } from '../constants'
 import {
   organizeWallsByKind,
   findFirstWhiteWalls,
-  detectWallJunctions
+  detectWallJunctions,
+  initWalls
 } from './initWalls'
 
 describe('organizeWallsByKind', () => {
@@ -1069,5 +1070,59 @@ describe('detectWallJunctions', () => {
     for (let i = 10; i < 28; i++) {
       expect(junctions[i]).toEqual({ x: 20000, y: 0 })
     }
+  })
+})
+
+describe('initWalls integration', () => {
+  it('h1/h2 values from updatedWalls make it to organizedWalls', () => {
+    // Create a single line similar to the one in single-line-render.ts
+    const singleLine: LineRec[] = [
+      {
+        id: 'test-line',
+        startx: 200,
+        starty: 100,
+        endx: 200,
+        endy: 150,
+        length: 50,
+        type: LINE_TYPE.N,
+        up_down: LINE_DIR.DN,
+        kind: LINE_KIND.NORMAL,
+        newtype: NEW_TYPE.S,
+        nextId: null,
+        nextwhId: null
+        // Note: h1 and h2 are optional and not set during initial line creation
+      }
+    ]
+
+    // Initialize the wall system
+    const wallState = initWalls(singleLine)
+
+    // Extract the test line from both updatedWalls and organizedWalls
+    const updatedWall = wallState.updatedWalls.find(w => w.id === 'test-line')
+    const organizedWall = wallState.organizedWalls['test-line']
+
+    // Check that updatedWalls has h1/h2 values set by closeWhites
+    expect(updatedWall).toBeDefined()
+    expect(updatedWall?.h1).toBeDefined()
+    expect(updatedWall?.h2).toBeDefined()
+    
+    console.log('updatedWall h1/h2:', {
+      h1: updatedWall?.h1,
+      h2: updatedWall?.h2
+    })
+
+    // Check if organizedWalls also has the same h1/h2 values
+    expect(organizedWall).toBeDefined()
+    expect(organizedWall?.h1).toBeDefined()
+    expect(organizedWall?.h2).toBeDefined()
+    
+    console.log('organizedWall h1/h2:', {
+      h1: organizedWall?.h1,
+      h2: organizedWall?.h2
+    })
+
+    // The bug: h1/h2 values should be the same in both structures
+    expect(organizedWall?.h1).toBe(updatedWall?.h1)
+    expect(organizedWall?.h2).toBe(updatedWall?.h2)
   })
 })

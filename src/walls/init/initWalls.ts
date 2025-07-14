@@ -25,14 +25,22 @@ export function initWalls(walls: LineRec[]): WallsState {
     junctions
   )
 
-  // Merge the organized walls with the white links to maintain consistency
+  // Convert updatedWalls array to a record for easy lookup
+  const updatedWallsRecord: Record<string, LineRec> = {}
+  for (const wall of updatedWalls) {
+    updatedWallsRecord[wall.id] = wall
+  }
+
+  // Merge the organized walls with the updated walls to maintain consistency
   const finalOrganizedWalls: Record<string, LineRec> = {}
   for (const [id, wall] of Object.entries(organizedWalls)) {
-    const wallWithLinks = wallsWithWhiteLinks[id]
-    if (wallWithLinks) {
+    const updatedWall = updatedWallsRecord[id]
+    if (updatedWall) {
       finalOrganizedWalls[id] = {
         ...wall,
-        nextwhId: wallWithLinks.nextwhId
+        nextwhId: updatedWall.nextwhId,
+        h1: updatedWall.h1,
+        h2: updatedWall.h2
       }
     } else {
       finalOrganizedWalls[id] = wall
