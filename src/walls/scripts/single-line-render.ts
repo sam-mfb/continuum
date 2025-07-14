@@ -11,6 +11,7 @@ import type { LineRec } from '../types'
 import { LINE_TYPE, LINE_DIR, LINE_KIND, NEW_TYPE } from '../types'
 import { initWalls } from '../init'
 import { whiteTerrain, blackTerrain } from '../render'
+import { SBARHT } from '@/screen/constants'
 
 const main = (): void => {
   // 1. Define the single line to be rendered.
@@ -69,12 +70,12 @@ const main = (): void => {
   })(renderedBitmap)
 
   // 7. Define the clipping rectangle with a 50px margin.
-  const margin = 50
+  const margin = 10
   const clip = {
-    top: singleLine[0]!.starty - margin,
+    top: singleLine[0]!.starty + SBARHT - margin,
     left: singleLine[0]!.startx - margin,
-    bottom: singleLine[0]!.endy + margin,
-    right: singleLine[0]!.endx + margin
+    bottom: singleLine[0]!.endy + SBARHT + margin,
+    right: singleLine[0]!.endx + 10 + margin
   }
 
   // 8. Visualize the clipped area of the bitmap.
