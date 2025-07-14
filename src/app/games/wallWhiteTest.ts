@@ -168,20 +168,20 @@ export const wallWhiteTestRenderer: BitmapRenderer = (bitmap, _frame, _env) => {
     r: bitmap.width // right
   }
 
-  // First render black terrain (top surfaces) for normal lines
-  let renderedBitmap = blackTerrain(bitmap, {
-    thekind: LINE_KIND.NORMAL, // Draw only normal lines
-    kindPointers: wallState.kindPointers,
+  // First render white terrain (undersides, patches, junctions) on top
+  let renderedBitmap = whiteTerrain(bitmap, {
+    whites: wallState.whites,
+    junctions: wallState.junctions,
+    firstWhite: wallState.firstWhite,
     organizedWalls: wallState.organizedWalls,
     viewport: viewport,
     worldwidth: bitmap.width // No wrapping needed for this test
   })
 
-  // Then render white terrain (undersides, patches, junctions) on top
-  renderedBitmap = whiteTerrain(renderedBitmap, {
-    whites: wallState.whites,
-    junctions: wallState.junctions,
-    firstWhite: wallState.firstWhite,
+  // Then render black terrain (top surfaces) for normal lines
+  renderedBitmap = blackTerrain(renderedBitmap, {
+    thekind: LINE_KIND.NORMAL, // Draw only normal lines
+    kindPointers: wallState.kindPointers,
     organizedWalls: wallState.organizedWalls,
     viewport: viewport,
     worldwidth: bitmap.width // No wrapping needed for this test
