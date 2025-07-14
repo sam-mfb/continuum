@@ -4,6 +4,7 @@
 
 import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
+import { drawEneline } from '../lines/drawEneline'
 import { eneWhite } from './eneWhite'
 
 // Masks and values from orig/Sources/Walls.c:336-337
@@ -201,42 +202,12 @@ export const eneBlack = (
 
   // Draw end line if needed (lines 486-487)
   if (adjustedEndline > 0) {
-    drawENELine(newScreen, endlinex, endliney, adjustedEndline + 1, L_UP)
+    drawEneline(newScreen, endlinex, endliney, adjustedEndline + 1, L_UP)
   }
 
   return newScreen
 }
 
-/**
- * Helper function to draw ENE lines (stub for now)
- */
-function drawENELine(
-  screen: MonochromeBitmap,
-  x: number,
-  y: number,
-  len: number,
-  _dir: number
-): void {
-  // TODO: This will be implemented when we implement draw_eneline
-  // For now, draw diagonal line going up and right
-  if (x >= 0 && y >= 0 && len > 0) {
-    for (let i = 0; i < len; i += 2) {
-      const currentX = x + i
-      const currentY = y - (i >> 1)
-      if (currentX >= 0 && currentX < screen.width && 
-          currentY >= 0 && currentY < screen.height) {
-        // Calculate word-aligned byte offset (from FIND_WADDRESS macro)
-        // Original did: asr.w #3, D0 then bclr.l #0, D0 for word alignment
-        const byteX = (currentX >> 3) & 0xfffe
-        const bitPos = 7 - (currentX & 7)
-        const address = currentY * screen.rowBytes + byteX
-        if (address >= 0 && address < screen.data.length) {
-          screen.data[address]! |= 1 << bitPos
-        }
-      }
-    }
-  }
-}
 
 /**
  * Helper function to rotate a 16-bit value right
