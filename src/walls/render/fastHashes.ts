@@ -3,7 +3,7 @@
  */
 
 import type { MonochromeBitmap, JunctionRec } from '../types'
-import { drawHash } from './drawHash'
+// TODO: import { drawHash } from './drawHash' when implementing
 
 /**
  * Draws crosshatch patterns at visible junctions
@@ -11,7 +11,7 @@ import { drawHash } from './drawHash'
  */
 export const fastHashes = (
   screen: MonochromeBitmap,
-  data: {
+  _data: {
     junctions: JunctionRec[]
     viewport: { x: number; y: number; b: number; r: number }
     worldwidth: number
