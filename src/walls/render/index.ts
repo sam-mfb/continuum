@@ -4,6 +4,8 @@
 
 // Main rendering functions
 export { fastWhites } from './fastWhites'
+export { fastHashes } from './fastHashes'
+export { whiteTerrain } from './whiteTerrain'
 export { whiteWallPiece } from './whiteWallPiece'
 export { eorWallPiece } from './eorWallPiece'
 export { drawHash } from './drawHash'
