@@ -1,11 +1,11 @@
 /**
- * Test game for demonstrating the whiteTerrain() wall rendering function
- * Shows white shadow pieces for all 8 line directions plus junction handling
+ * Test game for demonstrating complete wall rendering with both whiteTerrain() and blackTerrain()
+ * Shows both black tops and white undersides for all 8 line directions plus junction handling
  */
 
 import type { BitmapRenderer } from '../../bitmap'
 import type { LineRec } from '../../walls/types'
-import { whiteTerrain } from '../../walls/render/whiteTerrain'
+import { whiteTerrain, blackTerrain } from '../../walls/render'
 import { wallsActions } from '../../walls/wallsSlice'
 import { buildGameStore } from './store'
 import { LINE_TYPE, LINE_DIR, LINE_KIND, NEW_TYPE } from '../../walls/types'
@@ -141,7 +141,7 @@ const sampleLines: LineRec[] = [
 store.dispatch(wallsActions.initWalls({ walls: sampleLines }))
 
 /**
- * Renderer that displays white wall pieces using whiteTerrain
+ * Renderer that displays complete walls using both blackTerrain and whiteTerrain
  */
 export const wallWhiteTestRenderer: BitmapRenderer = (bitmap, _frame, _env) => {
   // First, create a crosshatch gray background (same as bitmapTest)
@@ -168,8 +168,17 @@ export const wallWhiteTestRenderer: BitmapRenderer = (bitmap, _frame, _env) => {
     r: bitmap.width // right
   }
 
-  // Call whiteTerrain to render all white elements (whites, junctions, NNE walls)
-  const renderedBitmap = whiteTerrain(bitmap, {
+  // First render black terrain (top surfaces) for normal lines
+  let renderedBitmap = blackTerrain(bitmap, {
+    thekind: LINE_KIND.NORMAL, // Draw only normal lines
+    kindPointers: wallState.kindPointers,
+    organizedWalls: wallState.organizedWalls,
+    viewport: viewport,
+    worldwidth: bitmap.width // No wrapping needed for this test
+  })
+
+  // Then render white terrain (undersides, patches, junctions) on top
+  renderedBitmap = whiteTerrain(renderedBitmap, {
     whites: wallState.whites,
     junctions: wallState.junctions,
     firstWhite: wallState.firstWhite,
@@ -181,7 +190,9 @@ export const wallWhiteTestRenderer: BitmapRenderer = (bitmap, _frame, _env) => {
   // Copy rendered bitmap data back to original
   bitmap.data.set(renderedBitmap.data)
 
-  // Note: whiteTerrain will also draw:
+  // Note: This complete render shows:
+  // - Black tops of all walls (from blackTerrain)
+  // - White undersides/shadows (from whiteTerrain)
   // - Junction hashes if any walls intersect
-  // - NNE wall white undersides (the vertical wall in our sample)
+  // - NNE wall white undersides
 }
