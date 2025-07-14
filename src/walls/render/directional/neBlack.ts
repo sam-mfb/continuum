@@ -4,6 +4,7 @@
 
 import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
+import { drawNeline } from '../lines/drawNeline'
 
 // Background patterns from Play.c:61-62
 const backgr1 = 0xaaaaaaaa
@@ -108,10 +109,10 @@ export const neBlack = (
 
   // Draw edge lines (lines 266-269)
   if (h1 - h0 > 1) {
-    drawNELine(newScreen, x + h0, y - h0, h1 - h0 - 1, L_UP)
+    drawNeline(newScreen, x + h0, y - h0, h1 - h0 - 1, L_UP)
   }
   if (endline > 0) {
-    drawNELine(newScreen, x + h3, y - h3, endline - 1, L_UP)
+    drawNeline(newScreen, x + h3, y - h3, endline - 1, L_UP)
   }
 
   x += h15
@@ -198,34 +199,6 @@ export const neBlack = (
   return newScreen
 }
 
-/**
- * Helper function to draw NE lines (stub for now)
- */
-function drawNELine(
-  screen: MonochromeBitmap,
-  x: number,
-  y: number,
-  len: number,
-  _dir: number
-): void {
-  // TODO: This will be implemented when we implement draw_neline
-  // For now, just draw diagonal pixels
-  if (x >= 0 && x < screen.width && len > 0) {
-    for (let i = 0; i <= len; i++) {
-      const currentX = x + i
-      const currentY = y - i
-      if (currentX >= 0 && currentX < screen.width && 
-          currentY >= 0 && currentY < screen.height) {
-        const byteX = currentX >> 3
-        const bitPos = 7 - (currentX & 7)
-        const address = currentY * screen.rowBytes + byteX
-        if (address >= 0 && address < screen.data.length) {
-          screen.data[address]! |= 1 << bitPos
-        }
-      }
-    }
-  }
-}
 
 /**
  * Helper function to rotate a 32-bit value right

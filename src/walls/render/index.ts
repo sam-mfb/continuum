@@ -25,6 +25,7 @@ export { southBlack } from './directional/southBlack'
 
 // Line drawing functions
 export { drawNline } from './lines/drawNline'
+export { drawNeline } from './lines/drawNeline'
 export { drawEline } from './lines/drawEline'
 
 // Function arrays
