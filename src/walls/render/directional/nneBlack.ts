@@ -2,15 +2,98 @@
  * @fileoverview Corresponds to nne_black() from orig/Sources/Walls.c:27
  */
 
-import type { LineData, MonochromeBitmap } from '../../types'
+import type { LineRec, MonochromeBitmap } from '../../types'
+import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
+
+// Line direction constants from Draw.c
+const L_UP = 1 // Up direction
 
 /**
  * Draws black parts of NNE (North-North-East) lines
  * @see orig/Sources/Walls.c:27 nne_black()
  */
 export const nneBlack = (
-  _screen: MonochromeBitmap,
-  _lineData: LineData
-): void => {
-  // TODO: Implement nne_black drawing logic
+  screen: MonochromeBitmap,
+  line: LineRec,
+  scrx: number,
+  scry: number
+): MonochromeBitmap => {
+  // Deep clone the screen bitmap for immutability
+  const newScreen: MonochromeBitmap = {
+    data: new Uint8Array(screen.data),
+    width: screen.width,
+    height: screen.height,
+    rowBytes: screen.rowBytes
+  }
+
+  const x = line.startx - scrx
+  const y = line.starty - scry
+  let h1 = 0
+  let h4 = line.length + 1
+
+  // Ensure h4 is even (lines 41-42)
+  if (h4 & 1) {
+    h4++
+  }
+
+  // Calculate h1 boundaries (lines 44-49)
+  if (x + (h1 >> 1) < 0) {
+    h1 = -x << 1
+  }
+  if (y - h1 > VIEWHT - 1) {
+    h1 = y - (VIEWHT - 1)
+  }
+  if (h1 & 1) {
+    h1++
+  }
+
+  // Calculate h4 boundaries (lines 50-53)
+  if (x + (h4 >> 1) > SCRWTH) {
+    h4 = (SCRWTH - x) << 1
+  }
+  if (y - h4 < -1) {
+    h4 = y + 1
+  }
+
+  // Draw the line if valid (lines 55-56)
+  if (h4 > h1) {
+    drawNNELine(
+      newScreen,
+      x + (h1 >> 1),
+      y - h1 + SBARHT,
+      h4 - h1 - 1,
+      L_UP
+    )
+  }
+
+  return newScreen
+}
+
+/**
+ * Helper function to draw NNE lines (stub for now)
+ */
+function drawNNELine(
+  screen: MonochromeBitmap,
+  x: number,
+  y: number,
+  len: number,
+  _dir: number
+): void {
+  // TODO: This will be implemented when we implement draw_nneline
+  // For now, draw a line that goes 1 pixel right for every 2 pixels up
+  if (x >= 0 && y >= 0 && len > 0) {
+    for (let i = 0; i <= len; i++) {
+      const currentX = x + (i >> 1)
+      const currentY = y - i
+      if (currentX >= 0 && currentX < screen.width && 
+          currentY >= 0 && currentY < screen.height) {
+        const byteX = currentX >> 3
+        const bitPos = 7 - (currentX & 7)
+        const address = currentY * screen.rowBytes + byteX
+        if (address >= 0 && address < screen.data.length) {
+          screen.data[address]! |= 1 << bitPos
+        }
+      }
+    }
+  }
 }
