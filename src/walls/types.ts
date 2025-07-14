@@ -7,13 +7,7 @@ import type {
   NewType
 } from '../shared/types/line'
 
-export type {
-  LineRec,
-  LineType,
-  LineKind,
-  LineDir,
-  NewType
-}
+export type { LineRec, LineType, LineKind, LineDir, NewType }
 
 export {
   LINE_TYPE,

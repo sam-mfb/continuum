@@ -6,7 +6,13 @@
 
 import { createBigEnd } from '@/asm/bigEnd'
 import type { Bunker, Crater, Fuel, PlanetState } from '@/planet/types'
-import type { LineRec, LineDir, LineType, LineKind, NewType } from '@/shared/types/line'
+import type {
+  LineRec,
+  LineDir,
+  LineType,
+  LineKind,
+  NewType
+} from '@/shared/types/line'
 import { generateLineId } from '@/shared/types/line'
 
 export function parsePlanet(

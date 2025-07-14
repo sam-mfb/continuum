@@ -143,7 +143,12 @@ describe('mergeOverlappingWhites', () => {
       0xaa & 0x55, // 0x00
       0x55 & 0xaa, // 0x00
       0x33 & 0xcc, // 0x00
-      0, 0, 0, 0, 0, 0 // Remaining elements default to 0
+      0,
+      0,
+      0,
+      0,
+      0,
+      0 // Remaining elements default to 0
     ])
   })
 

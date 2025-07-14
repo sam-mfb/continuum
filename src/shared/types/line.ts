@@ -9,11 +9,11 @@
  * See GW.h:211
  */
 export const LINE_TYPE = {
-  N: 1,   // North
+  N: 1, // North
   NNE: 2, // North-Northeast
-  NE: 3,  // Northeast
+  NE: 3, // Northeast
   ENE: 4, // East-Northeast
-  E: 5    // East
+  E: 5 // East
 } as const
 
 export type LineType = (typeof LINE_TYPE)[keyof typeof LINE_TYPE]
@@ -23,8 +23,8 @@ export type LineType = (typeof LINE_TYPE)[keyof typeof LINE_TYPE]
  * See GW.h:214-215
  */
 export const LINE_DIR = {
-  UP: -1,  // L_UP
-  DN: 1    // L_DN
+  UP: -1, // L_UP
+  DN: 1 // L_DN
 } as const
 
 export type LineDir = (typeof LINE_DIR)[keyof typeof LINE_DIR]
@@ -34,10 +34,10 @@ export type LineDir = (typeof LINE_DIR)[keyof typeof LINE_DIR]
  * See GW.h:218
  */
 export const LINE_KIND = {
-  NORMAL: 0,   // L_NORMAL
-  BOUNCE: 1,   // L_BOUNCE
-  GHOST: 2,    // L_GHOST
-  EXPLODE: 3   // L_EXPLODE
+  NORMAL: 0, // L_NORMAL
+  BOUNCE: 1, // L_BOUNCE
+  GHOST: 2, // L_GHOST
+  EXPLODE: 3 // L_EXPLODE
 } as const
 
 export type LineKind = (typeof LINE_KIND)[keyof typeof LINE_KIND]
@@ -47,14 +47,14 @@ export type LineKind = (typeof LINE_KIND)[keyof typeof LINE_KIND]
  * See GW.h:221
  */
 export const NEW_TYPE = {
-  S: 1,    // NEW_S - South
-  SSE: 2,  // NEW_SSE - South-Southeast
-  SE: 3,   // NEW_SE - Southeast
-  ESE: 4,  // NEW_ESE - East-Southeast
-  E: 5,    // NEW_E - East
-  ENE: 6,  // NEW_ENE - East-Northeast
-  NE: 7,   // NEW_NE - Northeast
-  NNE: 8   // NEW_NNE - North-Northeast
+  S: 1, // NEW_S - South
+  SSE: 2, // NEW_SSE - South-Southeast
+  SE: 3, // NEW_SE - Southeast
+  ESE: 4, // NEW_ESE - East-Southeast
+  E: 5, // NEW_E - East
+  ENE: 6, // NEW_ENE - East-Northeast
+  NE: 7, // NEW_NE - Northeast
+  NNE: 8 // NEW_NNE - North-Northeast
   // Note: No NEW_N (9) in the original
 } as const
 
@@ -68,7 +68,7 @@ export type NewType = (typeof NEW_TYPE)[keyof typeof NEW_TYPE]
  * for linked list implementation in JavaScript
  */
 export type LineRec = {
-  /** 
+  /**
    * Unique identifier for this line (replaces C pointers)
    * When loading from planet files, IDs are generated as "line-0", "line-1", etc.
    * in the order they appear in the file
@@ -105,7 +105,9 @@ export type LineRec = {
 /**
  * Type guard to check if a line has XOR optimization values
  */
-export function hasXorOptimization(line: LineRec): line is LineRec & { h1: number; h2: number } {
+export function hasXorOptimization(
+  line: LineRec
+): line is LineRec & { h1: number; h2: number } {
   return line.h1 !== undefined && line.h2 !== undefined
 }
 

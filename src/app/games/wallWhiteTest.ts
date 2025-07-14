@@ -140,7 +140,6 @@ const sampleLines: LineRec[] = [
 // Initialize walls on module load
 store.dispatch(wallsActions.initWalls({ walls: sampleLines }))
 
-
 /**
  * Renderer that displays white wall pieces using fastWhites
  */

@@ -1,13 +1,13 @@
 /**
  * White wall shadow patterns from the original C code
- * 
+ *
  * IMPORTANT: These patterns are 16-bit big-endian values from the 68K Mac.
  * Each value represents one row of a 16-pixel wide bitmap pattern.
  * The original Mac stored these as big-endian words in memory.
- * 
+ *
  * When creating WhiteRec objects, these values are converted to byte arrays
  * with high byte first to maintain the original byte order for rendering.
- * 
+ *
  * @see Junctions.c:98-116
  */
 
