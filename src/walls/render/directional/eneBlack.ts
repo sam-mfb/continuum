@@ -225,7 +225,9 @@ function drawENELine(
       const currentY = y - (i >> 1)
       if (currentX >= 0 && currentX < screen.width && 
           currentY >= 0 && currentY < screen.height) {
-        const byteX = currentX >> 3
+        // Calculate word-aligned byte offset (from FIND_WADDRESS macro)
+        // Original did: asr.w #3, D0 then bclr.l #0, D0 for word alignment
+        const byteX = (currentX >> 3) & 0xfffe
         const bitPos = 7 - (currentX & 7)
         const address = currentY * screen.rowBytes + byteX
         if (address >= 0 && address < screen.data.length) {

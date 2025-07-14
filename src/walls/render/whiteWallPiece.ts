@@ -55,7 +55,13 @@ export const whiteWallPiece = (
 
   // Calculate bit shift for x position within 32-bit word
   const bitShift = 16 - (x & 15) // How many bits to shift left
-  const byteX = Math.floor(x / 8) // Byte offset in row
+  
+  // Calculate word-aligned byte offset from x coordinate
+  // Original 68K used FIND_WADDRESS macro which did:
+  // 1. asr.w #3, D0 (shift right by 3 = divide by 8)
+  // 2. bclr.l #0, D0 (clear bit 0 for word alignment)
+  // This ensures addresses are even for 16/32-bit operations
+  const byteX = (x >> 3) & 0xfffe // Word-aligned byte offset
 
   // Draw each row (orig asm lines 755-761)
   for (let row = 0; row < adjustedHeight; row++) {
