@@ -118,7 +118,7 @@ export const nneWhite = (
         mask = rotateMaskRight(mask, 1)
 
         // Check if we need to wrap to next word
-        if ((mask & 0x8) !== 0) {
+        if ((mask & 0x80000000) === 0) {
           mask = swapWords(mask)
           address += 2
         }
@@ -132,7 +132,7 @@ export const nneWhite = (
         mask = rotateMaskRight(mask, 1)
 
         // Check if we need to wrap to next word
-        if ((mask & 0x8) !== 0) {
+        if ((mask & 0x80000000) === 0) {
           mask = swapWords(mask)
           address += 2
         }
@@ -142,8 +142,8 @@ export const nneWhite = (
     // Handle end section if needed (lines 166-177)
     if (end > 0) {
       mask = swapWords(mask)
-      let endLen = end >> 1
-      for (let i = 0; i <= endLen; i++) {
+      const endLen = end >> 1
+      for (let i = 0; i < endLen; i++) {
         andMaskToScreen16(newScreen, address, mask)
         andMaskToScreen16(newScreen, address - newScreen.rowBytes, mask)
         mask >>= 1
@@ -162,7 +162,7 @@ export const nneWhite = (
     mask >>= leftx & 15
 
     let startLen = start >> 1
-    for (let i = 0; i <= startLen; i++) {
+    for (let i = 0; i < startLen; i++) {
       andMaskToScreen16(newScreen, address, mask)
       andMaskToScreen16(newScreen, address - newScreen.rowBytes, mask)
       mask >>= 1
