@@ -1,11 +1,11 @@
 /**
- * Test game for demonstrating the fastWhites() wall rendering function
- * Shows white shadow pieces for all 8 line directions
+ * Test game for demonstrating the whiteTerrain() wall rendering function
+ * Shows white shadow pieces for all 8 line directions plus junction handling
  */
 
 import type { BitmapRenderer } from '../../bitmap'
 import type { LineRec } from '../../walls/types'
-import { fastWhites } from '../../walls/render/fastWhites'
+import { whiteTerrain } from '../../walls/render/whiteTerrain'
 import { wallsActions } from '../../walls/wallsSlice'
 import { buildGameStore } from './store'
 import { LINE_TYPE, LINE_DIR, LINE_KIND, NEW_TYPE } from '../../walls/types'
@@ -141,7 +141,7 @@ const sampleLines: LineRec[] = [
 store.dispatch(wallsActions.initWalls({ walls: sampleLines }))
 
 /**
- * Renderer that displays white wall pieces using fastWhites
+ * Renderer that displays white wall pieces using whiteTerrain
  */
 export const wallWhiteTestRenderer: BitmapRenderer = (bitmap, _frame, _env) => {
   // First, create a crosshatch gray background (same as bitmapTest)
@@ -157,8 +157,8 @@ export const wallWhiteTestRenderer: BitmapRenderer = (bitmap, _frame, _env) => {
     }
   }
 
-  // Get whites from Redux state
-  const whites = store.getState().walls.whites
+  // Get wall data from Redux state
+  const wallState = store.getState().walls
 
   // Set up viewport (static, centered)
   const viewport = {
@@ -168,9 +168,12 @@ export const wallWhiteTestRenderer: BitmapRenderer = (bitmap, _frame, _env) => {
     r: bitmap.width // right
   }
 
-  // Call fastWhites to render the white pieces
-  const renderedBitmap = fastWhites(bitmap, {
-    whites: whites,
+  // Call whiteTerrain to render all white elements (whites, junctions, NNE walls)
+  const renderedBitmap = whiteTerrain(bitmap, {
+    whites: wallState.whites,
+    junctions: wallState.junctions,
+    firstWhite: wallState.firstWhite,
+    organizedWalls: wallState.organizedWalls,
     viewport: viewport,
     worldwidth: bitmap.width // No wrapping needed for this test
   })
@@ -178,6 +181,7 @@ export const wallWhiteTestRenderer: BitmapRenderer = (bitmap, _frame, _env) => {
   // Copy rendered bitmap data back to original
   bitmap.data.set(renderedBitmap.data)
 
-  // Optional: Add labels for each direction
-  // (This would require text rendering which isn't implemented yet)
+  // Note: whiteTerrain will also draw:
+  // - Junction hashes if any walls intersect
+  // - NNE wall white undersides (the vertical wall in our sample)
 }
