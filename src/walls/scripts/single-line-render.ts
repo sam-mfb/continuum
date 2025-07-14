@@ -17,12 +17,12 @@ const main = (): void => {
   // 1. Define the single line to be rendered.
   const singleLine: LineRec[] = [
     {
-      id: 'test-line',
-      startx: 200,
-      starty: 100,
-      endx: 200,
-      endy: 150,
-      length: 50,
+      id: 'line-0',
+      startx: 50,
+      starty: 30,
+      endx: 50,
+      endy: 55,
+      length: 25,
       type: LINE_TYPE.N,
       up_down: LINE_DIR.DN,
       kind: LINE_KIND.NORMAL,
@@ -70,7 +70,7 @@ const main = (): void => {
   })(renderedBitmap)
 
   // 7. Define the clipping rectangle with a 50px margin.
-  const margin = 10
+  const margin = 20
   const clip = {
     top: singleLine[0]!.starty + SBARHT - margin,
     left: singleLine[0]!.startx - margin,
