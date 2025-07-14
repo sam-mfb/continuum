@@ -4,6 +4,7 @@
 
 import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
+import { drawNneline } from '../lines/drawNneline'
 
 // Line direction constants from Draw.c
 const L_UP = 1 // Up direction
@@ -57,7 +58,7 @@ export const nneBlack = (
 
   // Draw the line if valid (lines 55-56)
   if (h4 > h1) {
-    drawNNELine(
+    drawNneline(
       newScreen,
       x + (h1 >> 1),
       y - h1 + SBARHT,
@@ -69,31 +70,3 @@ export const nneBlack = (
   return newScreen
 }
 
-/**
- * Helper function to draw NNE lines (stub for now)
- */
-function drawNNELine(
-  screen: MonochromeBitmap,
-  x: number,
-  y: number,
-  len: number,
-  _dir: number
-): void {
-  // TODO: This will be implemented when we implement draw_nneline
-  // For now, draw a line that goes 1 pixel right for every 2 pixels up
-  if (x >= 0 && y >= 0 && len > 0) {
-    for (let i = 0; i <= len; i++) {
-      const currentX = x + (i >> 1)
-      const currentY = y - i
-      if (currentX >= 0 && currentX < screen.width && 
-          currentY >= 0 && currentY < screen.height) {
-        const byteX = currentX >> 3
-        const bitPos = 7 - (currentX & 7)
-        const address = currentY * screen.rowBytes + byteX
-        if (address >= 0 && address < screen.data.length) {
-          screen.data[address]! |= 1 << bitPos
-        }
-      }
-    }
-  }
-}

@@ -4,6 +4,7 @@
 
 import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
+import { drawNneline } from '../lines/drawNneline'
 
 // Background patterns from Play.c:61-62
 const backgr1 = 0xaaaaaaaa
@@ -119,10 +120,10 @@ export const sseBlack = (
 
   // Draw short black-only pieces (lines 1035-1038)
   if (start > 0) {
-    drawNNELine(newScreen, x + (h1 >> 1), y + h1, start - 1, L_DN)
+    drawNneline(newScreen, x + (h1 >> 1), y + h1, start - 1, L_DN)
   }
   if (adjustedH5 - h4 > 1) {
-    drawNNELine(newScreen, x + (h4 >> 1), y + h4, adjustedH5 - h4 - 1, L_DN)
+    drawNneline(newScreen, x + (h4 >> 1), y + h4, adjustedH5 - h4 - 1, L_DN)
   }
 
   x += h2 >> 1
@@ -234,32 +235,6 @@ export const sseBlack = (
   return newScreen
 }
 
-/**
- * Helper function to draw NNE lines (stub for now)
- */
-function drawNNELine(
-  screen: MonochromeBitmap,
-  x: number,
-  y: number,
-  len: number,
-  _dir: number
-): void {
-  // TODO: This will be implemented when we implement draw_nneline
-  // For now, just mark the pixels
-  if (x >= 0 && x < screen.width && len > 0) {
-    for (let i = 0; i <= len; i++) {
-      const currentY = y + i
-      if (currentY >= 0 && currentY < screen.height) {
-        const byteX = x >> 3
-        const bitPos = 7 - (x & 7)
-        const address = currentY * screen.rowBytes + byteX
-        if (address >= 0 && address < screen.data.length) {
-          screen.data[address]! |= 1 << bitPos
-        }
-      }
-    }
-  }
-}
 
 /**
  * Helper function to rotate a 32-bit value right
