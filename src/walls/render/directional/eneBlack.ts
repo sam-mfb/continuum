@@ -4,7 +4,7 @@
 
 import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
-// import { eneWhite } from './eneWhite' // TODO: Uncomment when eneWhite is implemented
+import { eneWhite } from './eneWhite'
 
 // Masks and values from orig/Sources/Walls.c:336-337
 const ENE_MASK1 = 0x8000
@@ -25,16 +25,7 @@ export const eneBlack = (
   scry: number
 ): MonochromeBitmap => {
   // First call eneWhite (line 349)
-  // TODO: Uncomment when eneWhite is implemented
-  // let newScreen = eneWhite(screen, line, scrx, scry)
-  
-  // For now, just clone the screen
-  const newScreen: MonochromeBitmap = {
-    data: new Uint8Array(screen.data),
-    width: screen.width,
-    height: screen.height,
-    rowBytes: screen.rowBytes
-  }
+  const newScreen = eneWhite(screen, line, scrx, scry)
 
   let x = line.startx - scrx
   let y = line.starty - scry
