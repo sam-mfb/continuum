@@ -4,6 +4,7 @@
 
 import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT, SCRHT } from '../../../screen/constants'
+import { drawEline } from '../lines/drawEline'
 
 // Line direction constants from Draw.c
 const L_DN = 0 // Down direction
@@ -86,10 +87,10 @@ export const eastBlack = (
   // Draw edge lines if needed (lines 599-605)
   if (y + height >= SBARHT + 5 && y < SCRHT) {
     if (h2 > h1) {
-      drawELine(newScreen, x + h1, y, h2 - h1 - 1, L_DN)
+      drawEline(newScreen, x + h1, y, h2 - h1 - 1, L_DN)
     }
     if (adjustedH4 > h3) {
-      drawELine(newScreen, x + h3, y, adjustedH4 - h3 - 1, L_DN)
+      drawEline(newScreen, x + h3, y, adjustedH4 - h3 - 1, L_DN)
     }
   }
 
@@ -182,32 +183,6 @@ export const eastBlack = (
   return newScreen
 }
 
-/**
- * Helper function to draw E lines (stub for now)
- */
-function drawELine(
-  screen: MonochromeBitmap,
-  x: number,
-  y: number,
-  len: number,
-  _dir: number
-): void {
-  // TODO: This will be implemented when we implement draw_eline
-  // For now, just draw horizontal pixels
-  if (y >= 0 && y < screen.height && len > 0) {
-    for (let i = 0; i <= len; i++) {
-      const currentX = x + i
-      if (currentX >= 0 && currentX < screen.width) {
-        const byteX = currentX >> 3
-        const bitPos = 7 - (currentX & 7)
-        const address = y * screen.rowBytes + byteX
-        if (address >= 0 && address < screen.data.length) {
-          screen.data[address]! |= 1 << bitPos
-        }
-      }
-    }
-  }
-}
 
 /**
  * Helper function to draw one word with pattern data
