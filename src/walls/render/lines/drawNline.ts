@@ -13,6 +13,7 @@ import { SCRWTH } from '../../../screen/constants'
  * @param y - Y coordinate  
  * @param len - Length of the line
  * @param u_d - Direction flag (not used, but 4567 has special meaning)
+ * @returns A new MonochromeBitmap with the line drawn
  */
 export const drawNline = (
   screen: MonochromeBitmap,
@@ -20,7 +21,14 @@ export const drawNline = (
   y: number,
   len: number,
   u_d: number
-): void => {
+): MonochromeBitmap => {
+  // Deep clone the screen bitmap for immutability
+  const newScreen: MonochromeBitmap = {
+    data: new Uint8Array(screen.data),
+    width: screen.width,
+    height: screen.height,
+    rowBytes: screen.rowBytes
+  }
   let mask: number
 
   // Special case handling (lines 950-957)
@@ -29,7 +37,7 @@ export const drawNline = (
   } else if ((x & 0x000f) === 15) {
     // At right edge of word, may need to draw on next word
     if (x < SCRWTH - 1) {
-      drawNline(screen, x + 1, y, len, 4567)
+      return drawNline(newScreen, x + 1, y, len, 4567)
     }
     mask = 1
   } else {
@@ -48,22 +56,24 @@ export const drawNline = (
 
   // Fast loop - draw 8 pixels at a time (lines 976-985)
   for (let i = 0; i < fastLoopCount; i++) {
-    orToScreen16(screen, address, mask)
-    orToScreen16(screen, address + 64 * 1, mask)
-    orToScreen16(screen, address + 64 * 2, mask)
-    orToScreen16(screen, address + 64 * 3, mask)
-    orToScreen16(screen, address + 64 * 4, mask)
-    orToScreen16(screen, address + 64 * 5, mask)
-    orToScreen16(screen, address + 64 * 6, mask)
-    orToScreen16(screen, address + 64 * 7, mask)
+    orToScreen16(newScreen, address, mask)
+    orToScreen16(newScreen, address + 64 * 1, mask)
+    orToScreen16(newScreen, address + 64 * 2, mask)
+    orToScreen16(newScreen, address + 64 * 3, mask)
+    orToScreen16(newScreen, address + 64 * 4, mask)
+    orToScreen16(newScreen, address + 64 * 5, mask)
+    orToScreen16(newScreen, address + 64 * 6, mask)
+    orToScreen16(newScreen, address + 64 * 7, mask)
     address += 64 * 8
   }
 
   // Remainder loop - draw remaining pixels (lines 987-989)
   for (let i = 0; i <= remainder; i++) {
-    orToScreen16(screen, address, mask)
+    orToScreen16(newScreen, address, mask)
     address += 64
   }
+
+  return newScreen
 }
 
 /**

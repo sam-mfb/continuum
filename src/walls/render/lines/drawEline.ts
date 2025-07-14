@@ -13,6 +13,7 @@ import { SCRHT } from '../../../screen/constants'
  * @param y - Y coordinate  
  * @param len - Length of the line
  * @param u_d - Direction flag (not used)
+ * @returns A new MonochromeBitmap with the line drawn
  */
 export const drawEline = (
   screen: MonochromeBitmap,
@@ -20,14 +21,21 @@ export const drawEline = (
   y: number,
   len: number,
   _u_d: number
-): void => {
+): MonochromeBitmap => {
+  // Deep clone the screen bitmap for immutability
+  const newScreen: MonochromeBitmap = {
+    data: new Uint8Array(screen.data),
+    width: screen.width,
+    height: screen.height,
+    rowBytes: screen.rowBytes
+  }
   // Check if we should draw the lower line (line 1336-1339)
   const drawLower = y + 1 < SCRHT
 
   // Assembly drawing logic (lines 1340-1387)
   // Calculate screen address
   const byteX = (x >> 3) & 0xfffe
-  let address = y * screen.rowBytes + byteX
+  let address = y * newScreen.rowBytes + byteX
 
   const shift = x & 15
   const totalBits = shift + len
@@ -40,17 +48,17 @@ export const drawEline = (
     mask = rotateRight16(mask, shift)
     mask = ~mask & 0xffff
 
-    orToScreen16(screen, address, mask)
+    orToScreen16(newScreen, address, mask)
     if (drawLower) {
-      orToScreen16(screen, address + 64, mask)
+      orToScreen16(newScreen, address + 64, mask)
     }
   } else {
     // Normal case (lines 1361-1385)
     // First partial word
     let mask = 0xffff >>> shift
-    orToScreen16(screen, address, mask)
+    orToScreen16(newScreen, address, mask)
     if (drawLower) {
-      orToScreen16(screen, address + 64, mask)
+      orToScreen16(newScreen, address + 64, mask)
     }
     address += 2
 
@@ -59,9 +67,9 @@ export const drawEline = (
 
     // Full 32-bit words
     while (remainingLen >= 32) {
-      orToScreen32(screen, address, 0xffffffff)
+      orToScreen32(newScreen, address, 0xffffffff)
       if (drawLower) {
-        orToScreen32(screen, address + 64, 0xffffffff)
+        orToScreen32(newScreen, address + 64, 0xffffffff)
       }
       address += 4
       remainingLen -= 32
@@ -70,12 +78,14 @@ export const drawEline = (
     // Last partial word
     if (remainingLen > 0) {
       const finalMask = ~(0xffffffff >>> remainingLen)
-      orToScreen32(screen, address, finalMask)
+      orToScreen32(newScreen, address, finalMask)
       if (drawLower) {
-        orToScreen32(screen, address + 64, finalMask)
+        orToScreen32(newScreen, address + 64, finalMask)
       }
     }
   }
+
+  return newScreen
 }
 
 /**

@@ -58,7 +58,7 @@ export const nneBlack = (
 
   // Draw the line if valid (lines 55-56)
   if (h4 > h1) {
-    drawNneline(
+    return drawNneline(
       newScreen,
       x + (h1 >> 1),
       y - h1 + SBARHT,

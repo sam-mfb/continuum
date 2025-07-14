@@ -14,6 +14,7 @@ import { SCRWTH } from '../../../screen/constants'
  * @param len - Length of the line
  * @param dir - Direction: positive for down-right, negative/zero for up-left
  * @see orig/Sources/Draw.c:1110 draw_neline()
+ * @returns A new MonochromeBitmap with the line drawn
  */
 export const drawNeline = (
   screen: MonochromeBitmap,
@@ -21,17 +22,24 @@ export const drawNeline = (
   y: number,
   len: number,
   dir: number
-): void => {
+): MonochromeBitmap => {
+  // Deep clone the screen bitmap for immutability
+  const newScreen: MonochromeBitmap = {
+    data: new Uint8Array(screen.data),
+    width: screen.width,
+    height: screen.height,
+    rowBytes: screen.rowBytes
+  }
   // Boundary check from original (line 1117)
   if (x + len + 1 >= SCRWTH) {
     len--
   }
   
-  if (len < 0) return
+  if (len < 0) return newScreen
 
   // Calculate byte address using FIND_BADDRESS logic
   let byteX = x >> 3 // No word alignment for byte operations
-  let address = y * screen.rowBytes + byteX
+  let address = y * newScreen.rowBytes + byteX
   
   // Get bit position within byte (0-7)
   const bitPos = x & 7
@@ -49,28 +57,28 @@ export const drawNeline = (
   // Pre-loop: Handle initial partial byte
   if (mask !== 1) {
     while (mask > 1 && remainingLen >= 0) {
-      if (address >= 0 && address < screen.data.length) {
-        screen.data[address]! |= mask
+      if (address >= 0 && address < newScreen.data.length) {
+        newScreen.data[address]! |= mask
       }
       address += rowOffset
       mask >>= 1
       remainingLen--
     }
     
-    if (remainingLen < 0) return
+    if (remainingLen < 0) return newScreen
   }
 
   // Handle byte boundary crossing
-  if (address >= 0 && address < screen.data.length) {
-    screen.data[address]! |= mask // Set last pixel in current byte
+  if (address >= 0 && address < newScreen.data.length) {
+    newScreen.data[address]! |= mask // Set last pixel in current byte
   }
-  if (address + 1 >= 0 && address + 1 < screen.data.length) {
-    screen.data[address + 1]! |= 0x80 // Set leftmost bit of next byte
+  if (address + 1 >= 0 && address + 1 < newScreen.data.length) {
+    newScreen.data[address + 1]! |= 0x80 // Set leftmost bit of next byte
   }
   address += rowOffset + 1 // Move to next row and byte
   remainingLen--
   
-  if (remainingLen < 0) return
+  if (remainingLen < 0) return newScreen
 
   // Main loop: Process 8-pixel chunks
   const chunks = remainingLen >> 3
@@ -88,16 +96,16 @@ export const drawNeline = (
       
       if (row < 7) {
         // Normal pattern
-        if (rowAddr >= 0 && rowAddr < screen.data.length) {
-          screen.data[rowAddr]! |= patterns[row]!
+        if (rowAddr >= 0 && rowAddr < newScreen.data.length) {
+          newScreen.data[rowAddr]! |= patterns[row]!
         }
       } else {
         // Row 7: split across byte boundary
-        if (rowAddr >= 0 && rowAddr < screen.data.length) {
-          screen.data[rowAddr]! |= 0x01
+        if (rowAddr >= 0 && rowAddr < newScreen.data.length) {
+          newScreen.data[rowAddr]! |= 0x01
         }
-        if (rowAddr + 1 >= 0 && rowAddr + 1 < screen.data.length) {
-          screen.data[rowAddr + 1]! |= 0x80
+        if (rowAddr + 1 >= 0 && rowAddr + 1 < newScreen.data.length) {
+          newScreen.data[rowAddr + 1]! |= 0x80
         }
       }
     }
@@ -111,8 +119,8 @@ export const drawNeline = (
     let count = remainder
     
     while (count >= 0) {
-      if (address >= 0 && address < screen.data.length) {
-        screen.data[address]! |= mask & 0xff
+      if (address >= 0 && address < newScreen.data.length) {
+        newScreen.data[address]! |= mask & 0xff
       }
       
       address += rowOffset
@@ -127,8 +135,8 @@ export const drawNeline = (
         if (count < 0) break
         
         // Set pixels after rotation
-        if (address >= 0 && address < screen.data.length) {
-          screen.data[address]! |= mask & 0xff
+        if (address >= 0 && address < newScreen.data.length) {
+          newScreen.data[address]! |= mask & 0xff
         }
         address++ // Move to next byte
         
@@ -139,4 +147,6 @@ export const drawNeline = (
       }
     }
   }
+
+  return newScreen
 }

@@ -29,7 +29,7 @@ export const southBlack = (
   scry: number
 ): MonochromeBitmap => {
   // Deep clone the screen bitmap for immutability
-  const newScreen: MonochromeBitmap = {
+  let newScreen: MonochromeBitmap = {
     data: new Uint8Array(screen.data),
     width: screen.width,
     height: screen.height,
@@ -73,10 +73,10 @@ export const southBlack = (
   // Draw north lines for the gaps (lines 1176-1182)
   if (x >= 0 && x < SCRWTH) {
     if (h2 > h1) {
-      drawNline(newScreen, x, y + h1, h2 - h1 - 1, L_DN)
+      newScreen = drawNline(newScreen, x, y + h1, h2 - h1 - 1, L_DN)
     }
     if (h4 > h3 + 1) {
-      drawNline(newScreen, x, y + h3, h4 - h3 - 1, L_DN)
+      newScreen = drawNline(newScreen, x, y + h3, h4 - h3 - 1, L_DN)
     }
   }
 

@@ -14,6 +14,7 @@ import { SCRWTH } from '../../../screen/constants'
  * @param len - Length of the line
  * @param dir - Direction: positive for down, negative/zero for up
  * @see orig/Sources/Draw.c:988 draw_nneline()
+ * @returns A new MonochromeBitmap with the line drawn
  */
 export const drawNneline = (
   screen: MonochromeBitmap,
@@ -21,17 +22,24 @@ export const drawNneline = (
   y: number,
   len: number,
   dir: number
-): void => {
+): MonochromeBitmap => {
+  // Deep clone the screen bitmap for immutability
+  const newScreen: MonochromeBitmap = {
+    data: new Uint8Array(screen.data),
+    width: screen.width,
+    height: screen.height,
+    rowBytes: screen.rowBytes
+  }
   // Right edge clipping (lines 1001-1002)
   if (x + (len >> 1) + 1 >= SCRWTH) {
     len -= 1 + (len & 0x0001)
   }
   
-  if (len < 0) return
+  if (len < 0) return newScreen
 
   // Calculate byte address using FIND_BADDRESS logic
   let byteX = x >> 3 // No word alignment for byte operations
-  let address = y * screen.rowBytes + byteX
+  let address = y * newScreen.rowBytes + byteX
   
   // Get bit position within byte (0-7)
   const bitPos = x & 7
@@ -46,8 +54,8 @@ export const drawNneline = (
 
   // Pre-loop: Handle initial pixels until byte boundary or single pixel
   while (mask > 1 && remainingLen >= 0) {
-    if (address >= 0 && address < screen.data.length) {
-      screen.data[address]! |= mask
+    if (address >= 0 && address < newScreen.data.length) {
+      newScreen.data[address]! |= mask
     }
     address += rowOffset
     
@@ -58,17 +66,17 @@ export const drawNneline = (
     remainingLen--
   }
   
-  if (remainingLen < 0) return
+  if (remainingLen < 0) return newScreen
 
   // Handle cross-byte dots (lines 1033-1042)
   if (mask === 1 || mask === 0x80) {
     // Set rightmost pixel of current byte
-    if (address >= 0 && address < screen.data.length) {
-      screen.data[address]! |= 0x01
+    if (address >= 0 && address < newScreen.data.length) {
+      newScreen.data[address]! |= 0x01
     }
     // Set leftmost pixel of next byte
-    if (address + 1 >= 0 && address + 1 < screen.data.length) {
-      screen.data[address + 1]! |= 0x80
+    if (address + 1 >= 0 && address + 1 < newScreen.data.length) {
+      newScreen.data[address + 1]! |= 0x80
     }
     
     // Move to next position
@@ -76,7 +84,7 @@ export const drawNneline = (
     remainingLen--
     
     // Move pointer right by half a byte for next iteration
-    if ((remainingLen & 1) === 0 && address + 1 < screen.data.length) {
+    if ((remainingLen & 1) === 0 && address + 1 < newScreen.data.length) {
       address++
       mask = 0x40 // Start at bit 1 of new byte
     } else {
@@ -91,33 +99,33 @@ export const drawNneline = (
     if (dir > 0) {
       // Downward direction (dnloop)
       // Unrolled loop for 16 pixels
-      if (baseAddr >= 0 && baseAddr < screen.data.length) {
-        screen.data[baseAddr]! |= 0xc0 // Rows 0-1
+      if (baseAddr >= 0 && baseAddr < newScreen.data.length) {
+        newScreen.data[baseAddr]! |= 0xc0 // Rows 0-1
       }
-      if (baseAddr + 128 >= 0 && baseAddr + 128 < screen.data.length) {
-        screen.data[baseAddr + 128]! |= 0x60 // Rows 2-3
+      if (baseAddr + 128 >= 0 && baseAddr + 128 < newScreen.data.length) {
+        newScreen.data[baseAddr + 128]! |= 0x60 // Rows 2-3
       }
-      if (baseAddr + 256 >= 0 && baseAddr + 256 < screen.data.length) {
-        screen.data[baseAddr + 256]! |= 0x30 // Rows 4-5
+      if (baseAddr + 256 >= 0 && baseAddr + 256 < newScreen.data.length) {
+        newScreen.data[baseAddr + 256]! |= 0x30 // Rows 4-5
       }
-      if (baseAddr + 384 >= 0 && baseAddr + 384 < screen.data.length) {
-        screen.data[baseAddr + 384]! |= 0x18 // Rows 6-7
+      if (baseAddr + 384 >= 0 && baseAddr + 384 < newScreen.data.length) {
+        newScreen.data[baseAddr + 384]! |= 0x18 // Rows 6-7
       }
-      if (baseAddr + 512 >= 0 && baseAddr + 512 < screen.data.length) {
-        screen.data[baseAddr + 512]! |= 0x0c // Rows 8-9
+      if (baseAddr + 512 >= 0 && baseAddr + 512 < newScreen.data.length) {
+        newScreen.data[baseAddr + 512]! |= 0x0c // Rows 8-9
       }
-      if (baseAddr + 640 >= 0 && baseAddr + 640 < screen.data.length) {
-        screen.data[baseAddr + 640]! |= 0x06 // Rows 10-11
+      if (baseAddr + 640 >= 0 && baseAddr + 640 < newScreen.data.length) {
+        newScreen.data[baseAddr + 640]! |= 0x06 // Rows 10-11
       }
-      if (baseAddr + 768 >= 0 && baseAddr + 768 < screen.data.length) {
-        screen.data[baseAddr + 768]! |= 0x03 // Rows 12-13
+      if (baseAddr + 768 >= 0 && baseAddr + 768 < newScreen.data.length) {
+        newScreen.data[baseAddr + 768]! |= 0x03 // Rows 12-13
       }
       // Rows 14-15: split across byte boundary
-      if (baseAddr + 896 >= 0 && baseAddr + 896 < screen.data.length) {
-        screen.data[baseAddr + 896]! |= 0x01
+      if (baseAddr + 896 >= 0 && baseAddr + 896 < newScreen.data.length) {
+        newScreen.data[baseAddr + 896]! |= 0x01
       }
-      if (baseAddr + 897 >= 0 && baseAddr + 897 < screen.data.length) {
-        screen.data[baseAddr + 897]! |= 0x80
+      if (baseAddr + 897 >= 0 && baseAddr + 897 < newScreen.data.length) {
+        newScreen.data[baseAddr + 897]! |= 0x80
       }
       
       // Move to next column position
@@ -125,33 +133,33 @@ export const drawNneline = (
     } else {
       // Upward direction (uploop)
       // Unrolled loop for 16 pixels
-      if (baseAddr >= 0 && baseAddr < screen.data.length) {
-        screen.data[baseAddr]! |= 0xc0 // Rows 0-1
+      if (baseAddr >= 0 && baseAddr < newScreen.data.length) {
+        newScreen.data[baseAddr]! |= 0xc0 // Rows 0-1
       }
-      if (baseAddr - 128 >= 0 && baseAddr - 128 < screen.data.length) {
-        screen.data[baseAddr - 128]! |= 0x60 // Rows -2 to -3
+      if (baseAddr - 128 >= 0 && baseAddr - 128 < newScreen.data.length) {
+        newScreen.data[baseAddr - 128]! |= 0x60 // Rows -2 to -3
       }
-      if (baseAddr - 256 >= 0 && baseAddr - 256 < screen.data.length) {
-        screen.data[baseAddr - 256]! |= 0x30 // Rows -4 to -5
+      if (baseAddr - 256 >= 0 && baseAddr - 256 < newScreen.data.length) {
+        newScreen.data[baseAddr - 256]! |= 0x30 // Rows -4 to -5
       }
-      if (baseAddr - 384 >= 0 && baseAddr - 384 < screen.data.length) {
-        screen.data[baseAddr - 384]! |= 0x18 // Rows -6 to -7
+      if (baseAddr - 384 >= 0 && baseAddr - 384 < newScreen.data.length) {
+        newScreen.data[baseAddr - 384]! |= 0x18 // Rows -6 to -7
       }
-      if (baseAddr - 512 >= 0 && baseAddr - 512 < screen.data.length) {
-        screen.data[baseAddr - 512]! |= 0x0c // Rows -8 to -9
+      if (baseAddr - 512 >= 0 && baseAddr - 512 < newScreen.data.length) {
+        newScreen.data[baseAddr - 512]! |= 0x0c // Rows -8 to -9
       }
-      if (baseAddr - 640 >= 0 && baseAddr - 640 < screen.data.length) {
-        screen.data[baseAddr - 640]! |= 0x06 // Rows -10 to -11
+      if (baseAddr - 640 >= 0 && baseAddr - 640 < newScreen.data.length) {
+        newScreen.data[baseAddr - 640]! |= 0x06 // Rows -10 to -11
       }
-      if (baseAddr - 768 >= 0 && baseAddr - 768 < screen.data.length) {
-        screen.data[baseAddr - 768]! |= 0x03 // Rows -12 to -13
+      if (baseAddr - 768 >= 0 && baseAddr - 768 < newScreen.data.length) {
+        newScreen.data[baseAddr - 768]! |= 0x03 // Rows -12 to -13
       }
       // Rows -14 to -15: split across byte boundary
-      if (baseAddr - 896 >= 0 && baseAddr - 896 < screen.data.length) {
-        screen.data[baseAddr - 896]! |= 0x01
+      if (baseAddr - 896 >= 0 && baseAddr - 896 < newScreen.data.length) {
+        newScreen.data[baseAddr - 896]! |= 0x01
       }
-      if (baseAddr - 895 >= 0 && baseAddr - 895 < screen.data.length) {
-        screen.data[baseAddr - 895]! |= 0x80
+      if (baseAddr - 895 >= 0 && baseAddr - 895 < newScreen.data.length) {
+        newScreen.data[baseAddr - 895]! |= 0x80
       }
       
       // Move to next column position
@@ -166,8 +174,8 @@ export const drawNneline = (
     mask = 0xc0 // Reset to initial pattern
     
     while (remainingLen > 0) {
-      if (address >= 0 && address < screen.data.length) {
-        screen.data[address]! |= mask
+      if (address >= 0 && address < newScreen.data.length) {
+        newScreen.data[address]! |= mask
       }
       
       address += rowOffset
@@ -177,14 +185,16 @@ export const drawNneline = (
       // Check if mask is empty (crossed byte boundary)
       if (mask === 0 && remainingLen > 0) {
         // Set final cross-byte pixels
-        if (address >= 0 && address < screen.data.length) {
-          screen.data[address]! |= 0x01
+        if (address >= 0 && address < newScreen.data.length) {
+          newScreen.data[address]! |= 0x01
         }
-        if (address + 1 >= 0 && address + 1 < screen.data.length) {
-          screen.data[address + 1]! |= 0x80
+        if (address + 1 >= 0 && address + 1 < newScreen.data.length) {
+          newScreen.data[address + 1]! |= 0x80
         }
         break
       }
     }
   }
+
+  return newScreen
 }

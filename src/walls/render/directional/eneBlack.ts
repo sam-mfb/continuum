@@ -202,7 +202,7 @@ export const eneBlack = (
 
   // Draw end line if needed (lines 486-487)
   if (adjustedEndline > 0) {
-    drawEneline(newScreen, endlinex, endliney, adjustedEndline + 1, L_UP)
+    return drawEneline(newScreen, endlinex, endliney, adjustedEndline + 1, L_UP)
   }
 
   return newScreen

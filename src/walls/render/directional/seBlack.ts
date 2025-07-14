@@ -29,7 +29,7 @@ export const seBlack = (
   scry: number
 ): MonochromeBitmap => {
   // Deep clone the screen bitmap for immutability
-  const newScreen: MonochromeBitmap = {
+  let newScreen: MonochromeBitmap = {
     data: new Uint8Array(screen.data),
     width: screen.width,
     height: screen.height,
@@ -94,10 +94,10 @@ export const seBlack = (
 
   // Draw short black-only pieces (lines 910-913)
   if (h2 > h1) {
-    drawNeline(newScreen, x + h1, y + h1, h2 - h1 - 1, L_DN)
+    newScreen = drawNeline(newScreen, x + h1, y + h1, h2 - h1 - 1, L_DN)
   }
   if (adjustedH5 > h4) {
-    drawNeline(newScreen, x + h4, y + h4, adjustedH5 - h4 - 1, L_DN)
+    newScreen = drawNeline(newScreen, x + h4, y + h4, adjustedH5 - h4 - 1, L_DN)
   }
 
   x += h2

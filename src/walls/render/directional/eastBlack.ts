@@ -23,7 +23,7 @@ export const eastBlack = (
   scry: number
 ): MonochromeBitmap => {
   // Deep clone the screen bitmap for immutability
-  const newScreen: MonochromeBitmap = {
+  let newScreen: MonochromeBitmap = {
     data: new Uint8Array(screen.data),
     width: screen.width,
     height: screen.height,
@@ -87,10 +87,10 @@ export const eastBlack = (
   // Draw edge lines if needed (lines 599-605)
   if (y + height >= SBARHT + 5 && y < SCRHT) {
     if (h2 > h1) {
-      drawEline(newScreen, x + h1, y, h2 - h1 - 1, L_DN)
+      newScreen = drawEline(newScreen, x + h1, y, h2 - h1 - 1, L_DN)
     }
     if (adjustedH4 > h3) {
-      drawEline(newScreen, x + h3, y, adjustedH4 - h3 - 1, L_DN)
+      newScreen = drawEline(newScreen, x + h3, y, adjustedH4 - h3 - 1, L_DN)
     }
   }
 
