@@ -22,219 +22,227 @@ const L_DN = 0 // Down direction
  * Draws black parts of SSE (South-South-East) lines
  * @see orig/Sources/Walls.c:968 sse_black()
  */
-export const sseBlack = (
-  screen: MonochromeBitmap,
-  line: LineRec,
-  scrx: number,
-  scry: number
-): MonochromeBitmap => {
-  // Deep clone the screen bitmap for immutability
-  let newScreen: MonochromeBitmap = {
-    data: new Uint8Array(screen.data),
-    width: screen.width,
-    height: screen.height,
-    rowBytes: screen.rowBytes
-  }
+export const sseBlack =
+  (deps: { line: LineRec; scrx: number; scry: number }) =>
+  (screen: MonochromeBitmap): MonochromeBitmap => {
+    const { line, scrx, scry } = deps
 
-  let x = line.startx - scrx
-  let y = line.starty - scry
-  let h1 = 0
-  const h5 = line.length + 1
-
-  // Calculate h1 boundaries (lines 982-993)
-  if (x + (h1 >> 1) < 0) {
-    h1 = -x << 1
-  }
-  if (y + h1 < 0) {
-    h1 = -y
-  }
-  if (h1 & 1) {
-    h1++
-  }
-  
-  let adjustedH5 = h5
-  if (x + (h5 >> 1) > SCRWTH - 1) {
-    adjustedH5 = (SCRWTH - 1 - x) << 1
-  }
-  if (y + h5 > VIEWHT) {
-    adjustedH5 = VIEWHT - y
-  }
-  if (h1 > adjustedH5) {
-    h1 = adjustedH5
-  }
-
-  // Calculate h2 (lines 994-998)
-  let h2 = line.h1 ?? h1
-  if (h2 < h1) {
-    h2 = h1
-  }
-  if (h2 > adjustedH5) {
-    h2 = adjustedH5
-  }
-
-  // Calculate h4 (lines 999-1003)
-  let h4 = line.h2 ?? h1
-  if (h4 < h1) {
-    h4 = h1
-  }
-  if (h4 > adjustedH5) {
-    h4 = adjustedH5
-  }
-
-  // Calculate h3 (lines 1004-1012)
-  let h3 = h4
-  if (x + (h3 >> 1) > SCRWTH - 8) {
-    h3 = (SCRWTH - 8 - x) << 1
-    if (h3 & 1) {
-      h3--
+    // Deep clone the screen bitmap for immutability
+    let newScreen: MonochromeBitmap = {
+      data: new Uint8Array(screen.data),
+      width: screen.width,
+      height: screen.height,
+      rowBytes: screen.rowBytes
     }
-  }
-  if (h3 < h2) {
-    h3 = h2
-  }
 
-  // Calculate start piece if needed (lines 1014-1028)
-  let startlen = 0
-  let startx = 0
-  let starty = 0
-  if (x < 0) {
-    let h = line.h1 ?? 0
-    if (x + (h >> 1) < -7) {
-      h = (-7 - x) << 1
+    let x = line.startx - scrx
+    let y = line.starty - scry
+    let h1 = 0
+    const h5 = line.length + 1
+
+    // Calculate h1 boundaries (lines 982-993)
+    if (x + (h1 >> 1) < 0) {
+      h1 = -x << 1
     }
-    if (y + h < 0) {
-      h = -y
+    if (y + h1 < 0) {
+      h1 = -y
     }
-    if (h & 1) {
-      h++
+    if (h1 & 1) {
+      h1++
     }
-    startlen = h1 - h
-    startx = x + (h >> 1) + 7
-    starty = y + SBARHT + h
-  }
 
-  y += SBARHT
-  const start = h2 - h1
-  const len = h3 - h2
-  const end = h4 - h3
+    let adjustedH5 = h5
+    if (x + (h5 >> 1) > SCRWTH - 1) {
+      adjustedH5 = (SCRWTH - 1 - x) << 1
+    }
+    if (y + h5 > VIEWHT) {
+      adjustedH5 = VIEWHT - y
+    }
+    if (h1 > adjustedH5) {
+      h1 = adjustedH5
+    }
 
-  // Draw short black-only pieces (lines 1035-1038)
-  if (start > 0) {
-    newScreen = drawNneline(newScreen, x + (h1 >> 1), y + h1, start - 1, L_DN)
-  }
-  if (adjustedH5 - h4 > 1) {
-    newScreen = drawNneline(newScreen, x + (h4 >> 1), y + h4, adjustedH5 - h4 - 1, L_DN)
-  }
+    // Calculate h2 (lines 994-998)
+    let h2 = line.h1 ?? h1
+    if (h2 < h1) {
+      h2 = h1
+    }
+    if (h2 > adjustedH5) {
+      h2 = adjustedH5
+    }
 
-  x += h2 >> 1
-  y += h2
+    // Calculate h4 (lines 999-1003)
+    let h4 = line.h2 ?? h1
+    if (h4 < h1) {
+      h4 = h1
+    }
+    if (h4 > adjustedH5) {
+      h4 = adjustedH5
+    }
 
-  // Calculate EOR patterns (lines 1043-1044)
-  const eor1 = (background[(x + y) & 1]! & SSE_MASK) ^ SSE_VAL
-  const eor2 = (background[1 - ((x + y) & 1)]! & SSE_MASK) ^ SSE_VAL
-
-  // Main drawing section (lines 1046-1117)
-  if (len > 0 || end > 0) {
-    // Calculate screen address
-    const byteX = (x >> 3) & 0xfffe
-    let address = y * newScreen.rowBytes + byteX
-
-    // Rotate the EOR patterns based on x position
-    const shift = x & 15
-    let d0 = rotateRight(eor1, shift)
-    let d1 = rotateRight(eor2, shift)
-
-    let remainingLen = len - 1
-
-    // Fast loop (4 lines at a time)
-    while (remainingLen >= 4) {
-      eorToScreen32(newScreen, address, d0)
-      eorToScreen32(newScreen, address + 64, d1)
-      d0 = rotateRight(d0, 1)
-      d1 = rotateRight(d1, 1)
-      eorToScreen32(newScreen, address + 64 * 2, d1)
-      eorToScreen32(newScreen, address + 64 * 3, d0)
-      d0 = rotateRight(d0, 1)
-      d1 = rotateRight(d1, 1)
-      address += 64 * 4
-
-      // Check if we need to wrap to next word
-      if ((d1 & 0xff) === 0) {
-        d0 = swapWords(d0)
-        d1 = swapWords(d1)
-        address += 2
+    // Calculate h3 (lines 1004-1012)
+    let h3 = h4
+    if (x + (h3 >> 1) > SCRWTH - 8) {
+      h3 = (SCRWTH - 8 - x) << 1
+      if (h3 & 1) {
+        h3--
       }
-      remainingLen -= 4
+    }
+    if (h3 < h2) {
+      h3 = h2
     }
 
-    // Handle remainder
-    while (remainingLen >= 0) {
-      eorToScreen32(newScreen, address, d0)
-      if (remainingLen > 0) {
+    // Calculate start piece if needed (lines 1014-1028)
+    let startlen = 0
+    let startx = 0
+    let starty = 0
+    if (x < 0) {
+      let h = line.h1 ?? 0
+      if (x + (h >> 1) < -7) {
+        h = (-7 - x) << 1
+      }
+      if (y + h < 0) {
+        h = -y
+      }
+      if (h & 1) {
+        h++
+      }
+      startlen = h1 - h
+      startx = x + (h >> 1) + 7
+      starty = y + SBARHT + h
+    }
+
+    y += SBARHT
+    const start = h2 - h1
+    const len = h3 - h2
+    const end = h4 - h3
+
+    // Draw short black-only pieces (lines 1035-1038)
+    if (start > 0) {
+      newScreen = drawNneline({
+        x: x + (h1 >> 1),
+        y: y + h1,
+        len: start - 1,
+        dir: L_DN
+      })(newScreen)
+    }
+    if (adjustedH5 - h4 > 1) {
+      newScreen = drawNneline({
+        x: x + (h4 >> 1),
+        y: y + h4,
+        len: adjustedH5 - h4 - 1,
+        dir: L_DN
+      })(newScreen)
+    }
+
+    x += h2 >> 1
+    y += h2
+
+    // Calculate EOR patterns (lines 1043-1044)
+    const eor1 = (background[(x + y) & 1]! & SSE_MASK) ^ SSE_VAL
+    const eor2 = (background[1 - ((x + y) & 1)]! & SSE_MASK) ^ SSE_VAL
+
+    // Main drawing section (lines 1046-1117)
+    if (len > 0 || end > 0) {
+      // Calculate screen address
+      const byteX = (x >> 3) & 0xfffe
+      let address = y * newScreen.rowBytes + byteX
+
+      // Rotate the EOR patterns based on x position
+      const shift = x & 15
+      let d0 = rotateRight(eor1, shift)
+      let d1 = rotateRight(eor2, shift)
+
+      let remainingLen = len - 1
+
+      // Fast loop (4 lines at a time)
+      while (remainingLen >= 4) {
+        eorToScreen32(newScreen, address, d0)
         eorToScreen32(newScreen, address + 64, d1)
+        d0 = rotateRight(d0, 1)
+        d1 = rotateRight(d1, 1)
+        eorToScreen32(newScreen, address + 64 * 2, d1)
+        eorToScreen32(newScreen, address + 64 * 3, d0)
+        d0 = rotateRight(d0, 1)
+        d1 = rotateRight(d1, 1)
+        address += 64 * 4
+
+        // Check if we need to wrap to next word
+        if ((d1 & 0xff) === 0) {
+          d0 = swapWords(d0)
+          d1 = swapWords(d1)
+          address += 2
+        }
+        remainingLen -= 4
       }
-      address += 128
-      d0 = rotateRight(d0, 1)
-      d1 = rotateRight(d1, 1)
-      
-      // Swap d0 and d1
-      const temp = d0
-      d0 = d1
-      d1 = temp
 
-      // Check if we need to wrap to next word
-      if ((d1 & 0xff) === 0 && remainingLen > 0) {
-        d0 = swapWords(d0)
-        d1 = swapWords(d1)
-        address += 2
-      }
-      remainingLen--
-    }
-
-    // Handle end section with 16-bit operations
-    if (end > 0) {
-      d0 = swapWords(d0)
-      d1 = swapWords(d1)
-      let endLen = end - 1
-
-      while (endLen >= 0) {
-        eorToScreen16(newScreen, address, d0 >>> 16)
-        d0 >>>= 1
-        if (endLen > 0) {
-          eorToScreen16(newScreen, address + 64, d1 >>> 16)
-          d1 >>>= 1
-          
-          // Swap d0 and d1
-          const temp = d0
-          d0 = d1
-          d1 = temp
+      // Handle remainder
+      while (remainingLen >= 0) {
+        eorToScreen32(newScreen, address, d0)
+        if (remainingLen > 0) {
+          eorToScreen32(newScreen, address + 64, d1)
         }
         address += 128
-        endLen--
+        d0 = rotateRight(d0, 1)
+        d1 = rotateRight(d1, 1)
+
+        // Swap d0 and d1
+        const temp = d0
+        d0 = d1
+        d1 = temp
+
+        // Check if we need to wrap to next word
+        if ((d1 & 0xff) === 0 && remainingLen > 0) {
+          d0 = swapWords(d0)
+          d1 = swapWords(d1)
+          address += 2
+        }
+        remainingLen--
+      }
+
+      // Handle end section with 16-bit operations
+      if (end > 0) {
+        d0 = swapWords(d0)
+        d1 = swapWords(d1)
+        let endLen = end - 1
+
+        while (endLen >= 0) {
+          eorToScreen16(newScreen, address, d0 >>> 16)
+          d0 >>>= 1
+          if (endLen > 0) {
+            eorToScreen16(newScreen, address + 64, d1 >>> 16)
+            d1 >>>= 1
+
+            // Swap d0 and d1
+            const temp = d0
+            d0 = d1
+            d1 = temp
+          }
+          address += 128
+          endLen--
+        }
       }
     }
-  }
 
-  // Handle start piece with AND operations (lines 1118-1137)
-  if (startlen > 0) {
-    const byteX = (startx >> 3) & 0xfffe
-    let address = starty * newScreen.rowBytes + byteX
-    
-    let mask = 0x7fff
-    mask >>>= startx & 15
-    
-    const loopCount = startlen >> 1
-    for (let i = 0; i <= loopCount; i++) {
-      andToScreen16(newScreen, address, mask)
-      andToScreen16(newScreen, address + 64, mask)
-      mask >>>= 1
-      address += 128
+    // Handle start piece with AND operations (lines 1118-1137)
+    if (startlen > 0) {
+      const byteX = (startx >> 3) & 0xfffe
+      let address = starty * newScreen.rowBytes + byteX
+
+      let mask = 0x7fff
+      mask >>>= startx & 15
+
+      const loopCount = startlen >> 1
+      for (let i = 0; i <= loopCount; i++) {
+        andToScreen16(newScreen, address, mask)
+        andToScreen16(newScreen, address + 64, mask)
+        mask >>>= 1
+        address += 128
+      }
     }
+
+    return newScreen
   }
-
-  return newScreen
-}
-
 
 /**
  * Helper function to rotate a 32-bit value right

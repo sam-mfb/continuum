@@ -9,82 +9,81 @@ import { VIEWHT, SBARHT } from '../../../screen/constants'
  * Draws white parts of ENE (East-North-East) lines
  * @see orig/Sources/Walls.c:494 ene_white()
  */
-export const eneWhite = (
-  screen: MonochromeBitmap,
-  line: LineRec,
-  scrx: number,
-  scry: number
-): MonochromeBitmap => {
-  // Deep clone the screen bitmap for immutability
-  const newScreen: MonochromeBitmap = {
-    data: new Uint8Array(screen.data),
-    width: screen.width,
-    height: screen.height,
-    rowBytes: screen.rowBytes
-  }
+export const eneWhite =
+  (deps: { line: LineRec; scrx: number; scry: number }) =>
+  (screen: MonochromeBitmap): MonochromeBitmap => {
+    const { line, scrx, scry } = deps
 
-  const x = line.startx - scrx
-  const y = line.starty - scry
+    // Deep clone the screen bitmap for immutability
+    const newScreen: MonochromeBitmap = {
+      data: new Uint8Array(screen.data),
+      width: screen.width,
+      height: screen.height,
+      rowBytes: screen.rowBytes
+    }
 
-  // Early return if x > 0 (line 506-507)
-  if (x > 0) {
+    const x = line.startx - scrx
+    const y = line.starty - scry
+
+    // Early return if x > 0 (line 506-507)
+    if (x > 0) {
+      return newScreen
+    }
+
+    // Calculate h (lines 508-514)
+    let h = 0
+    if (x + h < -20) {
+      h = -20 - x
+    }
+    if (y - (h >> 1) > VIEWHT) {
+      h = (y - (VIEWHT - 1)) << 1
+    }
+    if (h & 1) {
+      h++
+    }
+
+    // Calculate len (lines 516-522)
+    let len = line.length - 12
+    if (len > -x) {
+      len = -x
+    }
+    if (len & 1) {
+      len++
+    }
+    if (y < len >> 1) {
+      len = y << 1
+    }
+
+    // Adjust len (lines 524-525)
+    len -= h
+    len >>= 1
+
+    // Calculate drawing position (lines 527-530)
+    const drawY = y + SBARHT - (h >> 1)
+    const drawX = x + h
+    const andval = 0x7fffffff >>> (drawX + 20)
+
+    // Early return if nothing to draw
+    if (len < 0) {
+      return newScreen
+    }
+
+    // Assembly drawing logic (lines 531-545)
+    // Calculate screen address at x=0
+    const byteX = 0 // x is set to 0 in line 530
+    let address = drawY * newScreen.rowBytes + byteX
+
+    let mask = andval
+
+    // Draw loop
+    for (let i = 0; i <= len; i++) {
+      andToScreen32(newScreen, address, mask)
+      address -= 64
+      mask >>>= 2
+    }
+
     return newScreen
   }
-
-  // Calculate h (lines 508-514)
-  let h = 0
-  if (x + h < -20) {
-    h = -20 - x
-  }
-  if (y - (h >> 1) > VIEWHT) {
-    h = (y - (VIEWHT - 1)) << 1
-  }
-  if (h & 1) {
-    h++
-  }
-
-  // Calculate len (lines 516-522)
-  let len = line.length - 12
-  if (len > -x) {
-    len = -x
-  }
-  if (len & 1) {
-    len++
-  }
-  if (y < len >> 1) {
-    len = y << 1
-  }
-
-  // Adjust len (lines 524-525)
-  len -= h
-  len >>= 1
-
-  // Calculate drawing position (lines 527-530)
-  const drawY = y + SBARHT - (h >> 1)
-  const drawX = x + h
-  const andval = 0x7fffffff >>> (drawX + 20)
-
-  // Early return if nothing to draw
-  if (len < 0) {
-    return newScreen
-  }
-
-  // Assembly drawing logic (lines 531-545)
-  // Calculate screen address at x=0
-  const byteX = 0 // x is set to 0 in line 530
-  let address = drawY * newScreen.rowBytes + byteX
-
-  let mask = andval
-
-  // Draw loop
-  for (let i = 0; i <= len; i++) {
-    andToScreen32(newScreen, address, mask)
-    address -= 64
-    mask >>>= 2
-  }
-
-  return newScreen
-}
 
 /**
  * Helper function to AND a 32-bit value into screen memory

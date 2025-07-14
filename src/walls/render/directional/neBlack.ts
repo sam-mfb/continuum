@@ -21,184 +21,196 @@ const L_UP = 1 // Up direction
 /**
  * Draws black parts of NE (North-East) lines
  * @see orig/Sources/Walls.c:209 ne_black()
+ * @param deps - Dependencies object containing:
+ *   @param line - Line record
+ *   @param scrx - Screen x offset
+ *   @param scry - Screen y offset
+ * @returns A curried function that takes a screen and returns a new MonochromeBitmap
  */
-export const neBlack = (
-  screen: MonochromeBitmap,
-  line: LineRec,
-  scrx: number,
-  scry: number
-): MonochromeBitmap => {
-  // Deep clone the screen bitmap for immutability
-  let newScreen: MonochromeBitmap = {
-    data: new Uint8Array(screen.data),
-    width: screen.width,
-    height: screen.height,
-    rowBytes: screen.rowBytes
-  }
+export const neBlack =
+  (deps: { line: LineRec; scrx: number; scry: number }) =>
+  (screen: MonochromeBitmap): MonochromeBitmap => {
+    const { line, scrx, scry } = deps
+    // Deep clone the screen bitmap for immutability
+    let newScreen: MonochromeBitmap = {
+      data: new Uint8Array(screen.data),
+      width: screen.width,
+      height: screen.height,
+      rowBytes: screen.rowBytes
+    }
 
-  let x = line.startx - scrx
-  let y = line.starty - scry
-  let h1 = line.h1 ?? 0
-  let h4 = line.length + 1
+    let x = line.startx - scrx
+    let y = line.starty - scry
+    let h1 = line.h1 ?? 0
+    let h4 = line.length + 1
 
-  // Calculate boundaries (lines 223-232)
-  if (y - h1 >= VIEWHT) {
-    h1 = y - (VIEWHT - 1)
-  }
-  if (y < h4) {
-    h4 = y + 1
-  }
-  if (x + h1 < -14) {
-    h1 = -14 - x
-  }
-  if (x + h4 > SCRWTH) {
-    h4 = SCRWTH - x
-  }
-  if (h1 > h4) {
-    h1 = h4
-  }
+    // Calculate boundaries (lines 223-232)
+    if (y - h1 >= VIEWHT) {
+      h1 = y - (VIEWHT - 1)
+    }
+    if (y < h4) {
+      h4 = y + 1
+    }
+    if (x + h1 < -14) {
+      h1 = -14 - x
+    }
+    if (x + h4 > SCRWTH) {
+      h4 = SCRWTH - x
+    }
+    if (h1 > h4) {
+      h1 = h4
+    }
 
-  // Calculate h3 and h15 (lines 233-250)
-  let h3 = line.h2 ?? h4
-  if (h3 > h4) {
-    h3 = h4
-  }
-  
-  let h15 = h3
-  if (x + h15 > 0) {
-    h15 = -x
-  }
-  if (h15 < h1) {
-    h15 = h1
-  }
-  
-  const startlen = h15 - h1
-  
-  if (x + h15 < 0) {
-    h15 = -x
-  }
-  if (h3 < h15) {
-    h3 = h15
-  }
-  
-  let h2 = h3
-  if (x + h2 > SCRWTH - 15) {
-    h2 = SCRWTH - 15 - x
-  }
-  if (h2 < h15) {
-    h2 = h15
-  }
+    // Calculate h3 and h15 (lines 233-250)
+    let h3 = line.h2 ?? h4
+    if (h3 > h4) {
+      h3 = h4
+    }
 
-  // Calculate h0 (lines 251-255)
-  let h0 = 0
-  if (x + h0 < 0) {
-    h0 = -x
-  }
-  if (y - h0 >= VIEWHT) {
-    h0 = y - (VIEWHT - 1)
-  }
+    let h15 = h3
+    if (x + h15 > 0) {
+      h15 = -x
+    }
+    if (h15 < h1) {
+      h15 = h1
+    }
 
-  y += SBARHT
+    const startlen = h15 - h1
 
-  const startx = x + h1 + 14
-  const starty = y - h1
+    if (x + h15 < 0) {
+      h15 = -x
+    }
+    if (h3 < h15) {
+      h3 = h15
+    }
 
-  const len = h2 - h15
-  const end = h3 - h2
-  const endline = h4 - h3
+    let h2 = h3
+    if (x + h2 > SCRWTH - 15) {
+      h2 = SCRWTH - 15 - x
+    }
+    if (h2 < h15) {
+      h2 = h15
+    }
 
-  // Draw edge lines (lines 266-269)
-  if (h1 - h0 > 1) {
-    newScreen = drawNeline(newScreen, x + h0, y - h0, h1 - h0 - 1, L_UP)
-  }
-  if (endline > 0) {
-    newScreen = drawNeline(newScreen, x + h3, y - h3, endline - 1, L_UP)
-  }
+    // Calculate h0 (lines 251-255)
+    let h0 = 0
+    if (x + h0 < 0) {
+      h0 = -x
+    }
+    if (y - h0 >= VIEWHT) {
+      h0 = y - (VIEWHT - 1)
+    }
 
-  x += h15
-  y -= h15
+    y += SBARHT
 
-  // Calculate EOR pattern (line 274)
-  const eor = (background[(x + y) & 1]! & NE_MASK) ^ NE_VAL
+    const startx = x + h1 + 14
+    const starty = y - h1
 
-  // Main drawing section (lines 276-313)
-  if (len > 0 || end > 0) {
-    // Calculate screen address
-    const byteX = (x >> 3) & 0xfffe
-    let address = y * newScreen.rowBytes + byteX
+    const len = h2 - h15
+    const end = h3 - h2
+    const endline = h4 - h3
 
-    // Rotate the EOR pattern based on x position
-    const shift = x & 15
-    let rotatedEor = rotateRight(eor, shift)
+    // Draw edge lines (lines 266-269)
+    if (h1 - h0 > 1) {
+      newScreen = drawNeline({
+        x: x + h0,
+        y: y - h0,
+        len: h1 - h0 - 1,
+        dir: L_UP
+      })(newScreen)
+    }
+    if (endline > 0) {
+      newScreen = drawNeline({
+        x: x + h3,
+        y: y - h3,
+        len: endline - 1,
+        dir: L_UP
+      })(newScreen)
+    }
 
-    let remainingLen = len - 1
+    x += h15
+    y -= h15
 
-    // Main loop
-    if (remainingLen >= 0) {
-      // Loop until we need to switch to 16-bit operations
-      while (remainingLen >= 0) {
-        eorToScreen32(newScreen, address, rotatedEor)
-        address -= 64
-        rotatedEor = rotateRight(rotatedEor, 1)
-        
-        // Check if carry bit is set
-        if ((rotatedEor & 0x80000000) === 0) {
-          // Need to switch to next word
-          rotatedEor = swapWords(rotatedEor)
-          address += 2
+    // Calculate EOR pattern (line 274)
+    const eor = (background[(x + y) & 1]! & NE_MASK) ^ NE_VAL
+
+    // Main drawing section (lines 276-313)
+    if (len > 0 || end > 0) {
+      // Calculate screen address
+      const byteX = (x >> 3) & 0xfffe
+      let address = y * newScreen.rowBytes + byteX
+
+      // Rotate the EOR pattern based on x position
+      const shift = x & 15
+      let rotatedEor = rotateRight(eor, shift)
+
+      let remainingLen = len - 1
+
+      // Main loop
+      if (remainingLen >= 0) {
+        // Loop until we need to switch to 16-bit operations
+        while (remainingLen >= 0) {
+          eorToScreen32(newScreen, address, rotatedEor)
+          address -= 64
+          rotatedEor = rotateRight(rotatedEor, 1)
+
+          // Check if carry bit is set
+          if ((rotatedEor & 0x80000000) === 0) {
+            // Need to switch to next word
+            rotatedEor = swapWords(rotatedEor)
+            address += 2
+            remainingLen--
+            break
+          }
           remainingLen--
-          break
         }
-        remainingLen--
-      }
 
-      // Continue with remaining iterations if any
-      while (remainingLen >= 0) {
-        eorToScreen32(newScreen, address, rotatedEor)
-        address -= 64
-        rotatedEor = rotateRight(rotatedEor, 1)
-        remainingLen--
-      }
+        // Continue with remaining iterations if any
+        while (remainingLen >= 0) {
+          eorToScreen32(newScreen, address, rotatedEor)
+          address -= 64
+          rotatedEor = rotateRight(rotatedEor, 1)
+          remainingLen--
+        }
 
-      // Check if we need to adjust for the end section
-      if ((rotatedEor & 0xff) === 0) {
-        address -= 2
+        // Check if we need to adjust for the end section
+        if ((rotatedEor & 0xff) === 0) {
+          address -= 2
+        } else {
+          rotatedEor = swapWords(rotatedEor)
+        }
       } else {
         rotatedEor = swapWords(rotatedEor)
       }
-    } else {
-      rotatedEor = swapWords(rotatedEor)
-    }
 
-    // Handle end section with 16-bit operations (lines 304-311)
-    if (end > 0) {
-      let endLen = end - 1
-      const eor16 = rotatedEor >>> 16
+      // Handle end section with 16-bit operations (lines 304-311)
+      if (end > 0) {
+        let endLen = end - 1
+        const eor16 = rotatedEor >>> 16
 
-      for (let i = 0; i <= endLen; i++) {
-        eorToScreen16(newScreen, address, (eor16 >>> i) & 0xffff)
-        address -= 64
+        for (let i = 0; i <= endLen; i++) {
+          eorToScreen16(newScreen, address, (eor16 >>> i) & 0xffff)
+          address -= 64
+        }
       }
     }
-  }
 
-  // Handle start piece with AND operations (lines 314-331)
-  if (startlen > 0) {
-    const byteX = (startx >> 3) & 0xfffe
-    let address = starty * newScreen.rowBytes + byteX
-    
-    let mask = 0x7fff >> (startx & 15)
-    
-    for (let i = 0; i <= startlen; i++) {
-      andToScreen16(newScreen, address, mask)
-      address -= 64
-      mask >>>= 1
+    // Handle start piece with AND operations (lines 314-331)
+    if (startlen > 0) {
+      const byteX = (startx >> 3) & 0xfffe
+      let address = starty * newScreen.rowBytes + byteX
+
+      let mask = 0x7fff >> (startx & 15)
+
+      for (let i = 0; i <= startlen; i++) {
+        andToScreen16(newScreen, address, mask)
+        address -= 64
+        mask >>>= 1
+      }
     }
+
+    return newScreen
   }
-
-  return newScreen
-}
-
 
 /**
  * Helper function to rotate a 32-bit value right

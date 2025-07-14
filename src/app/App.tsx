@@ -16,7 +16,6 @@ import { testGameLoop } from './games/testGame'
 import { shipMoveGameLoop } from './games/shipMove'
 import { bitmapTestRenderer } from './games/bitmapTest'
 import { wallWhiteTestRenderer } from './games/wallWhiteTest'
-import { singleLineTestRenderer } from './games/singleLineTest'
 import './App.css'
 
 function App(): React.JSX.Element {
@@ -122,11 +121,6 @@ function App(): React.JSX.Element {
                   type: 'bitmap',
                   name: 'Wall White Test',
                   bitmapRenderer: wallWhiteTestRenderer
-                } as BitmapGameDefinition,
-                {
-                  type: 'bitmap',
-                  name: 'Single Line Test',
-                  bitmapRenderer: singleLineTestRenderer
                 } as BitmapGameDefinition
               ]}
               defaultGameIndex={0}

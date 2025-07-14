@@ -22,119 +22,122 @@ const L_DN = 0 // Down direction
  * Draws black parts of southward lines
  * @see orig/Sources/Walls.c:1144 south_black()
  */
-export const southBlack = (
-  screen: MonochromeBitmap,
-  line: LineRec,
-  scrx: number,
-  scry: number
-): MonochromeBitmap => {
-  // Deep clone the screen bitmap for immutability
-  let newScreen: MonochromeBitmap = {
-    data: new Uint8Array(screen.data),
-    width: screen.width,
-    height: screen.height,
-    rowBytes: screen.rowBytes
-  }
+export const southBlack =
+  (deps: { line: LineRec; scrx: number; scry: number }) =>
+  (screen: MonochromeBitmap): MonochromeBitmap => {
+    const { line, scrx, scry } = deps
 
-  let x = line.startx - scrx
-  let y = line.starty - scry
-  let h1 = 0
-  let h4 = line.length + 1
+    // Deep clone the screen bitmap for immutability
+    let newScreen: MonochromeBitmap = {
+      data: new Uint8Array(screen.data),
+      width: screen.width,
+      height: screen.height,
+      rowBytes: screen.rowBytes
+    }
 
-  // Clipping calculations (lines 1158-1163)
-  if (y + h1 < 0) {
-    h1 = -y
-  }
-  if (y + h4 > VIEWHT) {
-    h4 = VIEWHT - y
-  }
-  if (h1 >= h4) {
+    let x = line.startx - scrx
+    let y = line.starty - scry
+    let h1 = 0
+    let h4 = line.length + 1
+
+    // Clipping calculations (lines 1158-1163)
+    if (y + h1 < 0) {
+      h1 = -y
+    }
+    if (y + h4 > VIEWHT) {
+      h4 = VIEWHT - y
+    }
+    if (h1 >= h4) {
+      return newScreen
+    }
+
+    // h2/h3 calculations (lines 1164-1173)
+    let h2 = line.h1 ?? h1
+    if (h2 < h1) {
+      h2 = h1
+    }
+    if (h2 > h4) {
+      h2 = h4
+    }
+    let h3 = line.h2 ?? h2
+    if (h3 < h2) {
+      h3 = h2
+    }
+    if (h3 > h4) {
+      h3 = h4
+    }
+
+    y += SBARHT
+
+    // Draw north lines for the gaps (lines 1176-1182)
+    if (x >= 0 && x < SCRWTH) {
+      if (h2 > h1) {
+        newScreen = drawNline({ x, y: y + h1, len: h2 - h1 - 1, u_d: L_DN })(
+          newScreen
+        )
+      }
+      if (h4 > h3 + 1) {
+        newScreen = drawNline({ x, y: y + h3, len: h4 - h3 - 1, u_d: L_DN })(
+          newScreen
+        )
+      }
+    }
+
+    y += h2
+    const len = h3 - h2
+    if (len <= 0) {
+      return newScreen
+    }
+
+    // Calculate EOR patterns (lines 1188-1189)
+    const eor1 = (background[(x + y) & 1]! & SOUTH_MASK) ^ SOUTH_BLACK
+    const eor2 = (background[(x + y + 1) & 1]! & SOUTH_MASK) ^ SOUTH_BLACK
+
+    // Assembly drawing logic (lines 1191-1260)
+    // Calculate screen address
+    const byteX = (x >> 3) & 0xfffe
+    let address = y * newScreen.rowBytes + byteX
+
+    // Shift the EOR patterns based on x position
+    const shift = x & 15
+    let d0 = eor1 >>> shift
+    let d1 = eor2 >>> shift
+
+    // Main drawing loop
+    let d3 = len >> 2 // Fast loop count
+    const remainder = len & 3
+
+    if (x < 0) {
+      // Quick mode 1: shift right by 2 bytes
+      address += 2
+    } else if (x >= SCRWTH - 16 || (x & 15) <= 6) {
+      // Quick mode 2: use 16-bit operations
+      d0 = swapWords(d0)
+      d1 = swapWords(d1)
+    }
+
+    // Fast loop (4 lines at a time)
+    const d2 = 64 * 4 // 4 scanlines
+    for (let i = 0; i < d3; i++) {
+      eorToScreen(newScreen, address, d0)
+      eorToScreen(newScreen, address + 64, d1)
+      eorToScreen(newScreen, address + 64 * 2, d0)
+      eorToScreen(newScreen, address + 64 * 3, d1)
+      address += d2
+    }
+
+    // Handle remainder
+    const d2Half = 64 * 2 // 2 scanlines
+    for (let i = 0; i < remainder; i++) {
+      eorToScreen(newScreen, address, i & 1 ? d1 : d0)
+      if (i < remainder - 1) {
+        eorToScreen(newScreen, address + 64, i & 1 ? d0 : d1)
+      }
+      address += d2Half
+    }
+
     return newScreen
   }
-
-  // h2/h3 calculations (lines 1164-1173)
-  let h2 = line.h1 ?? h1
-  if (h2 < h1) {
-    h2 = h1
-  }
-  if (h2 > h4) {
-    h2 = h4
-  }
-  let h3 = line.h2 ?? h2
-  if (h3 < h2) {
-    h3 = h2
-  }
-  if (h3 > h4) {
-    h3 = h4
-  }
-
-  y += SBARHT
-
-  // Draw north lines for the gaps (lines 1176-1182)
-  if (x >= 0 && x < SCRWTH) {
-    if (h2 > h1) {
-      newScreen = drawNline(newScreen, x, y + h1, h2 - h1 - 1, L_DN)
-    }
-    if (h4 > h3 + 1) {
-      newScreen = drawNline(newScreen, x, y + h3, h4 - h3 - 1, L_DN)
-    }
-  }
-
-  y += h2
-  const len = h3 - h2
-  if (len <= 0) {
-    return newScreen
-  }
-
-  // Calculate EOR patterns (lines 1188-1189)
-  const eor1 = (background[(x + y) & 1]! & SOUTH_MASK) ^ SOUTH_BLACK
-  const eor2 = (background[(x + y + 1) & 1]! & SOUTH_MASK) ^ SOUTH_BLACK
-
-  // Assembly drawing logic (lines 1191-1260)
-  // Calculate screen address
-  const byteX = (x >> 3) & 0xfffe
-  let address = y * newScreen.rowBytes + byteX
-
-  // Shift the EOR patterns based on x position
-  const shift = x & 15
-  let d0 = eor1 >>> shift
-  let d1 = eor2 >>> shift
-
-  // Main drawing loop
-  let d3 = len >> 2 // Fast loop count
-  const remainder = len & 3
-
-  if (x < 0) {
-    // Quick mode 1: shift right by 2 bytes
-    address += 2
-  } else if (x >= SCRWTH - 16 || (x & 15) <= 6) {
-    // Quick mode 2: use 16-bit operations
-    d0 = swapWords(d0)
-    d1 = swapWords(d1)
-  }
-
-  // Fast loop (4 lines at a time)
-  const d2 = 64 * 4 // 4 scanlines
-  for (let i = 0; i < d3; i++) {
-    eorToScreen(newScreen, address, d0)
-    eorToScreen(newScreen, address + 64, d1)
-    eorToScreen(newScreen, address + 64 * 2, d0)
-    eorToScreen(newScreen, address + 64 * 3, d1)
-    address += d2
-  }
-
-  // Handle remainder
-  const d2Half = 64 * 2 // 2 scanlines
-  for (let i = 0; i < remainder; i++) {
-    eorToScreen(newScreen, address, i & 1 ? d1 : d0)
-    if (i < remainder - 1) {
-      eorToScreen(newScreen, address + 64, i & 1 ? d0 : d1)
-    }
-    address += d2Half
-  }
-
-  return newScreen
-}
 
 /**
  * Helper function to swap high and low words of a 32-bit value

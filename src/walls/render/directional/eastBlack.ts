@@ -16,173 +16,184 @@ const data = [-1, -1, 0, 0, 0, 0]
  * Draws black parts of eastward lines
  * @see orig/Sources/Walls.c:553 east_black()
  */
-export const eastBlack = (
-  screen: MonochromeBitmap,
-  line: LineRec,
-  scrx: number,
-  scry: number
-): MonochromeBitmap => {
-  // Deep clone the screen bitmap for immutability
-  let newScreen: MonochromeBitmap = {
-    data: new Uint8Array(screen.data),
-    width: screen.width,
-    height: screen.height,
-    rowBytes: screen.rowBytes
-  }
+export const eastBlack =
+  (deps: { line: LineRec; scrx: number; scry: number }) =>
+  (screen: MonochromeBitmap): MonochromeBitmap => {
+    const { line, scrx, scry } = deps
 
-  let x = line.startx - scrx
-  let y = line.starty - scry
-  let h1 = 0
-  const h4 = line.length + 1
-  let height = 6
-  let dataIndex = 0
-
-  // Calculate h1 boundaries (lines 568-573)
-  if (x + h1 < 0) {
-    h1 = -x
-  }
-  let adjustedH4 = h4
-  if (x + h4 > SCRWTH) {
-    adjustedH4 = SCRWTH - x
-  }
-  if (h1 >= adjustedH4) {
-    return newScreen
-  }
-
-  // Calculate h2 (lines 574-578)
-  let h2 = 16
-  if (h2 < h1) {
-    h2 = h1
-  } else if (h2 > adjustedH4) {
-    h2 = adjustedH4
-  }
-
-  // Calculate h3 (lines 579-585)
-  let h3 = line.h2 ?? h2
-  if (h3 > line.length) {
-    h3 = line.length
-  }
-  if (h3 < h2) {
-    h3 = h2
-  }
-  if (h3 > adjustedH4) {
-    h3 = adjustedH4
-  }
-
-  // Adjust for vertical clipping (lines 586-596)
-  if (y < 0) {
-    dataIndex = -y
-    height += y
-    y = 0
-  } else if (y > VIEWHT - 6) {
-    height = VIEWHT - y
-  }
-  height--
-  if (height < 0) {
-    return newScreen
-  }
-
-  y += SBARHT
-
-  // Draw edge lines if needed (lines 599-605)
-  if (y + height >= SBARHT + 5 && y < SCRHT) {
-    if (h2 > h1) {
-      newScreen = drawEline(newScreen, x + h1, y, h2 - h1 - 1, L_DN)
+    // Deep clone the screen bitmap for immutability
+    let newScreen: MonochromeBitmap = {
+      data: new Uint8Array(screen.data),
+      width: screen.width,
+      height: screen.height,
+      rowBytes: screen.rowBytes
     }
-    if (adjustedH4 > h3) {
-      newScreen = drawEline(newScreen, x + h3, y, adjustedH4 - h3 - 1, L_DN)
+
+    let x = line.startx - scrx
+    let y = line.starty - scry
+    let h1 = 0
+    const h4 = line.length + 1
+    let height = 6
+    let dataIndex = 0
+
+    // Calculate h1 boundaries (lines 568-573)
+    if (x + h1 < 0) {
+      h1 = -x
     }
-  }
+    let adjustedH4 = h4
+    if (x + h4 > SCRWTH) {
+      adjustedH4 = SCRWTH - x
+    }
+    if (h1 >= adjustedH4) {
+      return newScreen
+    }
 
-  const len = h3 - h2 - 1
-  if (len < 0) {
-    return newScreen
-  }
+    // Calculate h2 (lines 574-578)
+    let h2 = 16
+    if (h2 < h1) {
+      h2 = h1
+    } else if (h2 > adjustedH4) {
+      h2 = adjustedH4
+    }
 
-  x += h2
+    // Calculate h3 (lines 579-585)
+    let h3 = line.h2 ?? h2
+    if (h3 > line.length) {
+      h3 = line.length
+    }
+    if (h3 < h2) {
+      h3 = h2
+    }
+    if (h3 > adjustedH4) {
+      h3 = adjustedH4
+    }
 
-  // Assembly drawing logic (lines 612-724)
-  // Calculate screen address
-  const byteX = (x >> 3) & 0xfffe
-  let address = y * newScreen.rowBytes + byteX
+    // Adjust for vertical clipping (lines 586-596)
+    if (y < 0) {
+      dataIndex = -y
+      height += y
+      y = 0
+    } else if (y > VIEWHT - 6) {
+      height = VIEWHT - y
+    }
+    height--
+    if (height < 0) {
+      return newScreen
+    }
 
-  const shift = x & 15
-  const totalBits = shift + len
+    y += SBARHT
 
-  if (totalBits < 16) {
-    // Deal with really short lines (lines 622-630)
-    let mask = 0xffff
-    mask >>>= 1
-    mask >>>= len
-    mask = rotateRight16(mask, shift)
-    
-    drawOneWord(newScreen, address, mask, height, dataIndex)
-  } else {
-    // Normal case (lines 632-723)
-    let mask = 0xffff >>> shift
-    mask = ~mask & 0xffff
-
-    if (height === 5) {
-      // Quick path - no vertical clipping (lines 683-722)
-      orToScreen16(newScreen, address, ~mask & 0xffff)
-      orToScreen16(newScreen, address + 64, ~mask & 0xffff)
-      andToScreen16(newScreen, address + 64 * 2, mask)
-      andToScreen16(newScreen, address + 64 * 3, mask)
-      andToScreen16(newScreen, address + 64 * 4, mask)
-      andToScreen16(newScreen, address + 64 * 5, mask)
-
-      address += 2
-      let remainingLen = len - 15 + shift
-
-      // Draw full 32-bit sections
-      while (remainingLen >= 32) {
-        orToScreen32(newScreen, address, 0xffffffff)
-        orToScreen32(newScreen, address + 64, 0xffffffff)
-        andToScreen32(newScreen, address + 64 * 2, 0)
-        andToScreen32(newScreen, address + 64 * 3, 0)
-        andToScreen32(newScreen, address + 64 * 4, 0)
-        andToScreen32(newScreen, address + 64 * 5, 0)
-        address += 4
-        remainingLen -= 32
+    // Draw edge lines if needed (lines 599-605)
+    if (y + height >= SBARHT + 5 && y < SCRHT) {
+      if (h2 > h1) {
+        newScreen = drawEline({ x: x + h1, y, len: h2 - h1 - 1, u_d: L_DN })(
+          newScreen
+        )
       }
-
-      // Draw final partial section
-      if (remainingLen > 0) {
-        const finalMask = 0xffffffff >>> remainingLen
-        orToScreen32(newScreen, address, ~finalMask)
-        orToScreen32(newScreen, address + 64, ~finalMask)
-        andToScreen32(newScreen, address + 64 * 2, finalMask)
-        andToScreen32(newScreen, address + 64 * 3, finalMask)
-        andToScreen32(newScreen, address + 64 * 4, finalMask)
-        andToScreen32(newScreen, address + 64 * 5, finalMask)
+      if (adjustedH4 > h3) {
+        newScreen = drawEline({
+          x: x + h3,
+          y,
+          len: adjustedH4 - h3 - 1,
+          u_d: L_DN
+        })(newScreen)
       }
-    } else {
-      // Slow path with vertical clipping (lines 637-664)
+    }
+
+    const len = h3 - h2 - 1
+    if (len < 0) {
+      return newScreen
+    }
+
+    x += h2
+
+    // Assembly drawing logic (lines 612-724)
+    // Calculate screen address
+    const byteX = (x >> 3) & 0xfffe
+    let address = y * newScreen.rowBytes + byteX
+
+    const shift = x & 15
+    const totalBits = shift + len
+
+    if (totalBits < 16) {
+      // Deal with really short lines (lines 622-630)
+      let mask = 0xffff
+      mask >>>= 1
+      mask >>>= len
+      mask = rotateRight16(mask, shift)
+
       drawOneWord(newScreen, address, mask, height, dataIndex)
+    } else {
+      // Normal case (lines 632-723)
+      let mask = 0xffff >>> shift
+      mask = ~mask & 0xffff
 
-      address += 2
-      let remainingLen = len - 15 + shift
+      if (height === 5) {
+        // Quick path - no vertical clipping (lines 683-722)
+        orToScreen16(newScreen, address, ~mask & 0xffff)
+        orToScreen16(newScreen, address + 64, ~mask & 0xffff)
+        andToScreen16(newScreen, address + 64 * 2, mask)
+        andToScreen16(newScreen, address + 64 * 3, mask)
+        andToScreen16(newScreen, address + 64 * 4, mask)
+        andToScreen16(newScreen, address + 64 * 5, mask)
 
-      // Draw full 32-bit sections
-      while (remainingLen >= 32) {
-        drawDataPattern(newScreen, address, height, dataIndex)
-        address += 4
-        remainingLen -= 32
-      }
+        address += 2
+        let remainingLen = len - 15 + shift
 
-      // Draw final partial section
-      if (remainingLen > 0) {
-        let finalMask = 0xffffffff >>> remainingLen
-        drawOneWord(newScreen, address + 2, finalMask & 0xffff, height, dataIndex)
-        finalMask = swapWords(finalMask)
-        drawOneWord(newScreen, address, finalMask >>> 16, height, dataIndex)
+        // Draw full 32-bit sections
+        while (remainingLen >= 32) {
+          orToScreen32(newScreen, address, 0xffffffff)
+          orToScreen32(newScreen, address + 64, 0xffffffff)
+          andToScreen32(newScreen, address + 64 * 2, 0)
+          andToScreen32(newScreen, address + 64 * 3, 0)
+          andToScreen32(newScreen, address + 64 * 4, 0)
+          andToScreen32(newScreen, address + 64 * 5, 0)
+          address += 4
+          remainingLen -= 32
+        }
+
+        // Draw final partial section
+        if (remainingLen > 0) {
+          const finalMask = 0xffffffff >>> remainingLen
+          orToScreen32(newScreen, address, ~finalMask)
+          orToScreen32(newScreen, address + 64, ~finalMask)
+          andToScreen32(newScreen, address + 64 * 2, finalMask)
+          andToScreen32(newScreen, address + 64 * 3, finalMask)
+          andToScreen32(newScreen, address + 64 * 4, finalMask)
+          andToScreen32(newScreen, address + 64 * 5, finalMask)
+        }
+      } else {
+        // Slow path with vertical clipping (lines 637-664)
+        drawOneWord(newScreen, address, mask, height, dataIndex)
+
+        address += 2
+        let remainingLen = len - 15 + shift
+
+        // Draw full 32-bit sections
+        while (remainingLen >= 32) {
+          drawDataPattern(newScreen, address, height, dataIndex)
+          address += 4
+          remainingLen -= 32
+        }
+
+        // Draw final partial section
+        if (remainingLen > 0) {
+          let finalMask = 0xffffffff >>> remainingLen
+          drawOneWord(
+            newScreen,
+            address + 2,
+            finalMask & 0xffff,
+            height,
+            dataIndex
+          )
+          finalMask = swapWords(finalMask)
+          drawOneWord(newScreen, address, finalMask >>> 16, height, dataIndex)
+        }
       }
     }
+
+    return newScreen
   }
-
-  return newScreen
-}
-
 
 /**
  * Helper function to draw one word with pattern data
@@ -196,7 +207,7 @@ function drawOneWord(
 ): void {
   const notMask = ~mask & 0xffff
   let currentAddr = address
-  
+
   for (let i = 0; i <= height; i++) {
     if (data[dataIndex + i]) {
       // Pattern is -1, so OR with notMask
@@ -219,7 +230,7 @@ function drawDataPattern(
   dataIndex: number
 ): void {
   let currentAddr = address
-  
+
   for (let i = 0; i <= height; i++) {
     if (data[dataIndex + i]) {
       // Pattern is -1

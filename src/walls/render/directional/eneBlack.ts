@@ -19,195 +19,198 @@ const L_UP = 1 // Up direction
  * Draws black parts of ENE (East-North-East) lines
  * @see orig/Sources/Walls.c:341 ene_black()
  */
-export const eneBlack = (
-  screen: MonochromeBitmap,
-  line: LineRec,
-  scrx: number,
-  scry: number
-): MonochromeBitmap => {
-  // First call eneWhite (line 349)
-  const newScreen = eneWhite(screen, line, scrx, scry)
+export const eneBlack =
+  (deps: { line: LineRec; scrx: number; scry: number }) =>
+  (screen: MonochromeBitmap): MonochromeBitmap => {
+    const { line, scrx, scry } = deps
 
-  let x = line.startx - scrx
-  let y = line.starty - scry
-  let h1 = 0
-  let h4 = line.length + 1
+    // First call eneWhite (line 349)
+    const newScreen = eneWhite(deps)(screen)
 
-  // Calculate h1 boundaries (lines 356-361)
-  if (x + h1 < 0) {
-    h1 = -x
-  }
-  if (y - (h1 >> 1) > VIEWHT) {
-    h1 = (y - VIEWHT) << 1
-  }
-  if (h1 & 1) {
-    h1++
-  }
+    let x = line.startx - scrx
+    let y = line.starty - scry
+    let h1 = 0
+    let h4 = line.length + 1
 
-  // Calculate h4 boundaries (lines 362-367)
-  if (x + h4 > SCRWTH) {
-    h4 = SCRWTH - x
-  }
-  if (y - (h4 >> 1) < 0) {
-    h4 = y << 1
-  }
-  if (h4 & 1) {
-    h4--
-  }
-  if (h4 <= h1) {
+    // Calculate h1 boundaries (lines 356-361)
+    if (x + h1 < 0) {
+      h1 = -x
+    }
+    if (y - (h1 >> 1) > VIEWHT) {
+      h1 = (y - VIEWHT) << 1
+    }
+    if (h1 & 1) {
+      h1++
+    }
+
+    // Calculate h4 boundaries (lines 362-367)
+    if (x + h4 > SCRWTH) {
+      h4 = SCRWTH - x
+    }
+    if (y - (h4 >> 1) < 0) {
+      h4 = y << 1
+    }
+    if (h4 & 1) {
+      h4--
+    }
+    if (h4 <= h1) {
+      return newScreen
+    }
+
+    // Calculate h3 (lines 370-376)
+    let h3 = line.h2 ?? h4
+    if (h3 > h4) {
+      h3 = h4
+    }
+    if (h3 & 1) {
+      h3--
+    }
+    if (h3 < h1) {
+      h3 = h1
+    }
+
+    // Calculate h2 (lines 377-383)
+    let h2 = h3
+    if (x + h2 >= SCRWTH - 20) {
+      h2 = SCRWTH - 21 - x
+    }
+    if (h2 & 1) {
+      h2--
+    }
+    if (h2 < h1) {
+      h2 = h1
+    }
+
+    const len = h2 - h1
+    const end = h3 - h2
+    const endline = h4 - h3
+    y += SBARHT
+
+    // Calculate endline coordinates (lines 390-397)
+    let endlinex = x + h3 - 2
+    let endliney = y - (h3 >> 1) + 1
+    let adjustedEndline = endline
+    if (endlinex < 0) {
+      endlinex += 2
+      endliney--
+      adjustedEndline -= 2
+    }
+
+    x += h1
+    y -= (h1 >> 1) + 1
+    let adjustedLen = (len >> 1) - 1
+    const adjustedEnd = end >> 1
+
+    if (adjustedLen < 0) {
+      adjustedLen = 0
+    }
+
+    // Assembly drawing logic (lines 407-485)
+    // Calculate screen address
+    const byteX = (x >> 3) & 0xfffe
+    let address = y * newScreen.rowBytes + byteX
+
+    const shift = x & 15
+
+    if (x >= SCRWTH - 16 - 3) {
+      // Special case for right edge (lines 413-422)
+      const shift32 = x & 31
+      let d0 = (ENE_VAL << 16) >>> shift32
+      let d2 = (ENE_MASK1 << 16) >> shift32
+
+      if (shift32 >= 16) {
+        address -= 2
+      }
+
+      // Handle end section
+      if (adjustedEnd > 0) {
+        for (let i = 0; i < adjustedEnd; i++) {
+          andToScreen32(newScreen, address, d2)
+          orToScreen32(newScreen, address, d0)
+          address -= 64
+          d2 >>= 2
+          d0 >>>= 2
+        }
+      }
+    } else {
+      // Normal case (lines 424-467)
+      let d1 = ENE_MASK1 >> shift
+      let d2 = ENE_MASK2 >>> shift
+      let d0 = rotateRight16(ENE_VAL, shift)
+
+      // Main loop
+      let remainingLen = adjustedLen
+      while (remainingLen >= 0) {
+        andToScreen16(newScreen, address, d1)
+        orToScreen16(newScreen, address, d0)
+        andToScreen32(newScreen, address + 2, d2)
+        address -= 64
+        d2 >>>= 2
+        d1 >>= 2
+        d0 = rotateRight16(d0, 2)
+
+        // Check for carry
+        if ((d1 & 0x8000) === 0) {
+          remainingLen--
+          if (remainingLen < 0) break
+
+          // Handle overflow (lines 444-455)
+          const overflow = d0 & 0xff00
+          orToScreen8(newScreen, address + 1, d0 & 0xff)
+          andToScreen32(newScreen, address + 2, d2)
+          orToScreen16(newScreen, address + 2, overflow)
+          address -= 64
+          d2 >>>= 2
+          d0 = rotateRight16(d0, 2)
+          d1 = overflow >> 2
+          remainingLen--
+
+          if (remainingLen < 0) break
+
+          // Continue with adjusted values (lines 457-465)
+          orToScreen8(newScreen, address + 1, d0 & 0xff)
+          andToScreen32(newScreen, address + 2, d2)
+          orToScreen16(newScreen, address + 2, d1)
+          address -= 62
+          d2 >>>= 2
+          d2 = swapWords(d2)
+          d1 = ~(d2 >>> 16) & 0xffff
+          d0 = rotateRight16(d0, 2)
+          remainingLen--
+        } else {
+          remainingLen--
+        }
+      }
+
+      // Handle end section if we didn't reach it in main loop
+      if (remainingLen < 0 && adjustedEnd > 0) {
+        // Prepare for end section (lines 468-472)
+        d2 = d1 | (d1 << 16)
+        d0 = (d0 << 16) >>> 0
+
+        // End loop (lines 473-482)
+        for (let i = 0; i < adjustedEnd; i++) {
+          andToScreen32(newScreen, address, d2)
+          orToScreen32(newScreen, address, d0)
+          address -= 64
+          d2 >>= 2
+          d0 >>>= 2
+        }
+      }
+    }
+
+    // Draw end line if needed (lines 486-487)
+    if (adjustedEndline > 0) {
+      return drawEneline({
+        x: endlinex,
+        y: endliney,
+        len: adjustedEndline + 1,
+        dir: L_UP
+      })(newScreen)
+    }
+
     return newScreen
   }
-
-  // Calculate h3 (lines 370-376)
-  let h3 = line.h2 ?? h4
-  if (h3 > h4) {
-    h3 = h4
-  }
-  if (h3 & 1) {
-    h3--
-  }
-  if (h3 < h1) {
-    h3 = h1
-  }
-
-  // Calculate h2 (lines 377-383)
-  let h2 = h3
-  if (x + h2 >= SCRWTH - 20) {
-    h2 = SCRWTH - 21 - x
-  }
-  if (h2 & 1) {
-    h2--
-  }
-  if (h2 < h1) {
-    h2 = h1
-  }
-
-  const len = h2 - h1
-  const end = h3 - h2
-  const endline = h4 - h3
-  y += SBARHT
-
-  // Calculate endline coordinates (lines 390-397)
-  let endlinex = x + h3 - 2
-  let endliney = y - (h3 >> 1) + 1
-  let adjustedEndline = endline
-  if (endlinex < 0) {
-    endlinex += 2
-    endliney--
-    adjustedEndline -= 2
-  }
-
-  x += h1
-  y -= (h1 >> 1) + 1
-  let adjustedLen = (len >> 1) - 1
-  const adjustedEnd = end >> 1
-
-  if (adjustedLen < 0) {
-    adjustedLen = 0
-  }
-
-  // Assembly drawing logic (lines 407-485)
-  // Calculate screen address
-  const byteX = (x >> 3) & 0xfffe
-  let address = y * newScreen.rowBytes + byteX
-
-  const shift = x & 15
-
-  if (x >= SCRWTH - 16 - 3) {
-    // Special case for right edge (lines 413-422)
-    const shift32 = x & 31
-    let d0 = (ENE_VAL << 16) >>> shift32
-    let d2 = (ENE_MASK1 << 16) >> shift32
-
-    if (shift32 >= 16) {
-      address -= 2
-    }
-
-    // Handle end section
-    if (adjustedEnd > 0) {
-      for (let i = 0; i < adjustedEnd; i++) {
-        andToScreen32(newScreen, address, d2)
-        orToScreen32(newScreen, address, d0)
-        address -= 64
-        d2 >>= 2
-        d0 >>>= 2
-      }
-    }
-  } else {
-    // Normal case (lines 424-467)
-    let d1 = ENE_MASK1 >> shift
-    let d2 = ENE_MASK2 >>> shift
-    let d0 = rotateRight16(ENE_VAL, shift)
-
-    // Main loop
-    let remainingLen = adjustedLen
-    while (remainingLen >= 0) {
-      andToScreen16(newScreen, address, d1)
-      orToScreen16(newScreen, address, d0)
-      andToScreen32(newScreen, address + 2, d2)
-      address -= 64
-      d2 >>>= 2
-      d1 >>= 2
-      d0 = rotateRight16(d0, 2)
-
-      // Check for carry
-      if ((d1 & 0x8000) === 0) {
-        remainingLen--
-        if (remainingLen < 0) break
-
-        // Handle overflow (lines 444-455)
-        const overflow = d0 & 0xff00
-        orToScreen8(newScreen, address + 1, d0 & 0xff)
-        andToScreen32(newScreen, address + 2, d2)
-        orToScreen16(newScreen, address + 2, overflow)
-        address -= 64
-        d2 >>>= 2
-        d0 = rotateRight16(d0, 2)
-        d1 = overflow >> 2
-        remainingLen--
-
-        if (remainingLen < 0) break
-
-        // Continue with adjusted values (lines 457-465)
-        orToScreen8(newScreen, address + 1, d0 & 0xff)
-        andToScreen32(newScreen, address + 2, d2)
-        orToScreen16(newScreen, address + 2, d1)
-        address -= 62
-        d2 >>>= 2
-        d2 = swapWords(d2)
-        d1 = ~(d2 >>> 16) & 0xffff
-        d0 = rotateRight16(d0, 2)
-        remainingLen--
-      } else {
-        remainingLen--
-      }
-    }
-
-    // Handle end section if we didn't reach it in main loop
-    if (remainingLen < 0 && adjustedEnd > 0) {
-      // Prepare for end section (lines 468-472)
-      d2 = d1 | (d1 << 16)
-      d0 = (d0 << 16) >>> 0
-
-      // End loop (lines 473-482)
-      for (let i = 0; i < adjustedEnd; i++) {
-        andToScreen32(newScreen, address, d2)
-        orToScreen32(newScreen, address, d0)
-        address -= 64
-        d2 >>= 2
-        d0 >>>= 2
-      }
-    }
-  }
-
-  // Draw end line if needed (lines 486-487)
-  if (adjustedEndline > 0) {
-    return drawEneline(newScreen, endlinex, endliney, adjustedEndline + 1, L_UP)
-  }
-
-  return newScreen
-}
-
 
 /**
  * Helper function to rotate a 16-bit value right
