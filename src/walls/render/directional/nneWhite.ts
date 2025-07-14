@@ -161,8 +161,8 @@ export const nneWhite = (
     let mask = 0x7fff
     mask >>= leftx & 15
 
-    let startLen = start >> 1
-    for (let i = 0; i < startLen; i++) {
+    const startLen = start >> 1
+    for (let i = 0; i <= startLen; i++) {
       andMaskToScreen16(newScreen, address, mask)
       andMaskToScreen16(newScreen, address - newScreen.rowBytes, mask)
       mask >>= 1
