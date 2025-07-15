@@ -107,31 +107,49 @@ export const southBlack =
     let d3 = len >> 2 // Fast loop count
     const remainder = len & 3
 
+    // Determine drawing mode
+    let quickMode = false
     if (x < 0) {
       // Quick mode 1: shift right by 2 bytes
       address += 2
+      quickMode = true
     } else if (x >= SCRWTH - 16 || (x & 15) <= 6) {
       // Quick mode 2: use 16-bit operations
       d0 = swapWords(d0)
       d1 = swapWords(d1)
+      quickMode = true
     }
 
     // Fast loop (4 lines at a time)
     const d2 = 64 * 4 // 4 scanlines
     for (let i = 0; i < d3; i++) {
-      eorToScreen(newScreen, address, d0)
-      eorToScreen(newScreen, address + 64, d1)
-      eorToScreen(newScreen, address + 64 * 2, d0)
-      eorToScreen(newScreen, address + 64 * 3, d1)
+      if (quickMode) {
+        eorToScreen16(newScreen, address, d0)
+        eorToScreen16(newScreen, address + 64, d1)
+        eorToScreen16(newScreen, address + 64 * 2, d0)
+        eorToScreen16(newScreen, address + 64 * 3, d1)
+      } else {
+        eorToScreen(newScreen, address, d0)
+        eorToScreen(newScreen, address + 64, d1)
+        eorToScreen(newScreen, address + 64 * 2, d0)
+        eorToScreen(newScreen, address + 64 * 3, d1)
+      }
       address += d2
     }
 
     // Handle remainder
     const d2Half = 64 * 2 // 2 scanlines
     for (let i = 0; i < remainder; i++) {
-      eorToScreen(newScreen, address, i & 1 ? d1 : d0)
-      if (i < remainder - 1) {
-        eorToScreen(newScreen, address + 64, i & 1 ? d0 : d1)
+      if (quickMode) {
+        eorToScreen16(newScreen, address, i & 1 ? d1 : d0)
+        if (i < remainder - 1) {
+          eorToScreen16(newScreen, address + 64, i & 1 ? d0 : d1)
+        }
+      } else {
+        eorToScreen(newScreen, address, i & 1 ? d1 : d0)
+        if (i < remainder - 1) {
+          eorToScreen(newScreen, address + 64, i & 1 ? d0 : d1)
+        }
       }
       address += d2Half
     }
@@ -166,5 +184,24 @@ function eorToScreen(
     screen.data[address + 1]! ^= byte2
     screen.data[address + 2]! ^= byte1
     screen.data[address + 3]! ^= byte0
+  }
+}
+
+/**
+ * Helper function to EOR a 16-bit value into screen memory (for quick modes)
+ */
+function eorToScreen16(
+  screen: MonochromeBitmap,
+  address: number,
+  value: number
+): void {
+  if (address >= 0 && address + 1 < screen.data.length) {
+    // Extract bytes from the lower 16 bits (big-endian order)
+    const byte1 = (value >>> 8) & 0xff
+    const byte0 = value & 0xff
+
+    // EOR into screen buffer
+    screen.data[address]! ^= byte1
+    screen.data[address + 1]! ^= byte0
   }
 }
