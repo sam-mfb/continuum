@@ -138,20 +138,44 @@ export const southBlack =
     }
 
     // Handle remainder
-    const d2Half = 64 * 2 // 2 scanlines
-    for (let i = 0; i < remainder; i++) {
-      if (quickMode) {
-        eorToScreen16(newScreen, address, i & 1 ? d1 : d0)
-        if (i < remainder - 1) {
-          eorToScreen16(newScreen, address + 64, i & 1 ? d0 : d1)
-        }
-      } else {
-        eorToScreen(newScreen, address, i & 1 ? d1 : d0)
-        if (i < remainder - 1) {
-          eorToScreen(newScreen, address + 64, i & 1 ? d0 : d1)
-        }
+    // Assembly: after fast loop, D2 is halved (64*4 -> 64*2)
+    // Then uses dbra with remainder to draw remaining lines
+    if (remainder > 0) {
+      const d2Half = 128 // 64 * 2
+      
+      // Draw remaining lines based on remainder value
+      switch (remainder) {
+        case 3:
+          // Draw 3 lines: d0, d1, d0
+          if (quickMode) {
+            eorToScreen16(newScreen, address, d0)
+            eorToScreen16(newScreen, address + 64, d1)
+            eorToScreen16(newScreen, address + 128, d0)
+          } else {
+            eorToScreen(newScreen, address, d0)
+            eorToScreen(newScreen, address + 64, d1)
+            eorToScreen(newScreen, address + 128, d0)
+          }
+          break
+        case 2:
+          // Draw 2 lines: d0, d1
+          if (quickMode) {
+            eorToScreen16(newScreen, address, d0)
+            eorToScreen16(newScreen, address + 64, d1)
+          } else {
+            eorToScreen(newScreen, address, d0)
+            eorToScreen(newScreen, address + 64, d1)
+          }
+          break
+        case 1:
+          // Draw 1 line: d0
+          if (quickMode) {
+            eorToScreen16(newScreen, address, d0)
+          } else {
+            eorToScreen(newScreen, address, d0)
+          }
+          break
       }
-      address += d2Half
     }
 
     return newScreen
