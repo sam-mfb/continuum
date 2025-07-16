@@ -6,9 +6,7 @@ import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT, SCRHT } from '../../../screen/constants'
 import { drawEline } from '../lines/drawEline'
 import { findWAddress } from '../../../asm/assemblyMacros'
-
-// Line direction constants from Draw.c
-const L_DN = 0 // Down direction
+import { LINE_DIR } from '../../../shared/types/line'
 
 // Static data array from line 557
 const data = [-1, -1, 0, 0, 0, 0]
@@ -87,16 +85,19 @@ export const eastBlack =
     // Draw edge lines if needed (lines 599-605)
     if (y + height >= SBARHT + 5 && y < SCRHT) {
       if (h2 > h1) {
-        newScreen = drawEline({ x: x + h1, y, len: h2 - h1 - 1, u_d: L_DN })(
-          newScreen
-        )
+        newScreen = drawEline({
+          x: x + h1,
+          y,
+          len: h2 - h1 - 1,
+          u_d: LINE_DIR.DN
+        })(newScreen)
       }
       if (adjustedH4 > h3) {
         newScreen = drawEline({
           x: x + h3,
           y,
           len: adjustedH4 - h3 - 1,
-          u_d: L_DN
+          u_d: LINE_DIR.DN
         })(newScreen)
       }
     }

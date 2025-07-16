@@ -13,13 +13,11 @@ import {
 import { drawNneline } from '../lines/drawNneline'
 import { build68kArch } from '../../../asm/emulator'
 import { findWAddress, jsrWAddress } from '../../../asm/assemblyMacros'
+import { LINE_DIR } from '../../../shared/types/line'
 
 // Masks from orig/Sources/Walls.c:962-963
 const SSE_MASK = 0xff000000
 const SSE_VAL = 0xc0000000
-
-// Line direction constants from Draw.c
-const L_DN = 0 // Down direction
 
 /**
  * Draws black parts of SSE (South-South-East) lines
@@ -135,7 +133,7 @@ export const sseBlack =
         x: x + (h1 >> 1),
         y: y + h1,
         len: start - 1,
-        dir: L_DN
+        dir: LINE_DIR.DN
       })(newScreen)
     }
     if (h5 - h4 > 1) {
@@ -143,7 +141,7 @@ export const sseBlack =
         x: x + (h4 >> 1),
         y: y + h4,
         len: h5 - h4 - 1,
-        dir: L_DN
+        dir: LINE_DIR.DN
       })(newScreen)
     }
 

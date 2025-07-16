@@ -5,9 +5,7 @@
 import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
 import { drawNneline } from '../lines/drawNneline'
-
-// Line direction constants from Draw.c
-const L_UP = 1 // Up direction
+import { LINE_DIR } from '../../../shared/types/line'
 
 /**
  * Draws black parts of NNE (North-North-East) lines
@@ -65,7 +63,7 @@ export const nneBlack =
         x: x + (h1 >> 1),
         y: y - h1 + SBARHT,
         len: h4 - h1 - 1,
-        dir: L_UP
+        dir: LINE_DIR.UP
       })(newScreen)
     }
 

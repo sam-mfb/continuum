@@ -6,10 +6,7 @@
 import type { MonochromeBitmap } from '../../types'
 import { SCRHT, SBARHT } from '../../../screen/constants'
 import { jsrWAddress, negIfNeg } from '../../../asm/assemblyMacros'
-
-// Line direction constants
-const L_UP = -1
-const L_DN = 1
+import { LINE_DIR } from '../../../shared/types/line'
 
 /**
  * Draw an east-north-east diagonal line (2 pixels wide, shallow angle)
@@ -17,7 +14,7 @@ const L_DN = 1
  *   @param x - Starting x coordinate
  *   @param y - Starting y coordinate
  *   @param len - Length of the line
- *   @param dir - Direction: L_DN (1) for down, L_UP (-1) for up
+ *   @param dir - Direction: LINE_DIR.DN (1) for down, LINE_DIR.UP (-1) for up
  * @see orig/Sources/Draw.c:1232 draw_eneline()
  * @returns A curried function that takes a screen and returns a new MonochromeBitmap
  */
@@ -37,8 +34,8 @@ export const drawEneline =
     }
     // Boundary checking (lines 1233-1235)
     if (
-      (dir === L_DN && y + (len >> 1) >= SCRHT - 1) ||
-      (dir === L_UP && y - (len >> 1) <= SBARHT)
+      (dir === LINE_DIR.DN && y + (len >> 1) >= SCRHT - 1) ||
+      (dir === LINE_DIR.UP && y - (len >> 1) <= SBARHT)
     ) {
       len -= 1 + (len & 0x0001)
     }

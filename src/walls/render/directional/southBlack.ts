@@ -11,6 +11,7 @@ import {
 } from '../../../screen/constants'
 import { drawNline } from '../lines/drawNline'
 import { findWAddress } from '../../../asm/assemblyMacros'
+import { LINE_DIR } from '../../../shared/types/line'
 
 // Background patterns from Play.c:61-62
 const background = BACKGROUND_PATTERNS
@@ -18,9 +19,6 @@ const background = BACKGROUND_PATTERNS
 // Masks from orig/Sources/Walls.c:1141-1142
 const SOUTH_BLACK = 0xc0000000
 const SOUTH_MASK = 0xffc00000
-
-// Line direction constants from Draw.c
-const L_DN = 0 // Down direction
 
 /**
  * Draws black parts of southward lines
@@ -76,14 +74,20 @@ export const southBlack =
     // Draw north lines for the gaps (lines 1176-1182)
     if (x >= 0 && x < SCRWTH) {
       if (h2 > h1) {
-        newScreen = drawNline({ x, y: y + h1, len: h2 - h1 - 1, u_d: L_DN })(
-          newScreen
-        )
+        newScreen = drawNline({
+          x,
+          y: y + h1,
+          len: h2 - h1 - 1,
+          u_d: LINE_DIR.DN
+        })(newScreen)
       }
       if (h4 > h3 + 1) {
-        newScreen = drawNline({ x, y: y + h3, len: h4 - h3 - 1, u_d: L_DN })(
-          newScreen
-        )
+        newScreen = drawNline({
+          x,
+          y: y + h3,
+          len: h4 - h3 - 1,
+          u_d: LINE_DIR.DN
+        })(newScreen)
       }
     }
 

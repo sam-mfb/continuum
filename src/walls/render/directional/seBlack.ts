@@ -11,6 +11,7 @@ import {
 } from '../../../screen/constants'
 import { drawNeline } from '../lines/drawNeline'
 import { findWAddress } from '../../../asm/assemblyMacros'
+import { LINE_DIR } from '../../../shared/types/line'
 
 // Background patterns from Play.c:61-62
 const background = BACKGROUND_PATTERNS
@@ -18,9 +19,6 @@ const background = BACKGROUND_PATTERNS
 // Masks from orig/Sources/Walls.c:861-862
 const SE_MASK = 0xf8000000
 const SE_VAL = 0xc0000000
-
-// Line direction constants from Draw.c
-const L_DN = 0 // Down direction
 
 /**
  * Draws black parts of SE (South-East) lines
@@ -101,7 +99,7 @@ export const seBlack =
         x: x + h1,
         y: y + h1,
         len: h2 - h1 - 1,
-        dir: L_DN
+        dir: LINE_DIR.DN
       })(newScreen)
     }
     if (adjustedH5 > h4) {
@@ -109,7 +107,7 @@ export const seBlack =
         x: x + h4,
         y: y + h4,
         len: adjustedH5 - h4 - 1,
-        dir: L_DN
+        dir: LINE_DIR.DN
       })(newScreen)
     }
 

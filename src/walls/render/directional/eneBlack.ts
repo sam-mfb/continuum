@@ -7,14 +7,12 @@ import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
 import { drawEneline } from '../lines/drawEneline'
 import { findWAddress } from '../../../asm/assemblyMacros'
 import { eneWhite } from './eneWhite'
+import { LINE_DIR } from '../../../shared/types/line'
 
 // Masks and values from orig/Sources/Walls.c:336-337
 const ENE_MASK1 = 0x8000
 const ENE_MASK2 = 0x01ffffff
 const ENE_VAL = 0xc000
-
-// Line direction constants from Draw.c
-const L_UP = 1 // Up direction
 
 /**
  * Draws black parts of ENE (East-North-East) lines
@@ -205,7 +203,7 @@ export const eneBlack =
         x: endlinex,
         y: endliney,
         len: adjustedEndline + 1,
-        dir: L_UP
+        dir: LINE_DIR.UP
       })(newScreen)
     }
 

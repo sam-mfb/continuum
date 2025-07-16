@@ -11,6 +11,7 @@ import {
 } from '../../../screen/constants'
 import { drawNeline } from '../lines/drawNeline'
 import { findWAddress, jsrWAddress } from '../../../asm/assemblyMacros'
+import { LINE_DIR } from '../../../shared/types/line'
 
 // Background patterns from Play.c:61-62
 const background = BACKGROUND_PATTERNS
@@ -18,9 +19,6 @@ const background = BACKGROUND_PATTERNS
 // Masks from orig/Sources/Walls.c:203-204
 const NE_MASK = 0xfffe0000
 const NE_VAL = 0xc0000000
-
-// Line direction constants from Draw.c
-const L_UP = 1 // Up direction
 
 /**
  * Draws black parts of NE (North-East) lines
@@ -120,7 +118,7 @@ export const neBlack =
         x: x + h0,
         y: y - h0,
         len: h1 - h0 - 1,
-        dir: L_UP
+        dir: LINE_DIR.UP
       })(newScreen)
     }
     if (endline > 0) {
@@ -128,7 +126,7 @@ export const neBlack =
         x: x + h3,
         y: y - h3,
         len: endline - 1,
-        dir: L_UP
+        dir: LINE_DIR.UP
       })(newScreen)
     }
 
