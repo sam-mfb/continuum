@@ -8,29 +8,16 @@
 import { createMonochromeBitmap, setPixel } from '../../bitmap'
 import { visualizeBitmap } from '../../bitmap/visualize'
 import type { LineRec } from '../types'
-import { LINE_TYPE, LINE_DIR, LINE_KIND, NEW_TYPE } from '../types'
+import { LINE_KIND, NEW_TYPE } from '../types'
+import { createWall } from '../unpack'
 import { initWalls } from '../init'
 import { whiteTerrain, blackTerrain } from '../render'
 import { SBARHT } from '@/screen/constants'
 
 const main = (): void => {
-  // 1. Define the single line to be rendered.
+  // 1. Define the single line to be rendered using createWall.
   const singleLine: LineRec[] = [
-    // NEW_TYPE.SSE (2) - South-Southeast
-    {
-      id: 'line-1',
-      startx: 120,
-      starty: 30,
-      endx: 132,
-      endy: 55,
-      length: 25,
-      type: LINE_TYPE.NNE,
-      up_down: LINE_DIR.DN,
-      kind: LINE_KIND.NORMAL,
-      newtype: NEW_TYPE.SSE,
-      nextId: null,
-      nextwhId: null
-    }
+    createWall(120, 102, 25, NEW_TYPE.ENE, LINE_KIND.NORMAL, 5)
   ]
 
   // 2. Initialize the wall system state.
@@ -71,14 +58,16 @@ const main = (): void => {
   })(renderedBitmap)
 
   // 7. Define the clipping rectangle with a 50px margin.
-  const marginbig = 60
+  const marginbig = 50
   const marginsmall = 10
   const clip = {
-    top: singleLine[0]!.starty + SBARHT - marginsmall,
-    left: singleLine[0]!.startx - marginsmall,
-    bottom: singleLine[0]!.endy + SBARHT + marginsmall,
+    top: singleLine[0]!.endy + SBARHT - marginsmall,
+    left: singleLine[0]!.startx - marginsmall - 8,
+    bottom: singleLine[0]!.starty + SBARHT + marginsmall,
     right: singleLine[0]!.endx + marginbig
   }
+
+  console.log(singleLine[0])
 
   // 8. Visualize the clipped area of the bitmap.
   console.log('--- Single Line Render (Clipped) ---')

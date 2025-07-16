@@ -8,60 +8,32 @@ import type { LineRec } from '../../walls/types'
 import { whiteTerrain, blackTerrain } from '../../walls/render'
 import { wallsActions } from '../../walls/wallsSlice'
 import { buildGameStore } from './store'
-import { LINE_KIND } from '../../walls/types'
-import { createLine } from '../../walls/createLine'
-import { packLine } from '../../walls/packLine'
-import { unpackLine } from '../../walls/unpackLine'
-import { LINE_KIND as LineKind } from '../../shared/types/line'
+import { LINE_KIND, NEW_TYPE } from '../../walls/types'
+import { createWall } from '../../walls/unpack'
 
 // Create store instance
 const store = buildGameStore()
 
-// Generate walls using the complete flow: create -> pack -> unpack
-// This demonstrates the full editor -> save -> load cycle
-
-// Create examples of all 8 directions with desired endpoints
-const wallSpecs = [
-  // South (vertical down)
-  { x1: 50, y1: 30, x2: 50, y2: 55 },
-  // South-Southeast 
-  { x1: 120, y1: 30, x2: 132, y2: 55 },
-  // Southeast (diagonal down-right)
-  { x1: 190, y1: 30, x2: 208, y2: 48 },
-  // East-Southeast
-  { x1: 260, y1: 30, x2: 285, y2: 42 },
-  // East (horizontal right)
-  { x1: 50, y1: 90, x2: 75, y2: 90 },
-  // East-Northeast
-  { x1: 120, y1: 102, x2: 145, y2: 90 },
-  // Northeast (diagonal up-right)
-  { x1: 190, y1: 108, x2: 208, y2: 90 },
-  // North-Northeast
-  { x1: 260, y1: 108, x2: 272, y2: 83 }
+// Test with examples of all 8 NEW_TYPE values, each 25px long and well-spaced
+// Using createWall function to ensure proper unpacking and endpoint calculation
+const sampleLines: LineRec[] = [
+  // NEW_TYPE.S (1) - South (vertical down)
+  createWall(50, 30, 25, NEW_TYPE.S, LINE_KIND.NORMAL, 0),
+  // NEW_TYPE.SSE (2) - South-Southeast
+  createWall(120, 30, 25, NEW_TYPE.SSE, LINE_KIND.NORMAL, 1),
+  // NEW_TYPE.SE (3) - Southeast (diagonal down-right)
+  createWall(190, 30, 25, NEW_TYPE.SE, LINE_KIND.NORMAL, 2),
+  // NEW_TYPE.ESE (4) - East-Southeast
+  createWall(260, 30, 25, NEW_TYPE.ESE, LINE_KIND.NORMAL, 3),
+  // NEW_TYPE.E (5) - East (horizontal right)
+  createWall(50, 90, 25, NEW_TYPE.E, LINE_KIND.NORMAL, 4),
+  // NEW_TYPE.ENE (6) - East-Northeast
+  createWall(120, 102, 25, NEW_TYPE.ENE, LINE_KIND.NORMAL, 5),
+  // NEW_TYPE.NE (7) - Northeast (diagonal up-right)
+  createWall(190, 108, 25, NEW_TYPE.NE, LINE_KIND.NORMAL, 6),
+  // NEW_TYPE.NNE (8) - North-Northeast
+  createWall(260, 108, 25, NEW_TYPE.NNE, LINE_KIND.NORMAL, 7)
 ]
-
-// Process lines through the complete flow
-const sampleLines: LineRec[] = wallSpecs
-  .map((spec, index) => {
-    // Step 1: Create line (editor logic)
-    const created = createLine(spec.x1, spec.y1, spec.x2, spec.y2, {
-      kind: LineKind.NORMAL,
-      safeMode: false,
-      worldWidth: 512,
-      worldHeight: 318
-    })
-    
-    if (!created) return null
-    
-    // Step 2: Pack line (save to file format)
-    const packed = packLine(created)
-    
-    // Step 3: Unpack line (load from file format)
-    const unpacked = unpackLine(packed, `line-${index}`)
-    
-    return unpacked
-  })
-  .filter((line): line is LineRec => line !== null)
 
 // Initialize walls on module load
 store.dispatch(wallsActions.initWalls({ walls: sampleLines }))
