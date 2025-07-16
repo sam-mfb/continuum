@@ -8,29 +8,17 @@
 import { createMonochromeBitmap, setPixel } from '../../bitmap'
 import { visualizeBitmap } from '../../bitmap/visualize'
 import type { LineRec } from '../types'
-import { LINE_TYPE, LINE_DIR, LINE_KIND, NEW_TYPE } from '../types'
+import { LINE_KIND, NEW_TYPE } from '../types'
+import { createWall } from '../unpack'
 import { initWalls } from '../init'
 import { whiteTerrain, blackTerrain } from '../render'
 import { SBARHT } from '@/screen/constants'
 
 const main = (): void => {
-  // 1. Define the single line to be rendered.
+  // 1. Define the single line to be rendered using createWall.
   const singleLine: LineRec[] = [
     // NEW_TYPE.SSE (2) - South-Southeast
-    {
-      id: 'line-1',
-      startx: 120,
-      starty: 30,
-      endx: 132,
-      endy: 55,
-      length: 25,
-      type: LINE_TYPE.NNE,
-      up_down: LINE_DIR.DN,
-      kind: LINE_KIND.NORMAL,
-      newtype: NEW_TYPE.SSE,
-      nextId: null,
-      nextwhId: null
-    }
+    createWall(131, 31, 25, NEW_TYPE.SE, LINE_KIND.NORMAL, 0)
   ]
 
   // 2. Initialize the wall system state.
@@ -71,7 +59,7 @@ const main = (): void => {
   })(renderedBitmap)
 
   // 7. Define the clipping rectangle with a 50px margin.
-  const marginbig = 60
+  const marginbig = 40
   const marginsmall = 10
   const clip = {
     top: singleLine[0]!.starty + SBARHT - marginsmall,
