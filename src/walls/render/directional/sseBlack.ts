@@ -295,7 +295,7 @@ export const sseBlack =
         asm.A0 += asm.D2
 
         // dbra len, @loop2
-        if (!asm.instructions.dbra('len')) {
+        if (!asm.instructions.dbra('D7')) {
           break
         }
       }
@@ -315,7 +315,7 @@ export const sseBlack =
 
       // @lp loop
       asm.len = len
-      while (asm.instructions.dbra('len')) {
+      while (asm.instructions.dbra('D7')) {
         asm.instructions.and_w(newScreen.data, asm.A0, asm.D0)
         asm.instructions.and_w(newScreen.data, asm.A0 + 64, asm.D0)
         asm.D0 = asm.instructions.lsr_w(asm.D0, 1)
