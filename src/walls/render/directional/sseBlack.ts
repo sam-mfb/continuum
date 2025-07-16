@@ -7,6 +7,7 @@ import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
 import { drawNneline } from '../lines/drawNneline'
 import { build68kArch } from '../../../asm/emulator'
+import { findWAddress, jsrWAddress } from '../../../asm/assemblyMacros'
 
 // Background patterns from Play.c:61-62
 const backgr1 = 0xaaaaaaaa
@@ -168,7 +169,7 @@ export const sseBlack =
     })
 
     // Set A0 using the emulator's method
-    asm.A0 = asm.findWAddress(0, x, y)
+    asm.A0 = findWAddress(0, x, y)
 
     // Initialize D0 and D1 with rotated EOR values
     asm.D0 = asm.instructions.ror_l(eor1, asm.registers.data.D6)
@@ -308,7 +309,7 @@ export const sseBlack =
       y = starty!
 
       // JSR_WADDRESS
-      asm.A0 = asm.jsrWAddress(0, x, y)
+      asm.A0 = jsrWAddress(0, x, y)
       asm.D0 = 0x7fff
       asm.D0 = asm.instructions.lsr_w(asm.D0, x & 15)
       len >>= 1

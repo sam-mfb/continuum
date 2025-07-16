@@ -4,7 +4,6 @@
 
 import { createRegisters, type AsmRegisters } from './registers'
 import { createInstructionSet, type InstructionSet } from './instructions'
-import { findWAddress, jsrWAddress } from './assemblyMacros'
 import type { DeepPartial } from '../shared/types'
 
 /**
@@ -13,10 +12,6 @@ import type { DeepPartial } from '../shared/types'
 export type Asm68k = {
   registers: AsmRegisters
   instructions: InstructionSet
-  
-  // Convenience methods
-  findWAddress: (offset: number, x: number, y: number) => number
-  jsrWAddress: (offset: number, x: number, y: number) => number
   
   // Register shortcuts
   D0: number
@@ -52,8 +47,6 @@ export const build68kArch = (initialState?: DeepPartial<AsmRegisters>): Asm68k =
   const context: Asm68k = {
     registers,
     instructions,
-    findWAddress,
-    jsrWAddress,
 
     // Register shortcuts with getters/setters
     get D0() { return registers.data.D0 },
