@@ -3,14 +3,17 @@
  */
 
 import type { LineRec, MonochromeBitmap } from '../../types'
-import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
+import {
+  VIEWHT,
+  SCRWTH,
+  SBARHT,
+  BACKGROUND_PATTERNS
+} from '../../../screen/constants'
 import { drawNeline } from '../lines/drawNeline'
 import { findWAddress, jsrWAddress } from '../../../asm/assemblyMacros'
 
 // Background patterns from Play.c:61-62
-const backgr1 = 0xaaaaaaaa
-const backgr2 = 0x55555555
-const background = [backgr1, backgr2]
+const background = BACKGROUND_PATTERNS
 
 // Masks from orig/Sources/Walls.c:203-204
 const NE_MASK = 0xfffe0000

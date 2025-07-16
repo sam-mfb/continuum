@@ -165,4 +165,3 @@ export const createInstructionSet = (
     getFlag
   }
 }
-

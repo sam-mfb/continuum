@@ -4,15 +4,15 @@
  */
 
 import type { LineRec, MonochromeBitmap } from '../../types'
-import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
+import {
+  VIEWHT,
+  SCRWTH,
+  SBARHT,
+  BACKGROUND_PATTERNS
+} from '../../../screen/constants'
 import { drawNneline } from '../lines/drawNneline'
 import { build68kArch } from '../../../asm/emulator'
 import { findWAddress, jsrWAddress } from '../../../asm/assemblyMacros'
-
-// Background patterns from Play.c:61-62
-const backgr1 = 0xaaaaaaaa
-const backgr2 = 0x55555555
-const background = [backgr1, backgr2]
 
 // Masks from orig/Sources/Walls.c:962-963
 const SSE_MASK = 0xff000000
@@ -43,7 +43,11 @@ export const sseBlack =
     let y = line.starty - scry
     let len: number
     let eor1: number, eor2: number
-    let start: number, end: number, startx: number, starty: number, startlen: number
+    let start: number,
+      end: number,
+      startx: number,
+      starty: number,
+      startlen: number
     let h: number, h1: number, h2: number, h3: number, h4: number, h5: number
 
     // Initialize h1 and h5 (lines 979-980)
@@ -148,8 +152,8 @@ export const sseBlack =
     y += h2
 
     // Calculate EOR patterns (lines 1043-1044)
-    eor1 = (background[(x + y) & 1]! & SSE_MASK) ^ SSE_VAL
-    eor2 = (background[1 - ((x + y) & 1)]! & SSE_MASK) ^ SSE_VAL
+    eor1 = (BACKGROUND_PATTERNS[(x + y) & 1]! & SSE_MASK) ^ SSE_VAL
+    eor2 = (BACKGROUND_PATTERNS[1 - ((x + y) & 1)]! & SSE_MASK) ^ SSE_VAL
 
     // Main assembly section (lines 1046-1117)
     // Create 68K emulator instance
@@ -160,7 +164,7 @@ export const sseBlack =
         D2: 128,
         D3: 0,
         D7: len, // len
-        D6: x & 15, // x
+        D6: x & 15 // x
       },
       address: {
         A0: findWAddress(0, x, y)
@@ -174,10 +178,11 @@ export const sseBlack =
 
     // subq.w #1, len
     asm.D7 -= 1
-    
+
     let pc = '' // Program Counter for our state machine
 
-    if (asm.D7 < 0) { // blt.s @doend
+    if (asm.D7 < 0) {
+      // blt.s @doend
       pc = 'doend'
     } else {
       pc = 'enterq' // bra.s @enterq
@@ -195,9 +200,10 @@ export const sseBlack =
           asm.D0 = asm.instructions.ror_l(asm.D0, 1)
           asm.D1 = asm.instructions.ror_l(asm.D1, 1)
           asm.A0 += 64 * 4
-          
+
           asm.instructions.tst_b(asm.D1)
-          if (asm.instructions.getFlag('zero')) { // beq.s @enterq
+          if (asm.instructions.getFlag('zero')) {
+            // beq.s @enterq
             pc = 'enterq'
             continue main_asm_loop
           }
@@ -212,7 +218,8 @@ export const sseBlack =
 
         case 'enterq': {
           asm.D7 -= 4
-          if (asm.D7 >= 0) { // bge.s @quick
+          if (asm.D7 >= 0) {
+            // bge.s @quick
             pc = 'quick'
             continue main_asm_loop
           }
@@ -225,7 +232,8 @@ export const sseBlack =
         case 'loop1': {
           asm.instructions.eor_l(newScreen.data, asm.A0, asm.D0)
           asm.D7 -= 1
-          if (asm.D7 < 0) { // blt.s @leave
+          if (asm.D7 < 0) {
+            // blt.s @leave
             pc = 'leave'
             continue main_asm_loop
           }
@@ -233,20 +241,22 @@ export const sseBlack =
           asm.A0 += asm.D2
           asm.D0 = asm.instructions.ror_l(asm.D0, 1)
           asm.D1 = asm.instructions.ror_l(asm.D1, 1)
-          
+
           // swap D0, D1
           asm.D3 = asm.D0
           asm.D0 = asm.D1
           asm.D1 = asm.D3
 
           asm.instructions.tst_b(asm.D1)
-          
-          if (asm.instructions.dbne('D7')) { // dbne len, @loop1
+
+          if (asm.instructions.dbne('D7')) {
+            // dbne len, @loop1
             pc = 'loop1'
             continue main_asm_loop
           }
 
-          if (asm.instructions.getFlag('zero')) { // beq.s @doend
+          if (asm.instructions.getFlag('zero')) {
+            // beq.s @doend
             pc = 'doend'
             continue main_asm_loop
           }
@@ -255,11 +265,12 @@ export const sseBlack =
           asm.D1 = asm.instructions.swap(asm.D1)
           asm.A0 += 2
 
-          if (asm.instructions.dbra('D7')) { // dbra len, @loop1
+          if (asm.instructions.dbra('D7')) {
+            // dbra len, @loop1
             pc = 'loop1'
             continue main_asm_loop
           }
-          
+
           // bra.s @leave
           pc = 'leave'
           continue main_asm_loop
@@ -270,7 +281,8 @@ export const sseBlack =
           asm.D1 = asm.instructions.swap(asm.D1)
           asm.D7 = end
           asm.D7 -= 1
-          if (asm.D7 < 0) { // blt.s @leave
+          if (asm.D7 < 0) {
+            // blt.s @leave
             pc = 'leave'
             continue main_asm_loop
           }
@@ -281,19 +293,20 @@ export const sseBlack =
 
         case 'loop2': {
           asm.instructions.eor_w(newScreen.data, asm.A0, asm.D0)
-          
+
           const d0Low = asm.D0 & 0xffff
           const d0High = asm.D0 & 0xffff0000
           asm.D0 = d0High | asm.instructions.lsr_w(d0Low, 1)
 
           asm.D7 -= 1
-          if (asm.D7 < 0) { // blt.s @leave
+          if (asm.D7 < 0) {
+            // blt.s @leave
             pc = 'leave'
             continue main_asm_loop
           }
 
           asm.instructions.eor_w(newScreen.data, asm.A0 + 64, asm.D1)
-          
+
           const d1Low = asm.D1 & 0xffff
           const d1High = asm.D1 & 0xffff0000
           asm.D1 = d1High | asm.instructions.lsr_w(d1Low, 1)
@@ -305,7 +318,8 @@ export const sseBlack =
 
           asm.A0 += asm.D2
 
-          if (asm.instructions.dbra('D7')) { // dbra len, @loop2
+          if (asm.instructions.dbra('D7')) {
+            // dbra len, @loop2
             pc = 'loop2'
             continue main_asm_loop
           }
@@ -319,7 +333,7 @@ export const sseBlack =
         }
       }
     }
-    
+
     // Start piece drawing (lines 1118-1137)
     len = startlen
     if (len > 0) {

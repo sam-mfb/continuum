@@ -2,17 +2,33 @@
  * @fileoverview 68K processor register types and state management
  */
 
-export type DataRegisterName = 'D0' | 'D1' | 'D2' | 'D3' | 'D4' | 'D5' | 'D6' | 'D7';
-export type AddressRegisterName = 'A0' | 'A1' | 'A2' | 'A3' | 'A4' | 'A5' | 'A6' | 'A7';
-export type RegisterName = DataRegisterName | AddressRegisterName;
+export type DataRegisterName =
+  | 'D0'
+  | 'D1'
+  | 'D2'
+  | 'D3'
+  | 'D4'
+  | 'D5'
+  | 'D6'
+  | 'D7'
+export type AddressRegisterName =
+  | 'A0'
+  | 'A1'
+  | 'A2'
+  | 'A3'
+  | 'A4'
+  | 'A5'
+  | 'A6'
+  | 'A7'
+export type RegisterName = DataRegisterName | AddressRegisterName
 
 export type DataRegisters = {
-  [key in DataRegisterName]: number;
-};
+  [key in DataRegisterName]: number
+}
 
 export type AddressRegisters = {
-  [key in AddressRegisterName]: number;
-};
+  [key in AddressRegisterName]: number
+}
 
 export type StatusFlags = {
   zeroFlag: boolean
@@ -40,7 +56,7 @@ export const createRegisters = (): AsmRegisters => ({
     D4: 0,
     D5: 0,
     D6: 0,
-    D7: 0,
+    D7: 0
   },
   address: {
     A0: 0,
@@ -50,7 +66,7 @@ export const createRegisters = (): AsmRegisters => ({
     A4: 0,
     A5: 0,
     A6: 0,
-    A7: 0,
+    A7: 0
   },
   flags: {
     zeroFlag: false,

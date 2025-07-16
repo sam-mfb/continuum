@@ -2,7 +2,12 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { createRegisters } from '../registers'
 import { build68kArch } from '../emulator'
 import { createInstructionSet } from '../instructions'
-import type { AsmRegisters, RegisterName, DataRegisterName, AddressRegisterName } from '../registers'
+import type {
+  AsmRegisters,
+  RegisterName,
+  DataRegisterName,
+  AddressRegisterName
+} from '../registers'
 
 describe('ASM Emulator', () => {
   describe('createRegisters', () => {
@@ -61,7 +66,9 @@ describe('ASM Emulator', () => {
     })
 
     it('ror_l should rotate right long', () => {
-      expect(instructions.ror_l(0b10000000000000000000000000000001, 1)).toBe(0b11000000000000000000000000000000)
+      expect(instructions.ror_l(0b10000000000000000000000000000001, 1)).toBe(
+        0b11000000000000000000000000000000
+      )
       expect(instructions.ror_l(0x1, 1)).toBe(0x80000000)
       expect(instructions.ror_l(0x12345678, 4)).toBe(0x81234567)
       expect(instructions.ror_l(0x12345678, 0)).toBe(0x12345678)
@@ -118,15 +125,21 @@ describe('ASM Emulator', () => {
 
     it('memory operations should work correctly', () => {
       const memory = new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0])
-      
+
       instructions.eor_l(memory, 0, 0xffffffff)
-      expect(memory).toEqual(new Uint8Array([0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0]))
+      expect(memory).toEqual(
+        new Uint8Array([0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0])
+      )
 
       instructions.eor_w(memory, 4, 0xffff)
-      expect(memory).toEqual(new Uint8Array([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0, 0]))
+      expect(memory).toEqual(
+        new Uint8Array([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0, 0])
+      )
 
       instructions.and_w(memory, 0, 0x00ff)
-      expect(memory).toEqual(new Uint8Array([0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0, 0]))
+      expect(memory).toEqual(
+        new Uint8Array([0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0, 0])
+      )
     })
 
     it('getReg and setReg should work correctly', () => {
