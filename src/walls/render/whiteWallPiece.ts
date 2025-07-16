@@ -5,6 +5,7 @@
 import type { MonochromeBitmap } from '../types'
 import { VIEWHT, SBARHT, SCRWTH } from '../../screen/constants'
 import { LEFT_CLIP, RIGHT_CLIP, CENTER_CLIP } from './constants'
+import { findWAddress } from '../../asm/assemblyMacros'
 
 /**
  * Draws a single white wall piece
@@ -59,13 +60,6 @@ export const whiteWallPiece =
     // Calculate bit shift for x position within 32-bit word
     const bitShift = 16 - (x & 15) // How many bits to shift left
 
-    // Calculate word-aligned byte offset from x coordinate
-    // Original 68K used FIND_WADDRESS macro which did:
-    // 1. asr.w #3, D0 (shift right by 3 = divide by 8)
-    // 2. bclr.l #0, D0 (clear bit 0 for word alignment)
-    // This ensures addresses are even for 16/32-bit operations
-    const byteX = (x >> 3) & 0xfffe // Word-aligned byte offset
-
     // Draw each row (orig asm lines 755-761)
     for (let row = 0; row < adjustedHeight; row++) {
       // Get pattern word from data
@@ -83,9 +77,9 @@ export const whiteWallPiece =
       // Apply clipping mask (OR with inverted clip)
       pattern = (pattern | clip) >>> 0
 
-      // Calculate screen position
+      // Calculate screen position using FIND_WADDRESS macro
       const screenY = adjustedY + row
-      const screenOffset = screenY * newScreen.rowBytes + byteX
+      const screenOffset = findWAddress(0, x, screenY)
 
       // Apply pattern with AND operation (clears bits where pattern is 0)
       if (screenOffset >= 0 && screenOffset + 3 < newScreen.data.length) {

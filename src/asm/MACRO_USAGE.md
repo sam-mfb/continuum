@@ -7,6 +7,7 @@ This document tracks where each assembly macro from `orig/Sources/Assembly Macro
 Conditional negation macro that negates a value if another value is negative.
 
 **Usage in original code:**
+
 - `orig/Sources/Draw.c:1012` - in `draw_nneline()` function, negates D2 if dir(A6) is negative
 - `orig/Sources/Draw.c:1266` - in `draw_eneline()` function, negates D1 if dir(A6) is negative
 
@@ -15,6 +16,7 @@ Conditional negation macro that negates a value if another value is negative.
 Macro that calculates word-aligned screen addresses from x,y coordinates.
 
 **Usage in original code:**
+
 - `orig/Sources/Junctions.c:747` - in `white_wall_piece()` function
 - `orig/Sources/Junctions.c:802` - in `eor_wall_piece()` function
 - `orig/Sources/Junctions.c:883` - in `fast_hashes()` function
@@ -34,6 +36,7 @@ Macro that calculates word-aligned screen addresses from x,y coordinates.
 Macro that calculates byte-aligned screen addresses from x,y coordinates.
 
 **Usage in original code:**
+
 - `orig/Sources/Draw.c:512` - in `draw_small()` function
 - `orig/Sources/Draw.c:539` - in `black_small()` function
 - `orig/Sources/Utils.c:232` - in `find_baddr()` function
@@ -43,6 +46,7 @@ Macro that calculates byte-aligned screen addresses from x,y coordinates.
 Jump to subroutine wrapper that calls find_waddr and moves result to A0.
 
 **Usage in original code:**
+
 - `orig/Sources/Draw.c:41` - in `draw_figure()` function
 - `orig/Sources/Draw.c:76` - in `erase_figure()` function
 - `orig/Sources/Draw.c:112` - in `full_figure()` function
@@ -75,5 +79,6 @@ Jump to subroutine wrapper that calls find_waddr and moves result to A0.
 Jump to subroutine wrapper that calls find_baddr and moves result to A0.
 
 **Usage in original code:**
+
 - `orig/Sources/Draw.c:1006` - in `draw_nneline()` function
 - `orig/Sources/Draw.c:1145` - in `draw_neline()` function

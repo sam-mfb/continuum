@@ -5,6 +5,7 @@
 import type { MonochromeBitmap, JunctionRec } from '../types'
 import { drawHash } from './drawHash'
 import { VIEWHT, SCRWTH, SBARHT } from '../../screen/constants'
+import { findWAddress } from '../../asm/assemblyMacros'
 
 // Constants from the original assembly code
 const SCREEN_TOP_MARGIN = 5 // Pixels to check above screen for hashes
@@ -85,10 +86,8 @@ export const fastHashes =
           // Optimized inline hash drawing (@do_quick section, lines 881-905)
           const adjustedY = drawY + SBARHT
 
-          // Calculate screen address (FIND_WADDRESS macro)
-          const byteX = (drawX >> 3) & 0xfffe // Word-aligned byte offset
-          const rowOffset = adjustedY * newScreen.rowBytes
-          let address = rowOffset + byteX
+          // Calculate screen address using FIND_WADDRESS macro
+          let address = findWAddress(0, drawX, adjustedY)
 
           // Calculate bit position
           const bitPos = drawX & 15

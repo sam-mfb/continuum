@@ -51,7 +51,7 @@ const main = (): void => {
   console.log(visualizeBitmap(bitmap))
 
   console.log(
-    '\n--- Clipped Bitmap { top: 0, left: 3, bottom: 10, right: 25 } ---',
+    '\n--- Clipped Bitmap { top: 0, left: 3, bottom: 10, right: 25 } ---'
   )
   const clip = { top: 0, left: 3, bottom: 10, right: 25 }
   console.log(visualizeBitmap(bitmap, clip))

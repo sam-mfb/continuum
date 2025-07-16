@@ -1105,7 +1105,7 @@ describe('initWalls integration', () => {
     expect(updatedWall).toBeDefined()
     expect(updatedWall?.h1).toBeDefined()
     expect(updatedWall?.h2).toBeDefined()
-    
+
     console.log('updatedWall h1/h2:', {
       h1: updatedWall?.h1,
       h2: updatedWall?.h2
@@ -1115,7 +1115,7 @@ describe('initWalls integration', () => {
     expect(organizedWall).toBeDefined()
     expect(organizedWall?.h1).toBeDefined()
     expect(organizedWall?.h2).toBeDefined()
-    
+
     console.log('organizedWall h1/h2:', {
       h1: organizedWall?.h1,
       h2: organizedWall?.h2

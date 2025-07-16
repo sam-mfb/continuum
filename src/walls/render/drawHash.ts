@@ -6,6 +6,7 @@ import type { MonochromeBitmap } from '../types'
 import { VIEWHT, SBARHT, SCRWTH } from '../../screen/constants'
 import { LEFT_CLIP, RIGHT_CLIP, CENTER_CLIP } from './constants'
 import { HASH_FIGURE } from '../whiteBitmaps'
+import { findWAddress } from '../../asm/assemblyMacros'
 
 /**
  * Draws junction hash marks
@@ -57,11 +58,8 @@ export const drawHash =
       return newScreen
     }
 
-    // Calculate screen address (FIND_WADDRESS macro)
-    // In the original: x >> 3 & 0xFFFE gives the byte offset, y << 6 gives row offset
-    const byteX = (x >> 3) & 0xfffe // Word-aligned byte offset
-    const rowOffset = y * newScreen.rowBytes
-    let address = rowOffset + byteX
+    // Calculate screen address using FIND_WADDRESS macro
+    let address = findWAddress(0, x, y)
 
     // Calculate bit rotation (lines 947-949)
     // Original: and.w #15, x; neg.w x; add.w #16, x

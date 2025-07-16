@@ -104,4 +104,3 @@ if (y + len > VIEWHT) {
 
 - 68000 assembly often works with word-aligned addresses
 - Address increments of 2 or 4 bytes are common and must be preserved exactly
-

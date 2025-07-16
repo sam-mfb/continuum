@@ -20,7 +20,7 @@ type ClipRect = {
  */
 export const visualizeBitmap = (
   bitmap: MonochromeBitmap,
-  clip?: ClipRect,
+  clip?: ClipRect
 ): string => {
   const top = Math.max(0, clip?.top ?? 0)
   const left = Math.max(0, clip?.left ?? 0)
