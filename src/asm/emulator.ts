@@ -5,6 +5,7 @@
 import { createRegisters, type AsmRegisters } from './registers'
 import { createInstructionSet, type InstructionSet } from './instructions'
 import { findWAddress, jsrWAddress } from './assemblyMacros'
+import type { DeepPartial } from '../shared/types'
 
 /**
  * 68K assembler emulator context
@@ -32,52 +33,60 @@ export type Asm68k = {
 /**
  * Creates a 68K assembler emulator instance
  */
-export const build68kArch = (initialState?: Partial<AsmRegisters>): Asm68k => {
+export const build68kArch = (initialState?: DeepPartial<AsmRegisters>): Asm68k => {
   const registers = createRegisters()
-  
+
   // Apply initial state if provided
   if (initialState) {
-    Object.assign(registers, initialState)
+    if (initialState.data) {
+      Object.assign(registers.data, initialState.data)
+    }
+    if (initialState.address) {
+      Object.assign(registers.address, initialState.address)
+    }
+    if (initialState.flags) {
+      Object.assign(registers.flags, initialState.flags)
+    }
   }
-  
+
   const instructions = createInstructionSet(registers)
-  
+
   // Create proxy for convenient register access
   const context: Asm68k = {
     registers,
     instructions,
     findWAddress,
     jsrWAddress,
-    
+
     // Register shortcuts with getters/setters
-    get D0() { return registers.D0 },
-    set D0(val: number) { registers.D0 = val },
-    
-    get D1() { return registers.D1 },
-    set D1(val: number) { registers.D1 = val },
-    
-    get D2() { return registers.D2 },
-    set D2(val: number) { registers.D2 = val },
-    
-    get D3() { return registers.D3 },
-    set D3(val: number) { registers.D3 = val },
-    
-    get A0() { return registers.A0 },
-    set A0(val: number) { registers.A0 = val },
-    
-    get A1() { return registers.A1 },
-    set A1(val: number) { registers.A1 = val },
-    
+    get D0() { return registers.data.D0 },
+    set D0(val: number) { registers.data.D0 = val },
+
+    get D1() { return registers.data.D1 },
+    set D1(val: number) { registers.data.D1 = val },
+
+    get D2() { return registers.data.D2 },
+    set D2(val: number) { registers.data.D2 = val },
+
+    get D3() { return registers.data.D3 },
+    set D3(val: number) { registers.data.D3 = val },
+
+    get A0() { return registers.address.A0 },
+    set A0(val: number) { registers.address.A0 = val },
+
+    get A1() { return registers.address.A1 },
+    set A1(val: number) { registers.address.A1 = val },
+
     // Convenience aliases for common variables
-    get len() { return registers.D7 },
-    set len(val: number) { registers.D7 = val },
-    
-    get x() { return registers.D6 },
-    set x(val: number) { registers.D6 = val },
-    
-    get y() { return registers.D5 },
-    set y(val: number) { registers.D5 = val }
+    get len() { return registers.data.D7 },
+    set len(val: number) { registers.data.D7 = val },
+
+    get x() { return registers.data.D6 },
+    set x(val: number) { registers.data.D6 = val },
+
+    get y() { return registers.data.D5 },
+    set y(val: number) { registers.data.D5 = val }
   }
-  
+
   return context
 }

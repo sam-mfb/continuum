@@ -153,14 +153,18 @@ export const sseBlack =
     // Main assembly section (lines 1046-1117)
     // Create 68K emulator instance
     const asm = build68kArch({
-      D0: 0,
-      D1: 0,
-      D2: 128,
-      D3: 0,
-      A0: 0,
-      D7: len, // len
-      D6: x & 15, // x
-      D5: y // y
+      data: {
+        D0: 0,
+        D1: 0,
+        D2: 128,
+        D3: 0,
+        D7: len, // len
+        D6: x & 15, // x
+        D5: y // y
+      },
+      address: {
+        A0: 0
+      }
     })
 
     // Set A0 using the emulator's method
@@ -188,12 +192,12 @@ export const sseBlack =
         }
 
         // @quick body
-        asm.instructions.eor_l(newScreen, asm.A0, asm.D0)
-        asm.instructions.eor_l(newScreen, asm.A0 + 64, asm.D1)
+        asm.instructions.eor_l(newScreen.data, asm.A0, asm.D0)
+        asm.instructions.eor_l(newScreen.data, asm.A0 + 64, asm.D1)
         asm.D0 = asm.instructions.ror_l(asm.D0, 1)
         asm.D1 = asm.instructions.ror_l(asm.D1, 1)
-        asm.instructions.eor_l(newScreen, asm.A0 + 64 * 2, asm.D1)
-        asm.instructions.eor_l(newScreen, asm.A0 + 64 * 3, asm.D0)
+        asm.instructions.eor_l(newScreen.data, asm.A0 + 64 * 2, asm.D1)
+        asm.instructions.eor_l(newScreen.data, asm.A0 + 64 * 3, asm.D0)
         asm.D0 = asm.instructions.ror_l(asm.D0, 1)
         asm.D1 = asm.instructions.ror_l(asm.D1, 1)
         asm.A0 += 64 * 4
@@ -209,13 +213,13 @@ export const sseBlack =
 
       // @loop1 (lines 1078-1095)
       loop1: while (true) {
-        asm.instructions.eor_l(newScreen, asm.A0, asm.D0)
+        asm.instructions.eor_l(newScreen.data, asm.A0, asm.D0)
         asm.len -= 1
         if (asm.len < 0) {
           // blt.s @leave
           break
         }
-        asm.instructions.eor_l(newScreen, asm.A0 + 64, asm.D1)
+        asm.instructions.eor_l(newScreen.data, asm.A0 + 64, asm.D1)
         asm.A0 += asm.D2
         asm.D0 = asm.instructions.ror_l(asm.D0, 1)
         asm.D1 = asm.instructions.ror_l(asm.D1, 1)
@@ -275,12 +279,12 @@ export const sseBlack =
     if (asm.len >= 0) {
       // @loop2 - using 16-bit operations
       while (asm.len >= 0) {
-        asm.instructions.eor_w(newScreen, asm.A0, asm.D0 >>> 16)
+        asm.instructions.eor_w(newScreen.data, asm.A0, asm.D0 >>> 16)
         asm.D0 = asm.instructions.lsr_w(asm.D0 >>> 16, 1) << 16 | (asm.D0 & 0xffff)
         asm.len -= 1
         if (asm.len < 0) break
 
-        asm.instructions.eor_w(newScreen, asm.A0 + 64, asm.D1 >>> 16)
+        asm.instructions.eor_w(newScreen.data, asm.A0 + 64, asm.D1 >>> 16)
         asm.D1 = asm.instructions.lsr_w(asm.D1 >>> 16, 1) << 16 | (asm.D1 & 0xffff)
 
         // Swap D0 and D1
@@ -312,14 +316,14 @@ export const sseBlack =
       // @lp loop
       asm.len = len
       while (asm.instructions.dbra('len')) {
-        asm.instructions.and_w(newScreen, asm.A0, asm.D0)
-        asm.instructions.and_w(newScreen, asm.A0 + 64, asm.D0)
+        asm.instructions.and_w(newScreen.data, asm.A0, asm.D0)
+        asm.instructions.and_w(newScreen.data, asm.A0 + 64, asm.D0)
         asm.D0 = asm.instructions.lsr_w(asm.D0, 1)
         asm.A0 += 128
       }
       // Do one more iteration after dbra exits
-      asm.instructions.and_w(newScreen, asm.A0, asm.D0)
-      asm.instructions.and_w(newScreen, asm.A0 + 64, asm.D0)
+      asm.instructions.and_w(newScreen.data, asm.A0, asm.D0)
+      asm.instructions.and_w(newScreen.data, asm.A0 + 64, asm.D0)
     }
 
     return newScreen

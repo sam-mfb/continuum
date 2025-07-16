@@ -3,7 +3,6 @@
  */
 
 import type { AsmRegisters } from './registers'
-import type { MonochromeBitmap } from '../walls/types'
 
 /**
  * 68K instruction implementations
@@ -22,9 +21,9 @@ export type InstructionSet = {
   dbne: (counter: string) => boolean
 
   // Memory operations
-  eor_l: (screen: MonochromeBitmap, address: number, value: number) => void
-  eor_w: (screen: MonochromeBitmap, address: number, value: number) => void
-  and_w: (screen: MonochromeBitmap, address: number, value: number) => void
+  eor_l: (memory: Uint8Array, address: number, value: number) => void
+  eor_w: (memory: Uint8Array, address: number, value: number) => void
+  and_w: (memory: Uint8Array, address: number, value: number) => void
 
   // Register access
   getReg: (name: string) => number
@@ -42,12 +41,26 @@ export const createInstructionSet = (
 ): InstructionSet => {
   // Helper to get register value
   const getReg = (name: string): number => {
-    return registers[name as keyof AsmRegisters] as number
+    const upperName = name.toUpperCase()
+    if (upperName in registers.data) {
+      return registers.data[upperName as keyof typeof registers.data]
+    }
+    if (upperName in registers.address) {
+      return registers.address[upperName as keyof typeof registers.address]
+    }
+    throw new Error(`Unknown register: ${name}`)
   }
 
   // Helper to set register value
   const setReg = (name: string, value: number): void => {
-    ;(registers as any)[name] = value
+    const upperName = name.toUpperCase()
+    if (upperName in registers.data) {
+      registers.data[upperName as keyof typeof registers.data] = value
+    } else if (upperName in registers.address) {
+      registers.address[upperName as keyof typeof registers.address] = value
+    } else {
+      throw new Error(`Unknown register: ${name}`)
+    }
   }
 
   // Helper to get flag
@@ -60,7 +73,7 @@ export const createInstructionSet = (
       carry: 'carryFlag',
       overflow: 'overflowFlag'
     }
-    return registers[flagMap[flag] as keyof AsmRegisters] as boolean
+    return registers.flags[flagMap[flag] as keyof typeof registers.flags]
   }
 
   // Helper to set flags
@@ -68,8 +81,8 @@ export const createInstructionSet = (
     const mask = size === 'b' ? 0xff : size === 'w' ? 0xffff : 0xffffffff
     const maskedValue = value & mask
 
-    registers.zeroFlag = maskedValue === 0
-    registers.negativeFlag =
+    registers.flags.zeroFlag = maskedValue === 0
+    registers.flags.negativeFlag =
       size === 'b'
         ? (maskedValue & 0x80) !== 0
         : size === 'w'
@@ -110,7 +123,7 @@ export const createInstructionSet = (
 
     // Decrement and branch if not equal and not -1
     dbne: (counter: string): boolean => {
-      if (registers.zeroFlag) return false
+      if (registers.flags.zeroFlag) return false
       const current = getReg(counter)
       const newValue = (current - 1) & 0xffff
       setReg(counter, newValue)
@@ -118,28 +131,28 @@ export const createInstructionSet = (
     },
 
     // EOR long to screen memory
-    eor_l: (screen: MonochromeBitmap, address: number, value: number): void => {
-      if (address >= 0 && address + 3 < screen.data.length) {
-        screen.data[address]! ^= (value >>> 24) & 0xff
-        screen.data[address + 1]! ^= (value >>> 16) & 0xff
-        screen.data[address + 2]! ^= (value >>> 8) & 0xff
-        screen.data[address + 3]! ^= value & 0xff
+    eor_l: (memory: Uint8Array, address: number, value: number): void => {
+      if (address >= 0 && address + 3 < memory.length) {
+        memory[address]! ^= (value >>> 24) & 0xff
+        memory[address + 1]! ^= (value >>> 16) & 0xff
+        memory[address + 2]! ^= (value >>> 8) & 0xff
+        memory[address + 3]! ^= value & 0xff
       }
     },
 
     // EOR word to screen memory
-    eor_w: (screen: MonochromeBitmap, address: number, value: number): void => {
-      if (address >= 0 && address + 1 < screen.data.length) {
-        screen.data[address]! ^= (value >>> 8) & 0xff
-        screen.data[address + 1]! ^= value & 0xff
+    eor_w: (memory: Uint8Array, address: number, value: number): void => {
+      if (address >= 0 && address + 1 < memory.length) {
+        memory[address]! ^= (value >>> 8) & 0xff
+        memory[address + 1]! ^= value & 0xff
       }
     },
 
     // AND word to screen memory
-    and_w: (screen: MonochromeBitmap, address: number, value: number): void => {
-      if (address >= 0 && address + 1 < screen.data.length) {
-        screen.data[address]! &= (value >>> 8) & 0xff
-        screen.data[address + 1]! &= value & 0xff
+    and_w: (memory: Uint8Array, address: number, value: number): void => {
+      if (address >= 0 && address + 1 < memory.length) {
+        memory[address]! &= (value >>> 8) & 0xff
+        memory[address + 1]! &= value & 0xff
       }
     },
 
