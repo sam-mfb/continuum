@@ -2,7 +2,7 @@
  * @fileoverview 68K instruction implementations
  */
 
-import type { AsmRegisters } from './registers'
+import type { AsmRegisters, RegisterName } from './registers'
 
 /**
  * 68K instruction implementations
@@ -17,8 +17,8 @@ export type InstructionSet = {
   tst_b: (value: number) => void
 
   // Branch operations
-  dbra: (counter: string) => boolean
-  dbne: (counter: string) => boolean
+  dbra: (counter: RegisterName) => boolean
+  dbne: (counter: RegisterName) => boolean
 
   // Memory operations
   eor_l: (memory: Uint8Array, address: number, value: number) => void
@@ -26,8 +26,8 @@ export type InstructionSet = {
   and_w: (memory: Uint8Array, address: number, value: number) => void
 
   // Register access
-  getReg: (name: string) => number
-  setReg: (name: string, value: number) => void
+  getReg: (name: RegisterName) => number
+  setReg: (name: RegisterName, value: number) => void
 
   // Flags
   getFlag: (flag: 'zero' | 'negative' | 'carry' | 'overflow') => boolean
@@ -40,7 +40,7 @@ export const createInstructionSet = (
   registers: AsmRegisters
 ): InstructionSet => {
   // Helper to get register value
-  const getReg = (name: string): number => {
+  const getReg = (name: RegisterName): number => {
     const upperName = name.toUpperCase()
     if (upperName in registers.data) {
       return registers.data[upperName as keyof typeof registers.data]
@@ -52,7 +52,7 @@ export const createInstructionSet = (
   }
 
   // Helper to set register value
-  const setReg = (name: string, value: number): void => {
+  const setReg = (name: RegisterName, value: number): void => {
     const upperName = name.toUpperCase()
     if (upperName in registers.data) {
       registers.data[upperName as keyof typeof registers.data] = value
@@ -114,7 +114,7 @@ export const createInstructionSet = (
     },
 
     // Decrement and branch if not -1
-    dbra: (counter: string): boolean => {
+    dbra: (counter: RegisterName): boolean => {
       const current = getReg(counter)
       const newValue = (current - 1) & 0xffff
       setReg(counter, newValue)
@@ -122,7 +122,7 @@ export const createInstructionSet = (
     },
 
     // Decrement and branch if not equal and not -1
-    dbne: (counter: string): boolean => {
+    dbne: (counter: RegisterName): boolean => {
       if (registers.flags.zeroFlag) return false
       const current = getReg(counter)
       const newValue = (current - 1) & 0xffff

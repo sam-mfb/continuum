@@ -2,27 +2,17 @@
  * @fileoverview 68K processor register types and state management
  */
 
+export type DataRegisterName = 'D0' | 'D1' | 'D2' | 'D3' | 'D4' | 'D5' | 'D6' | 'D7';
+export type AddressRegisterName = 'A0' | 'A1' | 'A2' | 'A3' | 'A4' | 'A5' | 'A6' | 'A7';
+export type RegisterName = DataRegisterName | AddressRegisterName;
+
 export type DataRegisters = {
-  D0: number
-  D1: number
-  D2: number
-  D3: number
-  D4: number
-  D5: number
-  D6: number
-  D7: number
-}
+  [key in DataRegisterName]: number;
+};
 
 export type AddressRegisters = {
-  A0: number
-  A1: number
-  A2: number
-  A3: number
-  A4: number
-  A5: number
-  A6: number
-  A7: number
-}
+  [key in AddressRegisterName]: number;
+};
 
 export type StatusFlags = {
   zeroFlag: boolean
