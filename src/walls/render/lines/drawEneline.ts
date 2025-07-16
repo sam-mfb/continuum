@@ -5,7 +5,7 @@
 
 import type { MonochromeBitmap } from '../../types'
 import { SCRHT, SBARHT } from '../../../screen/constants'
-import { jsrWAddress } from '../../../asm/assemblyMacros'
+import { jsrWAddress, negIfNeg } from '../../../asm/assemblyMacros'
 
 // Line direction constants
 const L_UP = -1
@@ -87,7 +87,8 @@ export const drawEneline =
     len -= 4
 
     // Set up direction-dependent offset (lines 1265-1266)
-    const scanLineOffset = dir > 0 ? 64 : -64
+    // Uses NEGIFNEG macro from original assembly line 1266
+    const scanLineOffset = negIfNeg(64, dir)
 
     // JSR_WADDRESS for start position (line 1239)
     let address = jsrWAddress(0, x, y)

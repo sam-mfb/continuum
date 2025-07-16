@@ -5,7 +5,7 @@
 
 import type { MonochromeBitmap } from '../../types'
 import { SCRWTH } from '../../../screen/constants'
-import { jsrBAddress } from '../../../asm/assemblyMacros'
+import { jsrBAddress, negIfNeg } from '../../../asm/assemblyMacros'
 
 /**
  * Draw a north-north-east diagonal line (1 pixel right for every 2 pixels up)
@@ -46,7 +46,8 @@ export const drawNneline =
     let mask = (0xc0 >> bitPos) & 0xff
 
     // Row offset: 64 bytes per row, negative for upward
-    const rowOffset = dir > 0 ? 64 : -64
+    // Uses NEGIFNEG macro from original assembly line 1012
+    const rowOffset = negIfNeg(64, dir)
 
     let remainingLen = len
 

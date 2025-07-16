@@ -19,7 +19,7 @@ import { jsrWAddress } from '../../../asm/assemblyMacros'
 export const drawEline =
   (deps: { x: number; y: number; len: number; u_d: number }) =>
   (screen: MonochromeBitmap): MonochromeBitmap => {
-    const { x, y, len, u_d: _u_d } = deps
+    const { x, y, len } = deps
     // Deep clone the screen bitmap for immutability
     const newScreen: MonochromeBitmap = {
       data: new Uint8Array(screen.data),

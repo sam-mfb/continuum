@@ -141,8 +141,6 @@ export const southBlack =
     // Assembly: after fast loop, D2 is halved (64*4 -> 64*2)
     // Then uses dbra with remainder to draw remaining lines
     if (remainder > 0) {
-      const d2Half = 128 // 64 * 2
-
       // Draw remaining lines based on remainder value
       switch (remainder) {
         case 3:
