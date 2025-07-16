@@ -71,12 +71,13 @@ const main = (): void => {
   })(renderedBitmap)
 
   // 7. Define the clipping rectangle with a 50px margin.
-  const margin = 60
+  const marginbig = 60
+  const marginsmall = 10
   const clip = {
-    top: singleLine[0]!.starty + SBARHT - margin,
-    left: singleLine[0]!.startx - margin,
-    bottom: singleLine[0]!.endy + SBARHT + margin,
-    right: singleLine[0]!.endx + margin
+    top: singleLine[0]!.starty + SBARHT - marginsmall,
+    left: singleLine[0]!.startx - marginsmall,
+    bottom: singleLine[0]!.endy + SBARHT + marginsmall,
+    right: singleLine[0]!.endx + marginbig
   }
 
   // 8. Visualize the clipped area of the bitmap.
