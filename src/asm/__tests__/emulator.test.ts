@@ -1,16 +1,16 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { createRegisters } from '../registers'
 import { build68kArch } from '../emulator'
 import { createInstructionSet } from '../instructions'
-import type { AsmRegisters, RegisterName } from '../registers'
+import type { AsmRegisters, RegisterName, DataRegisterName, AddressRegisterName } from '../registers'
 
 describe('ASM Emulator', () => {
   describe('createRegisters', () => {
     it('should initialize all data and address registers to 0', () => {
       const registers = createRegisters()
       for (let i = 0; i < 8; i++) {
-        expect(registers.data[`D${i}` as RegisterName]).toBe(0)
-        expect(registers.address[`A${i}` as RegisterName]).toBe(0)
+        expect(registers.data[`D${i}` as DataRegisterName]).toBe(0)
+        expect(registers.address[`A${i}` as AddressRegisterName]).toBe(0)
       }
     })
 

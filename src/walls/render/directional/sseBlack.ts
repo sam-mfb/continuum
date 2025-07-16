@@ -155,153 +155,171 @@ export const sseBlack =
     // Create 68K emulator instance
     const asm = build68kArch({
       data: {
-        D0: 0,
-        D1: 0,
+        D0: eor1,
+        D1: eor2,
         D2: 128,
         D3: 0,
         D7: len, // len
         D6: x & 15, // x
-        D5: y // y
       },
       address: {
-        A0: 0
+        A0: findWAddress(0, x, y)
       }
     })
 
-    // Set A0 using the emulator's method
-    asm.A0 = findWAddress(0, x, y)
-
-    // Initialize D0 and D1 with rotated EOR values
-    asm.D0 = asm.instructions.ror_l(eor1, asm.registers.data.D6)
-    asm.D1 = asm.instructions.ror_l(eor2, asm.registers.data.D6)
+    // ror.l x, D0
+    asm.D0 = asm.instructions.ror_l(asm.D0, asm.D6)
+    // ror.l x, D1
+    asm.D1 = asm.instructions.ror_l(asm.D1, asm.D6)
 
     // subq.w #1, len
-    asm.registers.data.D7 -= 1
+    asm.D7 -= 1
+    
+    let pc = '' // Program Counter for our state machine
 
-    // blt.s @doend
-    if (asm.registers.data.D7 >= 0) {
-      // bra.s @enterq - jump to quick loop entry
+    if (asm.D7 < 0) { // blt.s @doend
+      pc = 'doend'
+    } else {
+      pc = 'enterq' // bra.s @enterq
+    }
 
-      // @quick loop (lines 1060-1075)
-      while (true) {
-        // @enterq
-        asm.registers.data.D7 -= 4
-        if (asm.registers.data.D7 < 0) {
-          // bge.s @quick failed, continue to addq
-          asm.registers.data.D7 += 4
-          break
-        }
+    main_asm_loop: while (true) {
+      switch (pc) {
+        case 'quick': {
+          asm.instructions.eor_l(newScreen.data, asm.A0, asm.D0)
+          asm.instructions.eor_l(newScreen.data, asm.A0 + 64, asm.D1)
+          asm.D0 = asm.instructions.ror_l(asm.D0, 1)
+          asm.D1 = asm.instructions.ror_l(asm.D1, 1)
+          asm.instructions.eor_l(newScreen.data, asm.A0 + 64 * 2, asm.D1)
+          asm.instructions.eor_l(newScreen.data, asm.A0 + 64 * 3, asm.D0)
+          asm.D0 = asm.instructions.ror_l(asm.D0, 1)
+          asm.D1 = asm.instructions.ror_l(asm.D1, 1)
+          asm.A0 += 64 * 4
+          
+          asm.instructions.tst_b(asm.D1)
+          if (asm.instructions.getFlag('zero')) { // beq.s @enterq
+            pc = 'enterq'
+            continue main_asm_loop
+          }
 
-        // @quick body
-        asm.instructions.eor_l(newScreen.data, asm.A0, asm.D0)
-        asm.instructions.eor_l(newScreen.data, asm.A0 + 64, asm.D1)
-        asm.D0 = asm.instructions.ror_l(asm.D0, 1)
-        asm.D1 = asm.instructions.ror_l(asm.D1, 1)
-        asm.instructions.eor_l(newScreen.data, asm.A0 + 64 * 2, asm.D1)
-        asm.instructions.eor_l(newScreen.data, asm.A0 + 64 * 3, asm.D0)
-        asm.D0 = asm.instructions.ror_l(asm.D0, 1)
-        asm.D1 = asm.instructions.ror_l(asm.D1, 1)
-        asm.A0 += 64 * 4
-
-        // tst.b D1; beq.s @enterq
-        asm.instructions.tst_b(asm.D1)
-        if (!asm.instructions.getFlag('zero')) {
           asm.D0 = asm.instructions.swap(asm.D0)
           asm.D1 = asm.instructions.swap(asm.D1)
           asm.A0 += 2
+          // fallthrough to @enterq
+          pc = 'enterq'
+          continue main_asm_loop
         }
-      }
 
-      // @loop1 (lines 1078-1095)
-      loop1: while (true) {
-        asm.instructions.eor_l(newScreen.data, asm.A0, asm.D0)
-        asm.registers.data.D7 -= 1
-        if (asm.registers.data.D7 < 0) {
-          // blt.s @leave
-          break
-        }
-        asm.instructions.eor_l(newScreen.data, asm.A0 + 64, asm.D1)
-        asm.A0 += asm.D2
-        asm.D0 = asm.instructions.ror_l(asm.D0, 1)
-        asm.D1 = asm.instructions.ror_l(asm.D1, 1)
-
-        // Swap D0 and D1 using D3
-        asm.D3 = asm.D0
-        asm.D0 = asm.D1
-        asm.D1 = asm.D3
-
-        // tst.b D1
-        asm.instructions.tst_b(asm.D1)
-        
-        // dbne len, @loop1
-        if (!asm.instructions.getFlag('zero')) {
-          asm.registers.data.D7--
-          if (asm.registers.data.D7 >= 0) {
-            continue
+        case 'enterq': {
+          asm.D7 -= 4
+          if (asm.D7 >= 0) { // bge.s @quick
+            pc = 'quick'
+            continue main_asm_loop
           }
-        }
-        
-        // dbne fell through - either zeroFlag was set OR len became -1
-        if (asm.instructions.getFlag('zero')) {
-          // When zero flag is set, dbne doesn't branch and beq branches to @doend
-          // This means we go straight to @doend
-          break loop1 // go to @doend
+          asm.D7 += 4
+          // fallthrough to @loop1
+          pc = 'loop1'
+          continue main_asm_loop
         }
 
-        // len reached -1 (dbne fell through due to counter), continue to swap
-        asm.D0 = asm.instructions.swap(asm.D0)
-        asm.D1 = asm.instructions.swap(asm.D1)
-        asm.A0 += 2
+        case 'loop1': {
+          asm.instructions.eor_l(newScreen.data, asm.A0, asm.D0)
+          asm.D7 -= 1
+          if (asm.D7 < 0) { // blt.s @leave
+            pc = 'leave'
+            continue main_asm_loop
+          }
+          asm.instructions.eor_l(newScreen.data, asm.A0 + 64, asm.D1)
+          asm.A0 += asm.D2
+          asm.D0 = asm.instructions.ror_l(asm.D0, 1)
+          asm.D1 = asm.instructions.ror_l(asm.D1, 1)
+          
+          // swap D0, D1
+          asm.D3 = asm.D0
+          asm.D0 = asm.D1
+          asm.D1 = asm.D3
 
-        // dbra len, @loop1
-        asm.registers.data.D7--
-        if (asm.registers.data.D7 >= 0) {
-          continue
+          asm.instructions.tst_b(asm.D1)
+          
+          if (asm.instructions.dbne('D7')) { // dbne len, @loop1
+            pc = 'loop1'
+            continue main_asm_loop
+          }
+
+          if (asm.instructions.getFlag('zero')) { // beq.s @doend
+            pc = 'doend'
+            continue main_asm_loop
+          }
+
+          asm.D0 = asm.instructions.swap(asm.D0)
+          asm.D1 = asm.instructions.swap(asm.D1)
+          asm.A0 += 2
+
+          if (asm.instructions.dbra('D7')) { // dbra len, @loop1
+            pc = 'loop1'
+            continue main_asm_loop
+          }
+          
+          // bra.s @leave
+          pc = 'leave'
+          continue main_asm_loop
         }
-        
-        // bra.s @leave
-        break
+
+        case 'doend': {
+          asm.D0 = asm.instructions.swap(asm.D0)
+          asm.D1 = asm.instructions.swap(asm.D1)
+          asm.D7 = end
+          asm.D7 -= 1
+          if (asm.D7 < 0) { // blt.s @leave
+            pc = 'leave'
+            continue main_asm_loop
+          }
+          // fallthrough to @loop2
+          pc = 'loop2'
+          continue main_asm_loop
+        }
+
+        case 'loop2': {
+          asm.instructions.eor_w(newScreen.data, asm.A0, asm.D0)
+          
+          const d0Low = asm.D0 & 0xffff
+          const d0High = asm.D0 & 0xffff0000
+          asm.D0 = d0High | asm.instructions.lsr_w(d0Low, 1)
+
+          asm.D7 -= 1
+          if (asm.D7 < 0) { // blt.s @leave
+            pc = 'leave'
+            continue main_asm_loop
+          }
+
+          asm.instructions.eor_w(newScreen.data, asm.A0 + 64, asm.D1)
+          
+          const d1Low = asm.D1 & 0xffff
+          const d1High = asm.D1 & 0xffff0000
+          asm.D1 = d1High | asm.instructions.lsr_w(d1Low, 1)
+
+          // swap D0, D1
+          asm.D3 = asm.D0
+          asm.D0 = asm.D1
+          asm.D1 = asm.D3
+
+          asm.A0 += asm.D2
+
+          if (asm.instructions.dbra('D7')) { // dbra len, @loop2
+            pc = 'loop2'
+            continue main_asm_loop
+          }
+          // fallthrough to leave
+          pc = 'leave'
+          continue main_asm_loop
+        }
+
+        case 'leave': {
+          break main_asm_loop
+        }
       }
     }
-
-    // @doend (lines 1098-1114)
-    // In the original assembly, when we go to @doend, we:
-    // 1. swap D0 and D1 
-    // 2. load end into len
-    // 3. use 16-bit operations
-    // But we need to account for the fact that we might have remaining pixels from @loop1
     
-    const remainingFromLoop1 = asm.registers.data.D7 >= 0 ? asm.registers.data.D7 + 1 : 0
-    
-    asm.D0 = asm.instructions.swap(asm.D0)
-    asm.D1 = asm.instructions.swap(asm.D1)
-    asm.registers.data.D7 = end + remainingFromLoop1 - 1
-    
-    if (asm.registers.data.D7 >= 0) {
-      // @loop2 - using 16-bit operations
-      while (asm.registers.data.D7 >= 0) {
-        asm.instructions.eor_w(newScreen.data, asm.A0, asm.D0 >>> 16)
-        asm.D0 = asm.instructions.lsr_w(asm.D0 >>> 16, 1) << 16 | (asm.D0 & 0xffff)
-        asm.registers.data.D7 -= 1
-        if (asm.registers.data.D7 < 0) break
-
-        asm.instructions.eor_w(newScreen.data, asm.A0 + 64, asm.D1 >>> 16)
-        asm.D1 = asm.instructions.lsr_w(asm.D1 >>> 16, 1) << 16 | (asm.D1 & 0xffff)
-
-        // Swap D0 and D1
-        asm.D3 = asm.D0
-        asm.D0 = asm.D1
-        asm.D1 = asm.D3
-
-        asm.A0 += asm.D2
-
-        // dbra len, @loop2
-        if (!asm.instructions.dbra('D7')) {
-          break
-        }
-      }
-    }
-
     // Start piece drawing (lines 1118-1137)
     len = startlen
     if (len > 0) {
@@ -315,7 +333,7 @@ export const sseBlack =
       len >>= 1
 
       // @lp loop
-      asm.registers.data.D7 = len
+      asm.D7 = len
       while (asm.instructions.dbra('D7')) {
         asm.instructions.and_w(newScreen.data, asm.A0, asm.D0)
         asm.instructions.and_w(newScreen.data, asm.A0 + 64, asm.D0)
