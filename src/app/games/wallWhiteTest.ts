@@ -8,133 +8,31 @@ import type { LineRec } from '../../walls/types'
 import { whiteTerrain, blackTerrain } from '../../walls/render'
 import { wallsActions } from '../../walls/wallsSlice'
 import { buildGameStore } from './store'
-import { LINE_TYPE, LINE_DIR, LINE_KIND, NEW_TYPE } from '../../walls/types'
+import { LINE_KIND, NEW_TYPE } from '../../walls/types'
+import { createWall } from '../../walls/unpack'
 
 // Create store instance
 const store = buildGameStore()
 
 // Test with examples of all 8 NEW_TYPE values, each 25px long and well-spaced
+// Using createWall function to ensure proper unpacking and endpoint calculation
 const sampleLines: LineRec[] = [
   // NEW_TYPE.S (1) - South (vertical down)
-  {
-    id: 'line-0',
-    startx: 50,
-    starty: 30,
-    endx: 50,
-    endy: 55,
-    length: 25,
-    type: LINE_TYPE.N,
-    up_down: LINE_DIR.DN,
-    kind: LINE_KIND.NORMAL,
-    newtype: NEW_TYPE.S,
-    nextId: null,
-    nextwhId: null
-  },
+  createWall(50, 30, 25, NEW_TYPE.S, LINE_KIND.NORMAL, 0),
   // NEW_TYPE.SSE (2) - South-Southeast
-  {
-    id: 'line-1',
-    startx: 120,
-    starty: 30,
-    endx: 132,
-    endy: 55,
-    length: 25,
-    type: LINE_TYPE.NNE,
-    up_down: LINE_DIR.DN,
-    kind: LINE_KIND.NORMAL,
-    newtype: NEW_TYPE.SSE,
-    nextId: null,
-    nextwhId: null
-  },
+  createWall(120, 30, 25, NEW_TYPE.SSE, LINE_KIND.NORMAL, 1),
   // NEW_TYPE.SE (3) - Southeast (diagonal down-right)
-  {
-    id: 'line-2',
-    startx: 190,
-    starty: 30,
-    endx: 208,
-    endy: 48,
-    length: 25,
-    type: LINE_TYPE.NE,
-    up_down: LINE_DIR.DN,
-    kind: LINE_KIND.NORMAL,
-    newtype: NEW_TYPE.SE,
-    nextId: null,
-    nextwhId: null
-  },
+  createWall(190, 30, 25, NEW_TYPE.SE, LINE_KIND.NORMAL, 2),
   // NEW_TYPE.ESE (4) - East-Southeast
-  {
-    id: 'line-3',
-    startx: 260,
-    starty: 30,
-    endx: 285,
-    endy: 42,
-    length: 25,
-    type: LINE_TYPE.ENE,
-    up_down: LINE_DIR.DN,
-    kind: LINE_KIND.NORMAL,
-    newtype: NEW_TYPE.ESE,
-    nextId: null,
-    nextwhId: null
-  },
+  createWall(260, 30, 25, NEW_TYPE.ESE, LINE_KIND.NORMAL, 3),
   // NEW_TYPE.E (5) - East (horizontal right)
-  {
-    id: 'line-4',
-    startx: 50,
-    starty: 90,
-    endx: 75,
-    endy: 90,
-    length: 25,
-    type: LINE_TYPE.E,
-    up_down: LINE_DIR.DN,
-    kind: LINE_KIND.NORMAL,
-    newtype: NEW_TYPE.E,
-    nextId: null,
-    nextwhId: null
-  },
+  createWall(50, 90, 25, NEW_TYPE.E, LINE_KIND.NORMAL, 4),
   // NEW_TYPE.ENE (6) - East-Northeast
-  {
-    id: 'line-5',
-    startx: 120,
-    starty: 102,
-    endx: 145,
-    endy: 90,
-    length: 25,
-    type: LINE_TYPE.ENE,
-    up_down: LINE_DIR.UP,
-    kind: LINE_KIND.NORMAL,
-    newtype: NEW_TYPE.ENE,
-    nextId: null,
-    nextwhId: null
-  },
+  createWall(120, 102, 25, NEW_TYPE.ENE, LINE_KIND.NORMAL, 5),
   // NEW_TYPE.NE (7) - Northeast (diagonal up-right)
-  {
-    id: 'line-6',
-    startx: 190,
-    starty: 108,
-    endx: 208,
-    endy: 90,
-    length: 25,
-    type: LINE_TYPE.NE,
-    up_down: LINE_DIR.UP,
-    kind: LINE_KIND.NORMAL,
-    newtype: NEW_TYPE.NE,
-    nextId: null,
-    nextwhId: null
-  },
+  createWall(190, 108, 25, NEW_TYPE.NE, LINE_KIND.NORMAL, 6),
   // NEW_TYPE.NNE (8) - North-Northeast
-  {
-    id: 'line-7',
-    startx: 260,
-    starty: 108,
-    endx: 272,
-    endy: 83,
-    length: 25,
-    type: LINE_TYPE.NNE,
-    up_down: LINE_DIR.UP,
-    kind: LINE_KIND.NORMAL,
-    newtype: NEW_TYPE.NNE,
-    nextId: null,
-    nextwhId: null
-  }
+  createWall(260, 108, 25, NEW_TYPE.NNE, LINE_KIND.NORMAL, 7)
 ]
 
 // Initialize walls on module load
