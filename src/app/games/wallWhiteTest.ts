@@ -10,13 +10,16 @@ import { wallsActions } from '../../walls/wallsSlice'
 import { buildGameStore } from './store'
 import { LINE_KIND } from '../../walls/types'
 import { createLine } from '../../walls/createLine'
-import { prepareLine } from '../../walls/prepareLine'
+import { packLine } from '../../walls/packLine'
+import { unpackLine } from '../../walls/unpackLine'
 import { LINE_KIND as LineKind } from '../../shared/types/line'
 
 // Create store instance
 const store = buildGameStore()
 
-// Generate walls using createLine to ensure proper constraints
+// Generate walls using the complete flow: create -> pack -> unpack
+// This demonstrates the full editor -> save -> load cycle
+
 // Create examples of all 8 directions with desired endpoints
 const wallSpecs = [
   // South (vertical down)
@@ -37,26 +40,26 @@ const wallSpecs = [
   { x1: 260, y1: 108, x2: 272, y2: 83 }
 ]
 
-// Create lines using the createLine function with original constraints
+// Process lines through the complete flow
 const sampleLines: LineRec[] = wallSpecs
   .map((spec, index) => {
-    const line = createLine(spec.x1, spec.y1, spec.x2, spec.y2, {
+    // Step 1: Create line (editor logic)
+    const created = createLine(spec.x1, spec.y1, spec.x2, spec.y2, {
       kind: LineKind.NORMAL,
       safeMode: false,
       worldWidth: 512,
       worldHeight: 318
     })
     
-    if (!line) return null
+    if (!created) return null
     
-    // Add the id
-    const lineWithId = {
-      ...line,
-      id: `line-${index}`
-    } as LineRec
+    // Step 2: Pack line (save to file format)
+    const packed = packLine(created)
     
-    // Prepare the line for rendering (calculates endpoints, forces odd lengths, sets newtype)
-    return prepareLine(lineWithId)
+    // Step 3: Unpack line (load from file format)
+    const unpacked = unpackLine(packed, `line-${index}`)
+    
+    return unpacked
   })
   .filter((line): line is LineRec => line !== null)
 
