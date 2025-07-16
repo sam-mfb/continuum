@@ -5,7 +5,7 @@
 import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
 import { drawNeline } from '../lines/drawNeline'
-import { findWAddress } from '../../../asm/assemblyMacros'
+import { findWAddress, jsrWAddress } from '../../../asm/assemblyMacros'
 
 // Background patterns from Play.c:61-62
 const backgr1 = 0xaaaaaaaa
@@ -197,8 +197,8 @@ export const neBlack =
 
     // Handle start piece with AND operations (lines 314-331)
     if (startlen > 0) {
-      // Calculate screen address using FIND_WADDRESS macro
-      let address = findWAddress(0, startx, starty)
+      // Calculate screen address using JSR_WADDRESS
+      let address = jsrWAddress(0, startx, starty)
 
       let mask = 0x7fff >> (startx & 15)
 

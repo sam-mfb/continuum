@@ -5,6 +5,7 @@
 import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
 import { drawNline } from '../lines/drawNline'
+import { findWAddress } from '../../../asm/assemblyMacros'
 
 // Background patterns from Play.c:61-62
 const backgr1 = 0xaaaaaaaa
@@ -94,9 +95,8 @@ export const southBlack =
     const eor2 = (background[(x + y + 1) & 1]! & SOUTH_MASK) ^ SOUTH_BLACK
 
     // Assembly drawing logic (lines 1191-1260)
-    // Calculate screen address
-    const byteX = (x >> 3) & 0xfffe
-    let address = y * newScreen.rowBytes + byteX
+    // Calculate screen address using FIND_WADDRESS macro
+    let address = findWAddress(0, x, y)
 
     // Shift the EOR patterns based on x position
     const shift = x & 15

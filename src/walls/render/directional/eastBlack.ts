@@ -5,6 +5,7 @@
 import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT, SCRHT } from '../../../screen/constants'
 import { drawEline } from '../lines/drawEline'
+import { findWAddress } from '../../../asm/assemblyMacros'
 
 // Line direction constants from Draw.c
 const L_DN = 0 // Down direction
@@ -108,9 +109,8 @@ export const eastBlack =
     x += h2
 
     // Assembly drawing logic (lines 612-724)
-    // Calculate screen address
-    const byteX = (x >> 3) & 0xfffe
-    let address = y * newScreen.rowBytes + byteX
+    // Calculate screen address using FIND_WADDRESS macro
+    let address = findWAddress(0, x, y)
 
     const shift = x & 15
     const totalBits = shift + len

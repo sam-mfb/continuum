@@ -4,6 +4,7 @@
 
 import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SBARHT } from '../../../screen/constants'
+import { findWAddress } from '../../../asm/assemblyMacros'
 
 /**
  * Draws white parts of ENE (East-North-East) lines
@@ -69,9 +70,8 @@ export const eneWhite =
     }
 
     // Assembly drawing logic (lines 531-545)
-    // Calculate screen address at x=0
-    const byteX = 0 // x is set to 0 in line 530
-    let address = drawY * newScreen.rowBytes + byteX
+    // Calculate screen address at x=0 using FIND_WADDRESS macro
+    let address = findWAddress(0, 0, drawY) // x is set to 0 in line 530
 
     let mask = andval
 

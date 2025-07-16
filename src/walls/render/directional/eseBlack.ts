@@ -4,7 +4,7 @@
 
 import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
-import { findWAddress } from '../../../asm/assemblyMacros'
+import { jsrWAddress } from '../../../asm/assemblyMacros'
 import { drawEseline } from '../lines/drawEseline'
 
 // Background patterns from Play.c:61-62
@@ -99,8 +99,8 @@ export const eseBlack =
 
     // Main drawing section (lines 786-829)
     if (h2 < h3) {
-      // Calculate screen address using FIND_WADDRESS macro
-      let address = findWAddress(0, x, y)
+      // Calculate screen address using JSR_WADDRESS
+      let address = jsrWAddress(0, x, y)
 
       // Shift the EOR patterns based on x position
       const shift = x & 15

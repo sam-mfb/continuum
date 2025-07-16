@@ -4,6 +4,7 @@
 
 import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
+import { findWAddress } from '../../../asm/assemblyMacros'
 
 // Mask from orig/Sources/Walls.c:22
 const NNE_MASK = 0x000fffff
@@ -89,9 +90,8 @@ export const nneWhite =
 
     // Main drawing section (lines 110-179)
     if (h2 < h4) {
-      // Calculate screen address (JSR_WADDRESS)
-      const byteX = (x >> 3) & 0xfffe
-      let address = y * newScreen.rowBytes + byteX
+      // Calculate screen address using JSR_WADDRESS
+      let address = findWAddress(0, x, y)
 
       // Calculate bit position and mask
       const bitPos = x & 15
@@ -157,9 +157,8 @@ export const nneWhite =
 
     // Handle start section (lines 181-199)
     if (start > 0) {
-      // Calculate screen address for left section
-      const byteX = (leftx >> 3) & 0xfffe
-      let address = lefty * newScreen.rowBytes + byteX
+      // Calculate screen address for left section using JSR_WADDRESS
+      let address = findWAddress(0, leftx, lefty)
 
       let mask = 0x7fff
       mask >>= leftx & 15
