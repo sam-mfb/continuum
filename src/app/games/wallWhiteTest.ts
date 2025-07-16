@@ -8,134 +8,57 @@ import type { LineRec } from '../../walls/types'
 import { whiteTerrain, blackTerrain } from '../../walls/render'
 import { wallsActions } from '../../walls/wallsSlice'
 import { buildGameStore } from './store'
-import { LINE_TYPE, LINE_DIR, LINE_KIND, NEW_TYPE } from '../../walls/types'
+import { LINE_KIND } from '../../walls/types'
+import { createLine } from '../../walls/createLine'
+import { prepareLine } from '../../walls/prepareLine'
+import { LINE_KIND as LineKind } from '../../shared/types/line'
 
 // Create store instance
 const store = buildGameStore()
 
-// Test with examples of all 8 NEW_TYPE values, each 25px long and well-spaced
-const sampleLines: LineRec[] = [
-  // NEW_TYPE.S (1) - South (vertical down)
-  {
-    id: 'line-0',
-    startx: 50,
-    starty: 30,
-    endx: 50,
-    endy: 55,
-    length: 25,
-    type: LINE_TYPE.N,
-    up_down: LINE_DIR.DN,
-    kind: LINE_KIND.NORMAL,
-    newtype: NEW_TYPE.S,
-    nextId: null,
-    nextwhId: null
-  },
-  // NEW_TYPE.SSE (2) - South-Southeast
-  {
-    id: 'line-1',
-    startx: 120,
-    starty: 30,
-    endx: 132,
-    endy: 55,
-    length: 25,
-    type: LINE_TYPE.NNE,
-    up_down: LINE_DIR.DN,
-    kind: LINE_KIND.NORMAL,
-    newtype: NEW_TYPE.SSE,
-    nextId: null,
-    nextwhId: null
-  },
-  // NEW_TYPE.SE (3) - Southeast (diagonal down-right)
-  {
-    id: 'line-2',
-    startx: 190,
-    starty: 30,
-    endx: 208,
-    endy: 48,
-    length: 25,
-    type: LINE_TYPE.NE,
-    up_down: LINE_DIR.DN,
-    kind: LINE_KIND.NORMAL,
-    newtype: NEW_TYPE.SE,
-    nextId: null,
-    nextwhId: null
-  },
-  // NEW_TYPE.ESE (4) - East-Southeast
-  {
-    id: 'line-3',
-    startx: 260,
-    starty: 30,
-    endx: 285,
-    endy: 42,
-    length: 25,
-    type: LINE_TYPE.ENE,
-    up_down: LINE_DIR.DN,
-    kind: LINE_KIND.NORMAL,
-    newtype: NEW_TYPE.ESE,
-    nextId: null,
-    nextwhId: null
-  },
-  // NEW_TYPE.E (5) - East (horizontal right)
-  {
-    id: 'line-4',
-    startx: 50,
-    starty: 90,
-    endx: 75,
-    endy: 90,
-    length: 25,
-    type: LINE_TYPE.E,
-    up_down: LINE_DIR.DN,
-    kind: LINE_KIND.NORMAL,
-    newtype: NEW_TYPE.E,
-    nextId: null,
-    nextwhId: null
-  },
-  // NEW_TYPE.ENE (6) - East-Northeast
-  {
-    id: 'line-5',
-    startx: 120,
-    starty: 102,
-    endx: 145,
-    endy: 90,
-    length: 25,
-    type: LINE_TYPE.ENE,
-    up_down: LINE_DIR.UP,
-    kind: LINE_KIND.NORMAL,
-    newtype: NEW_TYPE.ENE,
-    nextId: null,
-    nextwhId: null
-  },
-  // NEW_TYPE.NE (7) - Northeast (diagonal up-right)
-  {
-    id: 'line-6',
-    startx: 190,
-    starty: 108,
-    endx: 208,
-    endy: 90,
-    length: 25,
-    type: LINE_TYPE.NE,
-    up_down: LINE_DIR.UP,
-    kind: LINE_KIND.NORMAL,
-    newtype: NEW_TYPE.NE,
-    nextId: null,
-    nextwhId: null
-  },
-  // NEW_TYPE.NNE (8) - North-Northeast
-  {
-    id: 'line-7',
-    startx: 260,
-    starty: 108,
-    endx: 272,
-    endy: 83,
-    length: 25,
-    type: LINE_TYPE.NNE,
-    up_down: LINE_DIR.UP,
-    kind: LINE_KIND.NORMAL,
-    newtype: NEW_TYPE.NNE,
-    nextId: null,
-    nextwhId: null
-  }
+// Generate walls using createLine to ensure proper constraints
+// Create examples of all 8 directions with desired endpoints
+const wallSpecs = [
+  // South (vertical down)
+  { x1: 50, y1: 30, x2: 50, y2: 55 },
+  // South-Southeast 
+  { x1: 120, y1: 30, x2: 132, y2: 55 },
+  // Southeast (diagonal down-right)
+  { x1: 190, y1: 30, x2: 208, y2: 48 },
+  // East-Southeast
+  { x1: 260, y1: 30, x2: 285, y2: 42 },
+  // East (horizontal right)
+  { x1: 50, y1: 90, x2: 75, y2: 90 },
+  // East-Northeast
+  { x1: 120, y1: 102, x2: 145, y2: 90 },
+  // Northeast (diagonal up-right)
+  { x1: 190, y1: 108, x2: 208, y2: 90 },
+  // North-Northeast
+  { x1: 260, y1: 108, x2: 272, y2: 83 }
 ]
+
+// Create lines using the createLine function with original constraints
+const sampleLines: LineRec[] = wallSpecs
+  .map((spec, index) => {
+    const line = createLine(spec.x1, spec.y1, spec.x2, spec.y2, {
+      kind: LineKind.NORMAL,
+      safeMode: false,
+      worldWidth: 512,
+      worldHeight: 318
+    })
+    
+    if (!line) return null
+    
+    // Add the id
+    const lineWithId = {
+      ...line,
+      id: `line-${index}`
+    } as LineRec
+    
+    // Prepare the line for rendering (calculates endpoints, forces odd lengths, sets newtype)
+    return prepareLine(lineWithId)
+  })
+  .filter((line): line is LineRec => line !== null)
 
 // Initialize walls on module load
 store.dispatch(wallsActions.initWalls({ walls: sampleLines }))
