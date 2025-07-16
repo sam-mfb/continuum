@@ -137,17 +137,22 @@ export const seBlack =
       while (remainingLen >= 0) {
         eorToScreen32(newScreen, address, rotatedEor)
         address += 64
+        
+        // Save the bit that will be rotated out (carry flag simulation)
+        const carryBit = rotatedEor & 1
         rotatedEor = rotateRight(rotatedEor, 1)
 
-        // Check if carry bit is set (checking if we need to wrap)
-        if ((rotatedEor & 0x80000000) === 0) {
-          // Need to switch to next word
+        // dbcs: decrement and branch if carry set is false (carry clear)
+        // If carry bit was 0, we continue the loop
+        // If carry bit was 1, we fall through to swap
+        remainingLen--
+        if (carryBit === 1) {
+          // Carry set, fall through to swap
           rotatedEor = swapWords(rotatedEor)
           address += 2
           remainingLen--
           break
         }
-        remainingLen--
       }
 
       // Continue with remaining iterations if any
@@ -159,6 +164,8 @@ export const seBlack =
       }
 
       // Check if we need to adjust for the end section
+      // Assembly: tst.b eor / bne.s @1
+      // Test the low byte of eor
       if ((rotatedEor & 0xff) === 0) {
         rotatedEor = swapWords(rotatedEor)
       } else {
