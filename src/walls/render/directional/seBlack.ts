@@ -137,7 +137,7 @@ export const seBlack =
       while (remainingLen >= 0) {
         eorToScreen32(newScreen, address, rotatedEor)
         address += 64
-        
+
         // Save the bit that will be rotated out (carry flag simulation)
         const carryBit = rotatedEor & 1
         rotatedEor = rotateRight(rotatedEor, 1)

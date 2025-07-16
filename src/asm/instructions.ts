@@ -10,7 +10,11 @@ import type { AsmRegisters, RegisterName } from './registers'
 export type InstructionSet = {
   // Arithmetic/Logic operations
   ror_l: (value: number, bits: number) => number
+  ror_w: (value: number, bits: number) => number
   lsr_w: (value: number, bits: number) => number
+  lsr_l: (value: number, bits: number) => number
+  asr_w: (value: number, bits: number) => number
+  asr_l: (value: number, bits: number) => number
   swap: (value: number) => number
 
   // Test/Compare operations
@@ -19,11 +23,16 @@ export type InstructionSet = {
   // Branch operations
   dbra: (counter: RegisterName) => boolean
   dbne: (counter: RegisterName) => boolean
+  dbcs: (counter: RegisterName) => boolean
 
   // Memory operations
   eor_l: (memory: Uint8Array, address: number, value: number) => void
   eor_w: (memory: Uint8Array, address: number, value: number) => void
   and_w: (memory: Uint8Array, address: number, value: number) => void
+  and_l: (memory: Uint8Array, address: number, value: number) => void
+  or_l: (memory: Uint8Array, address: number, value: number) => void
+  or_w: (memory: Uint8Array, address: number, value: number) => void
+  or_b: (memory: Uint8Array, address: number, value: number) => void
 
   // Register access
   getReg: (name: RegisterName) => number
@@ -95,12 +104,50 @@ export const createInstructionSet = (
     ror_l: (value: number, bits: number): number => {
       bits = bits & 31
       if (bits === 0) return value
-      return ((value >>> bits) | (value << (32 - bits))) >>> 0
+      const result = ((value >>> bits) | (value << (32 - bits))) >>> 0
+      // Set carry flag to the last bit rotated out
+      registers.flags.carryFlag = bits > 0 && ((value >> (bits - 1)) & 1) === 1
+      return result
+    },
+
+    // Rotate right word
+    ror_w: (value: number, bits: number): number => {
+      bits = bits & 15
+      if (bits === 0) return value & 0xffff
+      const word = value & 0xffff
+      const result = ((word >>> bits) | (word << (16 - bits))) & 0xffff
+      // Set carry flag to the last bit rotated out
+      registers.flags.carryFlag = bits > 0 && ((word >> (bits - 1)) & 1) === 1
+      return result
     },
 
     // Logical shift right word
     lsr_w: (value: number, bits: number): number => {
       return (value >>> bits) & 0xffff
+    },
+
+    // Logical shift right long
+    lsr_l: (value: number, bits: number): number => {
+      bits = bits & 31
+      if (bits === 0) return value
+      return value >>> bits
+    },
+
+    // Arithmetic shift right word (sign-extend)
+    asr_w: (value: number, bits: number): number => {
+      bits = bits & 15
+      if (bits === 0) return value & 0xffff
+      // Sign extend to 32-bit, shift, then mask back to 16-bit
+      const signExtended = (value & 0xffff) | ((value & 0x8000) ? 0xffff0000 : 0)
+      return (signExtended >> bits) & 0xffff
+    },
+
+    // Arithmetic shift right long (sign-extend)
+    asr_l: (value: number, bits: number): number => {
+      bits = bits & 31
+      if (bits === 0) return value
+      // JavaScript >> operator already does arithmetic shift for 32-bit values
+      return value >> bits
     },
 
     // Swap high and low words
@@ -134,6 +181,15 @@ export const createInstructionSet = (
       return newValue !== 0xffff
     },
 
+    // Decrement and branch if carry set is false
+    dbcs: (counter: RegisterName): boolean => {
+      if (registers.flags.carryFlag) return false
+      const current = getReg(counter)
+      const newValue = (current - 1) & 0xffff
+      setReg(counter, newValue)
+      return newValue !== 0xffff
+    },
+
     // EOR long to screen memory
     eor_l: (memory: Uint8Array, address: number, value: number): void => {
       if (address >= 0 && address + 3 < memory.length) {
@@ -157,6 +213,41 @@ export const createInstructionSet = (
       if (address >= 0 && address + 1 < memory.length) {
         memory[address]! &= (value >>> 8) & 0xff
         memory[address + 1]! &= value & 0xff
+      }
+    },
+
+    // AND long to screen memory
+    and_l: (memory: Uint8Array, address: number, value: number): void => {
+      if (address >= 0 && address + 3 < memory.length) {
+        memory[address]! &= (value >>> 24) & 0xff
+        memory[address + 1]! &= (value >>> 16) & 0xff
+        memory[address + 2]! &= (value >>> 8) & 0xff
+        memory[address + 3]! &= value & 0xff
+      }
+    },
+
+    // OR long to screen memory
+    or_l: (memory: Uint8Array, address: number, value: number): void => {
+      if (address >= 0 && address + 3 < memory.length) {
+        memory[address]! |= (value >>> 24) & 0xff
+        memory[address + 1]! |= (value >>> 16) & 0xff
+        memory[address + 2]! |= (value >>> 8) & 0xff
+        memory[address + 3]! |= value & 0xff
+      }
+    },
+
+    // OR word to screen memory
+    or_w: (memory: Uint8Array, address: number, value: number): void => {
+      if (address >= 0 && address + 1 < memory.length) {
+        memory[address]! |= (value >>> 8) & 0xff
+        memory[address + 1]! |= value & 0xff
+      }
+    },
+
+    // OR byte to screen memory
+    or_b: (memory: Uint8Array, address: number, value: number): void => {
+      if (address >= 0 && address < memory.length) {
+        memory[address]! |= value & 0xff
       }
     },
 
