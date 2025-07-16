@@ -4,6 +4,8 @@
 
 import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
+import { findWAddress } from '../../../asm/assemblyMacros'
+import { drawEseline } from '../lines/drawEseline'
 
 // Background patterns from Play.c:61-62
 const backgr1 = 0xaaaaaaaa
@@ -85,7 +87,7 @@ export const eseBlack =
 
     // Draw end line if needed (lines 777-778)
     if (h3 < h4) {
-      eseLine(newScreen, x + h3, y + (h3 >> 1), h4 - h3)
+      drawEseline(newScreen, x + h3, y + (h3 >> 1), h4 - h3)
     }
 
     x += h2 - 2
@@ -97,9 +99,8 @@ export const eseBlack =
 
     // Main drawing section (lines 786-829)
     if (h2 < h3) {
-      // Calculate screen address
-      const byteX = (x >> 3) & 0xfffe
-      let address = y * newScreen.rowBytes + byteX
+      // Calculate screen address using FIND_WADDRESS macro
+      let address = findWAddress(0, x, y)
 
       // Shift the EOR patterns based on x position
       const shift = x & 15
@@ -145,38 +146,11 @@ export const eseBlack =
 
     // Draw start line if needed (lines 832-833)
     if (h1 < h2) {
-      eseLine(newScreen, startx, starty, h2 - h1)
+      drawEseline(newScreen, startx, starty, h2 - h1)
     }
 
     return newScreen
   }
-
-/**
- * Helper function to draw ESE line segments
- * @see orig/Sources/Walls.c:837 eseline()
- */
-function eseLine(
-  screen: MonochromeBitmap,
-  x: number,
-  y: number,
-  len: number
-): void {
-  // Calculate screen address
-  const byteX = (x >> 3) & 0xfffe
-  let address = y * screen.rowBytes + byteX
-
-  // Create mask
-  const shift = x & 15
-  let mask = 0xf0000000 >>> shift
-
-  const halfLen = (len >> 1) - 1
-
-  for (let i = 0; i <= halfLen; i++) {
-    orToScreen32(screen, address, mask)
-    address += 64
-    mask >>>= 2
-  }
-}
 
 /**
  * Helper function to swap high and low words of a 32-bit value
@@ -205,28 +179,5 @@ function eorToScreen32(
     screen.data[address + 1]! ^= byte2
     screen.data[address + 2]! ^= byte1
     screen.data[address + 3]! ^= byte0
-  }
-}
-
-/**
- * Helper function to OR a 32-bit value into screen memory
- */
-function orToScreen32(
-  screen: MonochromeBitmap,
-  address: number,
-  value: number
-): void {
-  if (address >= 0 && address + 3 < screen.data.length) {
-    // Extract bytes from the 32-bit value (big-endian order)
-    const byte3 = (value >>> 24) & 0xff
-    const byte2 = (value >>> 16) & 0xff
-    const byte1 = (value >>> 8) & 0xff
-    const byte0 = value & 0xff
-
-    // OR into screen buffer
-    screen.data[address]! |= byte3
-    screen.data[address + 1]! |= byte2
-    screen.data[address + 2]! |= byte1
-    screen.data[address + 3]! |= byte0
   }
 }

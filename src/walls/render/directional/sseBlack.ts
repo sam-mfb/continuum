@@ -5,6 +5,7 @@
 import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
 import { drawNneline } from '../lines/drawNneline'
+import { findWAddress } from '../../../asm/assemblyMacros'
 
 // Background patterns from Play.c:61-62
 const backgr1 = 0xaaaaaaaa
@@ -144,9 +145,8 @@ export const sseBlack =
 
     // Main drawing section (lines 1046-1117)
     if (len > 0 || end > 0) {
-      // Calculate screen address
-      const byteX = (x >> 3) & 0xfffe
-      let address = y * newScreen.rowBytes + byteX
+      // Calculate screen address using FIND_WADDRESS macro
+      let address = findWAddress(0, x, y)
 
       // Rotate the EOR patterns based on x position
       const shift = x & 15
@@ -226,8 +226,8 @@ export const sseBlack =
 
     // Handle start piece with AND operations (lines 1118-1137)
     if (startlen > 0) {
-      const byteX = (startx >> 3) & 0xfffe
-      let address = starty * newScreen.rowBytes + byteX
+      // Calculate screen address using FIND_WADDRESS macro
+      let address = findWAddress(0, startx, starty)
 
       let mask = 0x7fff
       mask >>>= startx & 15

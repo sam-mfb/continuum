@@ -25,10 +25,10 @@ Macro that calculates word-aligned screen addresses from x,y coordinates.
 - `orig/Sources/Draw.c:586` - in `draw_dot_safe()` function
 - `orig/Sources/Draw.c:607` - in `draw_spark_safe()` function
 - `orig/Sources/Draw.c:632` - in `draw_shipshot()` function
-- `orig/Sources/Walls.c:279` - in `draw_nwline()` function
+- `orig/Sources/Walls.c:279` - in `ne_black` function
 - `orig/Sources/Walls.c:842` - in `eseline()` function
-- `orig/Sources/Walls.c:925` - in `draw_seline()` function
-- `orig/Sources/Walls.c:1049` - in `draw_sseline()` function
+- `orig/Sources/Walls.c:925` - in `se_black()` function
+- `orig/Sources/Walls.c:1049` - in `sse_blak()` function
 - `orig/Sources/Utils.c:224` - in `find_waddr()` function
 
 ## FIND_BADDRESS
