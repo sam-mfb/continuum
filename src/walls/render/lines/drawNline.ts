@@ -4,6 +4,7 @@
 
 import type { MonochromeBitmap } from '../../types'
 import { SCRWTH } from '../../../screen/constants'
+import { jsrWAddress } from '../../../asm/assemblyMacros'
 
 /**
  * Draws north/south (vertical) lines
@@ -43,9 +44,8 @@ export const drawNline =
     }
 
     // Assembly drawing logic (lines 960-992)
-    // Calculate screen address
-    const byteX = (x >> 3) & 0xfffe
-    let address = y * screen.rowBytes + byteX
+    // Calculate screen address using JSR_WADDRESS
+    let address = jsrWAddress(0, x, y)
 
     // Calculate loop counts
     const fastLoopCount = len >> 3

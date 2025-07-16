@@ -5,6 +5,7 @@
 
 import type { MonochromeBitmap } from '../../types'
 import { SCRWTH } from '../../../screen/constants'
+import { jsrBAddress } from '../../../asm/assemblyMacros'
 
 /**
  * Draw a northeast diagonal line (45-degree angle, 2 pixels wide)
@@ -35,9 +36,8 @@ export const drawNeline =
 
     if (len < 0) return newScreen
 
-    // Calculate byte address using FIND_BADDRESS logic
-    let byteX = x >> 3 // No word alignment for byte operations
-    let address = y * newScreen.rowBytes + byteX
+    // Calculate byte address using JSR_BADDRESS
+    let address = jsrBAddress(0, x, y)
 
     // Get bit position within byte (0-7)
     const bitPos = x & 7

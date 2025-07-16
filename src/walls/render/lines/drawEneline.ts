@@ -5,6 +5,7 @@
 
 import type { MonochromeBitmap } from '../../types'
 import { SCRHT, SBARHT } from '../../../screen/constants'
+import { jsrWAddress } from '../../../asm/assemblyMacros'
 
 // Line direction constants
 const L_UP = -1
@@ -57,9 +58,8 @@ export const drawEneline =
     }
 
     // JSR_WADDRESS for end position (line 1259)
-    // Calculate word-aligned byte offset
-    const endByteX = (endX >> 3) & 0xfffe
-    const endAddress = endY * newScreen.rowBytes + endByteX
+    // Calculate word-aligned byte offset using JSR_WADDRESS
+    const endAddress = jsrWAddress(0, endX, endY)
 
     // Draw last 2 dots (lines 1260-1263)
     const endBitPos = endX & 31
@@ -90,8 +90,7 @@ export const drawEneline =
     const scanLineOffset = dir > 0 ? 64 : -64
 
     // JSR_WADDRESS for start position (line 1239)
-    let byteX = (x >> 3) & 0xfffe
-    let address = y * newScreen.rowBytes + byteX
+    let address = jsrWAddress(0, x, y)
 
     // Draw first 2 dots if length allows (lines 1268-1275)
     if (len >= 0) {
@@ -131,8 +130,7 @@ export const drawEneline =
     const remainder = len & 3
 
     // Recalculate address after position adjustment
-    byteX = (x >> 3) & 0xfffe
-    address = y * newScreen.rowBytes + byteX
+    address = jsrWAddress(0, x, y)
 
     // Main loop - process 4 pixels at a time
     for (let i = 0; i < mainLoopCount; i++) {

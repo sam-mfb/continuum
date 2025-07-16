@@ -4,6 +4,7 @@
 
 import type { MonochromeBitmap } from '../../types'
 import { SCRHT } from '../../../screen/constants'
+import { jsrWAddress } from '../../../asm/assemblyMacros'
 
 /**
  * Draws east/west (horizontal) lines
@@ -30,9 +31,8 @@ export const drawEline =
     const drawLower = y + 1 < SCRHT
 
     // Assembly drawing logic (lines 1340-1387)
-    // Calculate screen address
-    const byteX = (x >> 3) & 0xfffe
-    let address = y * newScreen.rowBytes + byteX
+    // Calculate screen address using JSR_WADDRESS
+    let address = jsrWAddress(0, x, y)
 
     const shift = x & 15
     const totalBits = shift + len
