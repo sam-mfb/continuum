@@ -18,7 +18,7 @@ const main = (): void => {
   // 1. Define the single line to be rendered using createWall.
   const singleLine: LineRec[] = [
     // NEW_TYPE.SSE (2) - South-Southeast
-    createWall(131, 31, 25, NEW_TYPE.SE, LINE_KIND.NORMAL, 0)
+    createWall(190, 30, 25, NEW_TYPE.SE, LINE_KIND.NORMAL, 0)
   ]
 
   // 2. Initialize the wall system state.
