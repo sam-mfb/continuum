@@ -116,6 +116,10 @@ export const createInstructionSet = (
     // Decrement and branch if not -1
     dbra: (counter: RegisterName): boolean => {
       const current = getReg(counter)
+      if (current === 0) {
+        setReg(counter, 0xffff)
+        return false
+      }
       const newValue = (current - 1) & 0xffff
       setReg(counter, newValue)
       return newValue !== 0xffff
