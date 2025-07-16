@@ -25,9 +25,6 @@ export type Asm68k = {
   D3: number
   A0: number
   A1: number
-  len: number
-  x: number
-  y: number
 }
 
 /**
@@ -75,17 +72,7 @@ export const build68kArch = (initialState?: DeepPartial<AsmRegisters>): Asm68k =
     set A0(val: number) { registers.address.A0 = val },
 
     get A1() { return registers.address.A1 },
-    set A1(val: number) { registers.address.A1 = val },
-
-    // Convenience aliases for common variables
-    get len() { return registers.data.D7 },
-    set len(val: number) { registers.data.D7 = val },
-
-    get x() { return registers.data.D6 },
-    set x(val: number) { registers.data.D6 = val },
-
-    get y() { return registers.data.D5 },
-    set y(val: number) { registers.data.D5 = val }
+    set A1(val: number) { registers.address.A1 = val }
   }
 
   return context

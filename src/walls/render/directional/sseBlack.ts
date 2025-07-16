@@ -171,23 +171,23 @@ export const sseBlack =
     asm.A0 = asm.findWAddress(0, x, y)
 
     // Initialize D0 and D1 with rotated EOR values
-    asm.D0 = asm.instructions.ror_l(eor1, asm.x)
-    asm.D1 = asm.instructions.ror_l(eor2, asm.x)
+    asm.D0 = asm.instructions.ror_l(eor1, asm.registers.data.D6)
+    asm.D1 = asm.instructions.ror_l(eor2, asm.registers.data.D6)
 
     // subq.w #1, len
-    asm.len -= 1
+    asm.registers.data.D7 -= 1
 
     // blt.s @doend
-    if (asm.len >= 0) {
+    if (asm.registers.data.D7 >= 0) {
       // bra.s @enterq - jump to quick loop entry
 
       // @quick loop (lines 1060-1075)
       while (true) {
         // @enterq
-        asm.len -= 4
-        if (asm.len < 0) {
+        asm.registers.data.D7 -= 4
+        if (asm.registers.data.D7 < 0) {
           // bge.s @quick failed, continue to addq
-          asm.len += 4
+          asm.registers.data.D7 += 4
           break
         }
 
@@ -214,8 +214,8 @@ export const sseBlack =
       // @loop1 (lines 1078-1095)
       loop1: while (true) {
         asm.instructions.eor_l(newScreen.data, asm.A0, asm.D0)
-        asm.len -= 1
-        if (asm.len < 0) {
+        asm.registers.data.D7 -= 1
+        if (asm.registers.data.D7 < 0) {
           // blt.s @leave
           break
         }
@@ -234,8 +234,8 @@ export const sseBlack =
         
         // dbne len, @loop1
         if (!asm.instructions.getFlag('zero')) {
-          asm.len--
-          if (asm.len >= 0) {
+          asm.registers.data.D7--
+          if (asm.registers.data.D7 >= 0) {
             continue
           }
         }
@@ -253,8 +253,8 @@ export const sseBlack =
         asm.A0 += 2
 
         // dbra len, @loop1
-        asm.len--
-        if (asm.len >= 0) {
+        asm.registers.data.D7--
+        if (asm.registers.data.D7 >= 0) {
           continue
         }
         
@@ -270,19 +270,19 @@ export const sseBlack =
     // 3. use 16-bit operations
     // But we need to account for the fact that we might have remaining pixels from @loop1
     
-    const remainingFromLoop1 = asm.len >= 0 ? asm.len + 1 : 0
+    const remainingFromLoop1 = asm.registers.data.D7 >= 0 ? asm.registers.data.D7 + 1 : 0
     
     asm.D0 = asm.instructions.swap(asm.D0)
     asm.D1 = asm.instructions.swap(asm.D1)
-    asm.len = end + remainingFromLoop1 - 1
+    asm.registers.data.D7 = end + remainingFromLoop1 - 1
     
-    if (asm.len >= 0) {
+    if (asm.registers.data.D7 >= 0) {
       // @loop2 - using 16-bit operations
-      while (asm.len >= 0) {
+      while (asm.registers.data.D7 >= 0) {
         asm.instructions.eor_w(newScreen.data, asm.A0, asm.D0 >>> 16)
         asm.D0 = asm.instructions.lsr_w(asm.D0 >>> 16, 1) << 16 | (asm.D0 & 0xffff)
-        asm.len -= 1
-        if (asm.len < 0) break
+        asm.registers.data.D7 -= 1
+        if (asm.registers.data.D7 < 0) break
 
         asm.instructions.eor_w(newScreen.data, asm.A0 + 64, asm.D1 >>> 16)
         asm.D1 = asm.instructions.lsr_w(asm.D1 >>> 16, 1) << 16 | (asm.D1 & 0xffff)
@@ -314,7 +314,7 @@ export const sseBlack =
       len >>= 1
 
       // @lp loop
-      asm.len = len
+      asm.registers.data.D7 = len
       while (asm.instructions.dbra('D7')) {
         asm.instructions.and_w(newScreen.data, asm.A0, asm.D0)
         asm.instructions.and_w(newScreen.data, asm.A0 + 64, asm.D0)
