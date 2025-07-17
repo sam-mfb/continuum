@@ -94,3 +94,4 @@ export const wallWhiteTestRenderer: BitmapRenderer = (bitmap, _frame, _env) => {
   // - Junction hashes if any walls intersect
   // - NNE wall white undersides
 }
+
