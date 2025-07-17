@@ -15,7 +15,7 @@ import { SoundTest } from './components/SoundTest'
 import { testGameLoop } from './games/testGame'
 import { shipMoveGameLoop } from './games/shipMove'
 import { bitmapTestRenderer } from './games/bitmapTest'
-import { wallWhiteTestRenderer } from './games/wallWhiteTest'
+import { wallDrawingRenderer } from './games/wallDrawing'
 import './App.css'
 
 function App(): React.JSX.Element {
@@ -119,8 +119,8 @@ function App(): React.JSX.Element {
                 } as BitmapGameDefinition,
                 {
                   type: 'bitmap',
-                  name: 'Wall White Test',
-                  bitmapRenderer: wallWhiteTestRenderer
+                  name: 'Wall Drawing',
+                  bitmapRenderer: wallDrawingRenderer
                 } as BitmapGameDefinition
               ]}
               defaultGameIndex={0}

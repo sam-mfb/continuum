@@ -1,4 +1,6 @@
 /**
+ * Wall Drawing
+ *
  * Test game for demonstrating complete wall rendering with both whiteTerrain() and blackTerrain()
  * Shows both black tops and white undersides for all 8 line directions plus junction handling
  */
@@ -41,7 +43,7 @@ store.dispatch(wallsActions.initWalls({ walls: sampleLines }))
 /**
  * Renderer that displays complete walls using both blackTerrain and whiteTerrain
  */
-export const wallWhiteTestRenderer: BitmapRenderer = (bitmap, _frame, _env) => {
+export const wallDrawingRenderer: BitmapRenderer = (bitmap, _frame, _env) => {
   // First, create a crosshatch gray background (same as bitmapTest)
   // This gives us a pattern to see the white pieces against
   for (let y = 0; y < bitmap.height; y++) {
