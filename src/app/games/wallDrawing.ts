@@ -3,6 +3,7 @@
  *
  * Test game for demonstrating complete wall rendering with both whiteTerrain() and blackTerrain()
  * Shows both black tops and white undersides for all 8 line directions plus junction handling
+ * Use arrow keys to move the viewport.
  */
 
 import type { BitmapRenderer } from '../../bitmap'
@@ -15,6 +16,10 @@ import { createWall } from '../../walls/unpack'
 
 // Create store instance
 const store = buildGameStore()
+
+// Define a world larger than the viewport
+const WORLD_WIDTH = 1024
+const WORLD_HEIGHT = 768
 
 // Test with examples of all 8 NEW_TYPE values, each 25px long and well-spaced
 // Using createWall function to ensure proper unpacking and endpoint calculation
@@ -40,10 +45,37 @@ const sampleLines: LineRec[] = [
 // Initialize walls on module load
 store.dispatch(wallsActions.initWalls({ walls: sampleLines }))
 
+// Viewport state
+const viewportState = {
+  x: 0,
+  y: 0
+}
+
 /**
  * Renderer that displays complete walls using both blackTerrain and whiteTerrain
  */
-export const wallDrawingRenderer: BitmapRenderer = (bitmap, _frame, _env) => {
+export const wallDrawingRenderer: BitmapRenderer = (bitmap, frame, _env) => {
+  // Handle keyboard input for viewport movement
+  const moveSpeed = 5
+  if (frame.keysDown.has('ArrowUp')) {
+    viewportState.y = Math.max(0, viewportState.y - moveSpeed)
+  }
+  if (frame.keysDown.has('ArrowDown')) {
+    viewportState.y = Math.min(
+      WORLD_HEIGHT - bitmap.height,
+      viewportState.y + moveSpeed
+    )
+  }
+  if (frame.keysDown.has('ArrowLeft')) {
+    viewportState.x = Math.max(0, viewportState.x - moveSpeed)
+  }
+  if (frame.keysDown.has('ArrowRight')) {
+    viewportState.x = Math.min(
+      WORLD_WIDTH - bitmap.width,
+      viewportState.x + moveSpeed
+    )
+  }
+
   // First, create a crosshatch gray background (same as bitmapTest)
   // This gives us a pattern to see the white pieces against
   for (let y = 0; y < bitmap.height; y++) {
@@ -60,12 +92,12 @@ export const wallDrawingRenderer: BitmapRenderer = (bitmap, _frame, _env) => {
   // Get wall data from Redux state
   const wallState = store.getState().walls
 
-  // Set up viewport (static, centered)
+  // Set up viewport based on state
   const viewport = {
-    x: 0,
-    y: 0,
-    b: bitmap.height, // bottom
-    r: bitmap.width // right
+    x: viewportState.x,
+    y: viewportState.y,
+    b: viewportState.y + bitmap.height, // bottom
+    r: viewportState.x + bitmap.width // right
   }
 
   // First render white terrain (undersides, patches, junctions) on top
@@ -75,7 +107,7 @@ export const wallDrawingRenderer: BitmapRenderer = (bitmap, _frame, _env) => {
     firstWhite: wallState.firstWhite,
     organizedWalls: wallState.organizedWalls,
     viewport: viewport,
-    worldwidth: bitmap.width // No wrapping needed for this test
+    worldwidth: WORLD_WIDTH
   })(bitmap)
 
   // Then render black terrain (top surfaces) for normal lines
@@ -84,7 +116,7 @@ export const wallDrawingRenderer: BitmapRenderer = (bitmap, _frame, _env) => {
     kindPointers: wallState.kindPointers,
     organizedWalls: wallState.organizedWalls,
     viewport: viewport,
-    worldwidth: bitmap.width // No wrapping needed for this test
+    worldwidth: WORLD_WIDTH
   })(renderedBitmap)
 
   // Copy rendered bitmap data back to original
