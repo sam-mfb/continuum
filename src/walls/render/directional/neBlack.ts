@@ -132,79 +132,121 @@ export const neBlack =
 
     // Calculate EOR pattern (line 274)
     const background = getBackground(x, y, scrx, scry)
-    const eor = (background[(x + y) & 1]! & NE_MASK) ^ NE_VAL
+    let eor = (background[(x + y) & 1]! & NE_MASK) ^ NE_VAL
 
-    // Main drawing section (lines 276-313)
+    // Main drawing section - faithful to assembly (lines 276-313)
     if (len > 0 || end > 0) {
-      // Calculate screen address using FIND_WADDRESS macro
-      let address = findWAddress(0, x, y)
+      // FIND_WADDRESS(x,y)
+      let screenAddr = findWAddress(0, x, y)
+      const D2 = -64 // moveq #-64, D2
 
-      // Rotate the EOR pattern based on x position
-      const shift = x & 15
-      let rotatedEor = rotateRight(eor, shift)
+      // andi.w #15, x; ror.l x, eor
+      const xAnd15 = x & 15
+      eor = ror32(eor, xAnd15)
 
-      let remainingLen = len - 1
+      // subq.w #1, len
+      let lenCounter = len - 1
 
-      // Main loop
-      if (remainingLen >= 0) {
-        // Loop until we need to switch to 16-bit operations
-        while (remainingLen >= 0) {
-          eorToScreen32(newScreen, address, rotatedEor)
-          address -= 64
-          rotatedEor = rotateRight(rotatedEor, 1)
-
-          // Check if carry bit is set
-          if ((rotatedEor & 0x80000000) === 0) {
-            // Need to switch to next word
-            rotatedEor = swapWords(rotatedEor)
-            address += 2
-            remainingLen--
+      // bge.s @loop1
+      if (lenCounter < 0) {
+        // swap eor
+        eor = swap32(eor)
+      } else {
+        // @loop1 main loop
+        let carrySet = false
+        
+        while (lenCounter >= 0) {
+          // eor.l eor, (screen)
+          eor32ToScreen(newScreen, screenAddr, eor)
+          
+          // adda.l D2, screen
+          screenAddr += D2
+          
+          // ror.l #1, eor (and track carry)
+          const oldBit31 = (eor & 0x80000000) !== 0
+          eor = ror32(eor, 1)
+          carrySet = oldBit31
+          
+          // dbcs len, @loop1 - decrement and branch if carry set
+          if (!carrySet) {
+            lenCounter--
+            if (lenCounter >= 0) continue
             break
           }
-          remainingLen--
+          
+          // Carry was set, need to handle word swap
+          // swap eor
+          eor = swap32(eor)
+          // addq.w #2, screen
+          screenAddr += 2
+          // subq.w #1, len
+          lenCounter--
+          
+          // bge.s @loop1 - continue main loop if len >= 0
+          if (lenCounter >= 0) {
+            // Continue the loop but we've already swapped
+            while (lenCounter >= 0) {
+              eor32ToScreen(newScreen, screenAddr, eor)
+              screenAddr += D2
+              eor = ror32(eor, 1)
+              lenCounter--
+            }
+          }
+          break
         }
-
-        // Continue with remaining iterations if any
-        while (remainingLen >= 0) {
-          eorToScreen32(newScreen, address, rotatedEor)
-          address -= 64
-          rotatedEor = rotateRight(rotatedEor, 1)
-          remainingLen--
-        }
-
-        // Check if we need to adjust for the end section
-        if ((rotatedEor & 0xff) === 0) {
-          address -= 2
+        
+        // After main loop: tst.b eor
+        if ((eor & 0xff) === 0) {
+          // beq.s @1
+          // swap eor
+          eor = swap32(eor)
         } else {
-          rotatedEor = swapWords(rotatedEor)
+          // subq.w #2, screen
+          screenAddr -= 2
         }
-      } else {
-        rotatedEor = swapWords(rotatedEor)
       }
 
-      // Handle end section with 16-bit operations (lines 304-311)
+      // @doend section - handle end with 16-bit operations
       if (end > 0) {
+        // move.w end(A6), len
+        // subq.w #1, len
         let endLen = end - 1
-        const eor16 = rotatedEor >>> 16
-
+        
+        // Extract high word for 16-bit operations
+        let eor16 = (eor >>> 16) & 0xffff
+        
+        // @loop2
         for (let i = 0; i <= endLen; i++) {
-          eorToScreen16(newScreen, address, (eor16 >>> i) & 0xffff)
-          address -= 64
+          // eor.w eor, (screen)
+          eor16ToScreen(newScreen, screenAddr, eor16)
+          // lsr.w #1, eor - shift the actual value
+          eor16 = (eor16 >>> 1) & 0xffff
+          // adda.l D2, screen
+          screenAddr += D2
         }
       }
     }
 
     // Handle start piece with AND operations (lines 314-331)
     if (startlen > 0) {
-      // Calculate screen address using JSR_WADDRESS
-      let address = jsrWAddress(0, startx, starty)
-
+      // JSR_WADDRESS
+      let screenAddr = jsrWAddress(0, startx, starty)
+      
+      // move.w #0x7FFF, D0
+      // asr.w x, D0
       let mask = 0x7fff >> (startx & 15)
-
+      
+      // moveq #64, D1
+      const D1 = 64
+      
+      // @lp loop with entry at bottom
       for (let i = 0; i <= startlen; i++) {
-        andToScreen16(newScreen, address, mask)
-        address -= 64
-        mask >>>= 1
+        // and.w D0, (A0)
+        and16ToScreen(newScreen, screenAddr, mask)
+        // suba.l D1, A0
+        screenAddr -= D1
+        // lsr.w #1, D0
+        mask = (mask >>> 1) & 0xffff
       }
     }
 
@@ -212,78 +254,64 @@ export const neBlack =
   }
 
 /**
- * Helper function to rotate a 32-bit value right
+ * 32-bit rotate right
  */
-function rotateRight(value: number, bits: number): number {
-  bits = bits % 32
+function ror32(value: number, bits: number): number {
+  bits = bits & 31 // Only need bottom 5 bits for 32-bit rotate
   if (bits === 0) return value
   return ((value >>> bits) | (value << (32 - bits))) >>> 0
 }
 
 /**
- * Helper function to swap high and low words of a 32-bit value
+ * Swap high and low words of 32-bit value
  */
-function swapWords(value: number): number {
+function swap32(value: number): number {
   return ((value >>> 16) | (value << 16)) >>> 0
 }
 
 /**
- * Helper function to EOR a 32-bit value into screen memory
+ * EOR a 32-bit value to screen (big-endian)
  */
-function eorToScreen32(
+function eor32ToScreen(
   screen: MonochromeBitmap,
   address: number,
   value: number
 ): void {
   if (address >= 0 && address + 3 < screen.data.length) {
-    // Extract bytes from the 32-bit value (big-endian order)
-    const byte3 = (value >>> 24) & 0xff
-    const byte2 = (value >>> 16) & 0xff
-    const byte1 = (value >>> 8) & 0xff
-    const byte0 = value & 0xff
-
-    // EOR into screen buffer
-    screen.data[address]! ^= byte3
-    screen.data[address + 1]! ^= byte2
-    screen.data[address + 2]! ^= byte1
-    screen.data[address + 3]! ^= byte0
+    // Big-endian order
+    screen.data[address]! ^= (value >>> 24) & 0xff
+    screen.data[address + 1]! ^= (value >>> 16) & 0xff
+    screen.data[address + 2]! ^= (value >>> 8) & 0xff
+    screen.data[address + 3]! ^= value & 0xff
   }
 }
 
 /**
- * Helper function to EOR a 16-bit value into screen memory
+ * EOR a 16-bit value to screen (big-endian)
  */
-function eorToScreen16(
+function eor16ToScreen(
   screen: MonochromeBitmap,
   address: number,
   value: number
 ): void {
   if (address >= 0 && address + 1 < screen.data.length) {
-    // Extract bytes from the 16-bit value (big-endian order)
-    const byte1 = (value >>> 8) & 0xff
-    const byte0 = value & 0xff
-
-    // EOR into screen buffer
-    screen.data[address]! ^= byte1
-    screen.data[address + 1]! ^= byte0
+    // Big-endian order
+    screen.data[address]! ^= (value >>> 8) & 0xff
+    screen.data[address + 1]! ^= value & 0xff
   }
 }
 
 /**
- * Helper function to AND a 16-bit value into screen memory
+ * AND a 16-bit value to screen (big-endian)
  */
-function andToScreen16(
+function and16ToScreen(
   screen: MonochromeBitmap,
   address: number,
   value: number
 ): void {
   if (address >= 0 && address + 1 < screen.data.length) {
-    // Extract bytes from the 16-bit value (big-endian order)
-    const byte1 = (value >>> 8) & 0xff
-    const byte0 = value & 0xff
-
-    // AND into screen buffer
-    screen.data[address]! &= byte1
-    screen.data[address + 1]! &= byte0
+    // Big-endian order
+    screen.data[address]! &= (value >>> 8) & 0xff
+    screen.data[address + 1]! &= value & 0xff
   }
 }
