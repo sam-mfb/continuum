@@ -6,14 +6,11 @@ import type { LineRec, MonochromeBitmap } from '../../types'
 import {
   VIEWHT,
   SCRWTH,
-  SBARHT,
-  BACKGROUND_PATTERNS
+  SBARHT
 } from '../../../screen/constants'
 import { jsrWAddress } from '../../../asm/assemblyMacros'
 import { drawEseline } from '../lines/drawEseline'
-
-// Background patterns from Play.c:61-62
-const background = BACKGROUND_PATTERNS
+import { getBackground } from '../getBackground'
 
 // Masks from orig/Sources/Walls.c:728-729
 const ESE_MASK = 0xfc000000
@@ -97,6 +94,7 @@ export const eseBlack =
     y += h2 >> 1
 
     // Calculate EOR patterns (lines 783-784)
+    const background = getBackground(x, y, scrx, scry)
     const eor1 = (background[(x + y) & 1]! & ESE_MASK) ^ ESE_VAL
     const eor2 = (background[(x + y + 1) & 1]! & ESE_MASK) ^ ESE_VAL
 

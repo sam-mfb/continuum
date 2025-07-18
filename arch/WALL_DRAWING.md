@@ -353,30 +353,41 @@ The 1980s hardware had very limited CPU power. Pre-sorting allows:
 
 ## Background Pattern and Viewport Movement
 
-**Critical Finding:** The wall rendering system depends on a fixed background pattern that remains consistent relative to world coordinates as the viewport moves.
+**Critical Finding:** The wall rendering system depends on a fixed background pattern that remains consistent relative to world coordinates as the viewport moves. To avoid needing to actually check what is "under" the wall being drawn, the game uses a fixed pattern that represents the possible bits underneath the wall for a gray background. Crucially the game would alter/swap that pattern based on the actually screen position as explained here. This is because the gray background in Continuum was always fixed relative to absolute world position (which, by the way, is why the game is a little hard to watch on modern LCD screens, the constantly moving black/white crosshatch does not look good on LCDs)
 
 ### How the Background Works
 
 1. **Pattern Definition**: Two alternating patterns are used:
+
    - `backgr1 = 0xAAAAAAAA` (binary: 10101010...)
    - `backgr2 = 0x55555555` (binary: 01010101...)
 
-2. **Pattern Selection in view_clear()**: 
+2. **Pattern Swapping in view_clear()**:
+
    ```c
    if ((screenx + screeny) & 1) {
        bgr1 = backgr2;
        bgr2 = backgr1;
    }
+   else {
+       bgr1 = backgr1;
+       bgr2 = backgr2;
+   }
+   background[0] = bgr1;
+   background[1] = bgr2;
    ```
-   This swaps the patterns based on viewport position to maintain consistency.
+
+   This critical step swaps the patterns based on viewport position. When the sum of viewport coordinates is odd, the patterns are swapped in the background array.
 
 3. **Wall Drawing Pattern Selection**:
+
    ```c
    eor = (background[(x+y)&1] & MASK) ^ VALUE;
    ```
-   Walls select patterns based on screen coordinates from the pre-swapped array.
 
-4. **Result**: Each world position always gets the same background pattern, regardless of viewport position. The combination of viewport-based swapping and screen-based selection ensures the checkerboard appears fixed in world space.
+   Walls select patterns using screen coordinates (x, y) from the pre-swapped background array.
+
+4. **Result**: The viewport-based swapping compensates for the screen coordinate-based selection, ensuring each world position always gets the same background pattern. Without this swapping, walls would appear to change patterns as the viewport moves.
 
 ### Implementation Note
 

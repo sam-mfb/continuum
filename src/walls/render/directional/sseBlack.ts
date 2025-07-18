@@ -7,13 +7,13 @@ import type { LineRec, MonochromeBitmap } from '../../types'
 import {
   VIEWHT,
   SCRWTH,
-  SBARHT,
-  BACKGROUND_PATTERNS
+  SBARHT
 } from '../../../screen/constants'
 import { drawNneline } from '../lines/drawNneline'
 import { build68kArch } from '../../../asm/emulator'
 import { findWAddress, jsrWAddress } from '../../../asm/assemblyMacros'
 import { LINE_DIR } from '../../../shared/types/line'
+import { getBackground } from '../getBackground'
 
 // Masks from orig/Sources/Walls.c:962-963
 const SSE_MASK = 0xff000000
@@ -150,8 +150,9 @@ export const sseBlack =
     y += h2
 
     // Calculate EOR patterns (lines 1043-1044)
-    eor1 = (BACKGROUND_PATTERNS[(x + y) & 1]! & SSE_MASK) ^ SSE_VAL
-    eor2 = (BACKGROUND_PATTERNS[1 - ((x + y) & 1)]! & SSE_MASK) ^ SSE_VAL
+    const background = getBackground(x, y, scrx, scry)
+    eor1 = (background[(x + y) & 1]! & SSE_MASK) ^ SSE_VAL
+    eor2 = (background[1 - ((x + y) & 1)]! & SSE_MASK) ^ SSE_VAL
 
     // Main assembly section (lines 1046-1117)
     // Create 68K emulator instance

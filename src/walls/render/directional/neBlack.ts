@@ -6,15 +6,12 @@ import type { LineRec, MonochromeBitmap } from '../../types'
 import {
   VIEWHT,
   SCRWTH,
-  SBARHT,
-  BACKGROUND_PATTERNS
+  SBARHT
 } from '../../../screen/constants'
 import { drawNeline } from '../lines/drawNeline'
 import { findWAddress, jsrWAddress } from '../../../asm/assemblyMacros'
 import { LINE_DIR } from '../../../shared/types/line'
-
-// Background patterns from Play.c:61-62
-const background = BACKGROUND_PATTERNS
+import { getBackground } from '../getBackground'
 
 // Masks from orig/Sources/Walls.c:203-204
 const NE_MASK = 0xfffe0000
@@ -134,6 +131,7 @@ export const neBlack =
     y -= h15
 
     // Calculate EOR pattern (line 274)
+    const background = getBackground(x, y, scrx, scry)
     const eor = (background[(x + y) & 1]! & NE_MASK) ^ NE_VAL
 
     // Main drawing section (lines 276-313)

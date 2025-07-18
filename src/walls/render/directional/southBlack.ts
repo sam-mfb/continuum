@@ -6,15 +6,12 @@ import type { LineRec, MonochromeBitmap } from '../../types'
 import {
   VIEWHT,
   SCRWTH,
-  SBARHT,
-  BACKGROUND_PATTERNS
+  SBARHT
 } from '../../../screen/constants'
 import { drawNline } from '../lines/drawNline'
 import { findWAddress } from '../../../asm/assemblyMacros'
 import { LINE_DIR } from '../../../shared/types/line'
-
-// Background patterns from Play.c:61-62
-const background = BACKGROUND_PATTERNS
+import { getBackground } from '../getBackground'
 
 // Masks from orig/Sources/Walls.c:1141-1142
 const SOUTH_BLACK = 0xc0000000
@@ -98,6 +95,7 @@ export const southBlack =
     }
 
     // Calculate EOR patterns (lines 1188-1189)
+    const background = getBackground(x, y, scrx, scry)
     const eor1 = (background[(x + y) & 1]! & SOUTH_MASK) ^ SOUTH_BLACK
     const eor2 = (background[(x + y + 1) & 1]! & SOUTH_MASK) ^ SOUTH_BLACK
 
