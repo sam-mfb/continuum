@@ -350,3 +350,50 @@ The 1980s hardware had very limited CPU power. Pre-sorting allows:
 - Single memory pass per wall = better performance
 - EOR masking elegantly creates both colors
 - Junction patches handled separately to avoid conflicts
+
+## Background Pattern and Viewport Movement
+
+**Critical Finding:** The wall rendering system depends on a fixed background pattern that remains consistent relative to world coordinates as the viewport moves.
+
+### How the Background Works
+
+1. **Pattern Definition**: Two alternating patterns are used:
+   - `backgr1 = 0xAAAAAAAA` (binary: 10101010...)
+   - `backgr2 = 0x55555555` (binary: 01010101...)
+
+2. **Pattern Selection in view_clear()**: 
+   ```c
+   if ((screenx + screeny) & 1) {
+       bgr1 = backgr2;
+       bgr2 = backgr1;
+   }
+   ```
+   This swaps the patterns based on viewport position to maintain consistency.
+
+3. **Wall Drawing Pattern Selection**:
+   ```c
+   eor = (background[(x+y)&1] & MASK) ^ VALUE;
+   ```
+   Walls select patterns based on screen coordinates from the pre-swapped array.
+
+4. **Result**: Each world position always gets the same background pattern, regardless of viewport position. The combination of viewport-based swapping and screen-based selection ensures the checkerboard appears fixed in world space.
+
+### Implementation Note
+
+When implementing visualization or rendering systems, the background pattern MUST be calculated based on world coordinates, not screen coordinates:
+
+```typescript
+// Correct:
+const worldX = screenX + viewport.x
+const worldY = screenY + viewport.y
+if ((worldX + worldY) % 2 === 0) {
+  // Draw pattern
+}
+
+// Incorrect:
+if ((screenX + screenY) % 2 === 0) {
+  // This would make the pattern move with the viewport!
+}
+```
+
+This is essential for proper wall rendering, especially for junction hash patterns which are pre-calculated assuming specific background alignment.

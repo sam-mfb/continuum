@@ -24,24 +24,27 @@ const main = (): void => {
   // 2. Initialize the wall system state.
   const wallState = initWalls(singleLine)
 
-  // 3. Create a bitmap to render on.
-  const bitmap = createMonochromeBitmap(512, 342)
-
-  // 4. Create a gray crosshatch background.
-  for (let y = 0; y < bitmap.height; y++) {
-    for (let x = 0; x < bitmap.width; x++) {
-      if ((x + y) % 2 === 0) {
-        setPixel(bitmap, x, y)
-      }
-    }
-  }
-
-  // 5. Set up the viewport for rendering.
+  // 3. Set up the viewport for rendering.
   const viewport = {
     x: 0,
     y: 0,
-    b: bitmap.height,
-    r: bitmap.width
+    b: 342,
+    r: 512
+  }
+
+  // 4. Create a bitmap to render on.
+  const bitmap = createMonochromeBitmap(512, 342)
+
+  // 5. Create a gray crosshatch background.
+  // IMPORTANT: Pattern must be based on world coordinates, not screen coordinates
+  for (let y = 0; y < bitmap.height; y++) {
+    for (let x = 0; x < bitmap.width; x++) {
+      const worldX = x + viewport.x
+      const worldY = y + viewport.y
+      if ((worldX + worldY) % 2 === 0) {
+        setPixel(bitmap, x, y)
+      }
+    }
   }
 
   // 6. Render the white and black terrain.
