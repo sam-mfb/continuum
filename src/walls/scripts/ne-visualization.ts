@@ -23,12 +23,13 @@ const main = (): void => {
   // 2. Initialize the wall system state.
   const wallState = initWalls(singleLine)
 
+  const offset = 14
   // 3. Set up the viewport for rendering.
   const viewport = {
-    x: 0,
+    x: 0 + offset,
     y: 0,
     b: 342,
-    r: 512
+    r: 512 + offset
   }
 
   // 4. Create a bitmap to render on.
@@ -62,7 +63,7 @@ const main = (): void => {
 
   // 7. Define the clipping rectangle with a 50px margin.
   const marginbig = 50
-  const marginsmall = 10
+  const marginsmall = 20
   const clip = {
     top: singleLine[0]!.endy + SBARHT - marginsmall,
     left: singleLine[0]!.startx - marginsmall,
