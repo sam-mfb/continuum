@@ -138,7 +138,7 @@ export const createInstructionSet = (
       bits = bits & 15
       if (bits === 0) return value & 0xffff
       // Sign extend to 32-bit, shift, then mask back to 16-bit
-      const signExtended = (value & 0xffff) | ((value & 0x8000) ? 0xffff0000 : 0)
+      const signExtended = (value & 0xffff) | (value & 0x8000 ? 0xffff0000 : 0)
       return (signExtended >> bits) & 0xffff
     },
 

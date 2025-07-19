@@ -4,11 +4,7 @@
  */
 
 import type { LineRec, MonochromeBitmap } from '../../types'
-import {
-  VIEWHT,
-  SCRWTH,
-  SBARHT
-} from '../../../screen/constants'
+import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
 import { drawNneline } from '../lines/drawNneline'
 import { build68kArch } from '../../../asm/emulator'
 import { findWAddress, jsrWAddress } from '../../../asm/assemblyMacros'

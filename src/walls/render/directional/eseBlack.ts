@@ -3,11 +3,7 @@
  */
 
 import type { LineRec, MonochromeBitmap } from '../../types'
-import {
-  VIEWHT,
-  SCRWTH,
-  SBARHT
-} from '../../../screen/constants'
+import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
 import { jsrWAddress } from '../../../asm/assemblyMacros'
 import { drawEseline } from '../lines/drawEseline'
 import { getBackground } from '../getBackground'

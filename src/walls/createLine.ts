@@ -1,9 +1,4 @@
-import type {
-  LineKind,
-  LineRec,
-  LineType,
-  LineDir
-} from '../shared/types/line'
+import type { LineKind, LineRec, LineType, LineDir } from '../shared/types/line'
 import { LINE_TYPE, LINE_DIR, LINE_KIND, NEW_TYPE } from '../shared/types/line'
 
 // Constants from the original code

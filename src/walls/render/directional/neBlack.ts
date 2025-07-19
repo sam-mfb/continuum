@@ -3,11 +3,7 @@
  */
 
 import type { LineRec, MonochromeBitmap } from '../../types'
-import {
-  VIEWHT,
-  SCRWTH,
-  SBARHT
-} from '../../../screen/constants'
+import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
 import { drawNeline } from '../lines/drawNeline'
 import { findWAddress, jsrWAddress } from '../../../asm/assemblyMacros'
 import { LINE_DIR } from '../../../shared/types/line'
@@ -154,26 +150,26 @@ export const neBlack =
       } else {
         // @loop1 main loop
         let carrySet = false
-        
+
         while (lenCounter >= 0) {
           // eor.l eor, (screen)
           eor32ToScreen(newScreen, screenAddr, eor)
-          
+
           // adda.l D2, screen
           screenAddr += D2
-          
+
           // ror.l #1, eor (and track carry)
           const oldBit31 = (eor & 0x80000000) !== 0
           eor = ror32(eor, 1)
           carrySet = oldBit31
-          
+
           // dbcs len, @loop1 - decrement and branch if carry set
           if (!carrySet) {
             lenCounter--
             if (lenCounter >= 0) continue
             break
           }
-          
+
           // Carry was set, need to handle word swap
           // swap eor
           eor = swap32(eor)
@@ -181,7 +177,7 @@ export const neBlack =
           screenAddr += 2
           // subq.w #1, len
           lenCounter--
-          
+
           // bge.s @loop1 - continue main loop if len >= 0
           if (lenCounter >= 0) {
             // Continue the loop but we've already swapped
@@ -194,7 +190,7 @@ export const neBlack =
           }
           break
         }
-        
+
         // After main loop: tst.b eor
         if ((eor & 0xff) === 0) {
           // beq.s @1
@@ -211,10 +207,10 @@ export const neBlack =
         // move.w end(A6), len
         // subq.w #1, len
         let endLen = end - 1
-        
+
         // Extract high word for 16-bit operations
         let eor16 = (eor >>> 16) & 0xffff
-        
+
         // @loop2
         for (let i = 0; i <= endLen; i++) {
           // eor.w eor, (screen)
@@ -231,14 +227,14 @@ export const neBlack =
     if (startlen > 0) {
       // JSR_WADDRESS
       let screenAddr = jsrWAddress(0, startx, starty)
-      
+
       // move.w #0x7FFF, D0
       // asr.w x, D0
       let mask = 0x7fff >> (startx & 15)
-      
+
       // moveq #64, D1
       const D1 = 64
-      
+
       // @lp loop with entry at bottom
       for (let i = 0; i <= startlen; i++) {
         // and.w D0, (A0)

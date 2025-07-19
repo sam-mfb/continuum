@@ -16,7 +16,7 @@ export interface PackedLine {
 /**
  * Packs a complete line record into the minimal format used for saving to planet files.
  * This strips out calculated fields (endx, endy, newtype) and keeps only the essential data.
- * 
+ *
  * Based on pack_planet() from Edit.c:
  * ```c
  * for (line=lines; line < lines+NUMLINES; line++)
@@ -26,7 +26,7 @@ export interface PackedLine {
  *     *ip++ = ((int) line->up_down << 8) + (line->kind << 3) + line->type;
  * }
  * ```
- * 
+ *
  * @param line Complete line record with all fields
  * @returns Packed line with only essential fields for storage
  */
@@ -43,7 +43,7 @@ export function packLine(line: LineRec): PackedLine {
 
 /**
  * Packs multiple lines at once
- * 
+ *
  * @param lines Array of complete line records
  * @returns Array of packed lines
  */

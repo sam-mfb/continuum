@@ -7,7 +7,7 @@ describe('createLine', () => {
     // Based on the typetable mapping from QuickEdit.c:756-759
     // angle16:  0     1     2    3     4     5    6     7     8     9    10    11    12    13   14     15
     // type:    N   NNE    NE  ENE     E   ENE   NE   NNE     N   NNE    NE   ENE     E   ENE   NE    NNE
-    
+
     it('maps angle16=0 to North (typetable[0] = LINE_N)', () => {
       // East pointing (0 degrees) maps to angle16=0, which gives LINE_N
       const line = createLine(100, 100, 120, 100)
@@ -86,7 +86,10 @@ describe('createLine', () => {
       // Create a line that will have angle16=1 (NNE)
       // From debug output, we need to find an angle that gives odd angle16
       const line = createLine(100, 100, 105, 88)
-      if (line && (Math.floor((Math.atan2(12, 5) * 360 / Math.PI + 22) / 45) & 15) & 1) {
+      if (
+        line &&
+        Math.floor(((Math.atan2(12, 5) * 360) / Math.PI + 22) / 45) & 15 & 1
+      ) {
         expect(line.length % 2).toBe(1)
       }
     })
@@ -102,7 +105,10 @@ describe('createLine', () => {
 
   describe('world bounds', () => {
     it('returns null if calculated endpoint is out of bounds', () => {
-      const line = createLine(500, 100, 600, 100, { worldWidth: 512, worldHeight: 318 })
+      const line = createLine(500, 100, 600, 100, {
+        worldWidth: 512,
+        worldHeight: 318
+      })
       // The calculated endpoint may be out of bounds
       if (line) {
         expect(line.endx).toBeLessThan(512)
@@ -134,22 +140,24 @@ describe('createLine', () => {
 
 describe('roundPoint', () => {
   it('snaps to nearby line endpoints within ROUNDRADIUS/4', () => {
-    const lines = [{
-      id: 'line-1',
-      startx: 100,
-      starty: 100,
-      endx: 150,
-      endy: 100,
-      length: 50,
-      type: LINE_TYPE.E,
-      kind: LINE_KIND.NORMAL,
-      up_down: LINE_DIR.DN,
-      h1: 0,
-      h2: 0,
-      newtype: 5 as any,
-      nextId: null,
-      nextwhId: null
-    }]
+    const lines = [
+      {
+        id: 'line-1',
+        startx: 100,
+        starty: 100,
+        endx: 150,
+        endy: 100,
+        length: 50,
+        type: LINE_TYPE.E,
+        kind: LINE_KIND.NORMAL,
+        up_down: LINE_DIR.DN,
+        h1: 0,
+        h2: 0,
+        newtype: 5 as any,
+        nextId: null,
+        nextwhId: null
+      }
+    ]
 
     // Point within ROUNDRADIUS/4 = 5 pixels
     const rounded = roundPoint(104, 103, lines)
@@ -158,22 +166,24 @@ describe('roundPoint', () => {
   })
 
   it('returns original point if no endpoints are within ROUNDRADIUS/4', () => {
-    const lines = [{
-      id: 'line-1',
-      startx: 100,
-      starty: 100,
-      endx: 150,
-      endy: 100,
-      length: 50,
-      type: LINE_TYPE.E,
-      kind: LINE_KIND.NORMAL,
-      up_down: LINE_DIR.DN,
-      h1: 0,
-      h2: 0,
-      newtype: 5 as any,
-      nextId: null,
-      nextwhId: null
-    }]
+    const lines = [
+      {
+        id: 'line-1',
+        startx: 100,
+        starty: 100,
+        endx: 150,
+        endy: 100,
+        length: 50,
+        type: LINE_TYPE.E,
+        kind: LINE_KIND.NORMAL,
+        up_down: LINE_DIR.DN,
+        h1: 0,
+        h2: 0,
+        newtype: 5 as any,
+        nextId: null,
+        nextwhId: null
+      }
+    ]
 
     // Point more than 5 pixels away
     const rounded = roundPoint(110, 110, lines)
