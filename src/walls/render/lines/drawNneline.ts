@@ -55,7 +55,7 @@ export const drawNneline =
     // @drawit: cmp.w #7, x -> beq @skip_pre (lines 1015-1016)
     if (xBit !== 7) {
       // @preloop (lines 1018-1029)
-      while (true) {
+      preloop: while (true) {
         // or.b D0, (A0) (line 1018)
         if (A0 >= 0 && A0 < newScreen.data.length) {
           newScreen.data[A0]! |= D0
@@ -83,7 +83,8 @@ export const drawNneline =
         D0 = ((D0 >> 1) | (carry << 7)) & 0xFF
         
         // dbcs D3, @preloop (line 1026)
-        // dbcs decrements D3 and branches if carry set
+        // dbcs: if carry set, decrement D3 and branch if D3 >= 0
+        // if carry clear, fall through without decrementing
         if (carry) {
           D3--
           if (D3 >= 0) continue
@@ -95,7 +96,7 @@ export const drawNneline =
         // blt @leave (line 1029)
         if (D3 < 0) return newScreen
         
-        break // Exit preloop
+        break // Exit preloop and continue to skip_pre
       }
     }
 
