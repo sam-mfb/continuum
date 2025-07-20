@@ -83,13 +83,18 @@ export const drawNneline =
         D0 = ((D0 >> 1) | (carry << 7)) & 0xff
 
         // dbcs D3, @preloop (line 1026)
-        // dbcs: if carry set, decrement D3 and branch if D3 >= 0
-        // if carry clear, fall through without decrementing
-        if (carry) {
+        // This implements the 68k dbcs instruction:
+        // If carry is clear (condition is false), decrement and branch.
+        // If carry is set (condition is true), fall through.
+        if (carry === 0) {
           D3--
-          if (D3 >= 0) continue
+          if (D3 >= 0) {
+            continue // Branch to @preloop
+          }
+          // if D3 becomes < 0, fall through
         }
 
+        // This code is executed upon fallthrough (when carry is set, or when D3 becomes < 0)
         // subq.w #1, D3 - dbcc missed this! (line 1028)
         D3--
 
