@@ -120,8 +120,9 @@ export const nneWhite =
           address -= newScreen.rowBytes * 8
           mask = rotateMaskRight(mask, 1)
 
-          // Check if we need to wrap to next word
-          if ((mask & 0x80000000) === 0) {
+          // Check if we need to wrap to next word. The original assembly tests
+          // bit 3 of the mask to decide when to wrap.
+          if ((mask & (1 << 3)) === 0) {
             mask = swapWords(mask)
             address += 2
           }
@@ -134,8 +135,9 @@ export const nneWhite =
           address -= newScreen.rowBytes * 2
           mask = rotateMaskRight(mask, 1)
 
-          // Check if we need to wrap to next word
-          if ((mask & 0x80000000) === 0) {
+          // Check if we need to wrap to next word. The original assembly tests
+          // bit 3 of the mask to decide when to wrap.
+          if ((mask & (1 << 3)) === 0) {
             mask = swapWords(mask)
             address += 2
           }
