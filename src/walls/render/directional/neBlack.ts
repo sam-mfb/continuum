@@ -57,7 +57,7 @@ export const neBlack =
     }
 
     // Calculate h3 and h15 (lines 233-250)
-    let h3 = line.h2 ?? h4
+    let h3 = line.h2 ?? 0
     if (h3 > h4) {
       h3 = h4
     }
@@ -144,62 +144,54 @@ export const neBlack =
       let lenCounter = len - 1
 
       // bge.s @loop1
-      if (lenCounter < 0) {
-        // swap eor
-        eor = swap32(eor)
-      } else {
+      if (lenCounter >= 0) {
         // @loop1 main loop
-        let carrySet = false
-
-        while (lenCounter >= 0) {
+        while (true) {
           // eor.l eor, (screen)
           eor32ToScreen(newScreen, screenAddr, eor)
 
           // adda.l D2, screen
           screenAddr += D2
 
-          // ror.l #1, eor (and track carry)
-          const oldBit31 = (eor & 0x80000000) !== 0
+          // ror.l #1, eor
+          const carry = eor & 1
           eor = ror32(eor, 1)
-          carrySet = oldBit31
 
-          // dbcs len, @loop1 - decrement and branch if carry set
-          if (!carrySet) {
+          // dbcs len, @loop1
+          // If carry is clear (0), decrement and branch if len >= 0.
+          // If carry is set (1), fall through.
+          if (carry === 0) {
             lenCounter--
-            if (lenCounter >= 0) continue
-            break
+            if (lenCounter >= 0) {
+              continue // This is the branch of dbcs
+            } else {
+              break // len became < 0, exit loop
+            }
           }
 
-          // Carry was set, need to handle word swap
+          // Fallthrough from dbcs (carry was 1)
           // swap eor
           eor = swap32(eor)
           // addq.w #2, screen
           screenAddr += 2
           // subq.w #1, len
           lenCounter--
-
-          // bge.s @loop1 - continue main loop if len >= 0
-          if (lenCounter >= 0) {
-            // Continue the loop but we've already swapped
-            while (lenCounter >= 0) {
-              eor32ToScreen(newScreen, screenAddr, eor)
-              screenAddr += D2
-              eor = ror32(eor, 1)
-              lenCounter--
-            }
+          // bge.s @loop1
+          if (lenCounter < 0) {
+            break // Exit loop
           }
-          break
+          // This continue represents the bge.s branch back to @loop1
+          continue
         }
+      }
 
-        // After main loop: tst.b eor
-        if ((eor & 0xff) === 0) {
-          // beq.s @1
-          // swap eor
-          eor = swap32(eor)
-        } else {
-          // subq.w #2, screen
-          screenAddr -= 2
-        }
+      // After main loop: tst.b eor
+      if ((eor & 0xff) !== 0) {
+        // bne.s @1 -> subq.w #2, screen
+        screenAddr -= 2
+      } else {
+        // beq.s @1 -> swap eor
+        eor = swap32(eor)
       }
 
       // @doend section - handle end with 16-bit operations
@@ -230,7 +222,7 @@ export const neBlack =
 
       // move.w #0x7FFF, D0
       // asr.w x, D0
-      let mask = 0x7fff >> (startx & 15)
+      let mask = 0x7fff >> startx
 
       // moveq #64, D1
       const D1 = 64
