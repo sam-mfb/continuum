@@ -338,7 +338,7 @@ export const sseBlack =
       // JSR_WADDRESS
       asm.A0 = jsrWAddress(0, x, y)
       asm.D0 = 0x7fff
-      asm.D0 = asm.instructions.lsr_w(asm.D0, x & 15)
+      asm.D0 = asm.instructions.lsr_w(asm.D0, x)
       len >>= 1
 
       // @lp loop
