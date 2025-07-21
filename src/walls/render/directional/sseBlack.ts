@@ -225,15 +225,20 @@ export const sseBlack =
         }
 
         case 'loop1': {
+          // This loop is complex. It corresponds to lines 1078-1101 of Walls.c
+          // The counter (len/D7) is decremented at the top of the loop, and then
+          // again by either the dbne or dbra instruction, which is unusual but
+          // consistent with other loops in the original source (e.g., loop2).
+
           asm.instructions.eor_l(newScreen.data, asm.A0, asm.D0)
-          asm.D7 -= 1
+          asm.D7 -= 1 // subq.w #1, len
           if (asm.D7 < 0) {
             // blt.s @leave
             pc = 'leave'
             continue main_asm_loop
           }
           asm.instructions.eor_l(newScreen.data, asm.A0 + 64, asm.D1)
-          asm.A0 += asm.D2
+          asm.A0 += asm.D2 // adda.l D2, A0 (D2=128)
           asm.D0 = asm.instructions.ror_l(asm.D0, 1)
           asm.D1 = asm.instructions.ror_l(asm.D1, 1)
 
@@ -245,33 +250,42 @@ export const sseBlack =
           asm.instructions.tst_b(asm.D1)
           const zeroFlag = asm.instructions.getFlag('zero')
 
-          // Faithful replication of: dbne len, @loop1
-          const counter = asm.D7
-          asm.D7-- // dbne always decrements the counter
-          if (counter !== 0 && !zeroFlag) {
-            pc = 'loop1'
-            continue main_asm_loop
+          // Emulate: dbne len, @loop1
+          // Condition is NE (Not Equal), so Z flag must be 0.
+          if (!zeroFlag) {
+            // Condition is true, so decrement counter and check.
+            asm.D7--
+            if (asm.D7 !== -1) {
+              // Branch to @loop1
+              pc = 'loop1'
+              continue main_asm_loop
+            }
+            // Counter expired, fall through.
           }
+          // Fall through if condition was false (zeroFlag was true) or counter expired.
 
-          // If we are here, dbne failed. Now check: beq.s @doend
+          // Emulate: beq.s @doend
+          // Condition is EQ (Equal), so Z flag must be 1.
           if (zeroFlag) {
             pc = 'doend'
             continue main_asm_loop
           }
+          // Fall through if beq condition was false. This happens when dbne's counter expired.
 
-          // --- Fallthrough from both dbne and beq ---
+          // Word boundary crossing logic
           asm.D0 = asm.instructions.swap(asm.D0)
           asm.D1 = asm.instructions.swap(asm.D1)
           asm.A0 += 2
 
-          // dbra len, @loop1
-          // The counter D7 was already decremented by the dbne emulation above.
-          if (asm.instructions.dbra('D7', false)) {
+          // Emulate: dbra len, @loop1
+          // dbra always decrements.
+          asm.D7--
+          if (asm.D7 !== -1) {
             pc = 'loop1'
             continue main_asm_loop
           }
 
-          // bra.s @leave
+          // Emulate: bra.s @leave
           pc = 'leave'
           continue main_asm_loop
         }
