@@ -59,7 +59,8 @@ export const eneBlack =
     }
 
     // Calculate h3 (lines 370-376)
-    let h3 = line.h2 ?? h4
+    // In C, an uninitialized line->h2 would be 0. We replicate that here.
+    let h3 = line.h2 ?? 0
     if (h3 > h4) {
       h3 = h4
     }
