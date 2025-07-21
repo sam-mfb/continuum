@@ -21,7 +21,7 @@ export const drawNline =
   (screen: MonochromeBitmap): MonochromeBitmap => {
     const { x, y, len, u_d } = deps
     // Deep clone the screen bitmap for immutability
-    const newScreen: MonochromeBitmap = {
+    let newScreen: MonochromeBitmap = {
       data: new Uint8Array(screen.data),
       width: screen.width,
       height: screen.height,
@@ -33,10 +33,14 @@ export const drawNline =
     if (u_d === 4567) {
       mask = 1 << 15
     } else if ((x & 0x000f) === 15) {
-      // At right edge of word, may need to draw on next word
+      // At right edge of word, we need to draw one pixel in the current word
+      // and one in the next.
       if (x < SCRWTH - 1) {
-        return drawNline({ x: x + 1, y, len, u_d: 4567 })(newScreen)
+        // First, recursively call to draw the right pixel in the next word.
+        // The result of this becomes our new screen to draw on.
+        newScreen = drawNline({ x: x + 1, y, len, u_d: 4567 })(newScreen)
       }
+      // Then, set the mask to draw the left pixel in the current word.
       mask = 1
     } else {
       // Normal case - create mask for 2 pixels
