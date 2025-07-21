@@ -292,38 +292,36 @@ export const sseBlack =
         }
 
         case 'loop2': {
-          asm.instructions.eor_w(newScreen.data, asm.A0, asm.D0)
+          // This loop has been corrected to decrement the counter twice per iteration,
+          // matching the original assembly's subq.w and dbra instructions.
+          for (;;) {
+            asm.instructions.eor_w(newScreen.data, asm.A0, asm.D0)
+            asm.D0 = asm.instructions.lsr_w(asm.D0 & 0xffff, 1)
 
-          // Correctly emulate lsr.w #1, D0 - it operates on the low word and zeros the high word.
-          asm.D0 = asm.instructions.lsr_w(asm.D0 & 0xffff, 1)
+            asm.D7 -= 1 // First decrement (subq.w #1, len)
+            if (asm.D7 < 0) {
+              pc = 'leave'
+              break
+            }
 
-          asm.D7 -= 1
-          if (asm.D7 < 0) {
-            // blt.s @leave
-            pc = 'leave'
-            continue main_asm_loop
+            asm.instructions.eor_w(newScreen.data, asm.A0 + 64, asm.D1)
+            asm.D1 = asm.instructions.lsr_w(asm.D1 & 0xffff, 1)
+
+            // swap D0, D1
+            const temp = asm.D0
+            asm.D0 = asm.D1
+            asm.D1 = temp
+
+            asm.A0 += asm.D2
+
+            // Second decrement (dbra len, @loop2)
+            if (asm.instructions.dbra('D7')) {
+              continue // loop again
+            } else {
+              pc = 'leave'
+              break // exit loop
+            }
           }
-
-          asm.instructions.eor_w(newScreen.data, asm.A0 + 64, asm.D1)
-
-          // Correctly emulate lsr.w #1, D1
-          asm.D1 = asm.instructions.lsr_w(asm.D1 & 0xffff, 1)
-
-          // swap D0, D1 - This happens *before* the address is incremented.
-          asm.D3 = asm.D0
-          asm.D0 = asm.D1
-          asm.D1 = asm.D3
-
-          asm.A0 += asm.D2
-
-          // The counter D7 was already decremented above.
-          if (asm.instructions.dbra('D7', false)) {
-            // dbra len, @loop2
-            pc = 'loop2'
-            continue main_asm_loop
-          }
-          // fallthrough to leave
-          pc = 'leave'
           continue main_asm_loop
         }
 
