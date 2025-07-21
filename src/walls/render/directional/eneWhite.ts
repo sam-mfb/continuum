@@ -45,6 +45,8 @@ export const eneWhite =
 
     // Calculate len (lines 516-522)
     let len = line.length - 12
+    // Simulate 16-bit signed integer overflow from the original C code
+    len = (len << 16) >> 16
     if (len > -x) {
       len = -x
     }

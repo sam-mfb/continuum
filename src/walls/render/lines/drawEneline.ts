@@ -152,7 +152,7 @@ export const drawEneline =
 
           // Lines 1315-1318: tst.b D0; beq.s @2; swap D0; addq.w #2, A0
           instructions.tst_b(asm.D0)
-          if (asm.registers.flags.zeroFlag) {
+          if (!asm.registers.flags.zeroFlag) {
             asm.D0 = instructions.swap(asm.D0)
             A0 = (A0 + 2) & 0xffffffff
           }
@@ -181,7 +181,7 @@ export const drawEneline =
 
           // Lines 1299-1302: tst.b D0; beq.s @1; swap D0; addq.w #2, A0
           instructions.tst_b(asm.D0)
-          if (asm.registers.flags.zeroFlag) {
+          if (!asm.registers.flags.zeroFlag) {
             asm.D0 = instructions.swap(asm.D0)
             A0 = (A0 + 2) & 0xffffffff
           }
@@ -190,17 +190,16 @@ export const drawEneline =
     }
 
     // @postloop (lines 1321-1324)
-    if ((asm.D3 & 0x8000) === 0) {
-      // Check if D3 is not negative
-      do {
-        // Line 1321: or.l D0, (A0)
-        instructions.or_l(newScreen.data, A0, asm.D0)
-        // Line 1322: adda.w D1, A0
-        A0 = (A0 + asm.D1) & 0xffffffff
-        // Line 1323: ror.l #2, D0
-        asm.D0 = instructions.ror_l(asm.D0, 2)
-      } while (instructions.dbra('D3')) // Line 1324: dbf D3, @postloop
-    }
+    // The original assembly does not have a guard condition here; the loop
+    // is controlled entirely by the dbra instruction.
+    do {
+      // Line 1321: or.l D0, (A0)
+      instructions.or_l(newScreen.data, A0, asm.D0)
+      // Line 1322: adda.w D1, A0
+      A0 = (A0 + asm.D1) & 0xffffffff
+      // Line 1323: ror.l #2, D0
+      asm.D0 = instructions.ror_l(asm.D0, 2)
+    } while (instructions.dbra('D3')) // Line 1324: dbf D3, @postloop
 
     // @leave (line 1326): movem.l (SP)+, D3-D5 (restore registers - not needed)
     return newScreen
