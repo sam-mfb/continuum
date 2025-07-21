@@ -195,144 +195,73 @@ export const eneBlack =
       // Set up len for loop
       asm.D7 = len
 
-      // bra.s @enter1
-      let firstIteration = true
+      // This section faithfully reproduces the complex control flow of the original assembly.
+      while (asm.D7 >= 0) {
+        // This is the top of the @loop1 / @enter1 structure
+        if (asm.instructions.getFlag('carry')) {
+          // Carry is set, so dbcs will fall through.
+          // The instruction after dbcs is subq.w #1, len
+          asm.D7 -= 1
+          if (asm.D7 < 0) {
+            // blt.s @endstuff
+            asm.D2 = asm.D1 & 0xffff
+            asm.D2 = asm.instructions.swap(asm.D2)
+            asm.D0 = asm.instructions.swap(asm.D0)
+            asm.D0 &= 0xffff0000
+            break // Break to @endst logic
+          }
 
-      while (true) {
-        if (!firstIteration) {
-          // @loop1
-          // and.w D1, (A0)
-          asm.instructions.and_w(newScreen.data, asm.A0, asm.D1)
-          // or.w D0, (A0)
-          asm.instructions.or_w(newScreen.data, asm.A0, asm.D0)
-          // and.l D2, 2(A0)
-          asm.instructions.and_l(newScreen.data, asm.A0 + 2, asm.D2)
-          // suba.l D3, A0
-          asm.A0 -= asm.D3
-          // lsr.l #2, D2
-          asm.D2 = asm.instructions.lsr_l(asm.D2, 2)
-          // asr.w #2, D1
-          asm.D1 = asm.instructions.asr_w(asm.D1, 2)
-          // ror.w #2, D0
-          asm.D0 = asm.instructions.ror_w(asm.D0, 2)
-        }
-
-        firstIteration = false
-
-        // @enter1 dbcs len, @loop1
-        if (!asm.instructions.dbcs('D7')) {
-          break
-        }
-      }
-
-      // subq.w #1, len
-      asm.D7 -= 1
-
-      // blt.s @endstuff
-      if (asm.D7 < 0) {
-        // @endstuff
-        // move.w D1, D2
-        asm.D2 = asm.D1 & 0xffff
-        // swap D2
-        asm.D2 = asm.instructions.swap(asm.D2)
-        // swap D0
-        asm.D0 = asm.instructions.swap(asm.D0)
-        // clr.w D0
-        asm.D0 &= 0xffff0000
-
-        // bra @endst - continue to @endst
-      } else {
-        // move.w D0, D1
-        asm.D1 = asm.D0 & 0xffff
-        // and.w #0xFF00, D1
-        asm.D1 &= 0xff00
-
-        // or.b D0, 1(A0)
-        asm.instructions.or_b(newScreen.data, asm.A0 + 1, asm.D0)
-        // and.l D2, 2(A0)
-        asm.instructions.and_l(newScreen.data, asm.A0 + 2, asm.D2)
-        // or.w D1, 2(A0)
-        asm.instructions.or_w(newScreen.data, asm.A0 + 2, asm.D1)
-        // suba.l D3, A0
-        asm.A0 -= asm.D3
-        // lsr.l #2, D2
-        asm.D2 = asm.instructions.lsr_l(asm.D2, 2)
-        // ror.w #2, D0
-        asm.D0 = asm.instructions.ror_w(asm.D0, 2)
-        // asr.w #2, D1
-        asm.D1 = asm.instructions.asr_w(asm.D1, 2)
-
-        // subq.w #1, len
-        asm.D7 -= 1
-
-        // blt @leave
-        if (asm.D7 >= 0) {
-          // or.b D0, 1(A0)
+          // --- Fallthrough logic continues ---
+          asm.D1 = asm.D0 & 0xffff
+          asm.D1 &= 0xff00
           asm.instructions.or_b(newScreen.data, asm.A0 + 1, asm.D0)
-          // and.l D2, 2(A0)
           asm.instructions.and_l(newScreen.data, asm.A0 + 2, asm.D2)
-          // or.w D1, 2(A0)
           asm.instructions.or_w(newScreen.data, asm.A0 + 2, asm.D1)
-          // suba.w #62, A0
-          asm.A0 -= 62
-          // lsr.l #2, D2
+          asm.A0 -= asm.D3
           asm.D2 = asm.instructions.lsr_l(asm.D2, 2)
-          // swap D2
+          asm.D0 = asm.instructions.ror_w(asm.D0, 2)
+          asm.D1 = asm.instructions.asr_w(asm.D1, 2)
+          asm.D7 -= 1
+
+          if (asm.D7 < 0) {
+            // blt @leave
+            break // Break to @leave logic
+          }
+
+          asm.instructions.or_b(newScreen.data, asm.A0 + 1, asm.D0)
+          asm.instructions.and_l(newScreen.data, asm.A0 + 2, asm.D2)
+          asm.instructions.or_w(newScreen.data, asm.A0 + 2, asm.D1)
+          asm.A0 -= 62
+          asm.D2 = asm.instructions.lsr_l(asm.D2, 2)
           asm.D2 = asm.instructions.swap(asm.D2)
-          // not.w D2
           asm.D2 = (asm.D2 & 0xffff0000) | (~asm.D2 & 0xffff)
-          // ror.w #2, D0
           asm.D0 = asm.instructions.ror_w(asm.D0, 2)
 
           // dbra len, @loop1
-          if (asm.instructions.dbra('D7')) {
-            // Continue loop1
-            while (true) {
-              // @loop1
-              // and.w D1, (A0)
-              asm.instructions.and_w(newScreen.data, asm.A0, asm.D1)
-              // or.w D0, (A0)
-              asm.instructions.or_w(newScreen.data, asm.A0, asm.D0)
-              // and.l D2, 2(A0)
-              asm.instructions.and_l(newScreen.data, asm.A0 + 2, asm.D2)
-              // suba.l D3, A0
-              asm.A0 -= asm.D3
-              // lsr.l #2, D2
-              asm.D2 = asm.instructions.lsr_l(asm.D2, 2)
-              // asr.w #2, D1
-              asm.D1 = asm.instructions.asr_w(asm.D1, 2)
-              // ror.w #2, D0
-              asm.D0 = asm.instructions.ror_w(asm.D0, 2)
-
-              // @enter1 dbcs len, @loop1
-              if (!asm.instructions.dbcs('D7')) {
-                break
-              }
-            }
-
-            // subq.w #1, len
-            asm.D7 -= 1
-
-            // blt.s @endstuff
-            if (asm.D7 < 0) {
-              // @endstuff
-              // move.w D1, D2
-              asm.D2 = asm.D1 & 0xffff
-              // swap D2
-              asm.D2 = asm.instructions.swap(asm.D2)
-              // swap D0
-              asm.D0 = asm.instructions.swap(asm.D0)
-              // clr.w D0
-              asm.D0 &= 0xffff0000
-            } else {
-              // This path continues with more complex logic
-              // For now we'll skip to @endst
-            }
+          asm.D7--
+          if (asm.D7 < 0) {
+            break
           }
+          // Fallthrough from dbra will re-enter the main loop body
+        }
+
+        // --- Main loop body (@loop1) ---
+        asm.instructions.and_w(newScreen.data, asm.A0, asm.D1)
+        asm.instructions.or_w(newScreen.data, asm.A0, asm.D0)
+        asm.instructions.and_l(newScreen.data, asm.A0 + 2, asm.D2)
+        asm.A0 -= asm.D3
+        asm.D2 = asm.instructions.lsr_l(asm.D2, 2)
+        asm.D1 = asm.instructions.asr_w(asm.D1, 2)
+        asm.D0 = asm.instructions.ror_w(asm.D0, 2) // This sets the carry flag for dbcs
+
+        // dbcs len, @loop1
+        if (!asm.instructions.getFlag('carry')) {
+          asm.D7--
         }
       }
 
       // @endst
+      // This logic is reached after the main loop breaks.
       // move.w end(A6), len
       asm.D7 = endParam
 
