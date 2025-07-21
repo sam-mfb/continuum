@@ -243,25 +243,30 @@ export const sseBlack =
           asm.D1 = asm.D3
 
           asm.instructions.tst_b(asm.D1)
+          const zeroFlag = asm.instructions.getFlag('zero')
 
-          if (asm.instructions.dbne('D7')) {
-            // dbne len, @loop1
+          // Faithful replication of: dbne len, @loop1
+          const counter = asm.D7
+          asm.D7-- // dbne always decrements the counter
+          if (counter !== 0 && !zeroFlag) {
             pc = 'loop1'
             continue main_asm_loop
           }
 
-          if (asm.instructions.getFlag('zero')) {
-            // beq.s @doend
+          // If we are here, dbne failed. Now check: beq.s @doend
+          if (zeroFlag) {
             pc = 'doend'
             continue main_asm_loop
           }
 
+          // --- Fallthrough from both dbne and beq ---
           asm.D0 = asm.instructions.swap(asm.D0)
           asm.D1 = asm.instructions.swap(asm.D1)
           asm.A0 += 2
 
-          if (asm.instructions.dbra('D7')) {
-            // dbra len, @loop1
+          // dbra len, @loop1
+          // The counter D7 was already decremented by the dbne emulation above.
+          if (asm.instructions.dbra('D7', false)) {
             pc = 'loop1'
             continue main_asm_loop
           }
@@ -289,9 +294,8 @@ export const sseBlack =
         case 'loop2': {
           asm.instructions.eor_w(newScreen.data, asm.A0, asm.D0)
 
-          const d0Low = asm.D0 & 0xffff
-          const d0High = asm.D0 & 0xffff0000
-          asm.D0 = d0High | asm.instructions.lsr_w(d0Low, 1)
+          // Correctly emulate lsr.w #1, D0 - it operates on the low word and zeros the high word.
+          asm.D0 = asm.instructions.lsr_w(asm.D0 & 0xffff, 1)
 
           asm.D7 -= 1
           if (asm.D7 < 0) {
@@ -302,18 +306,18 @@ export const sseBlack =
 
           asm.instructions.eor_w(newScreen.data, asm.A0 + 64, asm.D1)
 
-          const d1Low = asm.D1 & 0xffff
-          const d1High = asm.D1 & 0xffff0000
-          asm.D1 = d1High | asm.instructions.lsr_w(d1Low, 1)
+          // Correctly emulate lsr.w #1, D1
+          asm.D1 = asm.instructions.lsr_w(asm.D1 & 0xffff, 1)
 
-          // swap D0, D1
+          // swap D0, D1 - This happens *before* the address is incremented.
           asm.D3 = asm.D0
           asm.D0 = asm.D1
           asm.D1 = asm.D3
 
           asm.A0 += asm.D2
 
-          if (asm.instructions.dbra('D7')) {
+          // The counter D7 was already decremented above.
+          if (asm.instructions.dbra('D7', false)) {
             // dbra len, @loop2
             pc = 'loop2'
             continue main_asm_loop
