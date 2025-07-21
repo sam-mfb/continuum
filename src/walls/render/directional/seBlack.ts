@@ -116,68 +116,75 @@ export const seBlack =
     const eor = (background[(x + y) & 1]! & SE_MASK) ^ SE_VAL
 
     // Assembly drawing logic (lines 923-958)
-    // Calculate screen address using FIND_WADDRESS macro
     let address = findWAddress(0, x, y)
-
-    // Rotate the EOR pattern based on x position
     const shift = x & 15
-    let rotatedEor = rotateRight(eor, shift)
+    let eorVal = rotateRight(eor, shift)
+    let lenCounter = len - 1
 
-    let remainingLen = len - 1
-
-    // Main drawing loop
-    if (remainingLen >= 0) {
-      // Loop until we need to switch to 16-bit operations
-      while (remainingLen >= 0) {
-        eorToScreen32(newScreen, address, rotatedEor)
-        address += 64
-
-        // Save the bit that will be rotated out (carry flag simulation)
-        const carryBit = rotatedEor & 1
-        rotatedEor = rotateRight(rotatedEor, 1)
-
-        // dbcs: decrement and branch if carry set is false (carry clear)
-        // If carry bit was 0, we continue the loop
-        // If carry bit was 1, we fall through to swap
-        remainingLen--
-        if (carryBit === 1) {
-          // Carry set, fall through to swap
-          rotatedEor = swapWords(rotatedEor)
-          address += 2
-          remainingLen--
-          break
-        }
-      }
-
-      // Continue with remaining iterations if any
-      while (remainingLen >= 0) {
-        eorToScreen32(newScreen, address, rotatedEor)
-        address += 64
-        rotatedEor = rotateRight(rotatedEor, 1)
-        remainingLen--
-      }
-
-      // Check if we need to adjust for the end section
-      // Assembly: tst.b eor / bne.s @1
-      // Test the low byte of eor
-      if ((rotatedEor & 0xff) === 0) {
-        rotatedEor = swapWords(rotatedEor)
-      } else {
-        address -= 2
-      }
+    if (lenCounter < 0) {
+      eorVal = swapWords(eorVal)
     } else {
-      rotatedEor = swapWords(rotatedEor)
+      main_loop: while (true) {
+        // @loop1: eor.l eor, (A0)
+        eorToScreen32(newScreen, address, eorVal)
+        // adda.l D2, A0
+        address += 64
+        // ror.l #1, eor
+        const carry = eorVal & 1
+        eorVal = rotateRight(eorVal, 1)
+
+        // dbcs len, @loop1
+        // Branch if Carry Clear (carry === 0)
+        if (carry === 0) {
+          lenCounter--
+          if (lenCounter >= 0) {
+            continue main_loop
+          }
+          // Counter expired, fall through
+        }
+        // Fall through if Carry Set (carry === 1) or counter expired
+
+        // swap eor
+        eorVal = swapWords(eorVal)
+        // addq.w #2, A0
+        address += 2
+        // subq.w #1, len
+        lenCounter--
+        // bge.s @loop1
+        if (lenCounter >= 0) {
+          continue main_loop
+        }
+        // Fall through if counter expired
+
+        // tst.b eor
+        if ((eorVal & 0xff) !== 0) {
+          // bne.s @1
+          // @1: subq.w #2, A0
+          address -= 2
+        } else {
+          // swap eor
+          eorVal = swapWords(eorVal)
+        }
+        // bra.s @doend
+        break main_loop
+      }
     }
 
-    // Handle end section with 16-bit operations (lines 948-956)
-    if (end > 0) {
-      let endLen = end - 1
-      const eor16 = rotatedEor >>> 16
-
-      for (let i = 0; i <= endLen; i++) {
-        eorToScreen16(newScreen, address, (eor16 >>> i) & 0xffff)
+    // @doend: Handle end section with 16-bit operations (lines 948-956)
+    let endCounter = end - 1
+    if (endCounter >= 0) {
+      // The original code uses the upper 16 bits of the eor register
+      let eor16 = eorVal >>> 16
+      do {
+        // @loop2: eor.w eor, (A0)
+        eorToScreen16(newScreen, address, eor16)
+        // lsr.w #1, eor
+        eor16 >>>= 1
+        // adda.l D2, A0
         address += 64
-      }
+        // dbra len, @loop2
+        endCounter--
+      } while (endCounter >= 0)
     }
 
     return newScreen
