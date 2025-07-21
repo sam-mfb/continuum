@@ -345,17 +345,14 @@ export const sseBlack =
       asm.D0 = asm.instructions.lsr_w(asm.D0, x)
       len >>= 1
 
-      // @lp loop
+      // @lp loop - A standard dbra loop runs N+1 times.
       asm.D7 = len
-      while (asm.instructions.dbra('D7')) {
+      do {
         asm.instructions.and_w(newScreen.data, asm.A0, asm.D0)
         asm.instructions.and_w(newScreen.data, asm.A0 + 64, asm.D0)
         asm.D0 = asm.instructions.lsr_w(asm.D0, 1)
         asm.A0 += 128
-      }
-      // Do one more iteration after dbra exits
-      asm.instructions.and_w(newScreen.data, asm.A0, asm.D0)
-      asm.instructions.and_w(newScreen.data, asm.A0 + 64, asm.D0)
+      } while (asm.instructions.dbra('D7'))
     }
 
     return newScreen
