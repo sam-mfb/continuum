@@ -14,6 +14,7 @@ import { buildGameStore } from './store'
 import { LINE_KIND } from '../../walls/types'
 import { Galaxy } from '../../galaxy/methods'
 import { parsePlanet } from '../../planet/parsePlanet'
+import { VIEWHT } from '../../screen/constants'
 
 // Create store instance
 const store = buildGameStore()
@@ -83,7 +84,7 @@ export const planet3DrawingRenderer: BitmapRenderer = (bitmap, frame, _env) => {
         // Initialize viewport to planet's starting position
         if (!viewportState.initialized) {
           viewportState.x = Math.max(0, planet.xstart - bitmap.width / 2)
-          viewportState.y = Math.max(0, planet.ystart - bitmap.height / 2)
+          viewportState.y = Math.max(0, planet.ystart - VIEWHT / 2)
           viewportState.initialized = true
         }
       })
@@ -105,7 +106,7 @@ export const planet3DrawingRenderer: BitmapRenderer = (bitmap, frame, _env) => {
   }
   if (frame.keysDown.has('ArrowDown')) {
     viewportState.y = Math.min(
-      planet.worldheight - bitmap.height,
+      planet.worldheight - VIEWHT,
       viewportState.y + moveSpeed
     )
   }
