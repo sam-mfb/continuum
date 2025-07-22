@@ -156,28 +156,40 @@ export const drawNeline =
     // @post:
     i.move_w('D0', 0x00c0)
     // @postloop:
+    // This loop structure is complex to replicate the exact flow of the original
+    // assembly, which has a single exit point but multiple paths to loop.
     while (true) {
-      if ((asm.D3 & 0x8000) !== 0) break // leave if D3 is negative
-
       i.or_b(data, asm.A0, asm.D0)
       i.adda_w('A0', asm.D1)
       const tempD0 = asm.D0
       asm.D0 = i.ror_w(asm.D0, 1)
       r.flags.carryFlag = (tempD0 & 1) === 1
 
-      if (i.dbcs('D3')) {
-        continue // loop if C=0 and D3 is not -1
+      // This simulates the `dbcs D3, @postloop` instruction.
+      // It branches back to the top of the while loop if carry is clear
+      // and D3 has not reached -1.
+      if (!r.flags.carryFlag) {
+        asm.D3 = (asm.D3 - 1) & 0xffff
+        if (asm.D3 !== 0xffff) {
+          continue
+        }
       }
 
-      // dbcs failed, fall through to handle byte crossing
+      // This is the fallthrough path for the `dbcs` instruction.
+      // It's also hit if carry was set.
+      // The original assembly has an unconditional `subq.w #1, D3` here.
       i.subq_w('D3', 1)
+
+      // This is the loop's only exit point, matching `blt.s @leave`
       if ((asm.D3 & 0x8000) !== 0) {
-        break // @leave
+        break
       }
+
+      // Logic for when the line crosses a byte boundary
       i.or_b(data, asm.A0, asm.D0)
       i.addq_w('A0', 1)
       asm.D0 = i.rol_w(asm.D0, 8)
-      // bra.s @postloop
+      // The `while(true)` handles the unconditional `bra.s @postloop`
     }
 
     return newScreen
