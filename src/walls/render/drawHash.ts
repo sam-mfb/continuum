@@ -73,7 +73,8 @@ export const drawHash =
 
       // Rotate pattern left by rotateAmount bits (32-bit rotation)
       // Original uses rol.l which is a 32-bit rotate left
-      let rotated = patternData << rotateAmount
+      let rotated =
+        (patternData << rotateAmount) | (patternData >>> (32 - rotateAmount))
 
       // Apply clipping mask
       rotated &= clip
