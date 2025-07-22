@@ -8,22 +8,43 @@ import type { AsmRegisters, RegisterName } from './registers'
  * 68K instruction implementations
  */
 export type InstructionSet = {
+  // Data movement
+  move_b: (dest: RegisterName, src: number) => void
+  move_w: (dest: RegisterName, src: number) => void
+  move_l: (dest: RegisterName, src: number) => void
+
   // Arithmetic/Logic operations
   ror_l: (value: number, bits: number) => number
   ror_w: (value: number, bits: number) => number
+  rol_w: (value: number, bits: number) => number
   lsr_w: (value: number, bits: number) => number
   lsr_l: (value: number, bits: number) => number
+  lsr_b: (value: number, bits: number) => number
   asr_w: (value: number, bits: number) => number
   asr_l: (value: number, bits: number) => number
   swap: (value: number) => number
+  neg_w: (value: number) => number
+  addq_w: (dest: RegisterName, value: number) => void
+  subq_w: (dest: RegisterName, value: number) => void
+  adda_w: (dest: RegisterName, value: number) => void
+  andi_w: (dest: RegisterName, value: number) => void
 
   // Test/Compare operations
   tst_b: (value: number) => void
+  tst_w: (value: number) => void
+  cmp_b: (reg: RegisterName, value: number) => void
 
   // Branch operations
   dbra: (counter: RegisterName) => boolean
   dbne: (counter: RegisterName) => boolean
   dbcs: (counter: RegisterName) => boolean
+  bgt: () => boolean
+  blt: () => boolean
+  beq: () => boolean
+  bra: () => boolean
+
+  // Bit manipulation
+  bset_b: (memory: Uint8Array, address: number, bit: number) => void
 
   // Memory operations
   eor_l: (memory: Uint8Array, address: number, value: number) => void
@@ -100,6 +121,21 @@ export const createInstructionSet = (
   }
 
   return {
+    // Move byte
+    move_b: (dest: RegisterName, src: number): void => {
+      setReg(dest, src & 0xff)
+    },
+
+    // Move word
+    move_w: (dest: RegisterName, src: number): void => {
+      setReg(dest, src & 0xffff)
+    },
+
+    // Move long
+    move_l: (dest: RegisterName, src: number): void => {
+      setReg(dest, src)
+    },
+
     // Rotate right long
     ror_l: (value: number, bits: number): number => {
       bits = bits & 31
@@ -121,6 +157,18 @@ export const createInstructionSet = (
       return result
     },
 
+    // Rotate left word
+    rol_w: (value: number, bits: number): number => {
+      bits = bits & 15
+      if (bits === 0) return value & 0xffff
+      const word = value & 0xffff
+      const result = ((word << bits) | (word >>> (16 - bits))) & 0xffff
+      // Set carry flag to the last bit rotated out
+      registers.flags.carryFlag =
+        bits > 0 && ((word >> (16 - bits)) & 1) === 1
+      return result
+    },
+
     // Logical shift right word
     lsr_w: (value: number, bits: number): number => {
       return (value >>> bits) & 0xffff
@@ -131,6 +179,11 @@ export const createInstructionSet = (
       bits = bits & 31
       if (bits === 0) return value
       return value >>> bits
+    },
+
+    // Logical shift right byte
+    lsr_b: (value: number, bits: number): number => {
+      return (value >>> bits) & 0xff
     },
 
     // Arithmetic shift right word (sign-extend)
@@ -155,9 +208,53 @@ export const createInstructionSet = (
       return ((value >>> 16) | ((value & 0xffff) << 16)) >>> 0
     },
 
+    // Negate word (2's complement)
+    neg_w: (value: number): number => {
+      return (~(value & 0xffff) + 1) & 0xffff
+    },
+
+    // Add quick word
+    addq_w: (dest: RegisterName, value: number): void => {
+      const current = getReg(dest)
+      setReg(dest, (current + value) & 0xffff)
+    },
+
+    // Subtract quick word
+    subq_w: (dest: RegisterName, value: number): void => {
+      const current = getReg(dest)
+      setReg(dest, (current - value) & 0xffff)
+    },
+
+    // Add address word
+    adda_w: (dest: RegisterName, value: number): void => {
+      const current = getReg(dest)
+      setReg(dest, current + value) // No mask, affects full 32-bit address
+    },
+
+    // AND immediate word
+    andi_w: (dest: RegisterName, value: number): void => {
+      const current = getReg(dest)
+      const result = current & value
+      setReg(dest, result)
+      setFlags(result, 'w')
+    },
+
     // Test byte and set flags
     tst_b: (value: number): void => {
       setFlags(value, 'b')
+    },
+
+    // Test word and set flags
+    tst_w: (value: number): void => {
+      setFlags(value, 'w')
+    },
+
+    // Compare byte
+    cmp_b: (reg: RegisterName, value: number): void => {
+      const regValue = getReg(reg) & 0xff
+      const result = regValue - value
+      setFlags(result, 'b')
+      // Note: More complex flag logic for V and C is omitted for now
     },
 
     // Decrement and branch if not -1
@@ -188,6 +285,40 @@ export const createInstructionSet = (
       const newValue = (current - 1) & 0xffff
       setReg(counter, newValue)
       return newValue !== 0xffff
+    },
+
+    // Branch if greater than
+    bgt: (): boolean => {
+      return (
+        !registers.flags.negativeFlag &&
+        !registers.flags.zeroFlag &&
+        !registers.flags.overflowFlag
+      )
+    },
+
+    // Branch if less than
+    blt: (): boolean => {
+      return (
+        (registers.flags.negativeFlag && !registers.flags.overflowFlag) ||
+        (!registers.flags.negativeFlag && registers.flags.overflowFlag)
+      )
+    },
+
+    // Branch if equal
+    beq: (): boolean => {
+      return registers.flags.zeroFlag
+    },
+
+    // Branch always
+    bra: (): boolean => {
+      return true
+    },
+
+    // Set bit in byte
+    bset_b: (memory: Uint8Array, address: number, bit: number): void => {
+      if (address >= 0 && address < memory.length) {
+        memory[address]! |= 1 << (bit & 7)
+      }
     },
 
     // EOR long to screen memory

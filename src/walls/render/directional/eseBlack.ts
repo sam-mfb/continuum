@@ -90,7 +90,7 @@ export const eseBlack =
     y += h2 >> 1
 
     // Calculate EOR patterns (lines 783-784)
-    const background = getBackground(x, y, scrx, scry)
+    const background = getBackground(scrx, scry)
     const eor1 = (background[(x + y) & 1]! & ESE_MASK) ^ ESE_VAL
     const eor2 = (background[(x + y + 1) & 1]! & ESE_MASK) ^ ESE_VAL
 

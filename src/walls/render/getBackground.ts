@@ -11,15 +11,11 @@ import { BACKGROUND_PATTERNS } from '../../screen/constants'
  * Gets the appropriate background pattern for a given screen coordinate,
  * implementing the same swapping logic as the original C code's view_clear() function.
  *
- * @param x - Screen x coordinate
- * @param y - Screen y coordinate
  * @param scrx - Viewport x offset (screenx in original)
  * @param scry - Viewport y offset (screeny in original)
  * @returns The background pattern array with patterns swapped based on viewport position
  */
 export function getBackground(
-  x: number,
-  y: number,
   scrx: number,
   scry: number
 ): readonly [number, number] {
@@ -38,7 +34,7 @@ export function getBackground(
 
   if (shouldSwap) {
     // Swap the patterns
-    return [BACKGROUND_PATTERNS[1], BACKGROUND_PATTERNS[0]]
+    return [BACKGROUND_PATTERNS[1]!, BACKGROUND_PATTERNS[0]!]
   } else {
     // Keep original order
     return BACKGROUND_PATTERNS

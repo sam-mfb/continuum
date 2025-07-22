@@ -112,7 +112,7 @@ export const seBlack =
     }
 
     // Calculate EOR pattern (line 921)
-    const background = getBackground(x, y, scrx, scry)
+    const background = getBackground(scrx, scry)
     const eor = (background[(x + y) & 1]! & SE_MASK) ^ SE_VAL
 
     // Assembly drawing logic (lines 923-958)

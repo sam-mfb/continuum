@@ -8,15 +8,6 @@ import { SCRWTH } from '../../../screen/constants'
 import { jsrBAddress } from '../../../asm/assemblyMacros'
 
 /**
- * @fileoverview Corresponds to draw_neline() from orig/Sources/Draw.c:1110
- * Draws a northeast diagonal line (2 pixels wide)
- */
-
-import type { MonochromeBitmap } from '../../types'
-import { SCRWTH } from '../../../screen/constants'
-import { jsrBAddress } from '../../../asm/assemblyMacros'
-
-/**
  * Helper to OR a 16-bit word into a byte array in big-endian order.
  */
 const orWord = (data: Uint8Array, address: number, value: number) => {
@@ -89,4 +80,3 @@ export const drawNeline =
 
     return newScreen
   }
-

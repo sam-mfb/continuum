@@ -91,7 +91,7 @@ export const southBlack =
     }
 
     // Calculate EOR patterns (lines 1188-1189)
-    const background = getBackground(x, y, scrx, scry)
+    const background = getBackground(scrx, scry)
     const eor1 = (background[(x + y) & 1]! & SOUTH_MASK) ^ SOUTH_BLACK
     const eor2 = (background[(x + y + 1) & 1]! & SOUTH_MASK) ^ SOUTH_BLACK
 

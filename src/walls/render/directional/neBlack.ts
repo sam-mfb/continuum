@@ -127,7 +127,7 @@ export const neBlack =
     y -= h15
 
     // Calculate EOR pattern (line 274)
-    const background = getBackground(x, y, scrx, scry)
+    const background = getBackground(scrx, scry)
     let eor = (background[(x + y) & 1]! & NE_MASK) ^ NE_VAL
 
     // Main drawing section - faithful to assembly (lines 276-313)

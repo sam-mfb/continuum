@@ -146,7 +146,7 @@ export const sseBlack =
     y += h2
 
     // Calculate EOR patterns (lines 1043-1044)
-    const background = getBackground(x, y, scrx, scry)
+    const background = getBackground(scrx, scry)
     eor1 = (background[(x + y) & 1]! & SSE_MASK) ^ SSE_VAL
     eor2 = (background[1 - ((x + y) & 1)]! & SSE_MASK) ^ SSE_VAL
 
@@ -311,8 +311,7 @@ export const sseBlack =
           for (;;) {
             asm.instructions.eor_w(newScreen.data, asm.A0, asm.D0)
             asm.D0 =
-              (asm.D0 & 0xffff0000) |
-              asm.instructions.lsr_w(asm.D0 & 0xffff, 1)
+              (asm.D0 & 0xffff0000) | asm.instructions.lsr_w(asm.D0 & 0xffff, 1)
 
             asm.D7 -= 1 // First decrement (subq.w #1, len)
             if (asm.D7 < 0) {
@@ -322,8 +321,7 @@ export const sseBlack =
 
             asm.instructions.eor_w(newScreen.data, asm.A0 + 64, asm.D1)
             asm.D1 =
-              (asm.D1 & 0xffff0000) |
-              asm.instructions.lsr_w(asm.D1 & 0xffff, 1)
+              (asm.D1 & 0xffff0000) | asm.instructions.lsr_w(asm.D1 & 0xffff, 1)
 
             // swap D0, D1
             const temp = asm.D0
