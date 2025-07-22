@@ -16,6 +16,7 @@ import { testGameLoop } from './games/testGame'
 import { shipMoveGameLoop } from './games/shipMove'
 import { bitmapTestRenderer } from './games/bitmapTest'
 import { wallDrawingRenderer } from './games/wallDrawing'
+import { planet3DrawingRenderer } from './games/planet3Drawing'
 import './App.css'
 
 function App(): React.JSX.Element {
@@ -121,6 +122,11 @@ function App(): React.JSX.Element {
                   type: 'bitmap',
                   name: 'Wall Drawing',
                   bitmapRenderer: wallDrawingRenderer
+                } as BitmapGameDefinition,
+                {
+                  type: 'bitmap',
+                  name: 'Planet 3 Drawing',
+                  bitmapRenderer: planet3DrawingRenderer
                 } as BitmapGameDefinition
               ]}
               defaultGameIndex={0}

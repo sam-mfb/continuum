@@ -237,7 +237,7 @@ export const eneBlack =
           }
 
           // --- Rest of fall-through path ---
-          const tempD1 = (asm.D0 & 0xffff) & 0xff00
+          const tempD1 = asm.D0 & 0xffff & 0xff00
 
           asm.instructions.or_b(newScreen.data, asm.A0 + 1, asm.D0)
           asm.instructions.and_l(newScreen.data, asm.A0 + 2, asm.D2)
