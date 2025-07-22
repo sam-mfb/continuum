@@ -326,6 +326,43 @@ The 1980s hardware had very limited CPU power. Pre-sorting allows:
 - Efficient batching of similar operations
 - Predictable memory access patterns
 
+### Critical Requirement: Walls Must Be Sorted by X-Coordinate
+
+**IMPORTANT:** The wall rendering system requires that walls are sorted by their `startx` coordinate in ascending order. This is not just an optimization - it's a hard requirement that the rendering code depends on.
+
+**Evidence from QuickEdit.c:**
+
+1. When creating new walls (lines 850-854), the editor maintains sort order:
+   ```c
+   while(i > 0 && lines[i].startx < lines[i-1].startx)
+   {
+       swapmem(lines+i, lines+i-1, sizeof(linerec));
+       i--;
+   }
+   ```
+
+2. When dragging objects (fuel/bunkers), similar sorting is performed to maintain order
+
+3. The drawing code assumes this ordering when iterating through walls (line 158):
+   ```c
+   for (line=lines; line->startx < right; line++)
+   ```
+
+**Why This Matters:**
+
+The `blackTerrain()` function has an optimization at line 55 that checks if the first wall in the linked list is visible:
+```c
+if (!p || p.startx >= right) {
+    // First pass - nothing visible, but still need to check wrapped
+}
+```
+
+If walls aren't sorted by `startx`, the first wall in the list might be off-screen to the right, causing this check to incorrectly skip rendering all walls, even those that are visible.
+
+**Implementation Note:**
+
+When creating walls programmatically (not loading from a planet file), you MUST sort them by `startx` before passing them to `initWalls()`. The `initWalls()` function preserves input order when building linked lists - it does NOT sort the walls itself.
+
 ### How Wall Drawing Actually Works
 
 **The Key Insight:** Most walls draw their white undersides AND black tops together in a single pass!
