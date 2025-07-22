@@ -173,8 +173,9 @@ export const seBlack =
     // @doend: Handle end section with 16-bit operations (lines 948-956)
     let endCounter = end - 1
     if (endCounter >= 0) {
-      // The original code uses the upper 16 bits of the eor register
-      let eor16 = eorVal >>> 16
+      // The original assembly's `eor.w` instruction operates on the lower 16 bits
+      // of the register.
+      let eor16 = eorVal & 0xffff
       do {
         // @loop2: eor.w eor, (A0)
         eorToScreen16(newScreen, address, eor16)
