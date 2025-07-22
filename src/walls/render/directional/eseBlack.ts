@@ -120,7 +120,7 @@ export const eseBlack =
         address += 64 * 4
 
         // Check if we need to wrap to next word
-        if ((d1 & 0xff) === 0) {
+        if ((d1 & 0xff) !== 0) {
           d0 = swapWords(d0)
           d1 = swapWords(d1)
           address += 2
