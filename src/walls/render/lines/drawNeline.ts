@@ -44,8 +44,9 @@ export const drawNeline =
     // Isolate the bit position within the byte
     x = x & 7
 
-    // Create initial mask (0xC0 = 0b11000000)
-    let D0 = 0xc0 >> x // D0 holds or mask
+    // Create initial mask: move.b #3<<6, D0 gives 0xC0
+    // lsr.b x, D0 shifts right by x bits
+    let D0 = (0xC0 >> x) & 0xFF // D0 holds or mask
     let D3 = len
 
     if (D3 < 0) return newScreen
