@@ -1,8 +1,5 @@
 /**
  * A Node.js script to visualize the rendering of a single wall line.
- *
- * Usage:
- * vite-node src/walls/scripts/single-line-render.ts
  */
 
 import { createMonochromeBitmap, setPixel } from '../../bitmap'
@@ -12,7 +9,6 @@ import { LINE_KIND, NEW_TYPE } from '../types'
 import { createWall } from '../unpack'
 import { initWalls } from '../init'
 import { whiteTerrain, blackTerrain } from '../render'
-import { SBARHT } from '@/screen/constants'
 
 const main = (): void => {
   // 1. Define the single line to be rendered using createWall.
@@ -62,19 +58,15 @@ const main = (): void => {
   })(renderedBitmap)
 
   // 7. Define the clipping rectangle with a 50px margin.
-  const marginbig = 50
   const marginsmall = 20
   const clip = {
-    top: singleLine[0]!.endy + SBARHT - marginsmall,
+    top: singleLine[0]!.endy + marginsmall,
     left: singleLine[0]!.startx - marginsmall,
-    bottom: singleLine[0]!.starty + SBARHT + marginsmall,
-    right: singleLine[0]!.endx + marginbig
+    bottom: singleLine[0]!.starty + marginsmall + 12,
+    right: singleLine[0]!.endx
   }
 
-  console.log(singleLine[0])
-
   // 8. Visualize the clipped area of the bitmap.
-  console.log('--- Single Line Render (Clipped) ---')
   console.log(visualizeBitmap(renderedBitmap, clip))
 }
 
