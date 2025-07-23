@@ -147,35 +147,40 @@ export const drawNeline =
     }
 
     // Post loop: draw remaining pixels
-    D0 = 0xc0
-    for (let i = 0; i <= D3; i++) {
-      // or.b D0, (A0)
-      newScreen.data[asm.A0] |= D0
+    D0 = 0x00C0  // move.w #0x00C0, D0
+    
+    while (D3 >= 0) {
+      // @postloop: or.b D0, (A0)
+      newScreen.data[asm.A0] |= D0 & 0xff
 
       // adda.w D1, A0
       asm.A0 += D1
 
       // ror.w #1, D0
-      const bit0 = D0 & 1
-      D0 = ((D0 >> 1) | (bit0 << 15)) & 0xffff
+      const carry = D0 & 0x0001
+      D0 = ((D0 >> 1) | (carry << 15)) & 0xffff
 
       // dbcs D3, @postloop
-      if (bit0 === 0) {
-        // Carry set when bit rotates out
-        continue
-      } else {
-        // Carry clear, need to handle byte crossing
+      if (carry === 0) {  // Carry set means continue loop
         D3--
         if (D3 < 0) break
-
+      } else {
+        // Carry clear, need to handle byte crossing
+        // subq.w #1, D3
+        D3--
+        // blt.s @leave
+        if (D3 < 0) break
+        
         // or.b D0, (A0)
         newScreen.data[asm.A0] |= D0 & 0xff
-
+        
         // addq.w #1, A0
         asm.A0++
-
+        
         // rol.w #8, D0
         D0 = ((D0 << 8) | (D0 >> 8)) & 0xffff
+        
+        // bra.s @postloop (continue loop)
       }
     }
 
