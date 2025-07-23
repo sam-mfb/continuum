@@ -74,15 +74,17 @@ export const drawNeline =
         asm.A0 += D1
 
         // lsr.b #1, D0
+        const carry = D0 & 0x01  // Save carry before shift
         D0 = (D0 >> 1) & 0xff
 
         // dbcs D3, @preloop
-        if ((D0 & 0x01) === 0) {
-          // Carry set when bit shifts out
+        if (carry === 0) {  // Carry set means continue loop
           D3--
-          if (D3 < 0) break
+          if (D3 < 0) {
+            return newScreen  // Exit if D3 becomes negative
+          }
         } else {
-          break
+          break  // Carry clear means exit loop
         }
       }
 
