@@ -139,90 +139,204 @@ export const createInstructionSet = (
     // Rotate right long
     ror_l: (value: number, bits: number): number => {
       bits = bits & 31
-      if (bits === 0) return value
+      if (bits === 0) {
+        registers.flags.carryFlag = false
+        setFlags(value, 'l')
+        registers.flags.overflowFlag = false
+        return value
+      }
       const result = ((value >>> bits) | (value << (32 - bits))) >>> 0
       // Set carry flag to the last bit rotated out
-      registers.flags.carryFlag = bits > 0 && ((value >> (bits - 1)) & 1) === 1
+      registers.flags.carryFlag = ((value >> (bits - 1)) & 1) === 1
+      setFlags(result, 'l')
+      registers.flags.overflowFlag = false // V is always cleared
       return result
     },
 
     // Rotate right word
     ror_w: (value: number, bits: number): number => {
       bits = bits & 15
-      if (bits === 0) return value & 0xffff
       const word = value & 0xffff
+      if (bits === 0) {
+        registers.flags.carryFlag = false
+        setFlags(word, 'w')
+        registers.flags.overflowFlag = false
+        return word
+      }
       const result = ((word >>> bits) | (word << (16 - bits))) & 0xffff
       // Set carry flag to the last bit rotated out
-      registers.flags.carryFlag = bits > 0 && ((word >> (bits - 1)) & 1) === 1
+      registers.flags.carryFlag = ((word >> (bits - 1)) & 1) === 1
+      setFlags(result, 'w')
+      registers.flags.overflowFlag = false // V is always cleared
       return result
     },
 
     // Rotate left word
     rol_w: (value: number, bits: number): number => {
       bits = bits & 15
-      if (bits === 0) return value & 0xffff
       const word = value & 0xffff
+      if (bits === 0) {
+        registers.flags.carryFlag = false
+        setFlags(word, 'w')
+        registers.flags.overflowFlag = false
+        return word
+      }
       const result = ((word << bits) | (word >>> (16 - bits))) & 0xffff
       // Set carry flag to the last bit rotated out
-      registers.flags.carryFlag =
-        bits > 0 && ((word >> (16 - bits)) & 1) === 1
+      registers.flags.carryFlag = ((word >> (16 - bits)) & 1) === 1
+      setFlags(result, 'w')
+      registers.flags.overflowFlag = false // V is always cleared
       return result
     },
 
     // Logical shift right word
     lsr_w: (value: number, bits: number): number => {
-      return (value >>> bits) & 0xffff
+      bits = bits & 15
+      const word = value & 0xffff
+      if (bits === 0) {
+        registers.flags.carryFlag = false
+        setFlags(word, 'w')
+        registers.flags.overflowFlag = false
+        return word
+      }
+      const result = word >>> bits
+      registers.flags.carryFlag = ((word >> (bits - 1)) & 1) === 1
+      setFlags(result, 'w')
+      registers.flags.overflowFlag = false // V is always cleared
+      return result
     },
 
     // Logical shift right long
     lsr_l: (value: number, bits: number): number => {
       bits = bits & 31
-      if (bits === 0) return value
-      return value >>> bits
+      if (bits === 0) {
+        registers.flags.carryFlag = false
+        setFlags(value, 'l')
+        registers.flags.overflowFlag = false
+        return value
+      }
+      const result = value >>> bits
+      registers.flags.carryFlag = ((value >> (bits - 1)) & 1) === 1
+      setFlags(result, 'l')
+      registers.flags.overflowFlag = false // V is always cleared
+      return result
     },
 
     // Logical shift right byte
     lsr_b: (value: number, bits: number): number => {
-      return (value >>> bits) & 0xff
+      bits = bits & 7
+      const byte = value & 0xff
+      if (bits === 0) {
+        registers.flags.carryFlag = false
+        setFlags(byte, 'b')
+        registers.flags.overflowFlag = false
+        return byte
+      }
+      const result = byte >>> bits
+      registers.flags.carryFlag = ((byte >> (bits - 1)) & 1) === 1
+      setFlags(result, 'b')
+      registers.flags.overflowFlag = false // V is always cleared
+      return result
     },
 
     // Arithmetic shift right word (sign-extend)
     asr_w: (value: number, bits: number): number => {
       bits = bits & 15
-      if (bits === 0) return value & 0xffff
+      const word = value & 0xffff
+      if (bits === 0) {
+        registers.flags.carryFlag = false
+        setFlags(word, 'w')
+        registers.flags.overflowFlag = false
+        return word
+      }
       // Sign extend to 32-bit, shift, then mask back to 16-bit
-      const signExtended = (value & 0xffff) | (value & 0x8000 ? 0xffff0000 : 0)
-      return (signExtended >> bits) & 0xffff
+      const signExtended = word | (word & 0x8000 ? 0xffff0000 : 0)
+      const result = (signExtended >> bits) & 0xffff
+      registers.flags.carryFlag = ((word >> (bits - 1)) & 1) === 1
+      setFlags(result, 'w')
+      registers.flags.overflowFlag = false // V is always cleared
+      return result
     },
 
     // Arithmetic shift right long (sign-extend)
     asr_l: (value: number, bits: number): number => {
       bits = bits & 31
-      if (bits === 0) return value
+      if (bits === 0) {
+        registers.flags.carryFlag = false
+        setFlags(value, 'l')
+        registers.flags.overflowFlag = false
+        return value
+      }
       // JavaScript >> operator already does arithmetic shift for 32-bit values
-      return value >> bits
+      const result = value >> bits
+      registers.flags.carryFlag = ((value >> (bits - 1)) & 1) === 1
+      setFlags(result, 'l')
+      registers.flags.overflowFlag = false // V is always cleared
+      return result
     },
 
     // Swap high and low words
     swap: (value: number): number => {
-      return ((value >>> 16) | ((value & 0xffff) << 16)) >>> 0
+      const result = ((value >>> 16) | ((value & 0xffff) << 16)) >>> 0
+      setFlags(result, 'l')
+      registers.flags.carryFlag = false
+      registers.flags.overflowFlag = false
+      return result
     },
 
     // Negate word (2's complement)
     neg_w: (value: number): number => {
-      return (~(value & 0xffff) + 1) & 0xffff
+      const word = value & 0xffff
+      const result = (~word + 1) & 0xffff
+
+      setFlags(result, 'w')
+
+      // V is set if negating the most negative number
+      registers.flags.overflowFlag = word === 0x8000
+
+      // C is set if the result is non-zero (i.e., a borrow occurred)
+      // This is the same as the logical NOT of the Z flag.
+      registers.flags.carryFlag = !registers.flags.zeroFlag
+
+      return result
     },
 
     // Add quick word
     addq_w: (dest: RegisterName, value: number): void => {
-      const current = getReg(dest)
-      setReg(dest, (current + value) & 0xffff)
+      const current = getReg(dest) & 0xffff
+      const operand = value & 0xffff
+      const result = (current + operand) & 0xffff
+
+      setReg(dest, result)
+      setFlags(result, 'w')
+
+      const srcN = (current & 0x8000) !== 0
+      const opN = (operand & 0x8000) !== 0
+      const resN = (result & 0x8000) !== 0
+
+      // V is set if we add two numbers of the same sign and the result's sign is different.
+      registers.flags.overflowFlag = srcN === opN && srcN !== resN
+      // C is set if the unsigned result is smaller than an operand.
+      registers.flags.carryFlag = result < current
     },
 
     // Subtract quick word
     subq_w: (dest: RegisterName, value: number): void => {
-      const current = getReg(dest)
-      setReg(dest, (current - value) & 0xffff)
+      const current = getReg(dest) & 0xffff
+      const operand = value & 0xffff
+      const result = (current - operand) & 0xffff
+
+      setReg(dest, result)
+      setFlags(result, 'w')
+
+      const dstN = (current & 0x8000) !== 0
+      const srcN = (operand & 0x8000) !== 0
+      const resN = (result & 0x8000) !== 0
+
+      // V is set if we subtract a number from one of an opposite sign and the result has the same sign as the source.
+      registers.flags.overflowFlag = dstN !== srcN && resN === srcN
+      // C is set if a borrow was needed (unsigned).
+      registers.flags.carryFlag = operand > current
     },
 
     // Add address word
@@ -260,10 +374,6 @@ export const createInstructionSet = (
     // Decrement and branch if not -1
     dbra: (counter: RegisterName): boolean => {
       const current = getReg(counter)
-      if (current === 0) {
-        setReg(counter, 0xffff)
-        return false
-      }
       const newValue = (current - 1) & 0xffff
       setReg(counter, newValue)
       return newValue !== 0xffff
@@ -289,11 +399,9 @@ export const createInstructionSet = (
 
     // Branch if greater than
     bgt: (): boolean => {
-      return (
-        !registers.flags.negativeFlag &&
-        !registers.flags.zeroFlag &&
-        !registers.flags.overflowFlag
-      )
+      const { negativeFlag, zeroFlag, overflowFlag } = registers.flags
+      // Condition for signed greater than is (N=V) and Z=0
+      return negativeFlag === overflowFlag && !zeroFlag
     },
 
     // Branch if less than
