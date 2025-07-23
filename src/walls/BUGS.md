@@ -9,3 +9,5 @@ Known bugs in our implementation of wall rendering
 3. ESE wall showing white on left side when wall goes out right side
 
 4. ESE may be have a line drawing issue when coming in from the left side of the screen
+
+5. SE wall draws artifact just as it moves off screen to the left
