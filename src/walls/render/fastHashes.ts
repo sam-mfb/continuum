@@ -49,13 +49,13 @@ export const fastHashes =
       // Fast search with 16-element jumps (orig asm lines 841-844)
       while (
         jIndex + FAST_SEARCH_JUMP < junctions.length &&
-        junctions[jIndex + FAST_SEARCH_JUMP]!.x <= left
+        junctions[jIndex + FAST_SEARCH_JUMP]!.x < left
       ) {
         jIndex += FAST_SEARCH_JUMP
       }
 
       // Single-element stepping to find exact start (orig asm lines 847-849)
-      while (jIndex < junctions.length && junctions[jIndex]!.x <= left) {
+      while (jIndex < junctions.length && junctions[jIndex]!.x < left) {
         jIndex++
       }
 
@@ -63,7 +63,7 @@ export const fastHashes =
       left += SCREEN_LEFT_MARGIN
 
       // Main drawing loop (orig asm lines 854-905)
-      while (jIndex < junctions.length && junctions[jIndex]!.x <= right) {
+      while (jIndex < junctions.length && junctions[jIndex]!.x < right) {
         const junction = junctions[jIndex]!
 
         // Y bounds check (orig asm lines 854-858)
