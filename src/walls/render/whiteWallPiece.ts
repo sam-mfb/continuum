@@ -67,9 +67,13 @@ export const whiteWallPiece =
       const patternWord = (data[dataOffset]! << 8) | data[dataOffset + 1]!
       dataOffset += 2
 
-      // Create 32-bit pattern matching the original assembly:
-      // moveq #-1, D0 sets all bits to 1, then move.w loads pattern into lower 16 bits
-      let pattern = 0xffff0000 | patternWord // Upper 16 bits are 1s, lower 16 are the pattern
+      // Create 32-bit pattern matching the original assembly.
+      // The sequence is:
+      // 1. `moveq #-1, D0` -> D0 = 0xFFFFFFFF
+      // 2. `move.w (def)+, D0` -> D0 = 0xFFFF[word]
+      // This is because `move.w` to a data register only affects the lower 16 bits.
+      // We replicate this by explicitly setting the high bits and ORing the low bits.
+      let pattern = 0xffff0000 | patternWord
 
       // Rotate left to align with x position (matching rol.l x, D0)
       pattern = ((pattern << bitShift) | (pattern >>> (32 - bitShift))) >>> 0
