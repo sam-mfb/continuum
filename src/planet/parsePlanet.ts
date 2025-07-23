@@ -86,14 +86,14 @@ export function parsePlanet(
     //(multiplied by two to give a little extra precision, i.e., an extra bit).
     const ylength = [0, 2, 2, 2, 1, 0]
     const xlength = [0, 0, 1, 2, 2, 2]
-    const endx = startx + ((xlength[type]! * length) >> 1)
-    const endy = starty + up_down * ((ylength[type]! * length) >> 1)
     // Force NNE and ENE lines to have odd lengths for proper endpoint calculation
     // This matches the original C code: if (line->type == LINE_NNE || line->type == LINE_ENE) line->length |= 1;
-    // The |= 1 operation sets the least significant bit, making the number odd
+    // The |= 1 operation sets the least significant bit, making the number odd.
     const LINE_NNE = 2
     const LINE_ENE = 4
     if (type === LINE_NNE || type === LINE_ENE) length |= 1
+    const endx = startx + ((xlength[type]! * length) >> 1)
+    const endy = starty + up_down * ((ylength[type]! * length) >> 1)
     //newType consolidates up_down and type to give the following directions:
     //S, SSE, SE, ESE, E, ENE, NE, NNE
     // Note that the theoretical value of W, i.e., 0, is ignored in the subsequent
