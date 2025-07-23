@@ -145,31 +145,27 @@ export const neBlack =
 
       // bge.s @loop1
       if (lenCounter >= 0) {
-        // @loop1 main loop
+        // @loop1 main loop - refactored to match assembly flow
         while (true) {
           // eor.l eor, (screen)
           eor32ToScreen(newScreen, screenAddr, eor)
-
           // adda.l D2, screen
           screenAddr += D2
-
           // ror.l #1, eor
           const carry = eor & 1
           eor = ror32(eor, 1)
 
           // dbcs len, @loop1
-          // If carry is clear (0), decrement and branch if len >= 0.
-          // If carry is set (1), fall through.
           if (carry === 0) {
             lenCounter--
             if (lenCounter >= 0) {
-              continue // This is the branch of dbcs
-            } else {
-              break // len became < 0, exit loop
+              continue // Branch of dbcs
             }
+            // Fallthrough if len becomes < 0
           }
 
-          // Fallthrough from dbcs (carry was 1)
+          // This block is the fallthrough path for `dbcs` (when carry is set)
+          // OR when the `dbcs` counter expires.
           // swap eor
           eor = swap32(eor)
           // addq.w #2, screen
@@ -177,21 +173,23 @@ export const neBlack =
           // subq.w #1, len
           lenCounter--
           // bge.s @loop1
-          if (lenCounter < 0) {
-            break // Exit loop
+          if (lenCounter >= 0) {
+            continue // Branch of bge.s
           }
-          // This continue represents the bge.s branch back to @loop1
-          continue
+
+          // If we get here, the loop terminates.
+          break
         }
       }
 
       // After main loop: tst.b eor
-      if ((eor & 0xff) !== 0) {
-        // bne.s @1 -> subq.w #2, screen
-        screenAddr -= 2
-      } else {
+      // This logic corresponds to the assembly block after the main loop.
+      if ((eor & 0xff) === 0) {
         // beq.s @1 -> swap eor
         eor = swap32(eor)
+      } else {
+        // bne.s @1 -> subq.w #2, screen
+        screenAddr -= 2
       }
 
       // @doend section - handle end with 16-bit operations
@@ -200,8 +198,9 @@ export const neBlack =
         // subq.w #1, len
         let endLen = end - 1
 
-        // Extract high word for 16-bit operations
-        let eor16 = (eor >>> 16) & 0xffff
+        // Extract a 16-bit value for 16-bit operations.
+        // The original assembly's `eor.w` uses the lower 16 bits.
+        let eor16 = eor & 0xffff
 
         // @loop2
         for (let i = 0; i <= endLen; i++) {

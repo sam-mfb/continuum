@@ -185,7 +185,8 @@ export const drawNeline =
         break
       }
 
-      // Logic for when the line crosses a byte boundary
+      // Logic for when the line crosses a byte boundary.
+      // This is the `or.b D0, (A0)` that executes after the `blt.s` check.
       i.or_b(data, asm.A0, asm.D0)
       i.addq_w('A0', 1)
       asm.D0 = i.rol_w(asm.D0, 8)
