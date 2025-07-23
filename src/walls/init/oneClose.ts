@@ -84,8 +84,6 @@ export function oneClose(
     )
     if (index !== -1) {
       replaceWhite2(targetX, targetY, targetX, targetY, ht, data)
-    } else {
-      addWhite(targetX, targetY, ht, data)
     }
   }
 
@@ -97,7 +95,7 @@ export function oneClose(
     ht: number,
     data: number[]
   ) => {
-    // C code: for (wh=whites; wh < whites + numwhites && (wh->y != targety || wh->x != targetx || wh->ht >= ht); wh++);
+    // C code: for (wh=whites; wh < whites + numwhites && (wh->y != targety || wh->x != targetx || wh.ht >= ht); wh++);
     const index = currentWhites.findIndex(
       wh => wh.x === targetX && wh.y === targetY && wh.ht < ht
     )
@@ -119,8 +117,6 @@ export function oneClose(
           ...currentWhites.slice(index + 1)
         ]
       }
-    } else {
-      addWhite(x, y, ht, data)
     }
   }
 
