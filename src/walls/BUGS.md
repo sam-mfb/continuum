@@ -2,7 +2,7 @@
 
 Known bugs in our implementation of wall rendering
 
-1. NNE wall not properly drawing black line at top
+1. NE wall not properly drawing black line at top
 
 2. SSE wall drawing with one or two pixel high gaps at certain offsets (or with certain intersections)
 
