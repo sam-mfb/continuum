@@ -248,28 +248,16 @@ export const sseBlack =
           asm.D1 = asm.D3
 
           asm.instructions.tst_b(asm.D1)
-          const zeroFlag = asm.instructions.getFlag('zero')
 
-          // Emulate: dbne len, @loop1
-          // For dbne: if condition is true (Z=0, not equal), exit immediately without decrementing
-          // If condition is false (Z=1, equal), decrement and potentially branch
-          if (!zeroFlag) {
-            // Condition is true (not equal), so exit loop without decrementing
-            // Fall through to next instruction
-          } else {
-            // Condition is false (equal), so decrement counter and check
-            asm.D7--
-            if (asm.D7 !== -1) {
-              // Branch to @loop1
-              pc = 'loop1'
-              continue main_asm_loop
-            }
-            // Counter expired (-1), fall through
+          // dbne len, @loop1
+          if (asm.instructions.dbne('D7')) {
+            pc = 'loop1'
+            continue main_asm_loop
           }
+          // Fall through if dbne didn't branch (either condition was true or counter expired)
 
-          // Emulate: beq.s @doend
-          // Condition is EQ (Equal), so Z flag must be 1.
-          if (zeroFlag) {
+          // beq.s @doend
+          if (asm.instructions.getFlag('zero')) {
             pc = 'doend'
             continue main_asm_loop
           }
@@ -280,15 +268,13 @@ export const sseBlack =
           asm.D1 = asm.instructions.swap(asm.D1)
           asm.A0 += 2
 
-          // Emulate: dbra len, @loop1
-          // dbra always decrements.
-          asm.D7--
-          if (asm.D7 !== -1) {
+          // dbra len, @loop1
+          if (asm.instructions.dbra('D7')) {
             pc = 'loop1'
             continue main_asm_loop
           }
 
-          // Emulate: bra.s @leave
+          // bra.s @leave
           pc = 'leave'
           continue main_asm_loop
         }

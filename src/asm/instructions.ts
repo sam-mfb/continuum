@@ -379,22 +379,36 @@ export const createInstructionSet = (
       return newValue !== 0xffff
     },
 
-    // Decrement and branch if not equal and not -1
+    // Decrement and branch if not equal
+    // DBNE has "opposite sense" - it exits when condition is TRUE (Z=0)
+    // When Z=0 (not equal), exit without decrementing
+    // When Z=1 (equal), decrement and potentially branch
     dbne: (counter: RegisterName): boolean => {
-      if (registers.flags.zeroFlag) return false
+      if (!registers.flags.zeroFlag) {
+        // Condition is true (not equal), exit immediately without decrementing
+        return false
+      }
+      // Condition is false (equal), decrement and check
       const current = getReg(counter)
       const newValue = (current - 1) & 0xffff
       setReg(counter, newValue)
-      return newValue !== 0xffff
+      return newValue !== 0xffff  // Branch if not -1
     },
 
-    // Decrement and branch if carry set is false
+    // Decrement and branch if carry clear
+    // DBCS actually means "Decrement and Branch if Carry Clear" (CS = Carry Set is the exit condition)
+    // When C=1 (carry set), exit without decrementing
+    // When C=0 (carry clear), decrement and potentially branch
     dbcs: (counter: RegisterName): boolean => {
-      if (registers.flags.carryFlag) return false
+      if (registers.flags.carryFlag) {
+        // Condition is true (carry set), exit immediately without decrementing
+        return false
+      }
+      // Condition is false (carry clear), decrement and check
       const current = getReg(counter)
       const newValue = (current - 1) & 0xffff
       setReg(counter, newValue)
-      return newValue !== 0xffff
+      return newValue !== 0xffff  // Branch if not -1
     },
 
     // Branch if greater than
