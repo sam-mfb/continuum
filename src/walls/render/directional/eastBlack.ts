@@ -5,11 +5,9 @@
 import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT, SCRHT } from '../../../screen/constants'
 import { drawEline } from '../lines/drawEline'
-import { findWAddress } from '../../../asm/assemblyMacros'
+import { jsrWAddress } from '../../../asm/assemblyMacros'
 import { LINE_DIR } from '../../../shared/types/line'
-
-// Static data array from line 557
-const data = [-1, -1, 0, 0, 0, 0]
+import { build68kArch } from '../../../asm/emulator'
 
 /**
  * Draws black parts of eastward lines
@@ -28,63 +26,85 @@ export const eastBlack =
       rowBytes: screen.rowBytes
     }
 
-    let x = line.startx - scrx
-    let y = line.starty - scry
-    let h1 = 0
-    const h4 = line.length + 1
-    let height = 6
-    let dataIndex = 0
+    // static long data[6] = {-1, -1, 0, 0, 0, 0}; (line 557)
+    const data = [-1, -1, 0, 0, 0, 0]
+    // long *dataptr = data; (line 558)
+    let dataptr = 0 // Index into data array
 
-    // Calculate h1 boundaries (lines 568-573)
+    // register int x, y, len, height, *dp; (line 559)
+    let x = line.startx - scrx // (line 562)
+    let y = line.starty - scry // (line 563)
+    let h1 = 0 // (line 564)
+    let h4 = line.length + 1 // (line 565)
+    let height = 6 // (line 566)
+
+    // if (x + h1 < 0) (line 568)
     if (x + h1 < 0) {
-      h1 = -x
+      h1 = -x // (line 569)
     }
-    let adjustedH4 = h4
+    // if (x + h4 > SCRWTH) (line 570)
     if (x + h4 > SCRWTH) {
-      adjustedH4 = SCRWTH - x
+      h4 = SCRWTH - x // (line 571)
     }
-    if (h1 >= adjustedH4) {
-      return newScreen
+    // if (h1 >= h4) (line 572)
+    if (h1 >= h4) {
+      return newScreen // (line 573)
     }
 
-    // Calculate h2 (lines 574-578)
+    // h2 = 16; (line 574)
     let h2 = 16
+    // if (h2 < h1) (line 575)
     if (h2 < h1) {
-      h2 = h1
-    } else if (h2 > adjustedH4) {
-      h2 = adjustedH4
+      h2 = h1 // (line 576)
+    }
+    // else if (h2 > h4) (line 577)
+    else if (h2 > h4) {
+      h2 = h4 // (line 578)
     }
 
-    // Calculate h3 (lines 579-585)
-    let h3 = line.h2 ?? h2
+    // h3 = line->h2; (line 579)
+    let h3 = line.h2 ?? 0
+    // if (h3 > line->length) (line 580)
     if (h3 > line.length) {
-      h3 = line.length
+      h3 = line.length // (line 581)
     }
+    // if (h3 < h2) (line 582)
     if (h3 < h2) {
-      h3 = h2
+      h3 = h2 // (line 583)
     }
-    if (h3 > adjustedH4) {
-      h3 = adjustedH4
+    // if (h3 > h4) (line 584)
+    if (h3 > h4) {
+      h3 = h4 // (line 585)
     }
 
-    // Adjust for vertical clipping (lines 586-596)
+    // if (y<0) (line 586)
     if (y < 0) {
-      dataIndex = -y
+      // dataptr -= y; (line 588)
+      dataptr -= y
+      // height += y; (line 589)
       height += y
+      // y = 0; (line 590)
       y = 0
-    } else if (y > VIEWHT - 6) {
+    }
+    // else if (y > VIEWHT - 6) (line 592)
+    else if (y > VIEWHT - 6) {
+      // height = VIEWHT - y; (line 593)
       height = VIEWHT - y
     }
+    // height--; (line 594)
     height--
+    // if (height < 0) (line 595)
     if (height < 0) {
-      return newScreen
+      return newScreen // (line 596)
     }
-
+    // y += SBARHT; (line 597)
     y += SBARHT
 
-    // Draw edge lines if needed (lines 599-605)
+    // if (y + height >= SBARHT+5 && y < SCRHT) (line 599)
     if (y + height >= SBARHT + 5 && y < SCRHT) {
+      // if (h2 > h1) (line 601)
       if (h2 > h1) {
+        // draw_eline(x+h1, y, h2 - h1 - 1, L_DN); (line 602)
         newScreen = drawEline({
           x: x + h1,
           y,
@@ -92,254 +112,292 @@ export const eastBlack =
           u_d: LINE_DIR.DN
         })(newScreen)
       }
-      if (adjustedH4 > h3) {
+      // if (h4 > h3) (line 603)
+      if (h4 > h3) {
+        // draw_eline(x+h3, y, h4 - h3 - 1, L_DN); (line 604)
         newScreen = drawEline({
           x: x + h3,
           y,
-          len: adjustedH4 - h3 - 1,
+          len: h4 - h3 - 1,
           u_d: LINE_DIR.DN
         })(newScreen)
       }
     }
 
-    const len = h3 - h2 - 1
-    if (len < 0) {
-      return newScreen
-    }
+    // len = h3 - h2 - 1; (line 606)
+    let len = h3 - h2 - 1
 
+    // if (len < 0) (line 608)
+    if (len < 0) {
+      return newScreen // (line 609)
+    }
+    // x += h2; (line 610)
     x += h2
 
-    // Assembly drawing logic (lines 612-724)
-    // Calculate screen address using FIND_WADDRESS macro
-    let address = findWAddress(0, x, y)
+    // asm { (line 612)
+    const asm = build68kArch()
 
-    const shift = x & 15
-    const totalBits = shift + len
+    // move.l D3, -(SP) (line 614)
+    const savedD3 = asm.D3
+    // JSR_WADDRESS (line 615)
+    asm.A0 = jsrWAddress(0, x, y)
+    // moveq #64, D2 (line 616)
+    asm.D2 = 64
 
-    if (totalBits < 16) {
-      // Deal with really short lines (lines 622-630)
-      let mask = 0xffff
-      mask >>>= 1
-      mask >>>= len
-      mask = rotateRight16(mask, shift)
+    // andi.w #15, x (line 618)
+    x = x & 15
+    // move.w x, D0 (line 619)
+    asm.D0 = x
+    // add.w len, D0 (line 620)
+    asm.D0 = (asm.D0 + len) & 0xffff
+    // cmpi.w #16, D0 (line 621)
+    // bge.s @normal (line 622)
+    if (asm.D0 < 16) {
+      // moveq #-1, D1 (line 624)
+      asm.D1 = 0xffffffff
+      // lsr.w #1, D1 (line 625)
+      asm.D1 = asm.instructions.lsr_w(asm.D1, 1)
+      // lsr.w len, D1 (line 626)
+      asm.D1 = asm.instructions.lsr_w(asm.D1, len)
+      // ror.w x, D1 (line 627)
+      asm.D1 = asm.instructions.ror_w(asm.D1, x)
 
-      drawOneWord(newScreen, address, mask, height, dataIndex)
+      // bsr @oneword (line 629)
+      oneword(newScreen, asm, height, dataptr, data)
+      // bra @leave (line 630)
     } else {
-      // Normal case (lines 632-723)
-      let mask = 0xffff >>> shift
-      mask = ~mask & 0xffff
-
+      // @normal: moveq #-1, D1 (line 632)
+      asm.D1 = 0xffffffff
+      // lsr.w x, D1 (line 633)
+      asm.D1 = asm.instructions.lsr_w(asm.D1, x)
+      // not.w D1 (line 634)
+      asm.D1 = (~asm.D1) & 0xffff
+      // cmp.w #5, height (line 635)
+      // beq @quick (line 636)
       if (height === 5) {
-        // Quick path - no vertical clipping (lines 683-722)
-        orToScreen16(newScreen, address, ~mask & 0xffff)
-        orToScreen16(newScreen, address + 64, ~mask & 0xffff)
-        andToScreen16(newScreen, address + 64 * 2, mask)
-        andToScreen16(newScreen, address + 64 * 3, mask)
-        andToScreen16(newScreen, address + 64 * 4, mask)
-        andToScreen16(newScreen, address + 64 * 5, mask)
+        // @quick: (line 683)
+        // not.w D1 (line 684)
+        asm.D1 = (~asm.D1) & 0xffff
+        // or.w D1, (A0) (line 685)
+        newScreen.data[asm.A0]! |= (asm.D1 >>> 8) & 0xff
+        newScreen.data[asm.A0 + 1]! |= asm.D1 & 0xff
+        // or.w D1, 64(A0) (line 686)
+        newScreen.data[asm.A0 + 64]! |= (asm.D1 >>> 8) & 0xff
+        newScreen.data[asm.A0 + 64 + 1]! |= asm.D1 & 0xff
+        // not.w D1 (line 687)
+        asm.D1 = (~asm.D1) & 0xffff
+        // and.w D1, 64*2(A0) (line 688)
+        newScreen.data[asm.A0 + 64 * 2]! &= (asm.D1 >>> 8) & 0xff
+        newScreen.data[asm.A0 + 64 * 2 + 1]! &= asm.D1 & 0xff
+        // and.w D1, 64*3(A0) (line 689)
+        newScreen.data[asm.A0 + 64 * 3]! &= (asm.D1 >>> 8) & 0xff
+        newScreen.data[asm.A0 + 64 * 3 + 1]! &= asm.D1 & 0xff
+        // and.w D1, 64*4(A0) (line 690)
+        newScreen.data[asm.A0 + 64 * 4]! &= (asm.D1 >>> 8) & 0xff
+        newScreen.data[asm.A0 + 64 * 4 + 1]! &= asm.D1 & 0xff
+        // and.w D1, 64*5(A0) (line 691)
+        newScreen.data[asm.A0 + 64 * 5]! &= (asm.D1 >>> 8) & 0xff
+        newScreen.data[asm.A0 + 64 * 5 + 1]! &= asm.D1 & 0xff
 
-        address += 2
-        let remainingLen = len - 15 + shift
+        // addq.l #2, A0 (line 693)
+        asm.A0 += 2
+        // sub.w #15, len (line 694)
+        len -= 15
+        // add.w x, len (line 695)
+        len += x
+        // moveq #0, D0 (line 696)
+        asm.D0 = 0
+        // moveq #-1, D1 (line 697)
+        asm.D1 = 0xffffffff
+        // bra.s @enter2 (line 698)
 
-        // Draw full 32-bit sections
-        while (remainingLen >= 32) {
-          orToScreen32(newScreen, address, 0xffffffff)
-          orToScreen32(newScreen, address + 64, 0xffffffff)
-          andToScreen32(newScreen, address + 64 * 2, 0)
-          andToScreen32(newScreen, address + 64 * 3, 0)
-          andToScreen32(newScreen, address + 64 * 4, 0)
-          andToScreen32(newScreen, address + 64 * 5, 0)
-          address += 4
-          remainingLen -= 32
+        // @enter2: sub.w #32, len (line 707)
+        // bge.s @quicklp (line 708)
+        while (len >= 32) {
+          // @quicklp: move.l D1, (A0) (line 700)
+          newScreen.data[asm.A0]! = 0xff
+          newScreen.data[asm.A0 + 1]! = 0xff
+          newScreen.data[asm.A0 + 2]! = 0xff
+          newScreen.data[asm.A0 + 3]! = 0xff
+          // move.l D1, 64(A0) (line 701)
+          newScreen.data[asm.A0 + 64]! = 0xff
+          newScreen.data[asm.A0 + 64 + 1]! = 0xff
+          newScreen.data[asm.A0 + 64 + 2]! = 0xff
+          newScreen.data[asm.A0 + 64 + 3]! = 0xff
+          // move.l D0, 64*2(A0) (line 702)
+          newScreen.data[asm.A0 + 64 * 2]! = 0
+          newScreen.data[asm.A0 + 64 * 2 + 1]! = 0
+          newScreen.data[asm.A0 + 64 * 2 + 2]! = 0
+          newScreen.data[asm.A0 + 64 * 2 + 3]! = 0
+          // move.l D0, 64*3(A0) (line 703)
+          newScreen.data[asm.A0 + 64 * 3]! = 0
+          newScreen.data[asm.A0 + 64 * 3 + 1]! = 0
+          newScreen.data[asm.A0 + 64 * 3 + 2]! = 0
+          newScreen.data[asm.A0 + 64 * 3 + 3]! = 0
+          // move.l D0, 64*4(A0) (line 704)
+          newScreen.data[asm.A0 + 64 * 4]! = 0
+          newScreen.data[asm.A0 + 64 * 4 + 1]! = 0
+          newScreen.data[asm.A0 + 64 * 4 + 2]! = 0
+          newScreen.data[asm.A0 + 64 * 4 + 3]! = 0
+          // move.l D0, 64*5(A0) (line 705)
+          newScreen.data[asm.A0 + 64 * 5]! = 0
+          newScreen.data[asm.A0 + 64 * 5 + 1]! = 0
+          newScreen.data[asm.A0 + 64 * 5 + 2]! = 0
+          newScreen.data[asm.A0 + 64 * 5 + 3]! = 0
+          // addq.l #4, A0 (line 706)
+          asm.A0 += 4
+          // sub.w #32, len (line 707)
+          len -= 32
         }
 
-        // Draw final partial section
-        if (remainingLen > 0) {
-          const finalMask = 0xffffffff >>> remainingLen
-          orToScreen32(newScreen, address, ~finalMask)
-          orToScreen32(newScreen, address + 64, ~finalMask)
-          andToScreen32(newScreen, address + 64 * 2, finalMask)
-          andToScreen32(newScreen, address + 64 * 3, finalMask)
-          andToScreen32(newScreen, address + 64 * 4, finalMask)
-          andToScreen32(newScreen, address + 64 * 5, finalMask)
-        }
+        // add.w #32, len (line 710)
+        len += 32
+        // moveq #-1, D0 (line 711)
+        asm.D0 = 0xffffffff
+        // lsr.l len, D0 (line 712)
+        asm.D0 = asm.instructions.lsr_l(asm.D0, len)
+
+        // not.l D0 (line 714)
+        asm.D0 = (~asm.D0) >>> 0
+        // or.l D0, (A0) (line 715)
+        newScreen.data[asm.A0]! |= (asm.D0 >>> 24) & 0xff
+        newScreen.data[asm.A0 + 1]! |= (asm.D0 >>> 16) & 0xff
+        newScreen.data[asm.A0 + 2]! |= (asm.D0 >>> 8) & 0xff
+        newScreen.data[asm.A0 + 3]! |= asm.D0 & 0xff
+        // or.l D0, 64(A0) (line 716)
+        newScreen.data[asm.A0 + 64]! |= (asm.D0 >>> 24) & 0xff
+        newScreen.data[asm.A0 + 64 + 1]! |= (asm.D0 >>> 16) & 0xff
+        newScreen.data[asm.A0 + 64 + 2]! |= (asm.D0 >>> 8) & 0xff
+        newScreen.data[asm.A0 + 64 + 3]! |= asm.D0 & 0xff
+        // not.l D0 (line 717)
+        asm.D0 = (~asm.D0) >>> 0
+        // and.l D0, 64*2(A0) (line 718)
+        newScreen.data[asm.A0 + 64 * 2]! &= (asm.D0 >>> 24) & 0xff
+        newScreen.data[asm.A0 + 64 * 2 + 1]! &= (asm.D0 >>> 16) & 0xff
+        newScreen.data[asm.A0 + 64 * 2 + 2]! &= (asm.D0 >>> 8) & 0xff
+        newScreen.data[asm.A0 + 64 * 2 + 3]! &= asm.D0 & 0xff
+        // and.l D0, 64*3(A0) (line 719)
+        newScreen.data[asm.A0 + 64 * 3]! &= (asm.D0 >>> 24) & 0xff
+        newScreen.data[asm.A0 + 64 * 3 + 1]! &= (asm.D0 >>> 16) & 0xff
+        newScreen.data[asm.A0 + 64 * 3 + 2]! &= (asm.D0 >>> 8) & 0xff
+        newScreen.data[asm.A0 + 64 * 3 + 3]! &= asm.D0 & 0xff
+        // and.l D0, 64*4(A0) (line 720)
+        newScreen.data[asm.A0 + 64 * 4]! &= (asm.D0 >>> 24) & 0xff
+        newScreen.data[asm.A0 + 64 * 4 + 1]! &= (asm.D0 >>> 16) & 0xff
+        newScreen.data[asm.A0 + 64 * 4 + 2]! &= (asm.D0 >>> 8) & 0xff
+        newScreen.data[asm.A0 + 64 * 4 + 3]! &= asm.D0 & 0xff
+        // and.l D0, 64*5(A0) (line 721)
+        newScreen.data[asm.A0 + 64 * 5]! &= (asm.D0 >>> 24) & 0xff
+        newScreen.data[asm.A0 + 64 * 5 + 1]! &= (asm.D0 >>> 16) & 0xff
+        newScreen.data[asm.A0 + 64 * 5 + 2]! &= (asm.D0 >>> 8) & 0xff
+        newScreen.data[asm.A0 + 64 * 5 + 3]! &= asm.D0 & 0xff
       } else {
-        // Slow path with vertical clipping (lines 637-664)
-        drawOneWord(newScreen, address, mask, height, dataIndex)
+        // bsr @oneword (line 637)
+        oneword(newScreen, asm, height, dataptr, data)
 
-        address += 2
-        let remainingLen = len - 15 + shift
+        // addq.l #2, A0 (line 639)
+        asm.A0 += 2
+        // sub.w #15, len (line 640)
+        len -= 15
+        // add.w x, len (line 641)
+        len += x
+        // moveq #0, D0 (line 642)
+        asm.D0 = 0
+        // bra.s @enter1 (line 643)
 
-        // Draw full 32-bit sections
-        while (remainingLen >= 32) {
-          drawDataPattern(newScreen, address, height, dataIndex)
-          address += 4
-          remainingLen -= 32
+        // @enter1: sub.w #32, len (line 653)
+        // bge.s @slowlp (line 654)
+        while (len >= 32) {
+          // @slowlp: move.l A0, A1 (line 645)
+          let A1 = asm.A0
+          // move.w height, D1 (line 646)
+          asm.D1 = height
+          // move.l dataptr(A6), dp (line 647)
+          let dp = dataptr
+          // @inner: (line 648)
+          for (let i = 0; i <= asm.D1; i++) {
+            // move.l (dp)+, (A1) (line 648)
+            const val = data[dp++]! >>> 0
+            newScreen.data[A1]! = (val >>> 24) & 0xff
+            newScreen.data[A1 + 1]! = (val >>> 16) & 0xff
+            newScreen.data[A1 + 2]! = (val >>> 8) & 0xff
+            newScreen.data[A1 + 3]! = val & 0xff
+            // adda.l D2, A1 (line 649)
+            A1 += asm.D2
+            // dbra D1, @inner (line 650)
+          }
+
+          // addq.l #4, A0 (line 652)
+          asm.A0 += 4
+          // sub.w #32, len (line 653)
+          len -= 32
         }
 
-        // Draw final partial section
-        if (remainingLen > 0) {
-          let finalMask = 0xffffffff >>> remainingLen
-          drawOneWord(
-            newScreen,
-            address + 2,
-            finalMask & 0xffff,
-            height,
-            dataIndex
-          )
-          finalMask = swapWords(finalMask)
-          drawOneWord(newScreen, address, finalMask >>> 16, height, dataIndex)
-        }
+        // @continue: add.w #32, len (line 656)
+        len += 32
+        // moveq #-1, D1 (line 657)
+        asm.D1 = 0xffffffff
+        // lsr.l len, D1 (line 658)
+        asm.D1 = asm.instructions.lsr_l(asm.D1, len)
+        // swap D1 (line 659)
+        asm.D1 = asm.instructions.swap(asm.D1)
+        // bsr @oneword (line 660)
+        oneword(newScreen, asm, height, dataptr, data)
+        // addq.l #2, A0 (line 661)
+        asm.A0 += 2
+        // swap D1 (line 662)
+        asm.D1 = asm.instructions.swap(asm.D1)
+        // bsr @oneword (line 663)
+        oneword(newScreen, asm, height, dataptr, data)
+        // bra @leave (line 664)
       }
     }
+
+    // @leave: move.l (SP)+, D3 (line 723)
+    asm.D3 = savedD3
+    // } (line 724)
 
     return newScreen
   }
 
 /**
- * Helper function to draw one word with pattern data
+ * Implements @oneword subroutine (lines 666-681)
  */
-function drawOneWord(
+function oneword(
   screen: MonochromeBitmap,
-  address: number,
-  mask: number,
+  asm: ReturnType<typeof build68kArch>,
   height: number,
-  dataIndex: number
+  dataptr: number,
+  data: number[]
 ): void {
-  const notMask = ~mask & 0xffff
-  let currentAddr = address
+  // @oneword: move.w height, D3 (line 666)
+  asm.D3 = height
+  // move.w D1, D0 (line 667)
+  asm.D0 = asm.D1 & 0xffff
+  // not.w D0 (line 668)
+  asm.D0 = (~asm.D0) & 0xffff
+  // move.l A0, A1 (line 669)
+  let A1 = asm.A0
+  // move.l dataptr(A6), dp (line 670)
+  let dp = dataptr
 
-  for (let i = 0; i <= height; i++) {
-    if (data[dataIndex + i]) {
-      // Pattern is -1, so OR with notMask
-      orToScreen16(screen, currentAddr, notMask)
+  // @ow_loop: (line 672)
+  for (let i = 0; i <= asm.D3; i++) {
+    // tst.l (dp)+ (line 672)
+    const val = data[dp++]!
+    // bne.s @pos (line 673)
+    if (val !== 0) {
+      // @pos: or.w D0, (A1) (line 678)
+      screen.data[A1]! |= (asm.D0 >>> 8) & 0xff
+      screen.data[A1 + 1]! |= asm.D0 & 0xff
     } else {
-      // Pattern is 0, so AND with mask
-      andToScreen16(screen, currentAddr, mask)
+      // and.w D1, (A1) (line 674)
+      screen.data[A1]! &= (asm.D1 >>> 8) & 0xff
+      screen.data[A1 + 1]! &= asm.D1 & 0xff
     }
-    currentAddr += 64
+    // adda.l D2, A1 (line 675/679)
+    A1 += asm.D2
+    // @enterow: dbra D3, @ow_loop (line 676/680)
   }
-}
-
-/**
- * Helper function to draw data pattern for 32-bit sections
- */
-function drawDataPattern(
-  screen: MonochromeBitmap,
-  address: number,
-  height: number,
-  dataIndex: number
-): void {
-  let currentAddr = address
-
-  for (let i = 0; i <= height; i++) {
-    if (data[dataIndex + i]) {
-      // Pattern is -1
-      orToScreen32(screen, currentAddr, 0xffffffff)
-    } else {
-      // Pattern is 0
-      andToScreen32(screen, currentAddr, 0)
-    }
-    currentAddr += 64
-  }
-}
-
-/**
- * Helper function to rotate a 16-bit value right
- */
-function rotateRight16(value: number, bits: number): number {
-  bits = bits % 16
-  if (bits === 0) return value
-  return ((value >>> bits) | (value << (16 - bits))) & 0xffff
-}
-
-/**
- * Helper function to swap high and low words of a 32-bit value
- */
-function swapWords(value: number): number {
-  return ((value >>> 16) | (value << 16)) >>> 0
-}
-
-/**
- * Helper function to OR a 16-bit value into screen memory
- */
-function orToScreen16(
-  screen: MonochromeBitmap,
-  address: number,
-  value: number
-): void {
-  if (address >= 0 && address + 1 < screen.data.length) {
-    // Extract bytes from the 16-bit value (big-endian order)
-    const byte1 = (value >>> 8) & 0xff
-    const byte0 = value & 0xff
-
-    // OR into screen buffer
-    screen.data[address]! |= byte1
-    screen.data[address + 1]! |= byte0
-  }
-}
-
-/**
- * Helper function to AND a 16-bit value into screen memory
- */
-function andToScreen16(
-  screen: MonochromeBitmap,
-  address: number,
-  value: number
-): void {
-  if (address >= 0 && address + 1 < screen.data.length) {
-    // Extract bytes from the 16-bit value (big-endian order)
-    const byte1 = (value >>> 8) & 0xff
-    const byte0 = value & 0xff
-
-    // AND into screen buffer
-    screen.data[address]! &= byte1
-    screen.data[address + 1]! &= byte0
-  }
-}
-
-/**
- * Helper function to OR a 32-bit value into screen memory
- */
-function orToScreen32(
-  screen: MonochromeBitmap,
-  address: number,
-  value: number
-): void {
-  if (address >= 0 && address + 3 < screen.data.length) {
-    // Extract bytes from the 32-bit value (big-endian order)
-    const byte3 = (value >>> 24) & 0xff
-    const byte2 = (value >>> 16) & 0xff
-    const byte1 = (value >>> 8) & 0xff
-    const byte0 = value & 0xff
-
-    // OR into screen buffer
-    screen.data[address]! |= byte3
-    screen.data[address + 1]! |= byte2
-    screen.data[address + 2]! |= byte1
-    screen.data[address + 3]! |= byte0
-  }
-}
-
-/**
- * Helper function to AND a 32-bit value into screen memory
- */
-function andToScreen32(
-  screen: MonochromeBitmap,
-  address: number,
-  value: number
-): void {
-  if (address >= 0 && address + 3 < screen.data.length) {
-    // Extract bytes from the 32-bit value (big-endian order)
-    const byte3 = (value >>> 24) & 0xff
-    const byte2 = (value >>> 16) & 0xff
-    const byte1 = (value >>> 8) & 0xff
-    const byte0 = value & 0xff
-
-    // AND into screen buffer
-    screen.data[address]! &= byte3
-    screen.data[address + 1]! &= byte2
-    screen.data[address + 2]! &= byte1
-    screen.data[address + 3]! &= byte0
-  }
+  // rts (line 677/681)
 }
