@@ -27,12 +27,14 @@ export const createPlanetRenderer: PlanetRendererFactory = (
   const bitmapWidth = 512
   const bitmapHeight = 342
 
-  // Apply same constraints as movement to prevent showing past planet boundaries
+  // Apply constraints based on whether planet wraps
   const initialViewport = {
-    x: Math.max(
-      0,
-      Math.min(planet.worldwidth - bitmapWidth, planet.xstart - bitmapWidth / 2)
-    ),
+    x: planet.worldwrap
+      ? planet.xstart - bitmapWidth / 2 // No X constraints for circular planets
+      : Math.max(
+          0,
+          Math.min(planet.worldwidth - bitmapWidth, planet.xstart - bitmapWidth / 2)
+        ),
     y: Math.max(
       0,
       Math.min(
@@ -74,14 +76,20 @@ export const createPlanetRenderer: PlanetRendererFactory = (
 
     // Update viewport if there's movement
     if (dx !== 0 || dy !== 0) {
-      const newX = Math.max(
-        0,
-        Math.min(planet.worldwidth - bitmap.width, gameView.viewport.x + dx)
-      )
-      const newY = Math.max(
-        0,
-        Math.min(planet.worldheight - bitmap.height, gameView.viewport.y + dy)
-      )
+      let newX = gameView.viewport.x + dx
+      let newY = gameView.viewport.y + dy
+
+      if (planet.worldwrap) {
+        // For circular planets: wrap X coordinate
+        newX = ((newX % planet.worldwidth) + planet.worldwidth) % planet.worldwidth
+      } else {
+        // For non-circular planets: clamp X to world boundaries
+        newX = Math.max(0, Math.min(planet.worldwidth - bitmap.width, newX))
+      }
+
+      // Always clamp Y for all planets (no vertical wrapping)
+      newY = Math.max(0, Math.min(planet.worldheight - bitmap.height, newY))
+
       store.dispatch(gameViewActions.setViewport({ x: newX, y: newY }))
     }
 
