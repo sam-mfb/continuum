@@ -1,9 +1,11 @@
 /**
  * @fileoverview Corresponds to ese_black() from orig/Sources/Walls.c:734
+ * Reference implementation using 68K emulator
  */
 
 import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
+import { build68kArch } from '../../../asm/emulator'
 import { jsrWAddress } from '../../../asm/assemblyMacros'
 import { drawEseline } from '../lines/drawEseline'
 import { getBackground } from '../getBackground'
@@ -29,10 +31,16 @@ export const eseBlack =
       rowBytes: screen.rowBytes
     }
 
+    // C variables from lines 738-740
     let x = line.startx - scrx
     let y = line.starty - scry
-    let h1 = 0
-    let h4 = line.length - 1
+    let eor1: number, eor2: number
+    let h1: number, h2: number, h3: number, h4: number
+    let startx: number, starty: number
+
+    // Initialize h1 and h4 (lines 744-745)
+    h1 = 0
+    h4 = line.length - 1
 
     // Calculate h1 boundaries (lines 747-752)
     if (x + h1 < 2) {
@@ -59,8 +67,8 @@ export const eseBlack =
       return newScreen
     }
 
-    // Calculate h2 and h3 (lines 761-770)
-    let h2 = 12
+    // Calculate h2 (lines 761-768)
+    h2 = 12
     if (h2 < h1) {
       h2 = h1
     }
@@ -68,7 +76,8 @@ export const eseBlack =
       h2 = h4
     }
 
-    let h3 = line.length - 5
+    // Calculate h3 (lines 766-770)
+    h3 = line.length - 5
     if (h3 > h4) {
       h3 = h4
     }
@@ -76,68 +85,157 @@ export const eseBlack =
       h3 = h2
     }
 
+    // Update y (line 772)
     y += SBARHT
 
-    const startx = x + h1
-    const starty = y + (h1 >> 1)
+    // Save start position (lines 774-775)
+    startx = x + h1
+    starty = y + (h1 >> 1)
 
     // Draw end line if needed (lines 777-778)
     if (h3 < h4) {
       drawEseline(newScreen, x + h3, y + (h3 >> 1), h4 - h3)
     }
 
+    // Update position for main drawing (lines 780-781)
     x += h2 - 2
     y += h2 >> 1
 
     // Calculate EOR patterns (lines 783-784)
     const background = getBackground(scrx, scry)
-    const eor1 = (background[(x + y) & 1]! & ESE_MASK) ^ ESE_VAL
-    const eor2 = (background[(x + y + 1) & 1]! & ESE_MASK) ^ ESE_VAL
+    eor1 = (background[(x + y) & 1]! & ESE_MASK) ^ ESE_VAL
+    eor2 = (background[(x + y + 1) & 1]! & ESE_MASK) ^ ESE_VAL
 
-    // Main drawing section (lines 786-829)
+    // Main assembly section (lines 786-829)
     if (h2 < h3) {
-      // Calculate screen address using JSR_WADDRESS
-      let address = jsrWAddress(0, x, y)
-
-      // Shift the EOR patterns based on x position
-      const shift = x & 15
-      let d0 = eor1 >>> shift
-      let d1 = eor2 >>> shift
-      d1 >>>= 2 // Additional shift for eor2
-
-      let d2 = (h3 - h2) >> 1
-
-      // Fast loop (4 lines at a time)
-      while (d2 >= 4) {
-        eorToScreen32(newScreen, address, d0)
-        eorToScreen32(newScreen, address + 64, d1)
-        d0 >>>= 4
-        d1 >>>= 4
-        eorToScreen32(newScreen, address + 64 * 2, d0)
-        eorToScreen32(newScreen, address + 64 * 3, d1)
-        d0 >>>= 4
-        d1 >>>= 4
-        address += 64 * 4
-
-        // Check if we need to wrap to next word
-        if ((d1 & 0xff) !== 0) {
-          d0 = swapWords(d0)
-          d1 = swapWords(d1)
-          address += 2
+      // Create 68K emulator instance
+      const asm = build68kArch({
+        data: {
+          D0: 0,
+          D1: eor1,
+          D2: eor2,
+          D3: 0
+        },
+        address: {
+          A0: jsrWAddress(0, x, y)
         }
-        d2 -= 4
-      }
+      })
 
-      // Handle remainder
-      while (d2 > 0) {
-        eorToScreen32(newScreen, address, d0)
-        if (d2 > 1) {
-          eorToScreen32(newScreen, address + 64, d1)
+      // move.w x, D0
+      asm.D0 = x
+      // andi.w #15, D0
+      asm.D0 &= 15
+      // lsr.l D0, eor1
+      asm.D1 = asm.instructions.lsr_l(asm.D1, asm.D0)
+      // lsr.l D0, eor2
+      asm.D2 = asm.instructions.lsr_l(asm.D2, asm.D0)
+      // lsr.l #2, eor2
+      asm.D2 = asm.instructions.lsr_l(asm.D2, 2)
+      
+      // move.w h3(A6), D2
+      // sub.w h2(A6), D2
+      // asr.w #1, D2
+      asm.D3 = (h3 - h2) >> 1
+      
+      // bra.s @enterfa
+      let pc = 'enterfa'
+      
+      main_loop: while (true) {
+        switch (pc) {
+          case 'fast': {
+            // @fast: eor.l eor1, (A0)
+            asm.instructions.eor_l(newScreen.data, asm.A0, asm.D1)
+            // eor.l eor2, 64(A0)
+            asm.instructions.eor_l(newScreen.data, asm.A0 + 64, asm.D2)
+            // lsr.l #4, eor1
+            asm.D1 = asm.instructions.lsr_l(asm.D1, 4)
+            // lsr.l #4, eor2
+            asm.D2 = asm.instructions.lsr_l(asm.D2, 4)
+            // eor.l eor1, 64*2(A0)
+            asm.instructions.eor_l(newScreen.data, asm.A0 + 64 * 2, asm.D1)
+            // eor.l eor2, 64*3(A0)
+            asm.instructions.eor_l(newScreen.data, asm.A0 + 64 * 3, asm.D2)
+            // lsr.l #4, eor1
+            asm.D1 = asm.instructions.lsr_l(asm.D1, 4)
+            // lsr.l #4, eor2
+            asm.D2 = asm.instructions.lsr_l(asm.D2, 4)
+            // adda.w #64*4, A0
+            asm.A0 += 64 * 4
+            
+            // tst.b eor2
+            asm.instructions.tst_b(asm.D2)
+            if (asm.instructions.getFlag('zero')) {
+              // beq.s @enterfa (branch if zero)
+              pc = 'enterfa'
+              continue main_loop
+            }
+            
+            // swap eor1
+            asm.D1 = asm.instructions.swap(asm.D1)
+            // swap eor2
+            asm.D2 = asm.instructions.swap(asm.D2)
+            // addq.w #2, A0
+            asm.A0 += 2
+            // fall through to @enterfa
+            pc = 'enterfa'
+            continue main_loop
+          }
+          
+          case 'enterfa': {
+            // @enterfa: subq.w #4, D2
+            asm.D3 -= 4
+            // bge.s @fast
+            if (asm.D3 >= 0) {
+              pc = 'fast'
+              continue main_loop
+            }
+            
+            // addq.w #4, D2
+            asm.D3 += 4
+            // bra.s @enter1
+            pc = 'enter1'
+            continue main_loop
+          }
+          
+          case 'loop1': {
+            // @loop1: eor.l eor1, (A0)
+            asm.instructions.eor_l(newScreen.data, asm.A0, asm.D1)
+            // subq.w #1, D2
+            asm.D3 -= 1
+            // blt.s @out
+            if (asm.D3 < 0) {
+              pc = 'out'
+              continue main_loop
+            }
+            // eor.l eor2, 64(A0)
+            asm.instructions.eor_l(newScreen.data, asm.A0 + 64, asm.D2)
+            // adda.w #128, A0
+            asm.A0 += 128
+            // lsr.l #4, eor1
+            asm.D1 = asm.instructions.lsr_l(asm.D1, 4)
+            // lsr.l #4, eor2
+            asm.D2 = asm.instructions.lsr_l(asm.D2, 4)
+            // fall through to @enter1
+            pc = 'enter1'
+            continue main_loop
+          }
+          
+          case 'enter1': {
+            // @enter1: dbra D2, @loop1
+            if (asm.instructions.dbra('D3')) {
+              pc = 'loop1'
+              continue main_loop
+            }
+            // fall through to @out
+            pc = 'out'
+            continue main_loop
+          }
+          
+          case 'out': {
+            // @out
+            break main_loop
+          }
         }
-        address += 128
-        d0 >>>= 4
-        d1 >>>= 4
-        d2--
       }
     }
 
@@ -148,33 +246,3 @@ export const eseBlack =
 
     return newScreen
   }
-
-/**
- * Helper function to swap high and low words of a 32-bit value
- */
-function swapWords(value: number): number {
-  return ((value >>> 16) | (value << 16)) >>> 0
-}
-
-/**
- * Helper function to EOR a 32-bit value into screen memory
- */
-function eorToScreen32(
-  screen: MonochromeBitmap,
-  address: number,
-  value: number
-): void {
-  if (address >= 0 && address + 3 < screen.data.length) {
-    // Extract bytes from the 32-bit value (big-endian order)
-    const byte3 = (value >>> 24) & 0xff
-    const byte2 = (value >>> 16) & 0xff
-    const byte1 = (value >>> 8) & 0xff
-    const byte0 = value & 0xff
-
-    // EOR into screen buffer
-    screen.data[address]! ^= byte3
-    screen.data[address + 1]! ^= byte2
-    screen.data[address + 2]! ^= byte1
-    screen.data[address + 3]! ^= byte0
-  }
-}
