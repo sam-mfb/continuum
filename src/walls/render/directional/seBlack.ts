@@ -1,10 +1,12 @@
 /**
  * @fileoverview Corresponds to se_black() from orig/Sources/Walls.c:867
+ * Reference implementation using 68K emulator
  */
 
 import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
 import { drawNeline } from '../lines/drawNeline'
+import { build68kArch } from '../../../asm/emulator'
 import { findWAddress } from '../../../asm/assemblyMacros'
 import { LINE_DIR } from '../../../shared/types/line'
 import { getBackground } from '../getBackground'
@@ -30,10 +32,16 @@ export const seBlack =
       rowBytes: screen.rowBytes
     }
 
+    // C variables from lines 871-873
     let x = line.startx - scrx
     let y = line.starty - scry
-    let h1 = 0
-    const h5 = line.length + 1
+    let len: number
+    let eor: number
+    let end: number, h1: number, h2: number, h3: number, h4: number, h5: number
+
+    // Initialize h1 and h5 (lines 877-878)
+    h1 = 0
+    h5 = line.length + 1
 
     // Calculate h1 boundaries (lines 880-883)
     if (x + h1 < 0) {
@@ -44,28 +52,27 @@ export const seBlack =
     }
 
     // Calculate h5 boundaries (lines 884-889)
-    let adjustedH5 = h5
     if (x + h5 > SCRWTH) {
-      adjustedH5 = SCRWTH - x
+      h5 = SCRWTH - x
     }
     if (y + h5 > VIEWHT) {
-      adjustedH5 = VIEWHT - y
+      h5 = VIEWHT - y
     }
-    if (h1 >= adjustedH5) {
+    if (h1 >= h5) {
       return newScreen
     }
 
     // Calculate h4 (lines 890-894)
-    let h4 = line.h2 ?? adjustedH5
-    if (h4 > adjustedH5) {
-      h4 = adjustedH5
+    h4 = line.h2 ?? h5
+    if (h4 > h5) {
+      h4 = h5
     }
     if (h4 < h1) {
       h4 = h1
     }
 
     // Calculate h2 (lines 895-899)
-    let h2 = line.h1 ?? h1
+    h2 = line.h1 ?? h1
     if (h2 < h1) {
       h2 = h1
     }
@@ -74,7 +81,7 @@ export const seBlack =
     }
 
     // Calculate h3 (lines 900-904)
-    let h3 = h4
+    h3 = h4
     if (x + h3 > SCRWTH - 16) {
       h3 = SCRWTH - 16 - x
     }
@@ -82,9 +89,10 @@ export const seBlack =
       h3 = h2
     }
 
+    // Update y and calculate segments (lines 906-908)
     y += SBARHT
-    const len = h3 - h2
-    const end = h4 - h3
+    len = h3 - h2
+    end = h4 - h3
 
     // Draw short black-only pieces (lines 910-913)
     if (h2 > h1) {
@@ -95,156 +103,117 @@ export const seBlack =
         dir: LINE_DIR.DN
       })(newScreen)
     }
-    if (adjustedH5 > h4) {
+    if (h5 > h4) {
       newScreen = drawNeline({
         x: x + h4,
         y: y + h4,
-        len: adjustedH5 - h4 - 1,
+        len: h5 - h4 - 1,
         dir: LINE_DIR.DN
       })(newScreen)
     }
 
+    // Update x,y for main drawing (lines 915-916)
     x += h2
     y += h2
 
+    // Early exit if nothing to draw (lines 918-919)
     if (len <= 0 && end <= 0) {
       return newScreen
     }
 
     // Calculate EOR pattern (line 921)
     const background = getBackground(scrx, scry)
-    const eor = (background[(x + y) & 1]! & SE_MASK) ^ SE_VAL
+    eor = (background[(x + y) & 1]! & SE_MASK) ^ SE_VAL
 
-    // Assembly drawing logic (lines 923-958)
-    let address = findWAddress(0, x, y)
-    const shift = x & 15
-    let eorVal = rotateRight(eor, shift)
-    let lenCounter = len - 1
+    // Main assembly section (lines 923-958)
+    // Create 68K emulator instance
+    const asm = build68kArch({
+      data: {
+        D0: eor,
+        D2: 64,
+        D7: len // len
+      },
+      address: {
+        A0: findWAddress(0, x, y)
+      }
+    })
 
-    if (lenCounter < 0) {
-      eorVal = swapWords(eorVal)
-    } else {
+    // andi.w #15, x
+    const xShift = x & 15
+    // ror.l x, eor
+    asm.D0 = asm.instructions.ror_l(asm.D0, xShift)
+    
+    // subq.w #1, len
+    asm.D7 -= 1
+    
+    if (asm.D7 >= 0) {
+      // Main loop (@loop1)
       main_loop: while (true) {
-        // @loop1: eor.l eor, (A0)
-        eorToScreen32(newScreen, address, eorVal)
+        // eor.l eor, (A0)
+        asm.instructions.eor_l(newScreen.data, asm.A0, asm.D0)
         // adda.l D2, A0
-        address += 64
+        asm.A0 += asm.D2
         // ror.l #1, eor
-        const carry = eorVal & 1
-        eorVal = rotateRight(eorVal, 1)
-
+        const carry = asm.D0 & 1
+        asm.D0 = asm.instructions.ror_l(asm.D0, 1)
+        
         // dbcs len, @loop1
         // Branch if Carry Clear (carry === 0)
         if (carry === 0) {
-          lenCounter--
-          if (lenCounter >= 0) {
+          asm.D7--
+          if (asm.D7 >= 0) {
             continue main_loop
           }
           // Counter expired, fall through
         }
         // Fall through if Carry Set (carry === 1) or counter expired
-
+        
         // swap eor
-        eorVal = swapWords(eorVal)
+        asm.D0 = asm.instructions.swap(asm.D0)
         // addq.w #2, A0
-        address += 2
+        asm.A0 += 2
         // subq.w #1, len
-        lenCounter--
+        asm.D7--
         // bge.s @loop1
-        if (lenCounter >= 0) {
+        if (asm.D7 >= 0) {
           continue main_loop
         }
         // Fall through if counter expired
-
+        
         // tst.b eor
-        if ((eorVal & 0xff) !== 0) {
+        asm.instructions.tst_b(asm.D0)
+        if (!asm.instructions.getFlag('zero')) {
           // bne.s @1
           // @1: subq.w #2, A0
-          address -= 2
+          asm.A0 -= 2
         } else {
           // swap eor
-          eorVal = swapWords(eorVal)
+          asm.D0 = asm.instructions.swap(asm.D0)
         }
         // bra.s @doend
         break main_loop
       }
+    } else {
+      // swap eor (for @doend)
+      asm.D0 = asm.instructions.swap(asm.D0)
     }
-
+    
     // @doend: Handle end section with 16-bit operations (lines 948-956)
-    let endCounter = end - 1
-    if (endCounter >= 0) {
+    asm.D7 = end
+    asm.D7 -= 1
+    if (asm.D7 >= 0) {
       // The original assembly's `eor.w` instruction operates on the lower 16 bits
-      // of the register.
-      let eor16 = eorVal & 0xffff
+      // @loop2
       do {
-        // @loop2: eor.w eor, (A0)
-        eorToScreen16(newScreen, address, eor16)
+        // eor.w eor, (A0)
+        asm.instructions.eor_w(newScreen.data, asm.A0, asm.D0)
         // lsr.w #1, eor
-        eor16 >>>= 1
+        asm.D0 = (asm.D0 & 0xffff0000) | asm.instructions.lsr_w(asm.D0 & 0xffff, 1)
         // adda.l D2, A0
-        address += 64
+        asm.A0 += asm.D2
         // dbra len, @loop2
-        endCounter--
-      } while (endCounter >= 0)
+      } while (asm.instructions.dbra('D7'))
     }
 
     return newScreen
   }
-
-/**
- * Helper function to rotate a 32-bit value right
- */
-function rotateRight(value: number, bits: number): number {
-  bits = bits % 32
-  if (bits === 0) return value
-  return ((value >>> bits) | (value << (32 - bits))) >>> 0
-}
-
-/**
- * Helper function to swap high and low words of a 32-bit value
- */
-function swapWords(value: number): number {
-  return ((value >>> 16) | (value << 16)) >>> 0
-}
-
-/**
- * Helper function to EOR a 32-bit value into screen memory
- */
-function eorToScreen32(
-  screen: MonochromeBitmap,
-  address: number,
-  value: number
-): void {
-  if (address >= 0 && address + 3 < screen.data.length) {
-    // Extract bytes from the 32-bit value (big-endian order)
-    const byte3 = (value >>> 24) & 0xff
-    const byte2 = (value >>> 16) & 0xff
-    const byte1 = (value >>> 8) & 0xff
-    const byte0 = value & 0xff
-
-    // EOR into screen buffer
-    screen.data[address]! ^= byte3
-    screen.data[address + 1]! ^= byte2
-    screen.data[address + 2]! ^= byte1
-    screen.data[address + 3]! ^= byte0
-  }
-}
-
-/**
- * Helper function to EOR a 16-bit value into screen memory
- */
-function eorToScreen16(
-  screen: MonochromeBitmap,
-  address: number,
-  value: number
-): void {
-  if (address >= 0 && address + 1 < screen.data.length) {
-    // Extract bytes from the 16-bit value (big-endian order)
-    const byte1 = (value >>> 8) & 0xff
-    const byte0 = value & 0xff
-
-    // EOR into screen buffer
-    screen.data[address]! ^= byte1
-    screen.data[address + 1]! ^= byte0
-  }
-}
