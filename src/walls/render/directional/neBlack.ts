@@ -8,6 +8,7 @@ import { drawNeline } from '../lines/drawNeline'
 import { findWAddress, jsrWAddress } from '../../../asm/assemblyMacros'
 import { LINE_DIR } from '../../../shared/types/line'
 import { getBackground } from '../getBackground'
+import { build68kArch } from '../../../asm/emulator'
 
 // Masks from orig/Sources/Walls.c:203-204
 const NE_MASK = 0xfffe0000
@@ -130,66 +131,71 @@ export const neBlack =
     const background = getBackground(scrx, scry)
     let eor = (background[(x + y) & 1]! & NE_MASK) ^ NE_VAL
 
-    // Main drawing section - faithful to assembly (lines 276-313)
+    // Main drawing section - perfect emulation (lines 276-313)
     if (len > 0 || end > 0) {
+      const asm = build68kArch()
+
       // FIND_WADDRESS(x,y)
-      let screenAddr = findWAddress(0, x, y)
-      const D2 = -64 // moveq #-64, D2
+      asm.A0 = findWAddress(0, x, y)
+      asm.D2 = -64 // moveq #-64, D2
 
       // andi.w #15, x; ror.l x, eor
       const xAnd15 = x & 15
-      eor = ror32(eor, xAnd15)
+      eor = asm.instructions.ror_l(eor, xAnd15)
 
       // subq.w #1, len
       let lenCounter = len - 1
 
       // bge.s @loop1
       if (lenCounter >= 0) {
-        // @loop1 main loop - refactored to match assembly flow
+        // @loop1 main loop
         while (true) {
           // eor.l eor, (screen)
-          eor32ToScreen(newScreen, screenAddr, eor)
+          // No bounds checking - trust h2 calculation
+          const val = eor >>> 0
+          newScreen.data[asm.A0]! ^= (val >>> 24) & 0xff
+          newScreen.data[asm.A0 + 1]! ^= (val >>> 16) & 0xff
+          newScreen.data[asm.A0 + 2]! ^= (val >>> 8) & 0xff
+          newScreen.data[asm.A0 + 3]! ^= val & 0xff
+
           // adda.l D2, screen
-          screenAddr += D2
+          asm.A0 += asm.D2
+
           // ror.l #1, eor
-          const carry = eor & 1
-          eor = ror32(eor, 1)
+          eor = asm.instructions.ror_l(eor, 1)
 
           // dbcs len, @loop1
-          if (carry === 0) {
+          if (!asm.registers.flags.carryFlag) {
             lenCounter--
             if (lenCounter >= 0) {
-              continue // Branch of dbcs
+              continue
             }
-            // Fallthrough if len becomes < 0
           }
 
-          // This block is the fallthrough path for `dbcs` (when carry is set)
-          // OR when the `dbcs` counter expires.
+          // Fallthrough when carry set or counter expires
           // swap eor
-          eor = swap32(eor)
+          eor = asm.instructions.swap(eor)
           // addq.w #2, screen
-          screenAddr += 2
+          asm.A0 += 2
           // subq.w #1, len
           lenCounter--
           // bge.s @loop1
           if (lenCounter >= 0) {
-            continue // Branch of bge.s
+            continue
           }
 
-          // If we get here, the loop terminates.
+          // Exit loop
           break
         }
       }
 
       // After main loop: tst.b eor
-      // This logic corresponds to the assembly block after the main loop.
       if ((eor & 0xff) === 0) {
         // beq.s @1 -> swap eor
-        eor = swap32(eor)
+        eor = asm.instructions.swap(eor)
       } else {
         // bne.s @1 -> subq.w #2, screen
-        screenAddr -= 2
+        asm.A0 -= 2
       }
 
       // @doend section - handle end with 16-bit operations
@@ -198,107 +204,50 @@ export const neBlack =
         // subq.w #1, len
         let endLen = end - 1
 
-        // Extract a 16-bit value for 16-bit operations.
-        // The original assembly's `eor.w` uses the lower 16 bits.
+        // Extract lower 16 bits for word operations
         let eor16 = eor & 0xffff
 
         // @loop2
         for (let i = 0; i <= endLen; i++) {
           // eor.w eor, (screen)
-          eor16ToScreen(newScreen, screenAddr, eor16)
-          // lsr.w #1, eor - shift the actual value
+          // No bounds checking - trust h2 calculation
+          newScreen.data[asm.A0]! ^= (eor16 >>> 8) & 0xff
+          newScreen.data[asm.A0 + 1]! ^= eor16 & 0xff
+          // lsr.w #1, eor
           eor16 = (eor16 >>> 1) & 0xffff
           // adda.l D2, screen
-          screenAddr += D2
+          asm.A0 += asm.D2
         }
       }
     }
 
     // Handle start piece with AND operations (lines 314-331)
     if (startlen > 0) {
+      const asm = build68kArch()
+
       // JSR_WADDRESS
-      let screenAddr = jsrWAddress(0, startx, starty)
+      asm.A0 = jsrWAddress(0, startx, starty)
 
       // move.w #0x7FFF, D0
       // asr.w x, D0
-      let mask = 0x7fff >> startx
+      asm.D0 = asm.instructions.asr_w(0x7fff, startx & 15)
 
       // moveq #64, D1
-      const D1 = 64
+      asm.D1 = 64
 
       // @lp loop with entry at bottom
       for (let i = 0; i <= startlen; i++) {
         // and.w D0, (A0)
-        and16ToScreen(newScreen, screenAddr, mask)
+        const mask = asm.D0 & 0xffff
+        // No bounds checking - trust h1 calculation
+        newScreen.data[asm.A0]! &= (mask >>> 8) & 0xff
+        newScreen.data[asm.A0 + 1]! &= mask & 0xff
         // suba.l D1, A0
-        screenAddr -= D1
+        asm.A0 -= asm.D1
         // lsr.w #1, D0
-        mask = (mask >>> 1) & 0xffff
+        asm.D0 = asm.instructions.lsr_w(asm.D0, 1)
       }
     }
 
     return newScreen
   }
-
-/**
- * 32-bit rotate right
- */
-function ror32(value: number, bits: number): number {
-  bits = bits & 31 // Only need bottom 5 bits for 32-bit rotate
-  if (bits === 0) return value
-  return ((value >>> bits) | (value << (32 - bits))) >>> 0
-}
-
-/**
- * Swap high and low words of 32-bit value
- */
-function swap32(value: number): number {
-  return ((value >>> 16) | (value << 16)) >>> 0
-}
-
-/**
- * EOR a 32-bit value to screen (big-endian)
- */
-function eor32ToScreen(
-  screen: MonochromeBitmap,
-  address: number,
-  value: number
-): void {
-  if (address >= 0 && address + 3 < screen.data.length) {
-    // Big-endian order
-    screen.data[address]! ^= (value >>> 24) & 0xff
-    screen.data[address + 1]! ^= (value >>> 16) & 0xff
-    screen.data[address + 2]! ^= (value >>> 8) & 0xff
-    screen.data[address + 3]! ^= value & 0xff
-  }
-}
-
-/**
- * EOR a 16-bit value to screen (big-endian)
- */
-function eor16ToScreen(
-  screen: MonochromeBitmap,
-  address: number,
-  value: number
-): void {
-  if (address >= 0 && address + 1 < screen.data.length) {
-    // Big-endian order
-    screen.data[address]! ^= (value >>> 8) & 0xff
-    screen.data[address + 1]! ^= value & 0xff
-  }
-}
-
-/**
- * AND a 16-bit value to screen (big-endian)
- */
-function and16ToScreen(
-  screen: MonochromeBitmap,
-  address: number,
-  value: number
-): void {
-  if (address >= 0 && address + 1 < screen.data.length) {
-    // Big-endian order
-    screen.data[address]! &= (value >>> 8) & 0xff
-    screen.data[address + 1]! &= value & 0xff
-  }
-}
