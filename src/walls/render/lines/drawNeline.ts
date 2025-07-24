@@ -69,7 +69,7 @@ export const drawNeline =
       // Pre-loop: draw pixels until we reach byte boundary
       while (true) {
         // or.b D0, (A0)
-        newScreen.data[asm.A0] |= D0
+        newScreen.data[asm.A0]! |= D0
 
         // adda.w D1, A0
         asm.A0 += D1
@@ -96,13 +96,13 @@ export const drawNeline =
 
     // Skip pre: draw cross-byte pixel
     // or.b D0, (A0)
-    newScreen.data[asm.A0] |= D0
+    newScreen.data[asm.A0]! |= D0
 
     // addq.w #1, A0
     asm.A0++
 
     // bset #7, (A0)
-    newScreen.data[asm.A0] |= 0x80
+    newScreen.data[asm.A0]! |= 0x80
 
     // adda.w D1, A0
     asm.A0 += D1
@@ -119,29 +119,29 @@ export const drawNeline =
       if (dir > 0) {
         // Down loop
         for (let i = 0; i <= D4; i++) {
-          newScreen.data[asm.A0] |= 0xc0
-          newScreen.data[asm.A0 + 64 * 1] |= 0x60
-          newScreen.data[asm.A0 + 64 * 2] |= 0x30
-          newScreen.data[asm.A0 + 64 * 3] |= 0x18
-          newScreen.data[asm.A0 + 64 * 4] |= 0x0c
-          newScreen.data[asm.A0 + 64 * 5] |= 0x06
-          newScreen.data[asm.A0 + 64 * 6] |= 0x03
-          newScreen.data[asm.A0 + 64 * 7] |= 0x01
-          newScreen.data[asm.A0 + 64 * 7 + 1] |= 0x80
+          newScreen.data[asm.A0]! |= 0xc0
+          newScreen.data[asm.A0 + 64 * 1]! |= 0x60
+          newScreen.data[asm.A0 + 64 * 2]! |= 0x30
+          newScreen.data[asm.A0 + 64 * 3]! |= 0x18
+          newScreen.data[asm.A0 + 64 * 4]! |= 0x0c
+          newScreen.data[asm.A0 + 64 * 5]! |= 0x06
+          newScreen.data[asm.A0 + 64 * 6]! |= 0x03
+          newScreen.data[asm.A0 + 64 * 7]! |= 0x01
+          newScreen.data[asm.A0 + 64 * 7 + 1]! |= 0x80
           asm.A0 += D2
         }
       } else {
         // Up loop
         for (let i = 0; i <= D4; i++) {
-          newScreen.data[asm.A0] |= 0xc0
-          newScreen.data[asm.A0 - 64 * 1] |= 0x60
-          newScreen.data[asm.A0 - 64 * 2] |= 0x30
-          newScreen.data[asm.A0 - 64 * 3] |= 0x18
-          newScreen.data[asm.A0 - 64 * 4] |= 0x0c
-          newScreen.data[asm.A0 - 64 * 5] |= 0x06
-          newScreen.data[asm.A0 - 64 * 6] |= 0x03
-          newScreen.data[asm.A0 - 64 * 7] |= 0x01
-          newScreen.data[asm.A0 - 64 * 7 + 1] |= 0x80
+          newScreen.data[asm.A0]! |= 0xc0
+          newScreen.data[asm.A0 - 64 * 1]! |= 0x60
+          newScreen.data[asm.A0 - 64 * 2]! |= 0x30
+          newScreen.data[asm.A0 - 64 * 3]! |= 0x18
+          newScreen.data[asm.A0 - 64 * 4]! |= 0x0c
+          newScreen.data[asm.A0 - 64 * 5]! |= 0x06
+          newScreen.data[asm.A0 - 64 * 6]! |= 0x03
+          newScreen.data[asm.A0 - 64 * 7]! |= 0x01
+          newScreen.data[asm.A0 - 64 * 7 + 1]! |= 0x80
           asm.A0 += D2
         }
       }
@@ -152,7 +152,7 @@ export const drawNeline =
     
     while (D3 >= 0) {
       // @postloop: or.b D0, (A0)
-      newScreen.data[asm.A0] |= D0 & 0xff
+      newScreen.data[asm.A0]! |= D0 & 0xff
 
       // adda.w D1, A0
       asm.A0 += D1
@@ -173,7 +173,7 @@ export const drawNeline =
         if (D3 < 0) break
         
         // or.b D0, (A0)
-        newScreen.data[asm.A0] |= D0 & 0xff
+        newScreen.data[asm.A0]! |= D0 & 0xff
         
         // addq.w #1, A0
         asm.A0++
