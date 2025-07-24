@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type JSX } from 'react'
 import { useAppSelector, useAppDispatch, store } from '@/store/store'
 import { createMonochromeBitmap, clearBitmap, bitmapToCanvas } from '@/bitmap'
 import { createPlanetRenderer } from '../games/planetRendererFactory'
@@ -8,7 +8,7 @@ import type { PlanetState } from '@/planet/types'
 import type { BitmapRenderer, MonochromeBitmap } from '@/bitmap'
 import type { GameRendererStore } from '../games/types'
 
-export const PlanetGameViewer = () => {
+export const PlanetGameViewer = (): JSX.Element => {
   const dispatch = useAppDispatch()
   const selectedPlanetIndex = useAppSelector(
     state => state.galaxy.selectedPlanetIndex

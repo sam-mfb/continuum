@@ -26,11 +26,20 @@ export const createPlanetRenderer: PlanetRendererFactory = (
   // Note: bitmap dimensions are 512x342
   const bitmapWidth = 512
   const bitmapHeight = 342
-  
+
   // Apply same constraints as movement to prevent showing past planet boundaries
   const initialViewport = {
-    x: Math.max(0, Math.min(planet.worldwidth - bitmapWidth, planet.xstart - bitmapWidth / 2)),
-    y: Math.max(0, Math.min(planet.worldheight - bitmapHeight, planet.ystart - bitmapHeight / 2))
+    x: Math.max(
+      0,
+      Math.min(planet.worldwidth - bitmapWidth, planet.xstart - bitmapWidth / 2)
+    ),
+    y: Math.max(
+      0,
+      Math.min(
+        planet.worldheight - bitmapHeight,
+        planet.ystart - bitmapHeight / 2
+      )
+    )
   }
   store.dispatch(gameViewActions.setViewport(initialViewport))
 

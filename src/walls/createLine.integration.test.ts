@@ -149,7 +149,7 @@ describe('createLine integration - produces all 8 line types', () => {
       }
     ]
 
-    testCases.forEach(({ name, x1, y1, x2, y2, expectedType }) => {
+    testCases.forEach(({ x1, y1, x2, y2 }) => {
       const line = createLine(x1, y1, x2, y2)
       // Verify line type matches expected
       expect(line).toBeTruthy()

@@ -1107,17 +1107,13 @@ describe('initWalls integration', () => {
     expect(updatedWall?.h2).toBeDefined()
 
     // Verify h1/h2 values are set on updatedWall
-    const updatedH1 = updatedWall?.h1
-    const updatedH2 = updatedWall?.h2
+    expect(updatedWall?.h1).toBeDefined()
+    expect(updatedWall?.h2).toBeDefined()
 
     // Check if organizedWalls also has the same h1/h2 values
     expect(organizedWall).toBeDefined()
     expect(organizedWall?.h1).toBeDefined()
     expect(organizedWall?.h2).toBeDefined()
-
-    // Verify h1/h2 values are set on organizedWall
-    const organizedH1 = organizedWall?.h1
-    const organizedH2 = organizedWall?.h2
 
     // The bug: h1/h2 values should be the same in both structures
     expect(organizedWall?.h1).toBe(updatedWall?.h1)

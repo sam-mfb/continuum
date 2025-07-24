@@ -44,7 +44,7 @@ export const PlanetViewer: React.FC = () => {
     )
   }
 
-  const handleToggleDisplayMode = () => {
+  const handleToggleDisplayMode = (): void => {
     dispatch(toggleDisplayMode())
   }
 

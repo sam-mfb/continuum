@@ -43,7 +43,7 @@ describe('Complete line flow: createLine -> packLine -> unpackLine', () => {
         { name: 'Visual NW', x2: 75, y2: 75 }
       ]
 
-      directions.forEach(({ name, x2, y2 }) => {
+      directions.forEach(({ x2, y2 }) => {
         const created = createLine(100, 100, x2, y2)
         expect(created).toBeTruthy()
 
@@ -105,7 +105,7 @@ describe('Complete line flow: createLine -> packLine -> unpackLine', () => {
       expect(created).toBeTruthy()
 
       const packed = packLine(created!)
-      const unpacked = unpackLine(packed)
+      unpackLine(packed)
 
       // Verify endpoints calculated correctly
       // Note: createLine uses rot2lens table with angle-based calculation
