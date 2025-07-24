@@ -26,18 +26,20 @@ const WORLD_HEIGHT = 768
 const sampleLines: LineRec[] = [
   // NEW_TYPE.S (1) - South (vertical down)
   createWall(50, 30, 25, NEW_TYPE.S, LINE_KIND.NORMAL, 0),
-  // NEW_TYPE.SSE (2) - South-Southeast
-  createWall(120, 30, 25, NEW_TYPE.SSE, LINE_KIND.NORMAL, 1),
-  // NEW_TYPE.SE (3) - Southeast (diagonal down-right)
-  createWall(190, 30, 25, NEW_TYPE.SE, LINE_KIND.NORMAL, 2),
-  // NEW_TYPE.ESE (4) - East-Southeast
-  createWall(260, 30, 25, NEW_TYPE.ESE, LINE_KIND.NORMAL, 3),
   // NEW_TYPE.E (5) - East (horizontal right)
   createWall(50, 90, 25, NEW_TYPE.E, LINE_KIND.NORMAL, 4),
+  // NEW_TYPE.SSE (2) - South-Southeast
+  createWall(120, 30, 25, NEW_TYPE.SSE, LINE_KIND.NORMAL, 1),
   // NEW_TYPE.ENE (6) - East-Northeast
   createWall(120, 102, 25, NEW_TYPE.ENE, LINE_KIND.NORMAL, 5),
+  // NEW_TYPE.SE (3) - Southeast (diagonal down-right)
+  createWall(190, 30, 25, NEW_TYPE.SE, LINE_KIND.NORMAL, 2),
   // NEW_TYPE.NE (7) - Northeast (diagonal up-right)
   createWall(190, 108, 25, NEW_TYPE.NE, LINE_KIND.NORMAL, 6),
+  createWall(191, 188, 55, NEW_TYPE.NE, LINE_KIND.NORMAL, 9),
+  createWall(228, 168, 35, NEW_TYPE.NNE, LINE_KIND.NORMAL, 8),
+  // NEW_TYPE.ESE (4) - East-Southeast
+  createWall(260, 30, 25, NEW_TYPE.ESE, LINE_KIND.NORMAL, 3),
   // NEW_TYPE.NNE (8) - North-Northeast
   createWall(260, 108, 25, NEW_TYPE.NNE, LINE_KIND.NORMAL, 7)
 ]
