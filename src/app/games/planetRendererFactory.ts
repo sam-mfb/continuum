@@ -11,6 +11,7 @@ import { whiteTerrain, blackTerrain } from '../../walls/render'
 import { wallsActions } from '../../walls/wallsSlice'
 import { gameViewActions } from '../../store/gameViewSlice'
 import { LINE_KIND } from '../../walls/types'
+import { VIEWHT } from '../../screen/constants'
 
 /**
  * Creates a bitmap renderer for a specific planet
@@ -23,9 +24,8 @@ export const createPlanetRenderer: PlanetRendererFactory = (
   store.dispatch(wallsActions.initWalls({ walls: planet.lines }))
 
   // Initialize viewport to planet's starting position
-  // Note: bitmap dimensions are 512x342
+  // Note: bitmap dimensions are 512x342, but viewable area is 512x318 (VIEWHT)
   const bitmapWidth = 512
-  const bitmapHeight = 342
 
   // Apply constraints based on whether planet wraps
   const initialViewport = {
@@ -38,8 +38,8 @@ export const createPlanetRenderer: PlanetRendererFactory = (
     y: Math.max(
       0,
       Math.min(
-        planet.worldheight - bitmapHeight,
-        planet.ystart - bitmapHeight / 2
+        planet.worldheight - VIEWHT,
+        planet.ystart - VIEWHT / 2
       )
     )
   }
@@ -88,7 +88,8 @@ export const createPlanetRenderer: PlanetRendererFactory = (
       }
 
       // Always clamp Y for all planets (no vertical wrapping)
-      newY = Math.max(0, Math.min(planet.worldheight - bitmap.height, newY))
+      // Use VIEWHT instead of bitmap.height to account for status bar
+      newY = Math.max(0, Math.min(planet.worldheight - VIEWHT, newY))
 
       store.dispatch(gameViewActions.setViewport({ x: newX, y: newY }))
     }
