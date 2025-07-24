@@ -2,7 +2,7 @@
 
 Known bugs in our implementation of wall rendering
 
-1. NE wall not properly drawing black line at top
+1. NE wall not properly drawing black line at top - FIXED (rewrote draw neline)
 
 2. SSE wall drawing with one or two pixel high gaps at certain offsets (or with certain intersections)
 
@@ -10,4 +10,4 @@ Known bugs in our implementation of wall rendering
 
 4. ESE may be have a line drawing issue when coming in from the left side of the screen
 
-5. SE wall draws artifact just as it moves off screen to the left
+5. SE wall draws artifact just as it moves off screen to the left - FIXED (rewrote seBlack)
