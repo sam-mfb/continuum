@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { createLine, roundPoint } from './createLine'
-import { LINE_TYPE, LINE_DIR, LINE_KIND } from '../shared/types/line'
+import { LINE_TYPE, LINE_DIR, LINE_KIND, NEW_TYPE } from '../shared/types/line'
 
 describe('createLine', () => {
   describe('direction mapping based on angle16', () => {
@@ -153,7 +153,7 @@ describe('roundPoint', () => {
         up_down: LINE_DIR.DN,
         h1: 0,
         h2: 0,
-        newtype: 5 as any,
+        newtype: NEW_TYPE.E,
         nextId: null,
         nextwhId: null
       }
@@ -179,7 +179,7 @@ describe('roundPoint', () => {
         up_down: LINE_DIR.DN,
         h1: 0,
         h2: 0,
-        newtype: 5 as any,
+        newtype: NEW_TYPE.E,
         nextId: null,
         nextwhId: null
       }

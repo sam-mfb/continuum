@@ -10,7 +10,7 @@ export const GalaxySelector: React.FC = () => {
 
   const handleLoadGalaxy = (
     fileName: 'continuum_galaxy.bin' | 'release_galaxy.bin'
-  ) => {
+  ): void => {
     dispatch(loadGalaxyFile(fileName))
   }
 

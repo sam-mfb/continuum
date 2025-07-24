@@ -69,7 +69,7 @@ export const shotsSlice = createSlice({
   }
 })
 
-function setLife() {}
+function setLife(): void {}
 
 function moveShot(
   shot: ShotRec,
@@ -114,4 +114,4 @@ function moveShot(
 //
 // function legalAngle() {}
 //
-function bounceShot() {}
+function bounceShot(): void {}

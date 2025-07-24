@@ -78,7 +78,7 @@ export function oneClose(
     targetY: number,
     ht: number,
     data: number[]
-  ) => {
+  ): void => {
     const index = currentWhites.findIndex(
       wh => wh.x === targetX && wh.y === targetY && wh.ht < ht
     )
@@ -96,7 +96,7 @@ export function oneClose(
     y: number,
     ht: number,
     data: number[]
-  ) => {
+  ): void => {
     // C code: for (wh=whites; wh < whites + numwhites && (wh->y != targety || wh->x != targetx || wh->ht >= ht); wh++);
     const index = currentWhites.findIndex(
       wh => wh.x === targetX && wh.y === targetY && wh.ht < ht
@@ -131,7 +131,7 @@ export function oneClose(
     y: number,
     ht: number,
     data: number[]
-  ) => {
+  ): void => {
     addWhite(x, y, ht, data)
   }
 

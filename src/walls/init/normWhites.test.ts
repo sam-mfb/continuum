@@ -143,6 +143,7 @@ describe('normWhites', () => {
         h1: 0,
         h2: 0,
         length: 14,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         newtype: 0 as any, // Use 0 which has [null, null] in whitepicts
         nextId: null,
         nextwhId: null

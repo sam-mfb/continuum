@@ -6,7 +6,7 @@ export const PlanetList: React.FC = () => {
   const dispatch = useAppDispatch()
   const { planets, selectedPlanetIndex } = useAppSelector(state => state.galaxy)
 
-  const handleSelectPlanet = (index: number) => {
+  const handleSelectPlanet = (index: number): void => {
     dispatch(selectPlanet(index))
   }
 

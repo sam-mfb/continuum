@@ -139,7 +139,16 @@ export const createSoundEngine = (): SoundEngine => {
   /**
    * Get performance statistics
    */
-  const getStats = () => {
+  const getStats = (): {
+    underruns: number
+    totalCallbacks: number
+    averageLatency: number
+    bufferState: {
+      writePosition: number
+      readPosition: number
+      available: number
+    }
+  } => {
     const audioStats = audioOutput.getStats()
     const bufferState = bufferManager.getBufferState()
     return {

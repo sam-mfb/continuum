@@ -72,32 +72,32 @@ export const SoundTestPanel: React.FC = () => {
       }
     }, 100)
 
-    return () => clearInterval(interval)
+    return (): void => clearInterval(interval)
   }, [isPlaying, engine])
 
-  const handleStart = () => {
+  const handleStart = (): void => {
     soundManager.start()
     setIsPlaying(true)
   }
 
-  const handleStop = () => {
+  const handleStop = (): void => {
     soundManager.stop()
     setIsPlaying(false)
   }
 
-  const handleSoundChange = (soundType: string) => {
+  const handleSoundChange = (soundType: string): void => {
     setCurrentSound(soundType)
     if (engine && engine.playTestSound) {
       engine.playTestSound(soundType)
     }
   }
 
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const volume = parseFloat(e.target.value)
     dispatch(setVolume(volume))
   }
 
-  const handleMuteToggle = () => {
+  const handleMuteToggle = (): void => {
     dispatch(toggleSound())
   }
 

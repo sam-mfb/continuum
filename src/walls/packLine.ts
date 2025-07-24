@@ -4,7 +4,7 @@ import type { LineRec } from '../shared/types/line'
  * Packed line format that matches what's stored in planet files
  * Based on pack_planet() in Edit.c
  */
-export interface PackedLine {
+export type PackedLine = {
   startx: number
   starty: number
   length: number
