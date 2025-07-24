@@ -13,26 +13,15 @@ describe('Complete line flow: createLine -> packLine -> unpackLine', () => {
       })
       expect(created).toBeTruthy()
 
-      console.log('Created line:', {
-        start: `(${created!.startx}, ${created!.starty})`,
-        end: `(${created!.endx}, ${created!.endy})`,
-        type: created!.type,
-        length: created!.length
-      })
+      // Verify line was created with expected properties
 
       // Pack it (strip calculated fields)
       const packed = packLine(created!)
-      console.log('Packed line:', packed)
+      // Verify line was packed
 
       // Unpack it (recalculate fields)
       const unpacked = unpackLine(packed, 'test-line-1')
-      console.log('Unpacked line:', {
-        start: `(${unpacked.startx}, ${unpacked.starty})`,
-        end: `(${unpacked.endx}, ${unpacked.endy})`,
-        type: unpacked.type,
-        length: unpacked.length,
-        newtype: unpacked.newtype
-      })
+      // Verify line was unpacked with all properties
 
       // Verify essential fields match
       expect(unpacked.startx).toBe(created!.startx)
@@ -61,12 +50,7 @@ describe('Complete line flow: createLine -> packLine -> unpackLine', () => {
         const packed = packLine(created!)
         const unpacked = unpackLine(packed)
 
-        console.log(`${name}:`, {
-          createdEnd: `(${created!.endx}, ${created!.endy})`,
-          unpackedEnd: `(${unpacked.endx}, ${unpacked.endy})`,
-          type: unpacked.type,
-          newtype: unpacked.newtype
-        })
+        // Verify direction handled correctly
 
         // Basic validation
         expect(unpacked.startx).toBe(created!.startx)
@@ -85,12 +69,7 @@ describe('Complete line flow: createLine -> packLine -> unpackLine', () => {
       const packed = packLine(created!)
       const unpacked = unpackLine(packed)
 
-      console.log('NNE line lengths:', {
-        created: created!.length,
-        packed: packed.length,
-        unpacked: unpacked.length,
-        unpackedIsOdd: unpacked.length % 2 === 1
-      })
+      // Verify NNE line has odd length
 
       // Should maintain odd length
       expect(unpacked.length % 2).toBe(1)
@@ -110,12 +89,7 @@ describe('Complete line flow: createLine -> packLine -> unpackLine', () => {
       const packed = packLine(created!)
       const unpacked = unpackLine(packed)
 
-      console.log('ENE line lengths:', {
-        created: created!.length,
-        createdType: created!.type,
-        unpacked: unpacked.length,
-        unpackedIsOdd: unpacked.length % 2 === 1
-      })
+      // Verify ENE line has odd length
 
       // If it's ENE, should have odd length after unpack
       if (unpacked.type === LINE_TYPE.ENE) {
@@ -133,22 +107,9 @@ describe('Complete line flow: createLine -> packLine -> unpackLine', () => {
       const packed = packLine(created!)
       const unpacked = unpackLine(packed)
 
-      console.log('Endpoint calculation comparison:', {
-        input: '(100,100) -> (150,100)',
-        created: {
-          type: created!.type,
-          length: created!.length,
-          start: `(${created!.startx},${created!.starty})`,
-          end: `(${created!.endx},${created!.endy})`
-        },
-        unpacked: {
-          type: unpacked.type,
-          length: unpacked.length,
-          start: `(${unpacked.startx},${unpacked.starty})`,
-          end: `(${unpacked.endx},${unpacked.endy})`,
-          newtype: unpacked.newtype
-        }
-      })
+      // Verify endpoints calculated correctly
+      // Note: createLine uses rot2lens table with angle-based calculation
+      // unpackLine uses xlength/ylength tables with type-based calculation
 
       // The endpoints might differ because:
       // - createLine uses rot2lens table with angle-based calculation
@@ -196,11 +157,7 @@ describe('Complete line flow: createLine -> packLine -> unpackLine', () => {
       const createdFields = Object.keys(created).length
       const packedFields = Object.keys(packed).length
 
-      console.log('Storage efficiency:', {
-        createdFields,
-        packedFields,
-        savings: `${(((createdFields - packedFields) / createdFields) * 100).toFixed(1)}%`
-      })
+      // Verify storage efficiency by packing
 
       expect(packedFields).toBeLessThan(createdFields)
       expect(packed).not.toHaveProperty('endx')
