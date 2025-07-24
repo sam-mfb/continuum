@@ -148,7 +148,7 @@ export const sseBlack =
     // Calculate EOR patterns (lines 1043-1044)
     const background = getBackground(scrx, scry)
     eor1 = (background[(x + y) & 1]! & SSE_MASK) ^ SSE_VAL
-    eor2 = (background[1 - ((x + y) & 1)]! & SSE_MASK) ^ SSE_VAL
+    eor2 = (background[(1 - (x + y)) & 1]! & SSE_MASK) ^ SSE_VAL
 
     // Main assembly section (lines 1046-1117)
     // Create 68K emulator instance
@@ -251,18 +251,21 @@ export const sseBlack =
           const zeroFlag = asm.instructions.getFlag('zero')
 
           // Emulate: dbne len, @loop1
-          // Condition is NE (Not Equal), so Z flag must be 0.
+          // For dbne: if condition is true (Z=0, not equal), exit immediately without decrementing
+          // If condition is false (Z=1, equal), decrement and potentially branch
           if (!zeroFlag) {
-            // Condition is true, so decrement counter and check.
+            // Condition is true (not equal), so exit loop without decrementing
+            // Fall through to next instruction
+          } else {
+            // Condition is false (equal), so decrement counter and check
             asm.D7--
             if (asm.D7 !== -1) {
               // Branch to @loop1
               pc = 'loop1'
               continue main_asm_loop
             }
-            // Counter expired, fall through.
+            // Counter expired (-1), fall through
           }
-          // Fall through if condition was false (zeroFlag was true) or counter expired.
 
           // Emulate: beq.s @doend
           // Condition is EQ (Equal), so Z flag must be 1.
