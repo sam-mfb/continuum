@@ -19,7 +19,7 @@ export const PlanetViewer: React.FC = () => {
     selectedPlanetIndex !== null ? planets[selectedPlanetIndex] : null
 
   useEffect(() => {
-    if (!canvasRef.current || !selectedPlanet) return
+    if (!canvasRef.current || !selectedPlanet || displayMode !== 'map') return
 
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
@@ -34,7 +34,7 @@ export const PlanetViewer: React.FC = () => {
     drawFuels(ctx, selectedPlanet.fuels)
     drawCraters(ctx, selectedPlanet.craters)
     drawShip(ctx, selectedPlanet.xstart, selectedPlanet.ystart, 0)
-  }, [selectedPlanet])
+  }, [selectedPlanet, displayMode])
 
   if (!selectedPlanet) {
     return (

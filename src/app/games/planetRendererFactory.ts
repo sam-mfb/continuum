@@ -11,7 +11,6 @@ import { whiteTerrain, blackTerrain } from '../../walls/render'
 import { wallsActions } from '../../walls/wallsSlice'
 import { gameViewActions } from '../../store/gameViewSlice'
 import { LINE_KIND } from '../../walls/types'
-import { VIEWHT } from '../../screen/constants'
 
 /**
  * Creates a bitmap renderer for a specific planet
@@ -24,9 +23,10 @@ export const createPlanetRenderer: PlanetRendererFactory = (
   store.dispatch(wallsActions.initWalls({ walls: planet.lines }))
 
   // Initialize viewport to planet's starting position
+  // Note: bitmap dimensions are 512x342
   const initialViewport = {
-    x: Math.max(0, planet.xstart - 256), // Assuming 512px width / 2
-    y: Math.max(0, planet.ystart - VIEWHT / 2)
+    x: Math.max(0, planet.xstart - 256), // 512px width / 2
+    y: Math.max(0, planet.ystart - 171) // 342px height / 2
   }
   store.dispatch(gameViewActions.setViewport(initialViewport))
 
@@ -34,6 +34,12 @@ export const createPlanetRenderer: PlanetRendererFactory = (
   const renderer: BitmapRenderer = (bitmap, frame, _env) => {
     const state = store.getState()
     const { walls, gameView } = state
+
+    // If viewport is not initialized, ensure we use the initial viewport
+    if (!gameView.initialized) {
+      store.dispatch(gameViewActions.setViewport(initialViewport))
+      return // Skip this frame to avoid jump
+    }
 
     // Handle keyboard input for viewport movement
     const moveSpeed = 5
