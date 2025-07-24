@@ -142,10 +142,10 @@ export const seBlack =
     const xShift = x & 15
     // ror.l x, eor
     asm.D0 = asm.instructions.ror_l(asm.D0, xShift)
-    
+
     // subq.w #1, len
     asm.D7 -= 1
-    
+
     if (asm.D7 >= 0) {
       // Main loop (@loop1)
       main_loop: while (true) {
@@ -156,7 +156,7 @@ export const seBlack =
         // ror.l #1, eor
         const carry = asm.D0 & 1
         asm.D0 = asm.instructions.ror_l(asm.D0, 1)
-        
+
         // dbcs len, @loop1
         // Branch if Carry Clear (carry === 0)
         if (carry === 0) {
@@ -167,7 +167,7 @@ export const seBlack =
           // Counter expired, fall through
         }
         // Fall through if Carry Set (carry === 1) or counter expired
-        
+
         // swap eor
         asm.D0 = asm.instructions.swap(asm.D0)
         // addq.w #2, A0
@@ -179,7 +179,7 @@ export const seBlack =
           continue main_loop
         }
         // Fall through if counter expired
-        
+
         // tst.b eor
         asm.instructions.tst_b(asm.D0)
         if (!asm.instructions.getFlag('zero')) {
@@ -197,7 +197,7 @@ export const seBlack =
       // swap eor (for @doend)
       asm.D0 = asm.instructions.swap(asm.D0)
     }
-    
+
     // @doend: Handle end section with 16-bit operations (lines 948-956)
     asm.D7 = end
     asm.D7 -= 1
@@ -208,7 +208,8 @@ export const seBlack =
         // eor.w eor, (A0)
         asm.instructions.eor_w(newScreen.data, asm.A0, asm.D0)
         // lsr.w #1, eor
-        asm.D0 = (asm.D0 & 0xffff0000) | asm.instructions.lsr_w(asm.D0 & 0xffff, 1)
+        asm.D0 =
+          (asm.D0 & 0xffff0000) | asm.instructions.lsr_w(asm.D0 & 0xffff, 1)
         // adda.l D2, A0
         asm.A0 += asm.D2
         // dbra len, @loop2

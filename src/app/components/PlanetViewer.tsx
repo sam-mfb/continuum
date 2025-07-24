@@ -1,14 +1,19 @@
 import React, { useRef, useEffect } from 'react'
-import { useAppSelector } from '../../store/store'
+import { useAppSelector, useAppDispatch } from '../../store/store'
+import { toggleDisplayMode } from '../../store/galaxySlice'
 import { drawLines } from '../drawLines'
 import { drawBunkers } from '../drawBunkers'
 import { drawFuels } from '../drawFuels'
 import { drawCraters } from '../drawCraters'
 import { drawShip } from '../drawShip'
+import { PlanetGameViewer } from './PlanetGameViewer'
 
 export const PlanetViewer: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const { planets, selectedPlanetIndex } = useAppSelector(state => state.galaxy)
+  const dispatch = useAppDispatch()
+  const { planets, selectedPlanetIndex, displayMode } = useAppSelector(
+    state => state.galaxy
+  )
 
   const selectedPlanet =
     selectedPlanetIndex !== null ? planets[selectedPlanetIndex] : null
@@ -39,15 +44,28 @@ export const PlanetViewer: React.FC = () => {
     )
   }
 
+  const handleToggleDisplayMode = () => {
+    dispatch(toggleDisplayMode())
+  }
+
   return (
     <div className="planet-viewer">
-      <h3>Planet {selectedPlanetIndex! + 1}</h3>
-      <canvas
-        ref={canvasRef}
-        width={selectedPlanet ? selectedPlanet.worldwidth : 512}
-        height={selectedPlanet ? selectedPlanet.worldheight : 318}
-        className="planet-canvas"
-      />
+      <div className="planet-viewer-header">
+        <h3>Planet {selectedPlanetIndex! + 1}</h3>
+        <button onClick={handleToggleDisplayMode} className="toggle-button">
+          {displayMode === 'map' ? 'Switch to Game View' : 'Switch to Map View'}
+        </button>
+      </div>
+      {displayMode === 'map' ? (
+        <canvas
+          ref={canvasRef}
+          width={selectedPlanet ? selectedPlanet.worldwidth : 512}
+          height={selectedPlanet ? selectedPlanet.worldheight : 318}
+          className="planet-canvas"
+        />
+      ) : (
+        <PlanetGameViewer />
+      )}
     </div>
   )
 }

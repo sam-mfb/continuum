@@ -46,7 +46,7 @@ export const drawNeline =
 
     // Create initial mask: move.b #3<<6, D0 gives 0xC0
     // lsr.b x, D0 shifts right by x bits
-    let D0 = (0xC0 >> x) & 0xFF // D0 holds or mask
+    let D0 = (0xc0 >> x) & 0xff // D0 holds or mask
     let D3 = len
 
     if (D3 < 0) return newScreen
@@ -75,17 +75,18 @@ export const drawNeline =
         asm.A0 += D1
 
         // lsr.b #1, D0
-        const carry = D0 & 0x01  // Save carry before shift
+        const carry = D0 & 0x01 // Save carry before shift
         D0 = (D0 >> 1) & 0xff
 
         // dbcs D3, @preloop
-        if (carry === 0) {  // Carry set means continue loop
+        if (carry === 0) {
+          // Carry set means continue loop
           D3--
           if (D3 < 0) {
-            return newScreen  // Exit if D3 becomes negative
+            return newScreen // Exit if D3 becomes negative
           }
         } else {
-          break  // Carry clear means exit loop
+          break // Carry clear means exit loop
         }
       }
 
@@ -148,8 +149,8 @@ export const drawNeline =
     }
 
     // Post loop: draw remaining pixels
-    D0 = 0x00C0  // move.w #0x00C0, D0
-    
+    D0 = 0x00c0 // move.w #0x00C0, D0
+
     while (D3 >= 0) {
       // @postloop: or.b D0, (A0)
       newScreen.data[asm.A0]! |= D0 & 0xff
@@ -162,7 +163,8 @@ export const drawNeline =
       D0 = ((D0 >> 1) | (carry << 15)) & 0xffff
 
       // dbcs D3, @postloop
-      if (carry === 0) {  // Carry set means continue loop
+      if (carry === 0) {
+        // Carry set means continue loop
         D3--
         if (D3 < 0) break
       } else {
@@ -171,16 +173,16 @@ export const drawNeline =
         D3--
         // blt.s @leave
         if (D3 < 0) break
-        
+
         // or.b D0, (A0)
         newScreen.data[asm.A0]! |= D0 & 0xff
-        
+
         // addq.w #1, A0
         asm.A0++
-        
+
         // rol.w #8, D0
         D0 = ((D0 << 8) | (D0 >> 8)) & 0xffff
-        
+
         // bra.s @postloop (continue loop)
       }
     }

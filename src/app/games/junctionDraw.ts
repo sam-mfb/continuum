@@ -24,8 +24,8 @@ const WORLD_HEIGHT = 1024
 // Line parameters
 const LINE_LENGTH = 35
 const GRID_SPACING = 100 // Space between junction centers
-const GRID_START_X = 100  // Increased to ensure no negative coords
-const GRID_START_Y = 100  // Increased to ensure no negative coords
+const GRID_START_X = 100 // Increased to ensure no negative coords
+const GRID_START_Y = 100 // Increased to ensure no negative coords
 
 // Generate all 64 line intersection pairs (8x8 grid)
 const generateAllJunctions = (): LineRec[] => {
@@ -34,14 +34,14 @@ const generateAllJunctions = (): LineRec[] => {
 
   // All 8 line types
   const lineTypes = [
-    NEW_TYPE.S,    // 1 - South (vertical down)
-    NEW_TYPE.SSE,  // 2 - South-Southeast
-    NEW_TYPE.SE,   // 3 - Southeast (diagonal down-right)
-    NEW_TYPE.ESE,  // 4 - East-Southeast
-    NEW_TYPE.E,    // 5 - East (horizontal right)
-    NEW_TYPE.ENE,  // 6 - East-Northeast
-    NEW_TYPE.NE,   // 7 - Northeast (diagonal up-right)
-    NEW_TYPE.NNE   // 8 - North-Northeast
+    NEW_TYPE.S, // 1 - South (vertical down)
+    NEW_TYPE.SSE, // 2 - South-Southeast
+    NEW_TYPE.SE, // 3 - Southeast (diagonal down-right)
+    NEW_TYPE.ESE, // 4 - East-Southeast
+    NEW_TYPE.E, // 5 - East (horizontal right)
+    NEW_TYPE.ENE, // 6 - East-Northeast
+    NEW_TYPE.NE, // 7 - Northeast (diagonal up-right)
+    NEW_TYPE.NNE // 8 - North-Northeast
   ]
 
   // Create 8x8 grid of junctions
@@ -49,18 +49,18 @@ const generateAllJunctions = (): LineRec[] => {
     for (let col = 0; col < 8; col++) {
       const centerX = GRID_START_X + col * GRID_SPACING
       const centerY = GRID_START_Y + row * GRID_SPACING
-      
+
       const type1 = lineTypes[row]!
       const type2 = lineTypes[col]!
-      
+
       // Calculate offset for first line to ensure intersection at center
       // We'll place the first line's start point such that its midpoint is at the center
       const offset1 = Math.floor(LINE_LENGTH / 2)
-      
+
       // Create first line - position it so its midpoint is at the center
       let startX1 = centerX
       let startY1 = centerY
-      
+
       // Adjust starting position based on line type to center the line
       switch (type1) {
         case NEW_TYPE.S: // Vertical down
@@ -94,13 +94,22 @@ const generateAllJunctions = (): LineRec[] => {
           startY1 = centerY + offset1
           break
       }
-      
-      lines.push(createWall(startX1, startY1, LINE_LENGTH, type1, LINE_KIND.NORMAL, lineId++))
-      
+
+      lines.push(
+        createWall(
+          startX1,
+          startY1,
+          LINE_LENGTH,
+          type1,
+          LINE_KIND.NORMAL,
+          lineId++
+        )
+      )
+
       // Create second line - position it so its midpoint is at the center
       let startX2 = centerX
       let startY2 = centerY
-      
+
       // Adjust starting position based on line type to center the line
       switch (type2) {
         case NEW_TYPE.S: // Vertical down
@@ -134,11 +143,20 @@ const generateAllJunctions = (): LineRec[] => {
           startY2 = centerY + offset1
           break
       }
-      
-      lines.push(createWall(startX2, startY2, LINE_LENGTH, type2, LINE_KIND.NORMAL, lineId++))
+
+      lines.push(
+        createWall(
+          startX2,
+          startY2,
+          LINE_LENGTH,
+          type2,
+          LINE_KIND.NORMAL,
+          lineId++
+        )
+      )
     }
   }
-  
+
   return lines
 }
 
@@ -210,13 +228,16 @@ export const junctionDrawRenderer: BitmapRenderer = (bitmap, frame, _env) => {
     b: viewportState.y + bitmap.height, // bottom
     r: viewportState.x + bitmap.width // right
   }
-  
+
   // Debug viewport and wall state
   if (frame.frameCount === 0) {
     console.log('Viewport:', viewport)
     console.log('World dimensions:', WORLD_WIDTH, 'x', WORLD_HEIGHT)
     console.log('Wall state kindPointers:', wallState.kindPointers)
-    console.log('Total walls in organizedWalls:', Object.keys(wallState.organizedWalls).length)
+    console.log(
+      'Total walls in organizedWalls:',
+      Object.keys(wallState.organizedWalls).length
+    )
   }
 
   // First render white terrain (undersides, patches, junctions) on top

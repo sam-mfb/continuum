@@ -116,55 +116,55 @@ describe('ASM Emulator', () => {
       // DBNE = Decrement and Branch if Not Equal
       // When Z=0 (not equal), the condition is TRUE, so it should exit without decrementing
       registers.data.D0 = 3
-      registers.flags.zeroFlag = false  // Not equal condition
-      expect(instructions.dbne('D0')).toBe(false)  // Should NOT branch
-      expect(registers.data.D0).toBe(3)  // Should NOT decrement
+      registers.flags.zeroFlag = false // Not equal condition
+      expect(instructions.dbne('D0')).toBe(false) // Should NOT branch
+      expect(registers.data.D0).toBe(3) // Should NOT decrement
     })
 
     it('dbne should decrement and branch when condition is false (Z=1)', () => {
       // When Z=1 (equal), the condition is FALSE, so it should decrement and potentially branch
       registers.data.D0 = 3
-      registers.flags.zeroFlag = true  // Equal condition (not equal is false)
-      expect(instructions.dbne('D0')).toBe(true)  // Should branch (counter becomes 2, not -1)
-      expect(registers.data.D0).toBe(2)  // Should decrement
+      registers.flags.zeroFlag = true // Equal condition (not equal is false)
+      expect(instructions.dbne('D0')).toBe(true) // Should branch (counter becomes 2, not -1)
+      expect(registers.data.D0).toBe(2) // Should decrement
 
       // Continue with Z=1, should keep decrementing
-      expect(instructions.dbne('D0')).toBe(true)  // Should branch (counter becomes 1, not -1)
+      expect(instructions.dbne('D0')).toBe(true) // Should branch (counter becomes 1, not -1)
       expect(registers.data.D0).toBe(1)
-      
-      expect(instructions.dbne('D0')).toBe(true)  // Should branch (counter becomes 0, not -1)
+
+      expect(instructions.dbne('D0')).toBe(true) // Should branch (counter becomes 0, not -1)
       expect(registers.data.D0).toBe(0)
-      
-      expect(instructions.dbne('D0')).toBe(false)  // Should NOT branch (counter becomes -1/0xffff)
+
+      expect(instructions.dbne('D0')).toBe(false) // Should NOT branch (counter becomes -1/0xffff)
       expect(registers.data.D0).toBe(0xffff)
     })
 
     it('dbne complex control flow example from sseBlack', () => {
       // This tests the exact pattern used in sseBlack.ts @loop1
       // Pattern: tst.b D1, dbne len, @loop1, beq.s @doend
-      
+
       // Case 1: D1 low byte is non-zero (Z=0 after tst.b)
-      registers.data.D7 = 5  // len counter
-      registers.flags.zeroFlag = false  // tst.b D1 found non-zero
+      registers.data.D7 = 5 // len counter
+      registers.flags.zeroFlag = false // tst.b D1 found non-zero
       const dbneResult1 = instructions.dbne('D7')
-      expect(dbneResult1).toBe(false)  // Should exit without branching
-      expect(registers.data.D7).toBe(5)  // Should NOT decrement
+      expect(dbneResult1).toBe(false) // Should exit without branching
+      expect(registers.data.D7).toBe(5) // Should NOT decrement
       // The beq.s @doend would not branch here (Z=0), so it falls through to swap/dbra
-      
+
       // Case 2: D1 low byte is zero (Z=1 after tst.b)
-      registers.data.D7 = 5  // len counter
-      registers.flags.zeroFlag = true  // tst.b D1 found zero
+      registers.data.D7 = 5 // len counter
+      registers.flags.zeroFlag = true // tst.b D1 found zero
       const dbneResult2 = instructions.dbne('D7')
-      expect(dbneResult2).toBe(true)  // Should decrement and branch
-      expect(registers.data.D7).toBe(4)  // Should decrement
+      expect(dbneResult2).toBe(true) // Should decrement and branch
+      expect(registers.data.D7).toBe(4) // Should decrement
       // Loop would continue from @loop1
-      
+
       // Case 3: Counter exhaustion with Z=1
-      registers.data.D7 = 0  // len counter about to expire
-      registers.flags.zeroFlag = true  // tst.b D1 found zero
+      registers.data.D7 = 0 // len counter about to expire
+      registers.flags.zeroFlag = true // tst.b D1 found zero
       const dbneResult3 = instructions.dbne('D7')
-      expect(dbneResult3).toBe(false)  // Should NOT branch (counter becomes -1)
-      expect(registers.data.D7).toBe(0xffff)  // Should decrement to -1
+      expect(dbneResult3).toBe(false) // Should NOT branch (counter becomes -1)
+      expect(registers.data.D7).toBe(0xffff) // Should decrement to -1
       // The beq.s @doend would branch here (Z=1), going to @doend
     })
 
@@ -172,22 +172,22 @@ describe('ASM Emulator', () => {
       // DBCS = Decrement and Branch if Carry Set is false (i.e., Carry Clear)
       // When C=1 (carry set), the condition is TRUE, so it should exit without decrementing
       registers.data.D0 = 3
-      registers.flags.carryFlag = true  // Carry set
-      expect(instructions.dbcs('D0')).toBe(false)  // Should NOT branch
-      expect(registers.data.D0).toBe(3)  // Should NOT decrement
+      registers.flags.carryFlag = true // Carry set
+      expect(instructions.dbcs('D0')).toBe(false) // Should NOT branch
+      expect(registers.data.D0).toBe(3) // Should NOT decrement
     })
 
     it('dbcs should decrement and branch when carry is clear', () => {
       // When C=0 (carry clear), the condition is FALSE, so it should decrement and potentially branch
       registers.data.D0 = 2
-      registers.flags.carryFlag = false  // Carry clear
-      expect(instructions.dbcs('D0')).toBe(true)  // Should branch (counter becomes 1, not -1)
-      expect(registers.data.D0).toBe(1)  // Should decrement
-      
-      expect(instructions.dbcs('D0')).toBe(true)  // Should branch (counter becomes 0, not -1)
+      registers.flags.carryFlag = false // Carry clear
+      expect(instructions.dbcs('D0')).toBe(true) // Should branch (counter becomes 1, not -1)
+      expect(registers.data.D0).toBe(1) // Should decrement
+
+      expect(instructions.dbcs('D0')).toBe(true) // Should branch (counter becomes 0, not -1)
       expect(registers.data.D0).toBe(0)
-      
-      expect(instructions.dbcs('D0')).toBe(false)  // Should NOT branch (counter becomes -1/0xffff)
+
+      expect(instructions.dbcs('D0')).toBe(false) // Should NOT branch (counter becomes -1/0xffff)
       expect(registers.data.D0).toBe(0xffff)
     })
 

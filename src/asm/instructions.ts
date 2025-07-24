@@ -392,7 +392,7 @@ export const createInstructionSet = (
       const current = getReg(counter)
       const newValue = (current - 1) & 0xffff
       setReg(counter, newValue)
-      return newValue !== 0xffff  // Branch if not -1
+      return newValue !== 0xffff // Branch if not -1
     },
 
     // Decrement and branch if carry clear
@@ -408,7 +408,7 @@ export const createInstructionSet = (
       const current = getReg(counter)
       const newValue = (current - 1) & 0xffff
       setReg(counter, newValue)
-      return newValue !== 0xffff  // Branch if not -1
+      return newValue !== 0xffff // Branch if not -1
     },
 
     // Branch if greater than

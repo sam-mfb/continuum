@@ -5,13 +5,17 @@ import { uiReducer } from './uiSlice'
 import galaxyReducer from './galaxySlice'
 import graphicsReducer from './graphicsSlice'
 import soundReducer from '../sound/soundSlice'
+import { wallsSlice } from '../walls/wallsSlice'
+import gameViewReducer from './gameViewSlice'
 
 export const store = configureStore({
   reducer: {
     ui: uiReducer,
     galaxy: galaxyReducer,
     graphics: graphicsReducer,
-    sound: soundReducer
+    sound: soundReducer,
+    walls: wallsSlice.reducer,
+    gameView: gameViewReducer
   },
   middleware: getDefaultMiddleware =>
     getDefaultMiddleware({

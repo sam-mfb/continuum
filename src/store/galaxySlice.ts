@@ -11,6 +11,7 @@ type GalaxyState = {
   selectedPlanetIndex: number | null
   loadingState: 'idle' | 'loading' | 'error'
   error: string | null
+  displayMode: 'map' | 'game'
 }
 
 const initialState: GalaxyState = {
@@ -18,7 +19,8 @@ const initialState: GalaxyState = {
   planets: [],
   selectedPlanetIndex: null,
   loadingState: 'idle',
-  error: null
+  error: null,
+  displayMode: 'map'
 }
 
 export const loadGalaxyFile = createAsyncThunk(
@@ -52,6 +54,9 @@ const galaxySlice = createSlice({
     },
     clearSelection: state => {
       state.selectedPlanetIndex = null
+    },
+    toggleDisplayMode: state => {
+      state.displayMode = state.displayMode === 'map' ? 'game' : 'map'
     }
   },
   extraReducers: builder => {
@@ -73,5 +78,6 @@ const galaxySlice = createSlice({
   }
 })
 
-export const { selectPlanet, clearSelection } = galaxySlice.actions
+export const { selectPlanet, clearSelection, toggleDisplayMode } =
+  galaxySlice.actions
 export default galaxySlice.reducer

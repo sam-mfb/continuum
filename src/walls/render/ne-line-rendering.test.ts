@@ -54,28 +54,31 @@ describe('NE line rendering', () => {
     // Find two contiguous black pixels on line 112
     let baseX = -1
     for (let x = 0; x < 511; x++) {
-      if (getPixel(renderedBitmap, x, 112) && getPixel(renderedBitmap, x + 1, 112)) {
+      if (
+        getPixel(renderedBitmap, x, 112) &&
+        getPixel(renderedBitmap, x + 1, 112)
+      ) {
         baseX = x
         break
       }
     }
-    
+
     // Make sure we found the black line
     expect(baseX).not.toBe(-1)
-    
+
     // Check the diagonal pattern with slope of 1
     // Line 112 - should pass (base position)
     expect(getPixel(renderedBitmap, baseX, 112)).toBe(true)
     expect(getPixel(renderedBitmap, baseX + 1, 112)).toBe(true)
-    
+
     // Line 109 - should pass (three pixels to the right)
     expect(getPixel(renderedBitmap, baseX + 3, 109)).toBe(true)
     expect(getPixel(renderedBitmap, baseX + 4, 109)).toBe(true)
-    
+
     // Line 111 - currently fails, but should pass when bug is fixed (one pixel to the right)
     expect(getPixel(renderedBitmap, baseX + 1, 111)).toBe(true)
     expect(getPixel(renderedBitmap, baseX + 2, 111)).toBe(true)
-    
+
     // Line 110 - currently fails, but should pass when bug is fixed (two pixels to the right)
     expect(getPixel(renderedBitmap, baseX + 2, 110)).toBe(true)
     expect(getPixel(renderedBitmap, baseX + 3, 110)).toBe(true)

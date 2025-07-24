@@ -131,15 +131,15 @@ export const eseBlack =
       asm.D2 = asm.instructions.lsr_l(asm.D2, asm.D0)
       // lsr.l #2, eor2
       asm.D2 = asm.instructions.lsr_l(asm.D2, 2)
-      
+
       // move.w h3(A6), D2
       // sub.w h2(A6), D2
       // asr.w #1, D2
       asm.D3 = (h3 - h2) >> 1
-      
+
       // bra.s @enterfa
       let pc = 'enterfa'
-      
+
       main_loop: while (true) {
         switch (pc) {
           case 'fast': {
@@ -161,7 +161,7 @@ export const eseBlack =
             asm.D2 = asm.instructions.lsr_l(asm.D2, 4)
             // adda.w #64*4, A0
             asm.A0 += 64 * 4
-            
+
             // tst.b eor2
             asm.instructions.tst_b(asm.D2)
             if (asm.instructions.getFlag('zero')) {
@@ -169,7 +169,7 @@ export const eseBlack =
               pc = 'enterfa'
               continue main_loop
             }
-            
+
             // swap eor1
             asm.D1 = asm.instructions.swap(asm.D1)
             // swap eor2
@@ -180,7 +180,7 @@ export const eseBlack =
             pc = 'enterfa'
             continue main_loop
           }
-          
+
           case 'enterfa': {
             // @enterfa: subq.w #4, D2
             asm.D3 -= 4
@@ -189,14 +189,14 @@ export const eseBlack =
               pc = 'fast'
               continue main_loop
             }
-            
+
             // addq.w #4, D2
             asm.D3 += 4
             // bra.s @enter1
             pc = 'enter1'
             continue main_loop
           }
-          
+
           case 'loop1': {
             // @loop1: eor.l eor1, (A0)
             asm.instructions.eor_l(newScreen.data, asm.A0, asm.D1)
@@ -219,7 +219,7 @@ export const eseBlack =
             pc = 'enter1'
             continue main_loop
           }
-          
+
           case 'enter1': {
             // @enter1: dbra D2, @loop1
             if (asm.instructions.dbra('D3')) {
@@ -230,7 +230,7 @@ export const eseBlack =
             pc = 'out'
             continue main_loop
           }
-          
+
           case 'out': {
             // @out
             break main_loop

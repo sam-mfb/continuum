@@ -333,6 +333,7 @@ The 1980s hardware had very limited CPU power. Pre-sorting allows:
 **Evidence from QuickEdit.c:**
 
 1. When creating new walls (lines 850-854), the editor maintains sort order:
+
    ```c
    while(i > 0 && lines[i].startx < lines[i-1].startx)
    {
@@ -351,6 +352,7 @@ The 1980s hardware had very limited CPU power. Pre-sorting allows:
 **Why This Matters:**
 
 The `blackTerrain()` function has an optimization at line 55 that checks if the first wall in the linked list is visible:
+
 ```c
 if (!p || p.startx >= right) {
     // First pass - nothing visible, but still need to check wrapped
