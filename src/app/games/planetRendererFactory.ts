@@ -33,14 +33,14 @@ export const createPlanetRenderer: PlanetRendererFactory = (
       ? planet.xstart - bitmapWidth / 2 // No X constraints for circular planets
       : Math.max(
           0,
-          Math.min(planet.worldwidth - bitmapWidth, planet.xstart - bitmapWidth / 2)
+          Math.min(
+            planet.worldwidth - bitmapWidth,
+            planet.xstart - bitmapWidth / 2
+          )
         ),
     y: Math.max(
       0,
-      Math.min(
-        planet.worldheight - VIEWHT,
-        planet.ystart - VIEWHT / 2
-      )
+      Math.min(planet.worldheight - VIEWHT, planet.ystart - VIEWHT / 2)
     )
   }
   store.dispatch(gameViewActions.setViewport(initialViewport))
@@ -81,7 +81,8 @@ export const createPlanetRenderer: PlanetRendererFactory = (
 
       if (planet.worldwrap) {
         // For circular planets: wrap X coordinate
-        newX = ((newX % planet.worldwidth) + planet.worldwidth) % planet.worldwidth
+        newX =
+          ((newX % planet.worldwidth) + planet.worldwidth) % planet.worldwidth
       } else {
         // For non-circular planets: clamp X to world boundaries
         newX = Math.max(0, Math.min(planet.worldwidth - bitmap.width, newX))
