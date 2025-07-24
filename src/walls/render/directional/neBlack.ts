@@ -102,7 +102,7 @@ export const neBlack =
     const startx = x + h1 + 14
     const starty = y - h1
 
-    const len = h2 - h15
+    let len = h2 - h15
     const end = h3 - h2
     const endline = h4 - h3
 
@@ -131,122 +131,169 @@ export const neBlack =
     const background = getBackground(scrx, scry)
     let eor = (background[(x + y) & 1]! & NE_MASK) ^ NE_VAL
 
-    // Main drawing section - perfect emulation (lines 276-313)
+    // Main drawing section - exact assembly (lines 276-313)
     if (len > 0 || end > 0) {
       const asm = build68kArch()
-
-      // FIND_WADDRESS(x,y)
+      
+      // asm { (line 277)
+      // FIND_WADDRESS(x,y) (line 279)
       asm.A0 = findWAddress(0, x, y)
-      asm.D2 = -64 // moveq #-64, D2
-
-      // andi.w #15, x; ror.l x, eor
-      const xAnd15 = x & 15
-      eor = asm.instructions.ror_l(eor, xAnd15)
-
-      // subq.w #1, len
-      let lenCounter = len - 1
-
-      // bge.s @loop1
-      if (lenCounter >= 0) {
-        // @loop1 main loop
-        while (true) {
-          // eor.l eor, (screen)
-          // No bounds checking - trust h2 calculation
+      // move.l A0, screen (line 280)
+      let screen = asm.A0
+      // moveq #-64, D2 (line 281)
+      const D2 = -64
+      
+      // andi.w #15, x (line 283)
+      x = x & 15
+      // ror.l x, eor (line 284)
+      eor = asm.instructions.ror_l(eor, x)
+      // subq.w #1, len (line 285)
+      len = len - 1
+      // bge.s @loop1 (line 286)
+      if (len >= 0) {
+        // @loop1: (line 290)
+        loop1: while (true) {
+          // eor.l eor, (screen) (line 290)
           const val = eor >>> 0
-          newScreen.data[asm.A0]! ^= (val >>> 24) & 0xff
-          newScreen.data[asm.A0 + 1]! ^= (val >>> 16) & 0xff
-          newScreen.data[asm.A0 + 2]! ^= (val >>> 8) & 0xff
-          newScreen.data[asm.A0 + 3]! ^= val & 0xff
-
-          // adda.l D2, screen
-          asm.A0 += asm.D2
-
-          // ror.l #1, eor
+          newScreen.data[screen]! ^= (val >>> 24) & 0xff
+          newScreen.data[screen + 1]! ^= (val >>> 16) & 0xff
+          newScreen.data[screen + 2]! ^= (val >>> 8) & 0xff
+          newScreen.data[screen + 3]! ^= val & 0xff
+          
+          // adda.l D2, screen (line 291)
+          screen += D2
+          // ror.l #1, eor (line 292)
           eor = asm.instructions.ror_l(eor, 1)
-
-          // dbcs len, @loop1
-          if (!asm.registers.flags.carryFlag) {
-            lenCounter--
-            if (lenCounter >= 0) {
-              continue
-            }
+          // dbcs len, @loop1 (line 293)
+          if (asm.registers.flags.carryFlag) {
+            // Carry set, fall through
+            break
           }
-
-          // Fallthrough when carry set or counter expires
-          // swap eor
-          eor = asm.instructions.swap(eor)
-          // addq.w #2, screen
-          asm.A0 += 2
-          // subq.w #1, len
-          lenCounter--
-          // bge.s @loop1
-          if (lenCounter >= 0) {
-            continue
+          len--
+          if (len !== -1) {
+            continue loop1
           }
-
-          // Exit loop
+          // Counter expired, fall through
           break
         }
-      }
-
-      // After main loop: tst.b eor
-      if ((eor & 0xff) === 0) {
-        // beq.s @1 -> swap eor
+        
+        // swap eor (line 294)
         eor = asm.instructions.swap(eor)
+        // addq.w #2, screen (line 295)
+        screen += 2
+        // subq.w #1, len (line 296)
+        len--
+        // bge.s @loop1 (line 297)
+        while (len >= 0) {
+          // Back to @loop1
+          // eor.l eor, (screen) (line 290)
+          const val = eor >>> 0
+          newScreen.data[screen]! ^= (val >>> 24) & 0xff
+          newScreen.data[screen + 1]! ^= (val >>> 16) & 0xff
+          newScreen.data[screen + 2]! ^= (val >>> 8) & 0xff
+          newScreen.data[screen + 3]! ^= val & 0xff
+          
+          // adda.l D2, screen (line 291)
+          screen += D2
+          // ror.l #1, eor (line 292)
+          eor = asm.instructions.ror_l(eor, 1)
+          // dbcs len, @loop1 (line 293)
+          if (asm.registers.flags.carryFlag) {
+            // swap eor (line 294)
+            eor = asm.instructions.swap(eor)
+            // addq.w #2, screen (line 295)
+            screen += 2
+            // subq.w #1, len (line 296)
+            len--
+            // bge.s @loop1 (line 297)
+            continue
+          }
+          len--
+          if (len === -1) {
+            // swap eor (line 294)
+            eor = asm.instructions.swap(eor)
+            // addq.w #2, screen (line 295)
+            screen += 2
+            // subq.w #1, len (line 296)
+            len--
+            // bge.s @loop1 (line 297)
+            break
+          }
+        }
+        
+        // tst.b eor (line 298)
+        if ((eor & 0xff) !== 0) {
+          // bne.s @1 (line 299)
+          // subq.w #2, screen (line 300)
+          screen -= 2
+          // bra.s @doend (line 301)
+        } else {
+          // beq.s @1 (line 299)
+          // @1: swap eor (line 302)
+          eor = asm.instructions.swap(eor)
+        }
       } else {
-        // bne.s @1 -> subq.w #2, screen
-        asm.A0 -= 2
+        // swap eor (line 287)
+        eor = asm.instructions.swap(eor)
+        // bra.s @doend (line 288)
       }
 
-      // @doend section - handle end with 16-bit operations
-      if (end > 0) {
-        // move.w end(A6), len
-        // subq.w #1, len
-        let endLen = end - 1
-
-        // Extract lower 16 bits for word operations
-        let eor16 = eor & 0xffff
-
-        // @loop2
-        for (let i = 0; i <= endLen; i++) {
-          // eor.w eor, (screen)
-          // No bounds checking - trust h2 calculation
-          newScreen.data[asm.A0]! ^= (eor16 >>> 8) & 0xff
-          newScreen.data[asm.A0 + 1]! ^= eor16 & 0xff
-          // lsr.w #1, eor
-          eor16 = (eor16 >>> 1) & 0xffff
-          // adda.l D2, screen
-          asm.A0 += asm.D2
+      // @doend: (line 304)
+      // move.w end(A6), len (line 304)
+      len = end
+      // subq.w #1, len (line 305)
+      len--
+      // blt.s @leave (line 306)
+      if (len >= 0) {
+        // @loop2: (line 308)
+        for (let i = 0; i <= len; i++) {
+          // eor.w eor, (screen) (line 308)
+          const eor16 = eor & 0xffff
+          newScreen.data[screen]! ^= (eor16 >>> 8) & 0xff
+          newScreen.data[screen + 1]! ^= eor16 & 0xff
+          // lsr.w #1, eor (line 309)
+          eor = (eor & 0xffff0000) | ((eor & 0xffff) >>> 1)
+          // adda.l D2, screen (line 310)
+          screen += D2
+          // dbra len, @loop2 (line 311)
         }
       }
+      // @leave: (line 312)
+      // } (line 313)
     }
 
-    // Handle start piece with AND operations (lines 314-331)
-    if (startlen > 0) {
+    // Lines 314-331
+    x = startx
+    y = starty
+    len = startlen
+    if (len > 0) {
+      // asm { (line 318)
       const asm = build68kArch()
-
-      // JSR_WADDRESS
-      asm.A0 = jsrWAddress(0, startx, starty)
-
-      // move.w #0x7FFF, D0
-      // asr.w x, D0
-      asm.D0 = asm.instructions.asr_w(0x7fff, startx & 15)
-
-      // moveq #64, D1
-      asm.D1 = 64
-
-      // @lp loop with entry at bottom
-      for (let i = 0; i <= startlen; i++) {
-        // and.w D0, (A0)
+      
+      // JSR_WADDRESS (line 320)
+      asm.A0 = jsrWAddress(0, x, y)
+      
+      // move.w #0x7FFF, D0 (line 322)
+      asm.D0 = 0x7FFF
+      // asr.w x, D0 (line 323)
+      asm.D0 = asm.instructions.asr_w(asm.D0, x)
+      // moveq #64, D1 (line 324)
+      const D1 = 64
+      // bra.s @enterlp (line 325)
+      
+      // @lp: (line 327)
+      // @enterlp: dbra len, @lp (line 330)
+      for (let i = len; i >= 0; i--) {
+        // and.w D0, (A0) (line 327)
         const mask = asm.D0 & 0xffff
-        // No bounds checking - trust h1 calculation
         newScreen.data[asm.A0]! &= (mask >>> 8) & 0xff
         newScreen.data[asm.A0 + 1]! &= mask & 0xff
-        // suba.l D1, A0
-        asm.A0 -= asm.D1
-        // lsr.w #1, D0
+        // suba.l D1, A0 (line 328)
+        asm.A0 -= D1
+        // lsr.w #1, D0 (line 329)
         asm.D0 = asm.instructions.lsr_w(asm.D0, 1)
       }
+      // } (line 331)
     }
 
     return newScreen
