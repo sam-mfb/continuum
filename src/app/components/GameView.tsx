@@ -1,4 +1,19 @@
 import React, { useEffect, useRef, useState } from 'react'
+import type {
+  BitmapRenderer,
+  BitmapToCanvasOptions,
+  MonochromeBitmap
+} from '../../bitmap'
+import {
+  createMonochromeBitmap,
+  clearBitmap,
+  bitmapToCanvas
+} from '../../bitmap'
+import {
+  StatsOverlay,
+  type StatsConfig,
+  type CustomStats
+} from './StatsOverlay'
 
 /**
  * GameView Component
@@ -51,10 +66,20 @@ export type GameLoopFunction = (
   env: GameEnvironment
 ) => void
 
-export type GameDefinition = {
+export type CanvasGameDefinition = {
+  type: 'canvas'
   name: string
   gameLoop: GameLoopFunction
 }
+
+export type BitmapGameDefinition = {
+  type: 'bitmap'
+  name: string
+  bitmapRenderer: BitmapRenderer
+  bitmapOptions?: BitmapToCanvasOptions
+}
+
+export type GameDefinition = CanvasGameDefinition | BitmapGameDefinition
 
 export type GameViewProps = {
   // Canvas configuration
@@ -66,11 +91,21 @@ export type GameViewProps = {
   backgroundColor?: string // Canvas background (default: '#000000')
   pixelated?: boolean // Enable pixel-perfect rendering (default: true)
   scale?: number // Display scale factor (default: 1)
-  showFps?: boolean // Show FPS counter overlay (default: false)
+
+  // Stats overlay
+  statsConfig?: StatsConfig
+  getCustomStats?: (
+    frameInfo: GameFrameInfo,
+    env: GameEnvironment
+  ) => CustomStats
 
   // Game logic
   games: GameDefinition[]
   defaultGameIndex?: number
+
+  // Stats control
+  showGameStats?: boolean
+  onShowGameStatsChange?: (show: boolean) => void
 
   // Optional lifecycle hooks
   onInit?: (ctx: CanvasRenderingContext2D, env: GameEnvironment) => void
@@ -84,15 +119,31 @@ const GameView: React.FC<GameViewProps> = ({
   backgroundColor = '#000000',
   pixelated = true,
   scale = 1,
-  showFps = false,
+  statsConfig,
+  getCustomStats,
   games,
   defaultGameIndex = 0,
+  showGameStats,
+  onShowGameStatsChange,
   onInit,
   onCleanup
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationFrameRef = useRef<number>(0)
   const [selectedGameIndex, setSelectedGameIndex] = useState(defaultGameIndex)
+  const [currentFps, setCurrentFps] = useState(0)
+  const [currentFrameInfo, setCurrentFrameInfo] = useState<GameFrameInfo>({
+    frameCount: 0,
+    deltaTime: 0,
+    totalTime: 0,
+    targetDelta: 1000 / fps,
+    keysDown: new Set(),
+    keysPressed: new Set(),
+    keysReleased: new Set()
+  })
+
+  // Bitmap ref for bitmap games
+  const bitmapRef = useRef<MonochromeBitmap | null>(null)
 
   // Timing refs
   const startTimeRef = useRef<number>(0)
@@ -106,7 +157,19 @@ const GameView: React.FC<GameViewProps> = ({
 
   // FPS tracking for debug display
   const fpsHistoryRef = useRef<number[]>([])
-  const lastFpsUpdateRef = useRef<number>(0)
+
+  // Reset frame count and timing when game changes
+  useEffect(() => {
+    frameCountRef.current = 0
+    startTimeRef.current = Date.now()
+    lastFrameTimeRef.current = startTimeRef.current
+    setCurrentFrameInfo(prev => ({
+      ...prev,
+      frameCount: 0,
+      totalTime: 0,
+      deltaTime: 0
+    }))
+  }, [selectedGameIndex])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -126,7 +189,7 @@ const GameView: React.FC<GameViewProps> = ({
     const targetDelta = 1000 / fps
 
     // Set up keyboard event handlers
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
       const code = e.code
       if (!keysDownRef.current.has(code)) {
         keysDownRef.current.add(code)
@@ -142,7 +205,7 @@ const GameView: React.FC<GameViewProps> = ({
       }
     }
 
-    const handleKeyUp = (e: KeyboardEvent) => {
+    const handleKeyUp = (e: KeyboardEvent): void => {
       const code = e.code
       if (keysDownRef.current.has(code)) {
         keysDownRef.current.delete(code)
@@ -157,26 +220,34 @@ const GameView: React.FC<GameViewProps> = ({
     startTimeRef.current = Date.now()
     lastFrameTimeRef.current = startTimeRef.current
 
+    // Track next frame time for fixed-step timing
+    let nextFrameTime = startTimeRef.current + targetDelta
+
     // Call init hook if provided
     if (onInit) {
       onInit(ctx, env)
     }
 
-    const renderLoop = (_timestamp: DOMHighResTimeStamp) => {
+    const renderLoop = (_timestamp: DOMHighResTimeStamp): void => {
       const now = Date.now()
-      const elapsed = now - lastFrameTimeRef.current
 
-      // Check if it's time for a new frame
-      if (elapsed >= targetDelta) {
+      // Check if it's time for a new frame using fixed-step timing
+      if (now >= nextFrameTime) {
+        // Calculate actual delta from last frame execution
         const deltaTime = now - lastFrameTimeRef.current
         const totalTime = now - startTimeRef.current
 
-        // Update FPS tracking for debug display
-        if (showFps) {
+        // Update FPS tracking
+        if (statsConfig?.showFps) {
           fpsHistoryRef.current.push(1000 / deltaTime)
           if (fpsHistoryRef.current.length > 30) {
             fpsHistoryRef.current.shift()
           }
+          // Calculate average FPS
+          const avgFps =
+            fpsHistoryRef.current.reduce((a, b) => a + b, 0) /
+            fpsHistoryRef.current.length
+          setCurrentFps(avgFps)
         }
 
         // Create frame info
@@ -190,38 +261,65 @@ const GameView: React.FC<GameViewProps> = ({
           keysReleased: new Set(keysReleasedRef.current)
         }
 
+        // Update frame info state for overlay
+        setCurrentFrameInfo(frameInfo)
+
         // Clear background
         ctx.fillStyle = backgroundColor
         ctx.fillRect(0, 0, width, height)
 
         // Call selected game loop
         if (games[selectedGameIndex]) {
-          games[selectedGameIndex].gameLoop(ctx, frameInfo, env)
+          const game = games[selectedGameIndex]
+
+          switch (game.type) {
+            case 'canvas':
+              // Direct canvas rendering
+              game.gameLoop(ctx, frameInfo, env)
+              break
+
+            case 'bitmap':
+              // Bitmap rendering with conversion
+              // Lazy initialize bitmap
+              if (
+                !bitmapRef.current ||
+                bitmapRef.current.width !== width ||
+                bitmapRef.current.height !== height
+              ) {
+                bitmapRef.current = createMonochromeBitmap(width, height)
+              }
+
+              // Clear bitmap
+              clearBitmap(bitmapRef.current)
+
+              // Call bitmap renderer
+              game.bitmapRenderer(bitmapRef.current, frameInfo, env)
+
+              // Convert to canvas
+              bitmapToCanvas(bitmapRef.current, ctx, game.bitmapOptions)
+              break
+          }
         }
 
-        // Draw FPS counter if enabled
-        if (showFps && now - lastFpsUpdateRef.current > 500) {
-          lastFpsUpdateRef.current = now
-          const avgFps =
-            fpsHistoryRef.current.reduce((a, b) => a + b, 0) /
-            fpsHistoryRef.current.length
-          ctx.save()
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
-          ctx.fillRect(width - 100, 0, 100, 30)
-          ctx.fillStyle = '#00FF00'
-          ctx.font = '12px monospace'
-          ctx.textAlign = 'right'
-          ctx.fillText(`FPS: ${avgFps.toFixed(1)}`, width - 5, 20)
-          ctx.restore()
-        }
+        // No longer draw FPS counter here - handled by StatsOverlay
 
         // Clear per-frame key events
         keysPressedRef.current.clear()
         keysReleasedRef.current.clear()
 
-        // Update timing
+        // Update timing with fixed-step
         lastFrameTimeRef.current = now
         frameCountRef.current++
+
+        // Schedule next frame at fixed interval
+        // This prevents drift and maintains exact FPS
+        nextFrameTime += targetDelta
+
+        // Handle case where we're running behind
+        // Skip frames if we're more than one frame behind
+        if (now > nextFrameTime) {
+          nextFrameTime = now + targetDelta
+        }
       }
 
       // Continue the loop
@@ -232,7 +330,7 @@ const GameView: React.FC<GameViewProps> = ({
     animationFrameRef.current = requestAnimationFrame(renderLoop)
 
     // Cleanup
-    return () => {
+    return (): void => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current)
       }
@@ -249,7 +347,7 @@ const GameView: React.FC<GameViewProps> = ({
     backgroundColor,
     pixelated,
     scale,
-    showFps,
+    statsConfig,
     games,
     selectedGameIndex,
     onInit,
@@ -275,43 +373,94 @@ const GameView: React.FC<GameViewProps> = ({
       <div
         style={{
           display: 'flex',
-          gap: '10px',
+          gap: '20px',
           alignItems: 'center'
         }}
       >
-        <label style={{ color: '#fff', fontFamily: 'monospace' }}>
-          Select Game:
-        </label>
-        <select
-          value={selectedGameIndex}
-          onChange={e => setSelectedGameIndex(Number(e.target.value))}
+        <div
           style={{
-            padding: '5px 10px',
-            fontFamily: 'monospace',
-            fontSize: '14px',
-            backgroundColor: '#222',
-            color: '#fff',
-            border: '1px solid #666',
-            borderRadius: '4px'
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'center'
           }}
         >
-          {games.map((game, index) => (
-            <option key={index} value={index}>
-              {game.name}
-            </option>
-          ))}
-        </select>
+          <label style={{ color: '#fff', fontFamily: 'monospace' }}>
+            Select Game:
+          </label>
+          <select
+            value={selectedGameIndex}
+            onChange={e => setSelectedGameIndex(Number(e.target.value))}
+            style={{
+              padding: '5px 10px',
+              fontFamily: 'monospace',
+              fontSize: '14px',
+              backgroundColor: '#222',
+              color: '#fff',
+              border: '1px solid #666',
+              borderRadius: '4px'
+            }}
+          >
+            {games.map((game, index) => (
+              <option key={index} value={index}>
+                {game.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        {onShowGameStatsChange && (
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              color: '#fff',
+              fontFamily: 'monospace',
+              fontSize: '14px',
+              cursor: 'pointer'
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={showGameStats || false}
+              onChange={e => onShowGameStatsChange(e.target.checked)}
+              style={{ cursor: 'pointer' }}
+            />
+            Show Stats
+          </label>
+        )}
       </div>
-      <canvas
-        ref={canvasRef}
+      <div
         style={{
+          position: 'relative',
           width: `${displayWidth}px`,
           height: `${displayHeight}px`,
-          border: '1px solid #666',
-          imageRendering: pixelated ? 'pixelated' : 'auto',
-          background: backgroundColor
+          border: '1px solid #666'
         }}
-      />
+      >
+        <canvas
+          ref={canvasRef}
+          style={{
+            width: `${displayWidth}px`,
+            height: `${displayHeight}px`,
+            imageRendering: pixelated ? 'pixelated' : 'auto',
+            background: backgroundColor
+          }}
+        />
+        {statsConfig && (
+          <StatsOverlay
+            config={statsConfig}
+            frameInfo={currentFrameInfo}
+            customStats={
+              getCustomStats
+                ? getCustomStats(currentFrameInfo, { width, height, fps })
+                : undefined
+            }
+            width={displayWidth}
+            height={displayHeight}
+            currentFps={currentFps}
+          />
+        )}
+      </div>
     </div>
   )
 }

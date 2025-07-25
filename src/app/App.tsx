@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState } from '../store/store'
 import { setCurrentView, toggleDebugInfo } from '../store/uiSlice'
@@ -6,10 +7,17 @@ import { PlanetList } from './components/PlanetList'
 import { PlanetViewer } from './components/PlanetViewer'
 import { GraphicsList } from './components/GraphicsList'
 import { GraphicsViewer } from './components/GraphicsViewer'
-import GameView from './components/GameView'
+import GameView, {
+  type CanvasGameDefinition,
+  type BitmapGameDefinition
+} from './components/GameView'
 import { SoundTest } from './components/SoundTest'
 import { testGameLoop } from './games/testGame'
 import { shipMoveGameLoop } from './games/shipMove'
+import { bitmapTestRenderer } from './games/bitmapTest'
+import { wallDrawingRenderer } from './games/wallDrawing'
+import { planet3DrawingRenderer } from './games/planet3Drawing'
+import { junctionDrawRenderer } from './games/junctionDraw'
 import './App.css'
 
 function App(): React.JSX.Element {
@@ -17,6 +25,7 @@ function App(): React.JSX.Element {
     (state: RootState) => state.ui
   )
   const dispatch = useDispatch()
+  const [showGameStats, setShowGameStats] = useState(false)
 
   return (
     <div className="app">
@@ -95,13 +104,54 @@ function App(): React.JSX.Element {
           {currentView === 'game' && (
             <GameView
               games={[
-                { name: 'Test Game', gameLoop: testGameLoop },
-                { name: 'Ship Move', gameLoop: shipMoveGameLoop }
+                {
+                  type: 'canvas',
+                  name: 'Test Game',
+                  gameLoop: testGameLoop
+                } as CanvasGameDefinition,
+                {
+                  type: 'canvas',
+                  name: 'Ship Move',
+                  gameLoop: shipMoveGameLoop
+                } as CanvasGameDefinition,
+                {
+                  type: 'bitmap',
+                  name: 'Bitmap Test (Gray Pattern)',
+                  bitmapRenderer: bitmapTestRenderer
+                } as BitmapGameDefinition,
+                {
+                  type: 'bitmap',
+                  name: 'Wall Drawing',
+                  bitmapRenderer: wallDrawingRenderer
+                } as BitmapGameDefinition,
+                {
+                  type: 'bitmap',
+                  name: 'Planet 3 Drawing',
+                  bitmapRenderer: planet3DrawingRenderer
+                } as BitmapGameDefinition,
+                {
+                  type: 'bitmap',
+                  name: 'Junction Draw (All 64 Combinations)',
+                  bitmapRenderer: junctionDrawRenderer
+                } as BitmapGameDefinition
               ]}
               defaultGameIndex={0}
               scale={2} // Display at 2x size (1024x684)
               pixelated={true} // Keep pixels sharp
-              showFps={showDebugInfo}
+              statsConfig={
+                showGameStats
+                  ? {
+                      showFps: true,
+                      showFrameCount: true,
+                      showTime: true,
+                      showKeys: true,
+                      position: 'top-right',
+                      opacity: 0.8
+                    }
+                  : undefined
+              }
+              showGameStats={showGameStats}
+              onShowGameStatsChange={setShowGameStats}
               onInit={(_ctx, env) => {
                 console.log(
                   `Game initialized: ${env.width}x${env.height} @ ${env.fps}fps`

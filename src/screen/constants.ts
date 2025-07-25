@@ -12,3 +12,6 @@ export const BOTMARG = 211 // Bottom margin for ship movement
 
 // Ship dimensions for edge constraints
 export const SHIPHT = 16 // Ship height for boundary calculations
+
+// Background patterns from orig/Sources/Play.c:61-62
+export const BACKGROUND_PATTERNS = [0xaaaaaaaa, 0x55555555] as const

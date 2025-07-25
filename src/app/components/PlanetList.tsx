@@ -6,7 +6,7 @@ export const PlanetList: React.FC = () => {
   const dispatch = useAppDispatch()
   const { planets, selectedPlanetIndex } = useAppSelector(state => state.galaxy)
 
-  const handleSelectPlanet = (index: number) => {
+  const handleSelectPlanet = (index: number): void => {
     dispatch(selectPlanet(index))
   }
 
@@ -29,10 +29,14 @@ export const PlanetList: React.FC = () => {
             onClick={() => handleSelectPlanet(index)}
           >
             <div className="planet-item">
-              <span className="planet-number">Planet {index + 1}</span>
+              <span className="planet-number">
+                Planet {index + 1}
+                {planet.worldwrap && ' 🔄'}
+              </span>
               <span className="planet-info">
                 {planet.worldwidth}x{planet.worldheight} | Gravity:{' '}
                 {planet.gravx},{planet.gravy}
+                {planet.worldwrap && ' | Circular'}
               </span>
             </div>
           </li>

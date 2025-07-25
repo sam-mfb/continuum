@@ -64,7 +64,7 @@ export const createAudioOutput = (
    * Audio processing callback
    * Called by Web Audio when it needs more samples
    */
-  const processAudio = (event: AudioProcessingEvent) => {
+  const processAudio = (event: AudioProcessingEvent): void => {
     const outputBuffer = event.outputBuffer
     const outputChannel = outputBuffer.getChannelData(0)
 
@@ -194,7 +194,11 @@ export const createAudioOutput = (
   /**
    * Get performance statistics
    */
-  const getStats = () => {
+  const getStats = (): {
+    underruns: number
+    totalCallbacks: number
+    averageLatency: number
+  } => {
     return {
       underruns,
       totalCallbacks,

@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { join } from 'path'
 import { Galaxy } from '@/galaxy/methods'
 import { parsePlanet } from '../parsePlanet'
-import { LineType, LineDirection, BunkerKind } from '../types'
+import { BunkerKind } from '../types'
+import { LINE_TYPE, NEW_TYPE } from '@/shared/types/line'
 
 describe('parsePlanet snapshot', () => {
   it('parses planet 1 from sample galaxy matching known values', () => {
@@ -23,11 +24,11 @@ describe('parsePlanet snapshot', () => {
       starty: 43,
       length: 615,
       up_down: 1,
-      type: LineType.N,
+      type: LINE_TYPE.N,
       kind: 0, // LineKind.NORMAL
       endx: 38,
       endy: 658,
-      newType: LineDirection.S
+      newtype: NEW_TYPE.S
     }
 
     const expectedFirstBunker = {
@@ -77,7 +78,20 @@ describe('parsePlanet snapshot', () => {
     expect(planet.craters.length).toBe(25)
 
     // Test just the first item in each array
-    expect(planet.lines[0]).toEqual(expectedFirstLine)
+    // Check specific properties since LineRec has additional fields (id, nextId, nextwhId)
+    const firstLine = planet.lines[0]
+    expect(firstLine?.startx).toBe(expectedFirstLine.startx)
+    expect(firstLine?.starty).toBe(expectedFirstLine.starty)
+    expect(firstLine?.length).toBe(expectedFirstLine.length)
+    expect(firstLine?.up_down).toBe(expectedFirstLine.up_down)
+    expect(firstLine?.type).toBe(expectedFirstLine.type)
+    expect(firstLine?.kind).toBe(expectedFirstLine.kind)
+    expect(firstLine?.endx).toBe(expectedFirstLine.endx)
+    expect(firstLine?.endy).toBe(expectedFirstLine.endy)
+    expect(firstLine?.newtype).toBe(expectedFirstLine.newtype)
+    expect(firstLine?.id).toBe('line-0')
+    expect(firstLine?.nextId).toBe(null)
+    expect(firstLine?.nextwhId).toBe(null)
     expect(planet.bunkers[0]).toEqual(expectedFirstBunker)
     expect(planet.fuels[0]).toEqual(expectedFirstFuel)
     expect(planet.craters[0]).toEqual(expectedFirstCrater)

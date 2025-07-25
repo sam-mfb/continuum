@@ -12,7 +12,7 @@ This is a recreation of the 68000 Mac game "Continuum" for the web, maintaining 
 
 - Original source files are in `orig/Sources/` - these are the reference 68K Mac C files
 - IMPORTANT: Never edit files in orig/
-- Information about how the game is architectued is availabe in `arch/` though always double check against the actual code
+- Information about how the game is architected is available in `arch/` though always double check against the actual code
 
 ## Development Rules
 

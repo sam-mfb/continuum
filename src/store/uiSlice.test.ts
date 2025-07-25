@@ -8,7 +8,7 @@ import {
 
 describe('uiSlice', () => {
   const initialState = {
-    currentView: 'graphics' as const,
+    currentView: 'game' as const,
     isGamePaused: false,
     showDebugInfo: false
   }

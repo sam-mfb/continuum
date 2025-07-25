@@ -41,17 +41,17 @@ function getRealtimeFactor(samplesPerSecond: number): string {
   return `${color}${factor.toFixed(1)}x${colors.reset}`
 }
 
-function printHeader(title: string) {
+function printHeader(title: string): void {
   console.log(
     `\n${colors.bright}${colors.cyan}=== ${title} ===${colors.reset}\n`
   )
 }
 
-function printResult(label: string, value: string, suffix = '') {
+function printResult(label: string, value: string, suffix = ''): void {
   console.log(`${label.padEnd(30)} ${value}${suffix}`)
 }
 
-async function runBenchmark() {
+async function runBenchmark(): Promise<void> {
   console.log(
     `${colors.bright}Sound System Performance Benchmark${colors.reset}`
   )
@@ -168,7 +168,7 @@ async function runBenchmark() {
       const start = performance.now()
 
       for (let i = 0; i < iterations; i++) {
-        ;(generator as any).generateChunk()
+        generator.generateChunk()
       }
 
       const elapsed = performance.now() - start
