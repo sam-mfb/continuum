@@ -333,14 +333,16 @@ export function oneClose(
       } else {
         return { newWhites: currentWhites, wall1Updates, wall2Updates }
       }
+      // Use the updated h2 value from case 10 if it exists (fallthrough case)
+      const currentH2 = wall1Updates.h2 ?? getH2(wall1)
       for (j = 0; j < 8 * i11; j += 8) {
-        if (getH2(wall1) >= length1 - 11 - j) {
+        if (currentH2 >= length1 - 11 - j) {
           addWhite(wall1.endx - 18 - j, wall1.endy + 6 + (j >> 1), 4, enepatch)
           addWhite(wall1.endx - 8 - j, wall1.endy + 6 + (j >> 1), 4, enepatch)
         }
       }
       j = length1 - 11 - 8 * i11
-      if (getH2(wall1) > j) {
+      if (currentH2 > j) {
         wall1Updates.h2 = j
       }
       break
