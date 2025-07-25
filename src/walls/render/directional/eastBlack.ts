@@ -171,13 +171,13 @@ export const eastBlack =
       // lsr.w x, D1 (line 633)
       asm.D1 = asm.instructions.lsr_w(asm.D1, x)
       // not.w D1 (line 634)
-      asm.D1 = (~asm.D1) & 0xffff
+      asm.D1 = ~asm.D1 & 0xffff
       // cmp.w #5, height (line 635)
       // beq @quick (line 636)
       if (height === 5) {
         // @quick: (line 683)
         // not.w D1 (line 684)
-        asm.D1 = (~asm.D1) & 0xffff
+        asm.D1 = ~asm.D1 & 0xffff
         // or.w D1, (A0) (line 685)
         newScreen.data[asm.A0]! |= (asm.D1 >>> 8) & 0xff
         newScreen.data[asm.A0 + 1]! |= asm.D1 & 0xff
@@ -185,7 +185,7 @@ export const eastBlack =
         newScreen.data[asm.A0 + 64]! |= (asm.D1 >>> 8) & 0xff
         newScreen.data[asm.A0 + 64 + 1]! |= asm.D1 & 0xff
         // not.w D1 (line 687)
-        asm.D1 = (~asm.D1) & 0xffff
+        asm.D1 = ~asm.D1 & 0xffff
         // and.w D1, 64*2(A0) (line 688)
         newScreen.data[asm.A0 + 64 * 2]! &= (asm.D1 >>> 8) & 0xff
         newScreen.data[asm.A0 + 64 * 2 + 1]! &= asm.D1 & 0xff
@@ -258,7 +258,7 @@ export const eastBlack =
         asm.D0 = asm.instructions.lsr_l(asm.D0, len)
 
         // not.l D0 (line 714)
-        asm.D0 = (~asm.D0) >>> 0
+        asm.D0 = ~asm.D0 >>> 0
         // or.l D0, (A0) (line 715)
         newScreen.data[asm.A0]! |= (asm.D0 >>> 24) & 0xff
         newScreen.data[asm.A0 + 1]! |= (asm.D0 >>> 16) & 0xff
@@ -270,7 +270,7 @@ export const eastBlack =
         newScreen.data[asm.A0 + 64 + 2]! |= (asm.D0 >>> 8) & 0xff
         newScreen.data[asm.A0 + 64 + 3]! |= asm.D0 & 0xff
         // not.l D0 (line 717)
-        asm.D0 = (~asm.D0) >>> 0
+        asm.D0 = ~asm.D0 >>> 0
         // and.l D0, 64*2(A0) (line 718)
         newScreen.data[asm.A0 + 64 * 2]! &= (asm.D0 >>> 24) & 0xff
         newScreen.data[asm.A0 + 64 * 2 + 1]! &= (asm.D0 >>> 16) & 0xff
@@ -375,7 +375,7 @@ function oneword(
   // move.w D1, D0 (line 667)
   asm.D0 = asm.D1 & 0xffff
   // not.w D0 (line 668)
-  asm.D0 = (~asm.D0) & 0xffff
+  asm.D0 = ~asm.D0 & 0xffff
   // move.l A0, A1 (line 669)
   let A1 = asm.A0
   // move.l dataptr(A6), dp (line 670)

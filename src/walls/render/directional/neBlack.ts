@@ -134,7 +134,7 @@ export const neBlack =
     // Main drawing section - exact assembly (lines 276-313)
     if (len > 0 || end > 0) {
       const asm = build68kArch()
-      
+
       // asm { (line 277)
       // FIND_WADDRESS(x,y) (line 279)
       asm.A0 = findWAddress(0, x, y)
@@ -142,7 +142,7 @@ export const neBlack =
       let screen = asm.A0
       // moveq #-64, D2 (line 281)
       const D2 = -64
-      
+
       // andi.w #15, x (line 283)
       x = x & 15
       // ror.l x, eor (line 284)
@@ -159,7 +159,7 @@ export const neBlack =
           newScreen.data[screen + 1]! ^= (val >>> 16) & 0xff
           newScreen.data[screen + 2]! ^= (val >>> 8) & 0xff
           newScreen.data[screen + 3]! ^= val & 0xff
-          
+
           // adda.l D2, screen (line 291)
           screen += D2
           // ror.l #1, eor (line 292)
@@ -176,7 +176,7 @@ export const neBlack =
           // Counter expired, fall through
           break
         }
-        
+
         // swap eor (line 294)
         eor = asm.instructions.swap(eor)
         // addq.w #2, screen (line 295)
@@ -192,7 +192,7 @@ export const neBlack =
           newScreen.data[screen + 1]! ^= (val >>> 16) & 0xff
           newScreen.data[screen + 2]! ^= (val >>> 8) & 0xff
           newScreen.data[screen + 3]! ^= val & 0xff
-          
+
           // adda.l D2, screen (line 291)
           screen += D2
           // ror.l #1, eor (line 292)
@@ -220,7 +220,7 @@ export const neBlack =
             break
           }
         }
-        
+
         // tst.b eor (line 298)
         if ((eor & 0xff) !== 0) {
           // bne.s @1 (line 299)
@@ -269,18 +269,18 @@ export const neBlack =
     if (len > 0) {
       // asm { (line 318)
       const asm = build68kArch()
-      
+
       // JSR_WADDRESS (line 320)
       asm.A0 = jsrWAddress(0, x, y)
-      
+
       // move.w #0x7FFF, D0 (line 322)
-      asm.D0 = 0x7FFF
+      asm.D0 = 0x7fff
       // asr.w x, D0 (line 323)
       asm.D0 = asm.instructions.asr_w(asm.D0, x)
       // moveq #64, D1 (line 324)
       const D1 = 64
       // bra.s @enterlp (line 325)
-      
+
       // @lp: (line 327)
       // @enterlp: dbra len, @lp (line 330)
       for (let i = len; i >= 0; i--) {
