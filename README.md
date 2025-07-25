@@ -29,20 +29,25 @@ There is a wrapper React app that essentially shows/tests the various pieces tha
 ### 3. Sound
 
 - Recreated all the original game sounds from their original logic (they were all algorithmically generated)
+- Use a ring buffer to play accurately in the browser
 - Extracted the original sine lookup table from the game's resource fork.
 - TODO: Extract the pregenerated "hiss" random seeds from the game's resource fork (currently we just generate our own)
 
 ### 4. Gameplay
 
 - Recreated basic physics and ship movement in a canvas based system
+- Ship bullet firing working
 - TODO:
-  - Shooting
   - Collision detection
+  - Bunker bullet firing
   - Refueling
   - A lot of other things...
 
 ### 5. Drawing
 
+- Wall drawing complete. Phew.
+  - This was a lot the initialization of walls is complicated and involves a massive switch statement to find pre-rendered patches
+  - Wall rendering uses a lot of very specific 68k assembly. Eventually I had to just write a basic 68k instruction emulator to get the walls to render correctly. But they do. So far all the glitches I have found in rendering, are there in the original game as well (e.g., the frowny face in level 9)
 - TODO:
   - Draw bitmap images in game
   - Draw procedurally generated images (flames)
