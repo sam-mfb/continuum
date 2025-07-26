@@ -378,7 +378,7 @@ The shield system demonstrates another clever use of collision detection:
    - Interestingly, when a ship's own bullet hits their shield, it activates shielding
    - This creates a defensive feedback loop
 
-### Shield Drawing and Erasing (More Research Needed)
+### Shield Drawing and Erasing (Mystery Solved!)
 
 The rendering code shows:
 
@@ -389,18 +389,20 @@ if (shielding)
 }
 ```
 
-The `erase_figure` call with `shield_def` is puzzling because there's no visible `draw_figure` call for the shield sprite. This suggests either:
+The mystery of the missing `draw_figure` call is solved by understanding that **`erase_figure` is effectively a "draw with white" operation**.
 
-- The shield visual is drawn elsewhere (possibly in assembly or initialization code)
-- The shield might be a persistent effect that needs erasing each frame
-- The "erase" might be creating a visual effect rather than removing one
+The function works by inverting the bits of the provided sprite (`not.l D0`) and then ANDing them with the screen buffer (`and.l D0, (A0)`).
+- Where the `shield_def` sprite has a pixel (bit=1), the inverted bit is 0. `screen_pixel AND 0` results in `0` (white).
+- Where the `shield_def` sprite is empty (bit=0), the inverted bit is 1. `screen_pixel AND 1` leaves the screen pixel unchanged.
+
+This call happens at the very end of the drawing loop. The result is that a white outline of the shield is "stamped" directly onto the final rendered scene, overwriting parts of the ship, terrain, and background to create the visible shield effect.
 
 ### Key Shield Insights
 
-1. **Shields use proximity detection, not pixel collision** - they create an invisible force field
-2. **Bullets are destroyed before drawing** - preventing any possibility of collision
-3. **The shield visual rendering remains mysterious** - likely handled in code not visible here
-4. **Shields provide multiple benefits** - protection, fuel collection, and visual feedback
+1. **Shields use proximity detection, not pixel collision** - they create an invisible force field.
+2. **Bullets are destroyed before drawing** - preventing any possibility of pixel collision.
+3. **The shield is rendered by "drawing with white"** using the `erase_figure` function on the final composition of the screen.
+4. **Shields provide multiple benefits** - protection, fuel collection, and clear visual feedback.
 
 ### Why This Design?
 
