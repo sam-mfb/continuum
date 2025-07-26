@@ -259,6 +259,59 @@ The typical pattern in Play.c is:
 3. If collision, handle it via `kill_ship()` (Play.c:245)
 4. If no collision, use `full_figure` (Play.c:248-249) to draw ship with both visual sprite and mask
 
+## How Different Object Types Avoid Unwanted Collisions
+
+The game uses a clever combination of drawing order and the `erase_figure` function to control what can collide with the ship:
+
+### Drawing Order and Erase Strategy (Play.c:219-244)
+
+1. **Clear screen** 
+2. **Draw non-lethal objects**:
+   - Fuel cells (`do_fuels`)
+   - Craters (`draw_craters`)
+   - Ship shadow (`gray_figure`)
+   - White terrain (`white_terrain`)
+   - Ghost terrain (`black_terrain(L_GHOST)`)
+3. **Erase ship-shaped hole** (`erase_figure` at line 232)
+4. **Check bounce collisions** (`check_for_bounce`)
+5. **Draw lethal objects**:
+   - Normal terrain (`black_terrain(L_NORMAL)`)
+   - Bunkers (`do_bunkers`)
+   - Enemy bullets (`move_bullets`)
+6. **Check main collision** (`check_figure` at line 244)
+
+### How Each Object Type Works
+
+**Non-lethal objects (fuel, craters, ghost terrain)**:
+- Drawn BEFORE the first `erase_figure` call
+- The ship-shaped hole prevents any collision with these objects
+- They literally have ship-shaped holes punched through them
+
+**Bounce walls**:
+- Drawn in `check_for_bounce` (Play.c:272)
+- Collision checked immediately (Play.c:274)
+- If bounce detected, another `erase_figure` call (Play.c:278-279) punches a hole through the bounce terrain
+- This prevents bounce walls from triggering the main collision check
+
+**Lethal objects (normal terrain, bunkers, bullets)**:
+- Drawn AFTER all `erase_figure` calls
+- Will trigger collision in the main `check_figure` call
+- These are the only objects that can destroy the ship
+
+**Fuel cell pickups**:
+- Use proximity detection instead of pixel collision (Play.c:514-518)
+- Checked when shield is activated using `xyindist()` with `FRADIUS`
+- Never participate in pixel collision detection
+
+### Key Insights
+
+1. **The `erase_figure` function is the key** - it creates ship-shaped holes in anything drawn before it
+2. **Drawing order determines lethality** - only objects drawn after the final erase can kill the ship
+3. **Two-phase collision detection** - bounce check happens separately with its own erase operation
+4. **Mixed detection methods** - pixel collision for terrain/bunkers/bullets, proximity for fuel cells
+
+This elegant design allows complex collision behavior using just two `check_figure` calls and strategic use of `erase_figure` to control what can collide.
+
 ## Performance Considerations
 
 - Early exit on first collision saves cycles
