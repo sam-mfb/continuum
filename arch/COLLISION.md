@@ -42,7 +42,7 @@ Row 2: 10101010 10101010... (back to first pattern)
 
 Without special handling, this would cause constant false collision detections because half the background pixels are "on" (black).
 
-### The Brilliant Solution
+### The Solution
 
 The game uses an inverted masking technique:
 
@@ -392,6 +392,7 @@ if (shielding)
 The mystery of the missing `draw_figure` call is solved by understanding that **`erase_figure` is effectively a "draw with white" operation**.
 
 The function works by inverting the bits of the provided sprite (`not.l D0`) and then ANDing them with the screen buffer (`and.l D0, (A0)`).
+
 - Where the `shield_def` sprite has a pixel (bit=1), the inverted bit is 0. `screen_pixel AND 0` results in `0` (white).
 - Where the `shield_def` sprite is empty (bit=0), the inverted bit is 1. `screen_pixel AND 1` leaves the screen pixel unchanged.
 
@@ -442,4 +443,3 @@ The game elegantly uses three different collision detection methods:
 - Register usage optimized for 68000 architecture
 - Bit shifting operations are fast on 68000
 - Memory access pattern is sequential for cache efficiency
-
