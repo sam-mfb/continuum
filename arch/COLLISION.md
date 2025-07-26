@@ -312,6 +312,62 @@ The game uses a clever combination of drawing order and the `erase_figure` funct
 
 This elegant design allows complex collision behavior using just two `check_figure` calls and strategic use of `erase_figure` to control what can collide.
 
+## Bullet Collision Detection
+
+The game uses completely different collision systems for bullets than for the ship:
+
+### Ship Bullets (Play.c:750-814)
+
+Ship bullets **never use pixel collision**. Instead, they use two different methods:
+
+1. **Bunker collisions** (Play.c:767-784):
+   - Uses bounding box check first (lines 763-766)
+   - Then proximity detection with `xyindistance()` and `BRADIUS`
+   - For rotating bunkers, also checks firing angle with `legal_angle()`
+   - Special handling for hardy bunkers that take multiple hits
+
+2. **Terrain collisions** (Terrain.c:146-230 in `set_life`):
+   - Uses **predictive ray-casting** with line intersection mathematics
+   - When a bullet is fired, calculates its entire trajectory
+   - For each terrain line, computes if/when the bullet will intersect it
+   - Sets `lifecount` to expire the bullet at the exact frame it would hit
+   - For bounce terrain, sets `btime` to enable bouncing physics
+
+### Enemy Bullets (Play.c:816-846)
+
+Enemy bullets (`move_bullets`) work similarly but only check collision with the ship's shield using proximity detection.
+
+### Why This Design?
+
+Using mathematical collision detection for bullets provides several advantages:
+
+1. **Performance**: No need to check pixels every frame for fast-moving objects
+2. **Accuracy**: Bullets can't "tunnel through" thin walls at high speeds
+3. **Predictability**: The entire bullet path is known immediately when fired
+4. **Smooth bouncing**: Bounce angles can be calculated precisely
+
+### Three Collision Systems
+
+The game elegantly uses three different collision detection methods:
+
+1. **Pixel collision** (`check_figure`):
+   - Ship vs terrain/bunkers/enemy bullets
+   - Most accurate for large, slow-moving objects
+   - Handles complex shapes perfectly
+
+2. **Proximity detection** (`xyindist`, `xyindistance`):
+   - Fuel cell pickup (with shield)
+   - Bullet vs bunker initial check
+   - Bullet vs ship shield
+   - Fast circular collision detection
+
+3. **Line intersection mathematics** (`set_life`):
+   - Bullet vs terrain walls
+   - Predictive collision for fast projectiles
+   - Enables precise bounce calculations
+
+This multi-system approach optimizes each type of collision for its specific use case, demonstrating sophisticated game engineering for 1980s hardware.
+
 ## Performance Considerations
 
 - Early exit on first collision saves cycles
