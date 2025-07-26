@@ -11,10 +11,12 @@ The collision detection system in Continuum is a sophisticated pixel-perfect col
 ### Core Concept
 
 The collision detection works by:
-1. Taking a collision mask (all-black version of sprite) and position
-2. Checking each pixel of the mask against what's already on screen
+1. Taking a collision mask (32 pixels wide × height pixels tall) and screen position (x,y)
+2. Checking each pixel of the mask against the corresponding screen memory region
 3. Ignoring the background pattern (gray dithering) to avoid false positives
-4. Returning TRUE if any collision is detected, FALSE otherwise
+4. Returning TRUE if any mask pixel overlaps with a screen pixel, FALSE otherwise
+
+The function essentially asks: "If I were to draw this 32×height pixel mask at position (x,y), would any of its black pixels overlap with black pixels already on screen?"
 
 ### Why Separate Masks?
 
@@ -116,9 +118,18 @@ This is a clever engineering compromise - trading perfect collision detection fo
 ### Technical Implementation
 
 1. **Bitmap Layout**: The Mac Plus screen is 512 pixels wide (SCRWTH in GW.h), stored as 64 bytes per row (8 pixels per byte)
-2. **Sprite Format**: Sprites are stored as arrays of 32-bit integers (Ship_Pic definition in GW.h shows SHIPHT*2 integers)
-3. **Bit Shifting**: Sprites can be positioned at any pixel, requiring bit shifting to align with byte boundaries
-4. **Double Checking**: The algorithm checks both the main 32-bit word and a 16-bit overflow word (at offset +4) for complete coverage
+2. **Sprite Format**: All sprites are exactly 32 pixels wide (hardcoded by the data format) but variable height
+   - Stored as arrays of 32-bit integers (one per row)
+   - Ship_Pic definition in GW.h: array of SHIPHT*2 integers (2 ints = 1 row of 32 pixels)
+3. **Coordinate System**: Game logic tracks ship center, but drawing/collision expects top-left corner
+   - `shipx-SCENTER, shipy-SCENTER` converts from center to top-left (Play.c:244)
+   - SCENTER is likely 16 (half of 32-pixel width)
+4. **Bit Shifting**: Sprites can be positioned at any pixel (not just byte boundaries)
+   - Requires right-shifting sprite data by (x & 15) bits
+   - Overflow bits are left-shifted into adjacent word
+5. **Double Checking**: The algorithm checks a 48-pixel wide area
+   - Main 32-bit word at calculated position
+   - Additional 16-bit word (at offset +4) for overflow when sprite crosses word boundary
 
 ## Line-by-Line Analysis of check_figure
 
@@ -127,9 +138,9 @@ This is a clever engineering compromise - trading perfect collision detection fo
 		already set.  Used to find collisions.
 */
 int check_figure(x, y, def, height)
-register int x, y;		// Screen coordinates where figure would be drawn
-register int *def;		// Pointer to collision mask data (32-bit words)
-int height;			// Height of mask in pixels
+register int x, y;		// Top-left corner where sprite would be drawn
+register int *def;		// Pointer to collision mask data (array of 32-bit words, one per row)
+int height;			// Height of mask in pixels (width is always 32)
 {
 	register long back;	// Will hold the background pattern for masking
 	
