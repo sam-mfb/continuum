@@ -4,7 +4,7 @@
 
 The collision detection system in Continuum is a sophisticated pixel-perfect collision system that leverages the Mac's bitmap graphics architecture. The key function `check_figure` (Draw.c:227-273) performs collision detection by checking if any pixels of a collision mask would overlap with pixels already drawn on the screen.
 
-**Important**: The game maintains separate visual sprites and collision masks. When checking collisions, it uses all-black mask versions of sprites (e.g., `ship_masks` instead of `ship_defs`), not the actual visual sprites.
+**Important**: The game maintains separate visual sprites and collision masks. When checking collisions, it uses all-black mask versions of sprites (e.g., `ship_masks` instead of `ship_defs`), not the actual visual sprites. This is evident in Play.c:244 where collision detection uses `ship_masks[shiprot]` and Play.c:248-249 where drawing uses both `ship_defs` and `ship_masks`.
 
 ## How It Works
 
@@ -18,7 +18,7 @@ The collision detection works by:
 
 ### Why Separate Masks?
 
-The game stores both visual sprites (`ship_defs`, `bunker_defs`, etc.) and collision masks (`ship_masks`, `bunker_masks`, etc.) because:
+The game stores both visual sprites and collision masks (defined in Figs.c:12-24) because:
 - Visual sprites may have decorative elements that shouldn't cause collisions
 - Masks can define a different collision boundary than the visual appearance
 - All-black masks are simpler to process (no need to extract "solid" pixels)
@@ -39,7 +39,7 @@ Without special handling, this would cause constant false collision detections b
 
 The game uses an inverted masking technique:
 
-1. **Two patterns are stored:**
+1. **Two patterns are stored** (see Draw.c:25 and view_clear implementation at Draw.c:1439-1440):
    - `background[0]` = 0xAAAAAAAA (10101010... pattern)
    - `background[1]` = 0x55555555 (01010101... pattern)
 
@@ -102,7 +102,11 @@ This means:
 ### Why This Works in Practice
 
 This limitation doesn't affect gameplay because:
-1. **All collidable objects are >2 pixels wide**: Ship (32px), bunkers (48px), terrain lines (2+ pixels), bullets (4px)
+1. **All collidable objects are >2 pixels wide**: 
+   - Ship: 32 pixels (SHIPWD in GW.h)
+   - Bunkers: 48 pixels (BUNKWD in GW.h)  
+   - Bullets: 4x4 pixels (draw_shipshot at Draw.c:620)
+   - Terrain lines: 2+ pixels minimum thickness
 2. **Objects span both dither patterns**: Any object 2+ pixels wide is guaranteed to have pixels on white background positions
 3. **Moving objects**: The ship and bullets move continuously, ensuring they cross both pattern alignments
 4. **Design constraint**: The game was likely designed with this limitation in mind
@@ -111,10 +115,10 @@ This is a clever engineering compromise - trading perfect collision detection fo
 
 ### Technical Implementation
 
-1. **Bitmap Layout**: The Mac Plus screen is 512 pixels wide, stored as 64 bytes per row (8 pixels per byte)
-2. **Sprite Format**: Sprites are stored as arrays of 32-bit integers (2 integers per row = 32 pixels wide)
+1. **Bitmap Layout**: The Mac Plus screen is 512 pixels wide (SCRWTH in GW.h), stored as 64 bytes per row (8 pixels per byte)
+2. **Sprite Format**: Sprites are stored as arrays of 32-bit integers (Ship_Pic definition in GW.h shows SHIPHT*2 integers)
 3. **Bit Shifting**: Sprites can be positioned at any pixel, requiring bit shifting to align with byte boundaries
-4. **Double Checking**: The algorithm checks both the main 32-bit word and a 16-bit overflow word for complete coverage
+4. **Double Checking**: The algorithm checks both the main 32-bit word and a 16-bit overflow word (at offset +4) for complete coverage
 
 ## Line-by-Line Analysis of check_figure
 
@@ -136,7 +140,7 @@ int height;			// Height of mask in pixels
 	back = background[1 - (y & 1)];
 	
 	// Adjust y to account for status bar at top of screen
-	y += SBARHT;
+	y += SBARHT;  // SBARHT = 25 pixels (GW.h)
 	asm
 	{	
 		// Save D3 register as we'll use it as a counter
@@ -144,7 +148,7 @@ int height;			// Height of mask in pixels
 		
 		// Calculate screen memory address from x,y coordinates
 		// This macro sets A0 to point to the screen buffer location
-		JSR_WADDRESS
+		JSR_WADDRESS  // Macro defined in "Assembly Macros.h"
 		
 		// Get bit position within word (0-15)
 		andi.w	#15, x
@@ -231,16 +235,16 @@ int height;			// Height of mask in pixels
 ## Usage in the Game
 
 The game engine calls `check_figure` with collision masks (not visual sprites) to detect:
-- Terrain collisions (using ship_masks)
-- Bunker collisions (bunkers are drawn directly)
+- Terrain collisions (Play.c:244 using `ship_masks[shiprot]`)
+- Bunker collisions (bunkers are drawn directly with draw_bunker)
 - Enemy shot collisions 
-- Fuel cell pickups (fuel cells are drawn directly)
+- Fuel cell pickups (fuel cells are drawn directly with draw_medium)
 
 The typical pattern in Play.c is:
 1. Calculate new position
-2. Call `check_figure(x, y, ship_masks[shiprot], SHIPHT)`
-3. If collision, handle it (damage, death, etc.)
-4. If no collision, use `full_figure` to draw ship with both visual sprite and mask
+2. Call `check_figure(x, y, ship_masks[shiprot], SHIPHT)` (Play.c:244)
+3. If collision, handle it via `kill_ship()` (Play.c:245)
+4. If no collision, use `full_figure` (Play.c:248-249) to draw ship with both visual sprite and mask
 
 ## Performance Considerations
 
