@@ -16,7 +16,9 @@ The collision detection works by:
 3. Ignoring the background pattern (gray dithering) to avoid false positives
 4. Returning TRUE if any mask pixel overlaps with a screen pixel, FALSE otherwise
 
-The function essentially asks: "If I were to draw this 32×height pixel mask at position (x,y), would any of its black pixels overlap with black pixels already on screen?"
+The function essentially asks: "If I were to draw this 32×height pixel mask at position (x,y), would any of its black pixels overlap with black pixels already on screen at positions where the background pattern would be white?"
+
+This subtle distinction is crucial - the function can only detect collisions at positions where the dithered background would normally show white pixels.
 
 ### Why Separate Masks?
 
