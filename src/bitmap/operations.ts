@@ -135,3 +135,25 @@ export const getPixel = (
     byteIndex < bitmap.data.length && (bitmap.data[byteIndex]! & bitMask) !== 0
   )
 }
+
+/**
+ * Validate that a MonochromeBitmap object is internally consistent
+ * Checks that:
+ * - rowBytes matches the width (accounting for padding)
+ * - data array has the correct length for the declared dimensions
+ */
+export const validateBitmap = (bitmap: MonochromeBitmap): boolean => {
+  // Check that rowBytes is correct for the width
+  const expectedRowBytes = Math.ceil(bitmap.width / 8)
+  if (bitmap.rowBytes !== expectedRowBytes) {
+    return false
+  }
+
+  // Check that data array has the correct length
+  const expectedDataLength = bitmap.height * bitmap.rowBytes
+  if (bitmap.data.length !== expectedDataLength) {
+    return false
+  }
+
+  return true
+}
