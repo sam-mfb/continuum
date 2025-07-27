@@ -5,9 +5,12 @@
 import type { GameFrameInfo, GameEnvironment } from '../app/components/GameView'
 
 /**
- * Represents the 512x342 monochrome screen bitmap
+ * Represents a monochrome screen bitmap
  * Each byte holds 8 pixels (1 bit per pixel)
- * Matches the original Macintosh display format
+ * Matches the original Macintosh display format.
+ * For example, the original Mac screen used by the
+ * game is a 512 x 342 bitmap. Sprites in the game
+ * are typically 32 x 8n bitmaps.
  */
 export type MonochromeBitmap = {
   /** Raw bitmap data - each byte holds 8 pixels */
