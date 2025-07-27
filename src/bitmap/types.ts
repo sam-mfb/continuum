@@ -8,12 +8,22 @@ import type { GameFrameInfo, GameEnvironment } from '../app/components/GameView'
  * Represents a monochrome screen bitmap
  * Each byte holds 8 pixels (1 bit per pixel)
  * Matches the original Macintosh display format.
+ *
+ * IMPORTANT: Bit ordering within bytes is big-endian:
+ * - Leftmost pixel (x=0) is the Most Significant Bit (0x80)
+ * - Rightmost pixel (x=7) is the Least Significant Bit (0x01)
+ *
+ * Example byte 0xA5 (10100101) represents pixels: ■ □ ■ □ □ ■ □ ■
+ *
+ * This matches the original 68000 Mac architecture and is used
+ * consistently throughout the codebase for rendering and collision detection.
+ *
  * For example, the original Mac screen used by the
  * game is a 512 x 342 bitmap. Sprites in the game
  * are typically 32 x 8n bitmaps.
  */
 export type MonochromeBitmap = {
-  /** Raw bitmap data - each byte holds 8 pixels */
+  /** Raw bitmap data - each byte holds 8 pixels (big-endian bit order) */
   data: Uint8Array
   /** Width in pixels (512 for Mac screen) */
   width: number
