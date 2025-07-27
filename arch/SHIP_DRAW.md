@@ -13,6 +13,53 @@ The ship drawing in Continuum uses a sophisticated three-layer rendering techniq
 - Both are arrays of `Ship_Pic` type, defined as `int Ship_Pic[2*SHIPHT]` (GW.h:115)
 - Each rotation stored as 32 32-bit integers (one per pixel row)
 
+## Ship Rotation Generation
+
+The game resources only store 5 ship images, not 32. The `rotate_ship()` function (Figs.c:651-687) generates all 32 rotations algorithmically:
+
+### Resource Loading (Figs.c:552-566)
+- `extract_ships()` loads only 11 images from resources:
+  - Positions 0-4: 5 ship masks (facing up, up-right at different angles)
+  - Positions 5-9: 5 ship definitions (matching the masks)
+  - Position 10: Shield sprite
+
+### Rotation Algorithm (Figs.c:658-687)
+The function generates the remaining 27 rotations through bit manipulation:
+
+1. **Clear positions 5-31** (lines 658-660)
+   ```c
+   for (x=5; x<32; x++)
+       for(y=0, p=ships[x]; y < SHIPHT*2; y++, p++)
+           *p = 0;
+   ```
+
+2. **Generate positions 5-8** (lines 663-667): 90° rotation
+   - Rotates positions 0-3 by 90° clockwise
+   - Maps pixel (x,y) → (SIZE-y, SIZE-x)
+   - Creates right-facing ships from up-facing ones
+
+3. **Generate positions 24-31** (lines 670-674): 270° rotation
+   - Rotates positions 1-8 by 270° clockwise (or 90° counter-clockwise)
+   - Maps pixel (x,y) → (SIZE-x, y) then flips
+   - Creates left-facing ships
+
+4. **Generate positions 9-23** (lines 676-684): 180° rotation
+   - Rotates by 180° to create down-facing ships
+   - Simple vertical flip of existing positions
+
+### Rotation Symmetry
+- The algorithm exploits symmetry to generate 32 positions from just 5 base images
+- Each quadrant (8 positions) is derived from transformations of the base 5
+- Positions 0-7: Up to right (base + 90° rotations)
+- Positions 8-15: Right to down (180° of 0-7)
+- Positions 16-23: Down to left (180° of 8-15)
+- Positions 24-31: Left to up (270° rotations)
+
+### Bit Manipulation Functions
+- `get_bit()` (Figs.c:719-740): Reads individual pixels from source position
+- `put_bit()` (Figs.c:695-711): Sets individual pixels in destination position
+- Both work directly with the bitmap data as arrays of bytes
+
 ### Position Variables (Play.c:14-16)
 
 - `shipx, shipy`: Screen coordinates of ship center
