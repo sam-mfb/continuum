@@ -14,7 +14,7 @@ export function checkFigure(
     y: number
     height: number
     /** actual bytes of figure to be drawn (serves the purpose of *def ptr in original code **/
-    defIndex: Uint8Array
+    def: MonochromeBitmap
   }
 ): boolean {
   // TODO: implement
