@@ -7,7 +7,7 @@ import {
   BACKGROUND1,
   BACKGROUND2
 } from './types'
-import { rotateBunker } from './rotate'
+import { rotateBunker90CW } from './rotate'
 
 // Create a bunker sprite set from extracted arrays
 export function createBunkerSpriteSet(
@@ -42,13 +42,15 @@ export function createBunkerSpriteSet(
     }
 
     // Generate rotations 4-15 using the rotateBunker algorithm
+    // The C code does: for (i=4; i<16; i++) { old = defs[k][i-4]; new = defs[k][i]; }
     for (let i = 4; i < BUNKER_ROTATIONS; i++) {
-      const sourceRotation = i - 4
-      const sourceSprite = kindSprites[sourceRotation]
+      const sourceIdx = i - 4
+      const sourceSprite = kindSprites[sourceIdx]
       if (!sourceSprite) continue
+      
       kindSprites[i] = {
-        def: rotateBunker(sourceSprite.def, sourceRotation),
-        mask: rotateBunker(sourceSprite.mask, sourceRotation),
+        def: rotateBunker90CW(sourceSprite.def),
+        mask: rotateBunker90CW(sourceSprite.mask),
         images: {
           background1: new Uint8Array(6 * BUNKHT),
           background2: new Uint8Array(6 * BUNKHT)

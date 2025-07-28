@@ -107,39 +107,22 @@ export function mirrorVertical(
   return dest
 }
 
-// Special rotation for bunkers - different algorithm from ships
+// Special rotation for bunkers - 90° CW rotation
 // Based on the assembly code in rotate_bunker()
-export function rotateBunker(
-  src: Uint8Array,
-  _srcRotation: number
+export function rotateBunker90CW(
+  src: Uint8Array
 ): Uint8Array {
   const BUNKHT = 48
+  const BUNKWD = 48
   const dest = new Uint8Array(6 * BUNKHT)
 
-  // The original rotates by 90 degrees, creating rotations 4-15 from 0-3
-  // This implementation follows the assembly logic:
-  // - Reads bits column by column from source
-  // - Writes them row by row to destination
-
-  let destBitIndex = 0
-
-  // Process each column of the source (right to left)
-  for (let col = 47; col >= 0; col--) {
-    // Process each row in this column
-    for (let row = 0; row < BUNKHT; row++) {
-      const srcBit = getBit(col, row, src, 6)
-
-      if (srcBit) {
-        // Calculate destination position
-        const destByte = Math.floor(destBitIndex / 8)
-        const destBit = 7 - (destBitIndex % 8)
-
-        if (destByte < dest.length && dest[destByte] !== undefined) {
-          dest[destByte] |= 1 << destBit
-        }
+  // 90° CW rotation: Transform (x,y) -> (47-y, x)
+  for (let y = 0; y < BUNKHT; y++) {
+    for (let x = 0; x < BUNKWD; x++) {
+      if (getBit(x, y, src, 6)) {
+        // 90° CW: new position is (47-y, x)
+        setBit(BUNKWD - 1 - y, x, true, dest, 6)
       }
-
-      destBitIndex++
     }
   }
 
