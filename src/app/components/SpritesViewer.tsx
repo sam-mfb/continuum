@@ -95,42 +95,29 @@ export const SpritesViewer: React.FC = () => {
     
     if (!spriteData) return
     
-    // Convert 1-bit data to ImageData
-    const pixels = new Uint8ClampedArray(width * height * 4)
+    // Set canvas size
+    canvas.width = width * scale
+    canvas.height = height * scale
     
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    
+    // Draw pixels directly as scaled rectangles
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const byteIdx = y * storageRowBytes + Math.floor(x / 8)
         const bitIdx = 7 - (x % 8)
         const bit = (spriteData[byteIdx]! >> bitIdx) & 1
         
-        const pixelIdx = (y * width + x) * 4
-        const color = bit ? 0 : 255  // Black on white
-        pixels[pixelIdx] = color
-        pixels[pixelIdx + 1] = color
-        pixels[pixelIdx + 2] = color
-        pixels[pixelIdx + 3] = 255
+        if (bit) {
+          ctx.fillStyle = '#000'
+        } else {
+          ctx.fillStyle = '#fff'
+        }
+        
+        ctx.fillRect(x * scale, y * scale, scale, scale)
       }
     }
-    
-    const imageData = new ImageData(pixels, width, height)
-    
-    // Set canvas size
-    canvas.width = width * scale
-    canvas.height = height * scale
-    
-    // Create a temporary canvas for the unscaled image
-    const tempCanvas = document.createElement('canvas')
-    tempCanvas.width = width
-    tempCanvas.height = height
-    const tempCtx = tempCanvas.getContext('2d')
-    if (!tempCtx) return
-    
-    // Put image data on temp canvas
-    tempCtx.putImageData(imageData, 0, 0)
-    
-    // Draw scaled to main canvas
-    ctx.drawImage(tempCanvas, 0, 0, width, height, 0, 0, canvas.width, canvas.height)
     
   }, [allSprites, selectedType, showMask, rotation, scale, bunkerKind, bunkerVariation, fuelFrame, shardKind])
 
@@ -161,8 +148,8 @@ export const SpritesViewer: React.FC = () => {
       }}>
         <canvas 
           ref={canvasRef}
+          className="pixelated-canvas"
           style={{ 
-            imageRendering: 'pixelated',
             display: 'block'
           }}
         />
