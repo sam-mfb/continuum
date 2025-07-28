@@ -16,9 +16,10 @@ import {
   BUNKHT,
   FUELHT,
   SHARDHT,
-  BUNKKINDS,
   FUELFRAMES,
   SHARDKINDS,
+  BUNKROTKINDS,
+  BunkerKind,
   createShipSprite,
   createBunkerSprite,
   createFuelSprite,
@@ -93,69 +94,89 @@ function extractShips(bitmap: Uint8Array): {
 // Extract bunker sprites from the figure resource
 function extractBunkers(bitmap: Uint8Array): BunkerSprite[][] {
   const bunkers: BunkerSprite[][] = []
-
-  for (let kind = 0; kind < BUNKKINDS + 3; kind++) {
-    bunkers[kind] = []
-    const kindBunkers = bunkers[kind]!
-
+  
+  // The resource layout matches the original C code:
+  // Row 0: Wall (4 defs followed by 4 masks)
+  // Row 1: Diff (4 defs followed by 4 masks)
+  // Row 2: Ground defs (8 frames)
+  // Row 3: Ground masks (8 frames)
+  // Row 4: Follow defs (8 frames)
+  // Row 5: Follow masks (8 frames)
+  // Row 6: Generator defs (8 frames)
+  // Row 7: Generator masks (8 frames)
+  
+  const totalRows = 8 // BUNKKINDS + 3 from the C code
+  
+  // First pass: Extract all the raw data
+  const rawData: BunkerSprite[][] = []
+  for (let row = 0; row < totalRows; row++) {
+    rawData[row] = []
+    
     for (let i = 0; i < 8; i++) {
       const sprite = createBunkerSprite()
-      const y = kind * 48 + 1 // +1 for border
-
-      if (kind < BUNKKINDS) {
-        // Regular bunkers: 4 defs then 4 masks
-        const x = i * 48 + 1
+      const x = i * 48 + 1
+      const y = row * 48 + 1
+      
+      if (row < BUNKROTKINDS) {
+        // Rotating bunkers: first 4 are defs, next 4 are masks
         if (i < 4) {
           copyBitmapRegion(bitmap, 512, sprite.def, x, y, 46, BUNKHT - 2, 6)
         } else {
-          const baseSprite = kindBunkers[i - 4]
-          if (!baseSprite) continue
-          copyBitmapRegion(
-            bitmap,
-            512,
-            baseSprite.mask,
-            x,
-            y,
-            46,
-            BUNKHT - 2,
-            6
-          )
-          kindBunkers[i - 4] = baseSprite
+          // Copy mask to the corresponding def sprite
+          const defSprite = rawData[row]?.[i - 4]
+          if (defSprite) {
+            copyBitmapRegion(bitmap, 512, defSprite.mask, x, y, 46, BUNKHT - 2, 6)
+          }
           continue
         }
       } else {
-        // Diffusion bunkers alternating def/mask
-        const isDef = (kind - BUNKKINDS) % 2 === 0
-        const x = i * 48 + 1
-
-        if (isDef) {
+        // Animated bunkers: entire row is either all defs or all masks
+        const isDefRow = (row % 2) === 0
+        if (isDefRow) {
           copyBitmapRegion(bitmap, 512, sprite.def, x, y, 46, BUNKHT - 2, 6)
         } else {
           copyBitmapRegion(bitmap, 512, sprite.mask, x, y, 46, BUNKHT - 2, 6)
         }
       }
-
-      kindBunkers[i] = sprite
+      
+      rawData[row]![i] = sprite
     }
   }
-
-  // Reorganize diffusion bunkers
-  const diffBunkers: BunkerSprite[] = []
-  for (let i = 0; i < 3; i++) {
-    const defKind = BUNKKINDS + i * 2
-    const maskKind = BUNKKINDS + i * 2 + 1
-    for (let j = 0; j < 4; j++) {
+  
+  // Second pass: Organize into the final structure
+  // Type 0: Wall (rotating) - just copy the 4 base sprites
+  bunkers[BunkerKind.WALL] = rawData[0]!.slice(0, 4)
+  
+  // Type 1: Diff (rotating) - just copy the 4 base sprites  
+  bunkers[BunkerKind.DIFF] = rawData[1]!.slice(0, 4)
+  
+  // Types 2-4: Animated bunkers (Ground, Follow, Generator)
+  // Each has 8 animation frames
+  for (let bunkerType = 0; bunkerType < 3; bunkerType++) {
+    const kind = bunkerType + 2 // Maps to BunkerKind.GROUND, FOLLOW, GENERATOR
+    bunkers[kind] = []
+    
+    // From the C code: for j >= BUNKROTKINDS, it uses ((j & 1) ? masks : defs)[j/2 + 1][i]
+    // j=2: defs[2] (Ground defs), j=3: masks[2] (Ground masks)
+    // j=4: defs[3] (Follow defs), j=5: masks[3] (Follow masks)
+    // j=6: defs[4] (Generator defs), j=7: masks[4] (Generator masks)
+    const defRow = 2 + bunkerType * 2
+    const maskRow = defRow + 1
+    
+    for (let frame = 0; frame < 8; frame++) {
       const sprite = createBunkerSprite()
-      sprite.def = bunkers[defKind]?.[j]?.def ?? new Uint8Array(6 * BUNKHT)
-      sprite.mask = bunkers[maskKind]?.[j]?.mask ?? new Uint8Array(6 * BUNKHT)
-      diffBunkers.push(sprite)
+      
+      // Get the def and mask for this frame
+      const defSprite = rawData[defRow]?.[frame]
+      const maskSprite = rawData[maskRow]?.[frame]
+      
+      if (defSprite?.def) sprite.def = new Uint8Array(defSprite.def)
+      if (maskSprite?.mask) sprite.mask = new Uint8Array(maskSprite.mask)
+      
+      bunkers[kind]!.push(sprite)
     }
   }
-
-  // Replace with reorganized data
-  bunkers[BUNKKINDS] = diffBunkers
-  bunkers.length = BUNKKINDS + 1
-
+  
   return bunkers
 }
 

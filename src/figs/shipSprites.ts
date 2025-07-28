@@ -1,8 +1,13 @@
 import type { ShipSprite, ShipSpriteSet } from './types'
 import { SHIP_ROTATIONS, SCENTER, SHIPHT } from './types'
-import { rotate90, mirrorVertical, interpolateShipRotation } from './rotate'
+import { rotate90, mirrorVertical } from './rotate'
 
 // Create a ship sprite set from the 5 base images
+// The rotation scheme creates 32 rotations (11.25° each):
+// - Positions 0-4: Base images (0°, 11.25°, 22.5°, 33.75°, 45°)
+// - Positions 5-8: 90° CCW rotations of 3,2,1,0 (56.25°, 67.5°, 78.75°, 90°)
+// - Positions 9-23: Vertical flips to fill quadrants 2 and 3
+// - Positions 24-31: Vertical mirrors of positions 1-8 for quadrant 4
 export function createShipSpriteSet(baseShips: ShipSprite[]): ShipSpriteSet {
   const rotations: Record<number, ShipSprite> = {}
 
@@ -57,26 +62,53 @@ export function createShipSpriteSet(baseShips: ShipSprite[]): ShipSpriteSet {
     }
   }
 
-  // Generate positions 9-15 (interpolated between existing rotations)
-  // These fill in the gaps between 0°-180°
-  generateIntermediateRotations(rotations, 0, 4, 2) // 9-10 between 0 and 4
-  generateIntermediateRotations(rotations, 4, 8, 11) // 11-14 between 4 and 8
-  rotations[15] = {
-    def: new Uint8Array(rotations[8]?.def ?? []),
-    mask: new Uint8Array(rotations[8]?.mask ?? [])
-  }
-
-  // Generate positions 16-23 (interpolated between existing rotations)
-  // These fill in the gaps between 180°-360°
-  rotations[16] = {
-    def: new Uint8Array(rotations[24]?.def ?? []),
-    mask: new Uint8Array(rotations[24]?.mask ?? [])
-  }
-  generateIntermediateRotations(rotations, 24, 28, 17) // 17-20 between 24 and 28
-  generateIntermediateRotations(rotations, 28, 32, 21) // 21-22 between 28 and 32
-  rotations[23] = {
-    def: new Uint8Array(rotations[31]?.def ?? []),
-    mask: new Uint8Array(rotations[31]?.mask ?? [])
+  // Generate positions 9-23 by copying with vertical flip
+  // Based on the C code which does: ships[8+k][y*2+x] = ships[8-k][SIZE*2 - y*2 + x]
+  // In C, Ship_Pic is int[SHIPHT*2], so y*2+x is indexing ints (2 bytes each)
+  // In our TypeScript, we use bytes, so we need to handle this differently
+  
+  for (let k = 1; k < 9; k++) {
+    // Create rotations 8+k (9-16) from 8-k by vertical flip
+    const src8k = rotations[8 - k]
+    if (src8k) {
+      const newDef = new Uint8Array(4 * SHIPHT)
+      const newMask = new Uint8Array(4 * SHIPHT)
+      
+      // Copy entire sprite with vertical flip
+      for (let y = 0; y < SHIPHT; y++) {
+        for (let byteX = 0; byteX < 4; byteX++) {
+          const srcY = SHIPHT - 1 - y
+          const srcIdx = srcY * 4 + byteX
+          const dstIdx = y * 4 + byteX
+          newDef[dstIdx] = src8k.def[srcIdx] ?? 0
+          newMask[dstIdx] = src8k.mask[srcIdx] ?? 0
+        }
+      }
+      
+      rotations[8 + k] = { def: newDef, mask: newMask }
+    }
+    
+    // Create rotations 24-k (23-16) from 24+k by vertical flip
+    if (k !== 8) {
+      const src24k = rotations[24 + k]
+      if (src24k) {
+        const newDef = new Uint8Array(4 * SHIPHT)
+        const newMask = new Uint8Array(4 * SHIPHT)
+        
+        // Copy entire sprite with vertical flip
+        for (let y = 0; y < SHIPHT; y++) {
+          for (let byteX = 0; byteX < 4; byteX++) {
+            const srcY = SHIPHT - 1 - y
+            const srcIdx = srcY * 4 + byteX
+            const dstIdx = y * 4 + byteX
+            newDef[dstIdx] = src24k.def[srcIdx] ?? 0
+            newMask[dstIdx] = src24k.mask[srcIdx] ?? 0
+          }
+        }
+        
+        rotations[24 - k] = { def: newDef, mask: newMask }
+      }
+    }
   }
 
   return {
@@ -101,40 +133,6 @@ export function createShipSpriteSet(baseShips: ShipSprite[]): ShipSpriteSet {
   }
 }
 
-// Generate intermediate rotations by interpolating between two existing rotations
-function generateIntermediateRotations(
-  rotations: Record<number, ShipSprite>,
-  startIdx: number,
-  endIdx: number,
-  targetStartIdx: number
-): void {
-  const steps = endIdx - startIdx
-
-  for (let i = 1; i < steps; i++) {
-    const weight = i / steps
-    const targetIdx = targetStartIdx + i - 1
-
-    // Handle wrap-around for rotation 32 -> 0
-    const actualEndIdx = endIdx === 32 ? 0 : endIdx
-
-    rotations[targetIdx] = {
-      def: interpolateShipRotation(
-        rotations[startIdx]?.def ?? new Uint8Array(4 * SHIPHT),
-        rotations[actualEndIdx]?.def ?? new Uint8Array(4 * SHIPHT),
-        weight,
-        2 * SCENTER,
-        4
-      ),
-      mask: interpolateShipRotation(
-        rotations[startIdx]?.mask ?? new Uint8Array(4 * SHIPHT),
-        rotations[actualEndIdx]?.mask ?? new Uint8Array(4 * SHIPHT),
-        weight,
-        2 * SCENTER,
-        4
-      )
-    }
-  }
-}
 
 // Debug helper to visualize a ship sprite as ASCII art
 export function shipSpriteToAscii(sprite: ShipSprite): string {

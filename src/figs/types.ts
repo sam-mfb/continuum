@@ -6,19 +6,17 @@ export const SHARDHT = 16
 export const CRATERHT = 32
 export const SCENTER = 15
 
-// Bunker kinds
+// Bunker kinds (in order they appear in the resource)
 export enum BunkerKind {
-  GROUND = 0,
-  FOLLOW = 1,
-  GENERATOR = 2,
-  DIFFUSION = 3,
-  WALL = 4
+  WALL = 0,      // Rotates (16 directions)
+  DIFF = 1,      // Rotates (16 directions)
+  GROUND = 2,    // Animates (8 frames)
+  FOLLOW = 3,    // Animates (8 frames)
+  GENERATOR = 4  // Animates (8 frames)
 }
 
 export const BUNKKINDS = 5
-export const BUNKROTKINDS = 3 // First 3 kinds have rotation
-export const DIFFBUNK = 3
-export const WALLBUNK = 4
+export const BUNKROTKINDS = 2 // First 2 kinds have rotation (Wall, Diff)
 
 // Number of rotations
 export const SHIP_ROTATIONS = 32
@@ -57,16 +55,16 @@ export type BunkerSprite = {
 
 export type BunkerSpriteSet = {
   kinds: {
-    [BunkerKind.GROUND]: Record<number, BunkerSprite> // 16 rotations
-    [BunkerKind.FOLLOW]: Record<number, BunkerSprite> // 16 rotations
-    [BunkerKind.GENERATOR]: Record<number, BunkerSprite> // 16 rotations
-    [BunkerKind.DIFFUSION]: BunkerSprite[] // 3 variations, no rotation
-    [BunkerKind.WALL]: BunkerSprite // 1 static image
+    [BunkerKind.WALL]: Record<number, BunkerSprite>      // 16 rotations
+    [BunkerKind.DIFF]: Record<number, BunkerSprite>      // 16 rotations
+    [BunkerKind.GROUND]: BunkerSprite[]                  // 8 animation frames
+    [BunkerKind.FOLLOW]: BunkerSprite[]                  // 8 animation frames
+    [BunkerKind.GENERATOR]: BunkerSprite[]               // 8 animation frames
   }
   getSprite(
     kind: BunkerKind,
     rotation: number,
-    variation?: number
+    animationFrame?: number
   ): BunkerSprite
 }
 

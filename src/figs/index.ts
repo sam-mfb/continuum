@@ -19,7 +19,6 @@ export { processCraterSprite } from './craterSprites'
 
 // Re-export debug helpers
 export { shipSpriteToAscii } from './shipSprites'
-export { bunkerSpriteToAscii } from './bunkerSprites'
 export { fuelSpriteToAscii } from './fuelSprites'
 export { shardSpriteToAscii } from './shardSprites'
 export { craterSpriteToAscii } from './craterSprites'

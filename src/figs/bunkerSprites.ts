@@ -1,7 +1,6 @@
 import type { BunkerSprite, BunkerSpriteSet } from './types'
 import {
   BunkerKind,
-  BUNKKINDS,
   BUNKROTKINDS,
   BUNKER_ROTATIONS,
   BUNKHT,
@@ -15,35 +14,22 @@ export function createBunkerSpriteSet(
   bunkerArrays: BunkerSprite[][]
 ): BunkerSpriteSet {
   const kinds: BunkerSpriteSet['kinds'] = {
-    [BunkerKind.GROUND]: {},
-    [BunkerKind.FOLLOW]: {},
-    [BunkerKind.GENERATOR]: {},
-    [BunkerKind.DIFFUSION]: [],
-    [BunkerKind.WALL]: {} as BunkerSprite // Will be set below
+    [BunkerKind.WALL]: {},      // Will be filled with 16 rotations
+    [BunkerKind.DIFF]: {},      // Will be filled with 16 rotations
+    [BunkerKind.GROUND]: [],    // Will be filled with 8 animation frames
+    [BunkerKind.FOLLOW]: [],    // Will be filled with 8 animation frames
+    [BunkerKind.GENERATOR]: []  // Will be filled with 8 animation frames
   }
 
-  // Process rotating bunkers (ground, follow, generator)
+  // Process rotating bunkers (Wall, Diff)
   for (let kind = 0; kind < BUNKROTKINDS; kind++) {
-    const kindSprites = kinds[kind as BunkerKind] as Record<
-      number,
-      BunkerSprite
-    >
+    const kindSprites = kinds[kind as BunkerKind] as Record<number, BunkerSprite>
+    const sourceArray = bunkerArrays[kind]
+    if (!sourceArray) continue
 
-    // Initialize all 16 rotations
-    for (let rot = 0; rot < BUNKER_ROTATIONS; rot++) {
-      kindSprites[rot] = {
-        def: new Uint8Array(6 * BUNKHT),
-        mask: new Uint8Array(6 * BUNKHT),
-        images: {
-          background1: new Uint8Array(6 * BUNKHT),
-          background2: new Uint8Array(6 * BUNKHT)
-        }
-      }
-    }
-
-    // Copy the first 4 rotations from extracted data
+    // Copy the 4 base images
     for (let i = 0; i < 4; i++) {
-      const sprite = bunkerArrays[kind]?.[i]
+      const sprite = sourceArray[i]
       if (!sprite) continue
       kindSprites[i] = {
         def: new Uint8Array(sprite.def),
@@ -55,7 +41,7 @@ export function createBunkerSpriteSet(
       }
     }
 
-    // Generate rotations 4-15 from rotations 0-3
+    // Generate rotations 4-15 using the rotateBunker algorithm
     for (let i = 4; i < BUNKER_ROTATIONS; i++) {
       const sourceRotation = i - 4
       const sourceSprite = kindSprites[sourceRotation]
@@ -87,44 +73,28 @@ export function createBunkerSpriteSet(
     }
   }
 
-  // Process diffusion bunkers (3 variations, no rotation)
-  const diffusionSprites = kinds[BunkerKind.DIFFUSION] as BunkerSprite[]
-  for (let i = 0; i < 3; i++) {
-    const sprite = bunkerArrays[BUNKKINDS]?.[i]
-    if (!sprite) continue
-    diffusionSprites[i] = {
-      def: new Uint8Array(sprite.def),
-      mask: new Uint8Array(sprite.mask),
-      images: {
-        background1: applyBunkerBackground(
-          sprite.def,
-          sprite.mask,
-          BACKGROUND1
-        ),
-        background2: applyBunkerBackground(sprite.def, sprite.mask, BACKGROUND2)
-      }
-    }
-  }
+  // Process animated bunkers (Ground, Follow, Generator)
+  for (let kind = BunkerKind.GROUND; kind <= BunkerKind.GENERATOR; kind++) {
+    const kindSprites = kinds[kind] as BunkerSprite[]
+    const sourceArray = bunkerArrays[kind]
+    if (!sourceArray) continue
 
-  // Process wall bunker (single static image)
-  const wallSprite = bunkerArrays[BunkerKind.WALL]?.[0]
-  if (!wallSprite) {
-    throw new Error('Wall bunker sprite not found')
-  }
-  kinds[BunkerKind.WALL] = {
-    def: new Uint8Array(wallSprite.def),
-    mask: new Uint8Array(wallSprite.mask),
-    images: {
-      background1: applyBunkerBackground(
-        wallSprite.def,
-        wallSprite.mask,
-        BACKGROUND1
-      ),
-      background2: applyBunkerBackground(
-        wallSprite.def,
-        wallSprite.mask,
-        BACKGROUND2
-      )
+    // Copy all 8 animation frames
+    for (let frame = 0; frame < 8; frame++) {
+      const sprite = sourceArray[frame]
+      if (!sprite) continue
+      kindSprites[frame] = {
+        def: new Uint8Array(sprite.def),
+        mask: new Uint8Array(sprite.mask),
+        images: {
+          background1: applyBunkerBackground(
+            sprite.def,
+            sprite.mask,
+            BACKGROUND1
+          ),
+          background2: applyBunkerBackground(sprite.def, sprite.mask, BACKGROUND2)
+        }
+      }
     }
   }
 
@@ -134,12 +104,12 @@ export function createBunkerSpriteSet(
     getSprite(
       kind: BunkerKind,
       rotation: number,
-      variation?: number
+      animationFrame?: number
     ): BunkerSprite {
       switch (kind) {
-        case BunkerKind.GROUND:
-        case BunkerKind.FOLLOW:
-        case BunkerKind.GENERATOR:
+        case BunkerKind.WALL:
+        case BunkerKind.DIFF:
+          // Rotating bunkers
           const rotatingKind = kinds[kind] as Record<number, BunkerSprite>
           const rotSprite = rotatingKind[rotation % BUNKER_ROTATIONS]
           if (!rotSprite)
@@ -148,18 +118,18 @@ export function createBunkerSpriteSet(
             )
           return rotSprite
 
-        case BunkerKind.DIFFUSION:
-          const diffKind = kinds[kind] as BunkerSprite[]
-          const idx = variation !== undefined ? variation % 3 : 0
-          const diffSprite = diffKind[idx]
-          if (!diffSprite)
+        case BunkerKind.GROUND:
+        case BunkerKind.FOLLOW:
+        case BunkerKind.GENERATOR:
+          // Animated bunkers
+          const animatedKind = kinds[kind] as BunkerSprite[]
+          const frame = animationFrame !== undefined ? animationFrame % 8 : 0
+          const animSprite = animatedKind[frame]
+          if (!animSprite)
             throw new Error(
-              `Diffusion bunker sprite not found: variation ${idx}`
+              `Bunker sprite not found: ${kind} frame ${frame}`
             )
-          return diffSprite
-
-        case BunkerKind.WALL:
-          return kinds[kind] as BunkerSprite
+          return animSprite
 
         default:
           throw new Error(`Unknown bunker kind: ${kind}`)
@@ -176,51 +146,19 @@ function applyBunkerBackground(
 ): Uint8Array {
   const result = new Uint8Array(def.length)
 
-  // Process in 16-bit words to match original code
-  for (let row = 0; row < BUNKHT; row++) {
-    const rowOffset = row * 6
+  // Process as 16-bit values (2 bytes at a time)
+  for (let i = 0; i < def.length; i += 2) {
+    // Combine two bytes into a 16-bit value (big-endian)
+    const defValue = (def[i]! << 8) | (def[i + 1] ?? 0)
+    const maskValue = (mask[i]! << 8) | (mask[i + 1] ?? 0)
 
-    // Determine which background pattern to use for this row
-    const bgPattern = row % 2 === 0 ? background : ~background
+    // Apply formula: (background & mask) ^ def
+    const resultValue = (background & maskValue) ^ defValue
 
-    // Process 3 16-bit words per row
-    for (let word = 0; word < 3; word++) {
-      const wordOffset = rowOffset + word * 2
-
-      // Extract 16-bit values
-      const defWord = ((def[wordOffset] ?? 0) << 8) | (def[wordOffset + 1] ?? 0)
-      const maskWord =
-        ((mask[wordOffset] ?? 0) << 8) | (mask[wordOffset + 1] ?? 0)
-
-      // Get appropriate 16 bits from background pattern
-      const bgWord = (bgPattern >> (16 - word * 16)) & 0xffff
-
-      // Apply formula: (background & mask) ^ def
-      const resultWord = (bgWord & maskWord) ^ defWord
-
-      // Store result
-      result[wordOffset] = (resultWord >> 8) & 0xff
-      result[wordOffset + 1] = resultWord & 0xff
-    }
+    // Split back into two bytes
+    result[i] = (resultValue >> 8) & 0xff
+    result[i + 1] = resultValue & 0xff
   }
 
   return result
-}
-
-// Debug helper to visualize a bunker sprite as ASCII art
-export function bunkerSpriteToAscii(sprite: BunkerSprite): string {
-  const lines: string[] = []
-
-  for (let y = 0; y < BUNKHT; y++) {
-    let line = ''
-    for (let x = 0; x < 48; x++) {
-      const byteIdx = y * 6 + Math.floor(x / 8)
-      const bitIdx = 7 - (x % 8)
-      const bit = ((sprite.def[byteIdx] ?? 0) >> bitIdx) & 1
-      line += bit ? '█' : ' '
-    }
-    lines.push(line)
-  }
-
-  return lines.join('\n')
 }

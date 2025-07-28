@@ -33,7 +33,7 @@ export const SpritesControls: React.FC = () => {
   const getRotationMax = (): number => {
     switch (selectedType) {
       case 'ship': return 31
-      case 'bunker': return bunkerKind < 3 ? 15 : 0
+      case 'bunker': return bunkerKind < 2 ? 15 : 0 // Only Wall and Diff rotate
       case 'shard': return 15
       default: return 0
     }
@@ -54,21 +54,21 @@ export const SpritesControls: React.FC = () => {
               value={bunkerKind} 
               onChange={(e) => dispatch(setBunkerKind(Number(e.target.value) as BunkerKind))}
             >
-              <option value="0">Ground</option>
-              <option value="1">Follow</option>
-              <option value="2">Generator</option>
-              <option value="3">Diffusion</option>
-              <option value="4">Wall</option>
+              <option value="0">Wall</option>
+              <option value="1">Diff</option>
+              <option value="2">Ground</option>
+              <option value="3">Follow</option>
+              <option value="4">Generator</option>
             </select>
           </div>
           
-          {bunkerKind === 3 && (
+          {bunkerKind >= 2 && (
             <div className="control-group">
-              <label>Variation: {bunkerVariation}</label>
+              <label>Animation Frame: {bunkerVariation}</label>
               <input 
                 type="range" 
                 min="0" 
-                max="2" 
+                max="7" 
                 value={bunkerVariation}
                 onChange={(e) => dispatch(setBunkerVariation(Number(e.target.value)))}
               />
@@ -157,8 +157,8 @@ export const SpritesControls: React.FC = () => {
           5-8 are 90° rotations, and the rest are interpolated or mirrored.</p>
         )}
         {selectedType === 'bunker' && (
-          <p>Bunkers come in 5 types. Ground, Follow, and Generator bunkers can rotate (16 directions). 
-          Diffusion bunkers have 3 variations but don't rotate. Wall bunkers are static.</p>
+          <p>Bunkers come in 5 types. Wall and Diff bunkers can rotate (16 directions). 
+          Ground, Follow, and Generator bunkers animate through 8 frames.</p>
         )}
         {selectedType === 'fuel' && (
           <p>Fuel cells animate through 3 frames. The empty cell shows after fuel is collected.</p>
