@@ -29,6 +29,7 @@ export const SpritesViewer: React.FC = () => {
     let spriteData: Uint8Array | null = null
     let width = 0
     let height = 0
+    let storageRowBytes = 0
     
     // Get the appropriate sprite data
     try {
@@ -36,8 +37,9 @@ export const SpritesViewer: React.FC = () => {
         case 'ship': {
           const sprite = allSprites.ships.getRotationIndex(rotation)
           spriteData = showMask ? sprite.mask : sprite.def
-          width = 30
-          height = 30
+          width = 32
+          height = 32
+          storageRowBytes = 4 // 32 bits wide storage
           break
         }
         
@@ -46,6 +48,7 @@ export const SpritesViewer: React.FC = () => {
           spriteData = showMask ? sprite.mask : sprite.def
           width = 48
           height = 48
+          storageRowBytes = 6 // 48 bits wide storage
           break
         }
         
@@ -56,6 +59,7 @@ export const SpritesViewer: React.FC = () => {
           spriteData = showMask ? sprite.mask : sprite.def
           width = 32
           height = 32
+          storageRowBytes = 4 // 32 bits wide storage
           break
         }
         
@@ -64,20 +68,23 @@ export const SpritesViewer: React.FC = () => {
           spriteData = showMask ? sprite.mask : sprite.def
           width = 16
           height = 16
+          storageRowBytes = 2 // 16 bits wide storage
           break
         }
         
         case 'crater': {
           spriteData = showMask ? allSprites.crater.mask : allSprites.crater.def
-          width = 30
-          height = 30
+          width = 32
+          height = 32
+          storageRowBytes = 4 // 32 bits wide storage
           break
         }
         
         case 'shield': {
           spriteData = allSprites.shield.def
-          width = 30
-          height = 30
+          width = 32
+          height = 32
+          storageRowBytes = 4 // 32 bits wide storage
           break
         }
       }
@@ -90,11 +97,10 @@ export const SpritesViewer: React.FC = () => {
     
     // Convert 1-bit data to ImageData
     const pixels = new Uint8ClampedArray(width * height * 4)
-    const bytesPerRow = Math.ceil(width / 8)
     
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        const byteIdx = y * bytesPerRow + Math.floor(x / 8)
+        const byteIdx = y * storageRowBytes + Math.floor(x / 8)
         const bitIdx = 7 - (x % 8)
         const bit = (spriteData[byteIdx]! >> bitIdx) & 1
         

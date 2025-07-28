@@ -72,17 +72,17 @@ function extractShips(bitmap: Uint8Array): {
     if (i < 5) {
       // First 5 are masks
       const sprite = createShipSprite()
-      copyBitmapRegion(bitmap, 512, sprite.mask, x, y, 30, 30, 4)
+      copyBitmapRegion(bitmap, 512, sprite.mask, x - 1, y - 1, 32, 32, 4)
       baseShips[i] = sprite
     } else if (i < 10) {
       // Next 5 are defs
       const sprite = baseShips[i - 5]
       if (!sprite) continue
-      copyBitmapRegion(bitmap, 512, sprite.def, x, y, 30, 30, 4)
+      copyBitmapRegion(bitmap, 512, sprite.def, x - 1, y - 1, 32, 32, 4)
     } else {
       // Last one is shield
       const shieldDef = new Uint8Array(4 * SHIPHT)
-      copyBitmapRegion(bitmap, 512, shieldDef, x, y, 30, 30, 4)
+      copyBitmapRegion(bitmap, 512, shieldDef, x - 1, y - 1, 32, 32, 4)
       shield = shieldDef
     }
   }
@@ -229,10 +229,10 @@ function extractCrater(bitmap: Uint8Array): {
     bitmap,
     512,
     crater.def,
-    CRATER_LEFT + 1,
-    CRATER_TOP + 1,
-    30,
-    30,
+    CRATER_LEFT,
+    CRATER_TOP,
+    32,
+    32,
     4
   )
 
@@ -241,10 +241,10 @@ function extractCrater(bitmap: Uint8Array): {
     bitmap,
     512,
     crater.mask,
-    CRATER_LEFT + 32 + 1,
-    CRATER_TOP + 1,
-    30,
-    30,
+    CRATER_LEFT + 32,
+    CRATER_TOP,
+    32,
+    32,
     4
   )
 
