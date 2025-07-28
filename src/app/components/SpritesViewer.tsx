@@ -104,18 +104,18 @@ export const SpritesViewer: React.FC = () => {
           if (!allSprites.flames) break
           const flame = allSprites.flames.getFrame(flameFrame)
           spriteData = flame.def
-          width = 56 // 7 bytes * 8 bits
-          height = 1
-          storageRowBytes = 7
+          width = 8
+          height = 7
+          storageRowBytes = 1 // 8 bits wide storage
           break
         }
         
         case 'strafe': {
           if (!allSprites.strafe) break
           spriteData = allSprites.strafe.getFrame(strafeFrame)
-          width = 64 // 8 bytes * 8 bits
+          width = 8
           height = 8
-          storageRowBytes = 8
+          storageRowBytes = 1 // 8 bits wide storage
           break
         }
         

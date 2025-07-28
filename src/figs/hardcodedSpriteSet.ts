@@ -5,6 +5,7 @@ import {
   strafeDefs,
   digits,
   FLAME_WIDTH,
+  FLAME_HEIGHT,
   FLAME_FRAMES,
   STRAFE_FRAMES,
   SPACECHAR
@@ -34,7 +35,7 @@ export function createFlameSpriteSet(): {
   const frames: FlameSprite[] = flames.map(data => ({
     def: data,
     width: FLAME_WIDTH,
-    height: 1 // Each flame is a single row of 7 bytes
+    height: FLAME_HEIGHT
   }))
 
   return {

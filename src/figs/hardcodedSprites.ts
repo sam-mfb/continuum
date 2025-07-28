@@ -1,8 +1,8 @@
 // Hardcoded sprite data from orig/Sources/Figs.c
 
-// Flame animation sprites - 32 frames, 7 bytes each
-export const FLAME_WIDTH = 56 // 7 bytes * 8 bits
-export const FLAME_HEIGHT = 32
+// Flame animation sprites - 32 frames, 7 bytes each (one byte per row)
+export const FLAME_WIDTH = 8
+export const FLAME_HEIGHT = 7
 export const FLAME_FRAMES = 32
 
 export const flames: Uint8Array[] = [
@@ -44,7 +44,7 @@ export const flames: Uint8Array[] = [
 ]
 
 // Strafe sprites - 16 orientations, 8 bytes each
-export const STRAFE_WIDTH = 64 // 8 bytes * 8 bits
+export const STRAFE_WIDTH = 8
 export const STRAFE_HEIGHT = 8
 export const STRAFE_FRAMES = 16
 
