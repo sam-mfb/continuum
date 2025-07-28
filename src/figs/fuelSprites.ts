@@ -1,15 +1,23 @@
 import type { FuelSprite, FuelSpriteSet } from './types'
-import { FUELFRAMES, FUELHT, BACKGROUND1, BACKGROUND2 } from './types'
+import { 
+  FUELFRAMES, 
+  FUEL_DRAINING_FRAMES,
+  FUEL_TOTAL_FRAMES,
+  FUELHT, 
+  BACKGROUND1, 
+  BACKGROUND2 
+} from './types'
 
 // Create a fuel sprite set from extracted arrays
 export function createFuelSpriteSet(fuelArrays: FuelSprite[]): FuelSpriteSet {
-  const frames: FuelSprite[] = []
+  const normalFrames: FuelSprite[] = []
+  const drainingFrames: FuelSprite[] = []
 
-  // Process animation frames (0-2)
+  // Process normal animation frames (0-5)
   for (let i = 0; i < FUELFRAMES; i++) {
     const sprite = fuelArrays[i]
     if (!sprite) continue
-    frames[i] = {
+    normalFrames[i] = {
       def: new Uint8Array(sprite.def),
       mask: new Uint8Array(sprite.mask),
       images: {
@@ -19,8 +27,22 @@ export function createFuelSpriteSet(fuelArrays: FuelSprite[]): FuelSpriteSet {
     }
   }
 
-  // The last sprite (index 3) is the empty fuel cell
-  const emptyCell = fuelArrays[FUELFRAMES]
+  // Process draining frames (6-7)
+  for (let i = 0; i < FUEL_DRAINING_FRAMES; i++) {
+    const sprite = fuelArrays[FUELFRAMES + i]
+    if (!sprite) continue
+    drainingFrames[i] = {
+      def: new Uint8Array(sprite.def),
+      mask: new Uint8Array(sprite.mask),
+      images: {
+        background1: applyFuelBackground(sprite.def, sprite.mask, BACKGROUND1),
+        background2: applyFuelBackground(sprite.def, sprite.mask, BACKGROUND2)
+      }
+    }
+  }
+
+  // The last sprite (index 8) is the empty fuel cell
+  const emptyCell = fuelArrays[FUEL_TOTAL_FRAMES - 1]
   if (!emptyCell) {
     throw new Error('Empty fuel cell sprite not found')
   }
@@ -42,13 +64,21 @@ export function createFuelSpriteSet(fuelArrays: FuelSprite[]): FuelSpriteSet {
   }
 
   return {
-    frames,
+    frames: normalFrames,
+    drainingFrames,
     emptyCell: emptySprite,
 
     getFrame(index: number): FuelSprite {
-      // Cycle through animation frames
-      const sprite = frames[index % FUELFRAMES]
+      // Cycle through normal animation frames
+      const sprite = normalFrames[index % FUELFRAMES]
       if (!sprite) throw new Error(`Fuel sprite not found at index ${index}`)
+      return sprite
+    },
+
+    getDrainingFrame(index: number): FuelSprite {
+      // Cycle through draining frames
+      const sprite = drainingFrames[index % FUEL_DRAINING_FRAMES]
+      if (!sprite) throw new Error(`Draining fuel sprite not found at index ${index}`)
       return sprite
     }
   }

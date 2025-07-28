@@ -22,8 +22,10 @@ export const BUNKROTKINDS = 2 // First 2 kinds have rotation (Wall, Diff)
 export const SHIP_ROTATIONS = 32
 export const BUNKER_ROTATIONS = 16
 
-// Fuel animation frames
-export const FUELFRAMES = 3
+// Fuel frames: 6 normal animation + 2 draining + 1 empty = 9 total
+export const FUELFRAMES = 6
+export const FUEL_DRAINING_FRAMES = 2
+export const FUEL_TOTAL_FRAMES = 9
 
 // Shard kinds
 export const SHARDKINDS = 5
@@ -78,9 +80,11 @@ export type FuelSprite = {
 }
 
 export type FuelSpriteSet = {
-  frames: FuelSprite[] // Animation frames
+  frames: FuelSprite[] // Normal animation frames (6)
+  drainingFrames: FuelSprite[] // Draining animation frames (2)
   emptyCell: FuelSprite // The empty fuel cell sprite
   getFrame(index: number): FuelSprite
+  getDrainingFrame(index: number): FuelSprite
 }
 
 export type ShardSprite = {

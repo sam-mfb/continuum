@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react'
 import { useAppSelector } from '../../store/store'
+import type { FuelSprite } from '@/figs/types'
 
 export const SpritesViewer: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -53,9 +54,17 @@ export const SpritesViewer: React.FC = () => {
         }
         
         case 'fuel': {
-          const sprite = fuelFrame === 3 
-            ? allSprites.fuels.emptyCell 
-            : allSprites.fuels.getFrame(fuelFrame)
+          let sprite: FuelSprite
+          if (fuelFrame < 6) {
+            // Normal animation frames
+            sprite = allSprites.fuels.getFrame(fuelFrame)
+          } else if (fuelFrame < 8) {
+            // Draining frames
+            sprite = allSprites.fuels.getDrainingFrame(fuelFrame - 6)
+          } else {
+            // Empty cell
+            sprite = allSprites.fuels.emptyCell
+          }
           spriteData = showMask ? sprite.mask : sprite.def
           width = 32
           height = 32

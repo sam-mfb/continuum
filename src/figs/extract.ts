@@ -16,7 +16,7 @@ import {
   BUNKHT,
   FUELHT,
   SHARDHT,
-  FUELFRAMES,
+  FUEL_TOTAL_FRAMES,
   SHARDKINDS,
   BUNKROTKINDS,
   BunkerKind,
@@ -184,9 +184,9 @@ function extractBunkers(bitmap: Uint8Array): BunkerSprite[][] {
 function extractFuels(bitmap: Uint8Array): FuelSprite[] {
   const fuels: FuelSprite[] = []
 
-  // Extract masks and defs
+  // Extract all 9 fuel sprites (6 normal + 2 draining + 1 empty)
   for (let j = 0; j < 2; j++) {
-    for (let i = 0; i < FUELFRAMES + 1; i++) {
+    for (let i = 0; i < FUEL_TOTAL_FRAMES; i++) {
       const x = i * 48
       const y = j * 48 + FUEL_TOP
 

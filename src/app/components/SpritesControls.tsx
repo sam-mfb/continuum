@@ -85,10 +85,19 @@ export const SpritesControls: React.FC = () => {
             value={fuelFrame} 
             onChange={(e) => dispatch(setFuelFrame(Number(e.target.value)))}
           >
-            <option value="0">Frame 1</option>
-            <option value="1">Frame 2</option>
-            <option value="2">Frame 3</option>
-            <option value="3">Empty Cell</option>
+            <optgroup label="Normal Animation">
+              <option value="0">Normal 1</option>
+              <option value="1">Normal 2</option>
+              <option value="2">Normal 3</option>
+              <option value="3">Normal 4</option>
+              <option value="4">Normal 5</option>
+              <option value="5">Normal 6</option>
+            </optgroup>
+            <optgroup label="Draining">
+              <option value="6">Draining 1</option>
+              <option value="7">Draining 2</option>
+            </optgroup>
+            <option value="8">Empty Cell</option>
           </select>
         </div>
       )}
@@ -161,7 +170,8 @@ export const SpritesControls: React.FC = () => {
           Ground, Follow, and Generator bunkers animate through 8 frames.</p>
         )}
         {selectedType === 'fuel' && (
-          <p>Fuel cells animate through 3 frames. The empty cell shows after fuel is collected.</p>
+          <p>Fuel cells have 6 normal animation frames, 2 draining frames when being collected, 
+          and an empty cell frame after collection.</p>
         )}
         {selectedType === 'shard' && (
           <p>Explosion shards come in 5 types (one for each bunker type) with 16 rotations each.</p>
