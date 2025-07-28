@@ -73,7 +73,7 @@ export const strafeDefs: Uint8Array[] = [
 // Digit and character sprites - 9 bytes each (height)
 export const DIGIT_WIDTH = 8
 export const DIGIT_HEIGHT = 9
-export const SPACECHAR = 27 // Index of space character
+export const SPACECHAR = 37 // Index of space character
 
 export const digits: Uint8Array[] = [
   // 0-9
