@@ -36,8 +36,8 @@ export const SpritesViewer: React.FC = () => {
         case 'ship': {
           const sprite = allSprites.ships.getRotationIndex(rotation)
           spriteData = showMask ? sprite.mask : sprite.def
-          width = 32
-          height = 22
+          width = 30
+          height = 30
           break
         }
         
@@ -55,7 +55,7 @@ export const SpritesViewer: React.FC = () => {
             : allSprites.fuels.getFrame(fuelFrame)
           spriteData = showMask ? sprite.mask : sprite.def
           width = 32
-          height = 26
+          height = 32
           break
         }
         
@@ -69,15 +69,15 @@ export const SpritesViewer: React.FC = () => {
         
         case 'crater': {
           spriteData = showMask ? allSprites.crater.mask : allSprites.crater.def
-          width = 32
+          width = 30
           height = 30
           break
         }
         
         case 'shield': {
           spriteData = allSprites.shield.def
-          width = 32
-          height = 22
+          width = 30
+          height = 30
           break
         }
       }

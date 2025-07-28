@@ -16,7 +16,6 @@ import {
   BUNKHT,
   FUELHT,
   SHARDHT,
-  CRATERHT,
   BUNKKINDS,
   FUELFRAMES,
   SHARDKINDS,
@@ -73,17 +72,17 @@ function extractShips(bitmap: Uint8Array): {
     if (i < 5) {
       // First 5 are masks
       const sprite = createShipSprite()
-      copyBitmapRegion(bitmap, 512, sprite.mask, x, y, 30, SHIPHT - 2, 4)
+      copyBitmapRegion(bitmap, 512, sprite.mask, x, y, 30, 30, 4)
       baseShips[i] = sprite
     } else if (i < 10) {
       // Next 5 are defs
       const sprite = baseShips[i - 5]
       if (!sprite) continue
-      copyBitmapRegion(bitmap, 512, sprite.def, x, y, 30, SHIPHT - 2, 4)
+      copyBitmapRegion(bitmap, 512, sprite.def, x, y, 30, 30, 4)
     } else {
       // Last one is shield
       const shieldDef = new Uint8Array(4 * SHIPHT)
-      copyBitmapRegion(bitmap, 512, shieldDef, x, y, 30, SHIPHT - 2, 4)
+      copyBitmapRegion(bitmap, 512, shieldDef, x, y, 30, 30, 4)
       shield = shieldDef
     }
   }
@@ -233,7 +232,7 @@ function extractCrater(bitmap: Uint8Array): {
     CRATER_LEFT + 1,
     CRATER_TOP + 1,
     30,
-    CRATERHT - 2,
+    30,
     4
   )
 
@@ -245,7 +244,7 @@ function extractCrater(bitmap: Uint8Array): {
     CRATER_LEFT + 32 + 1,
     CRATER_TOP + 1,
     30,
-    CRATERHT - 2,
+    30,
     4
   )
 

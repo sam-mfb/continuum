@@ -1,9 +1,9 @@
 // Sprite dimensions from GW.h
-export const SHIPHT = 22
+export const SHIPHT = 32
 export const BUNKHT = 48
-export const FUELHT = 26
+export const FUELHT = 32
 export const SHARDHT = 16
-export const CRATERHT = 30
+export const CRATERHT = 32
 export const SCENTER = 15
 
 // Bunker kinds
@@ -36,8 +36,8 @@ export const BACKGROUND2 = 0x55555555
 
 // Core sprite types
 export type ShipSprite = {
-  def: Uint8Array // 88 bytes (4 bytes/row × 22 rows)
-  mask: Uint8Array // 88 bytes
+  def: Uint8Array // 128 bytes (4 bytes/row × 32 rows)
+  mask: Uint8Array // 128 bytes
 }
 
 export type ShipSpriteSet = {
@@ -71,8 +71,8 @@ export type BunkerSpriteSet = {
 }
 
 export type FuelSprite = {
-  def: Uint8Array // 104 bytes (4 bytes/row × 26 rows)
-  mask: Uint8Array // 104 bytes
+  def: Uint8Array // 128 bytes (4 bytes/row × 32 rows)
+  mask: Uint8Array // 128 bytes
   images: {
     background1: Uint8Array
     background2: Uint8Array
@@ -100,8 +100,8 @@ export type ShardSpriteSet = {
 }
 
 export type CraterSprite = {
-  def: Uint8Array // 120 bytes (4 bytes/row × 30 rows)
-  mask: Uint8Array // 120 bytes
+  def: Uint8Array // 128 bytes (4 bytes/row × 32 rows)
+  mask: Uint8Array // 128 bytes
   images: {
     background1: Uint8Array
     background2: Uint8Array
