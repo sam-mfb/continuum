@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { uiReducer } from './uiSlice'
 import galaxyReducer from './galaxySlice'
 import graphicsReducer from './graphicsSlice'
+import spritesReducer from './spritesSlice'
 import soundReducer from '../sound/soundSlice'
 import { wallsSlice } from '../walls/wallsSlice'
 import gameViewReducer from './gameViewSlice'
@@ -13,6 +14,7 @@ export const store = configureStore({
     ui: uiReducer,
     galaxy: galaxyReducer,
     graphics: graphicsReducer,
+    sprites: spritesReducer,
     sound: soundReducer,
     walls: wallsSlice.reducer,
     gameView: gameViewReducer
@@ -22,7 +24,7 @@ export const store = configureStore({
       serializableCheck: {
         // Ignore ImageData in actions and state
         ignoredActions: ['graphics/loadFile/fulfilled'],
-        ignoredPaths: ['graphics.imageData', 'sound.activeSource']
+        ignoredPaths: ['graphics.imageData', 'sprites.allSprites', 'sound.activeSource']
       }
     })
 })
