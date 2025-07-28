@@ -14,6 +14,9 @@ export const SpritesViewer: React.FC = () => {
     bunkerVariation,
     fuelFrame,
     shardKind,
+    flameFrame,
+    strafeFrame,
+    digitChar,
     error
   } = useAppSelector(state => state.sprites)
 
@@ -96,6 +99,36 @@ export const SpritesViewer: React.FC = () => {
           storageRowBytes = 4 // 32 bits wide storage
           break
         }
+        
+        case 'flame': {
+          if (!allSprites.flames) break
+          const flame = allSprites.flames.getFrame(flameFrame)
+          spriteData = flame.def
+          width = 56 // 7 bytes * 8 bits
+          height = 1
+          storageRowBytes = 7
+          break
+        }
+        
+        case 'strafe': {
+          if (!allSprites.strafe) break
+          spriteData = allSprites.strafe.getFrame(strafeFrame)
+          width = 64 // 8 bytes * 8 bits
+          height = 8
+          storageRowBytes = 8
+          break
+        }
+        
+        case 'digit': {
+          if (!allSprites.digits) break
+          const charData = allSprites.digits.getCharacter(digitChar)
+          if (!charData) break
+          spriteData = charData
+          width = 8
+          height = 9
+          storageRowBytes = 1
+          break
+        }
       }
     } catch (err) {
       console.error('Error getting sprite:', err)
@@ -128,7 +161,7 @@ export const SpritesViewer: React.FC = () => {
       }
     }
     
-  }, [allSprites, selectedType, showMask, rotation, scale, bunkerKind, bunkerVariation, fuelFrame, shardKind])
+  }, [allSprites, selectedType, showMask, rotation, scale, bunkerKind, bunkerVariation, fuelFrame, shardKind, flameFrame, strafeFrame, digitChar])
 
   if (error) {
     return (

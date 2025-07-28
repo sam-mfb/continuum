@@ -3,7 +3,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import type { AllSprites, BunkerKind } from '@/figs/types'
 import { extractAllSprites } from '@/figs'
 
-export type SpriteType = 'ship' | 'bunker' | 'fuel' | 'shard' | 'crater' | 'shield'
+export type SpriteType = 'ship' | 'bunker' | 'fuel' | 'shard' | 'crater' | 'shield' | 'flame' | 'strafe' | 'digit'
 
 type SpritesState = {
   // Sprite data
@@ -22,6 +22,9 @@ type SpritesState = {
   bunkerVariation: number
   fuelFrame: number
   shardKind: number
+  flameFrame: number
+  strafeFrame: number
+  digitChar: string
 }
 
 const initialState: SpritesState = {
@@ -37,7 +40,10 @@ const initialState: SpritesState = {
   bunkerKind: 0,
   bunkerVariation: 0,
   fuelFrame: 0,
-  shardKind: 0
+  shardKind: 0,
+  flameFrame: 0,
+  strafeFrame: 0,
+  digitChar: '0'
 }
 
 // Async thunk to load sprites
@@ -93,6 +99,18 @@ const spritesSlice = createSlice({
     
     setShardKind: (state, action: PayloadAction<number>) => {
       state.shardKind = action.payload
+    },
+    
+    setFlameFrame: (state, action: PayloadAction<number>) => {
+      state.flameFrame = action.payload
+    },
+    
+    setStrafeFrame: (state, action: PayloadAction<number>) => {
+      state.strafeFrame = action.payload
+    },
+    
+    setDigitChar: (state, action: PayloadAction<string>) => {
+      state.digitChar = action.payload
     }
   },
   
@@ -121,7 +139,10 @@ export const {
   setBunkerKind,
   setBunkerVariation,
   setFuelFrame,
-  setShardKind
+  setShardKind,
+  setFlameFrame,
+  setStrafeFrame,
+  setDigitChar
 } = spritesSlice.actions
 
 export default spritesSlice.reducer

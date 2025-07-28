@@ -16,7 +16,7 @@ const spriteTypes: { type: SpriteType; name: string; description: string }[] = [
   {
     type: 'fuel',
     name: 'Fuel Cell',
-    description: '3 animation frames + empty'
+    description: '6 normal + 2 draining + empty'
   },
   {
     type: 'shard',
@@ -32,6 +32,21 @@ const spriteTypes: { type: SpriteType; name: string; description: string }[] = [
     type: 'shield',
     name: 'Shield',
     description: 'Ship protection bubble'
+  },
+  {
+    type: 'flame',
+    name: 'Flame',
+    description: '32 thruster animation frames'
+  },
+  {
+    type: 'strafe',
+    name: 'Strafe',
+    description: '16 side-thruster orientations'
+  },
+  {
+    type: 'digit',
+    name: 'Characters',
+    description: 'Numbers, letters, and icons'
   }
 ]
 

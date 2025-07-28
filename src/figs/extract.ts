@@ -31,6 +31,11 @@ import { createBunkerSpriteSet } from './bunkerSprites'
 import { createFuelSpriteSet } from './fuelSprites'
 import { createShardSpriteSet } from './shardSprites'
 import { processCraterSprite } from './craterSprites'
+import { 
+  createFlameSpriteSet, 
+  createStrafeSpriteSet, 
+  createDigitSpriteSet 
+} from './hardcodedSpriteSet'
 
 // Copy a rectangular region from source bitmap to destination array
 function copyBitmapRegion(
@@ -291,6 +296,10 @@ export function extractAllSprites(figData: ArrayBuffer): AllSprites {
     fuels: createFuelSpriteSet(fuelArrays),
     shards: createShardSpriteSet(shardArrays),
     crater: processCraterSprite(crater.def, crater.mask),
-    shield: { def: shield }
+    shield: { def: shield },
+    // Add hardcoded sprites
+    flames: createFlameSpriteSet(),
+    strafe: createStrafeSpriteSet(),
+    digits: createDigitSpriteSet()
   }
 }

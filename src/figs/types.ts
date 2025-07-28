@@ -121,6 +121,10 @@ export type AllSprites = {
   shards: ShardSpriteSet
   crater: CraterSprite
   shield: ShieldSprite
+  // Hardcoded sprites
+  flames?: any // Will be defined when we add hardcoded sprites
+  strafe?: any
+  digits?: any
 }
 
 // Resource layout constants

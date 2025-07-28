@@ -7,7 +7,10 @@ import {
   setBunkerKind,
   setBunkerVariation,
   setFuelFrame,
-  setShardKind
+  setShardKind,
+  setFlameFrame,
+  setStrafeFrame,
+  setDigitChar
 } from '../../store/spritesSlice'
 import type { BunkerKind } from '@/figs/types'
 
@@ -22,6 +25,9 @@ export const SpritesControls: React.FC = () => {
     bunkerVariation,
     fuelFrame,
     shardKind,
+    flameFrame,
+    strafeFrame,
+    digitChar,
     allSprites
   } = useAppSelector(state => state.sprites)
 
@@ -116,6 +122,60 @@ export const SpritesControls: React.FC = () => {
         </div>
       )}
 
+      {/* Flame-specific controls */}
+      {selectedType === 'flame' && (
+        <div className="control-group">
+          <label>Flame Frame: {flameFrame}</label>
+          <input 
+            type="range" 
+            min="0" 
+            max="31" 
+            value={flameFrame}
+            onChange={(e) => dispatch(setFlameFrame(Number(e.target.value)))}
+          />
+        </div>
+      )}
+
+      {/* Strafe-specific controls */}
+      {selectedType === 'strafe' && (
+        <div className="control-group">
+          <label>Strafe Frame: {strafeFrame}</label>
+          <input 
+            type="range" 
+            min="0" 
+            max="15" 
+            value={strafeFrame}
+            onChange={(e) => dispatch(setStrafeFrame(Number(e.target.value)))}
+          />
+        </div>
+      )}
+
+      {/* Digit-specific controls */}
+      {selectedType === 'digit' && (
+        <div className="control-group">
+          <label>Character:</label>
+          <select 
+            value={digitChar} 
+            onChange={(e) => dispatch(setDigitChar(e.target.value))}
+          >
+            <optgroup label="Numbers">
+              {[...Array(10)].map((_, i) => (
+                <option key={i} value={i.toString()}>{i}</option>
+              ))}
+            </optgroup>
+            <optgroup label="Letters">
+              {[...Array(26)].map((_, i) => (
+                <option key={i + 10} value={String.fromCharCode(65 + i)}>
+                  {String.fromCharCode(65 + i)}
+                </option>
+              ))}
+            </optgroup>
+            <option value="SHIP">Ship Icon</option>
+            <option value=" ">Space</option>
+          </select>
+        </div>
+      )}
+
       {/* Rotation control */}
       {rotationMax > 0 && (
         <div className="control-group">
@@ -133,7 +193,7 @@ export const SpritesControls: React.FC = () => {
       )}
 
       {/* Mask toggle */}
-      {selectedType !== 'shield' && (
+      {selectedType !== 'shield' && selectedType !== 'flame' && selectedType !== 'strafe' && selectedType !== 'digit' && (
         <div className="control-group">
           <label className="checkbox-label">
             <input 
@@ -181,6 +241,15 @@ export const SpritesControls: React.FC = () => {
         )}
         {selectedType === 'shield' && (
           <p>The shield appears around the ship when activated.</p>
+        )}
+        {selectedType === 'flame' && (
+          <p>Flame animations have 32 frames. These are used for ship thruster effects.</p>
+        )}
+        {selectedType === 'strafe' && (
+          <p>Strafe sprites have 16 orientations for side-thruster effects.</p>
+        )}
+        {selectedType === 'digit' && (
+          <p>Character sprites include numbers 0-9, letters A-Z, a ship icon, and space.</p>
         )}
       </div>
     </div>
