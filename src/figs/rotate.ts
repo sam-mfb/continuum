@@ -41,20 +41,21 @@ export function setBit(
   }
 }
 
-// 90-degree rotation for square sprites (used for ships)
-export function rotate90(
+// 90-degree counter-clockwise rotation for square sprites (used for ships)
+export function rotate90CCW(
   src: Uint8Array,
   size: number,
   rowBytes: number
 ): Uint8Array {
   const dest = new Uint8Array(src.length)
 
-  // Rotate 90 degrees clockwise: (x,y) -> (size-y, x)
+  // Based on C code: get_bit(SIZE-y, SIZE-x) -> put_bit(x, y)
+  // This means: dest(x,y) = src(size-y, size-x)
   for (let x = 0; x <= size; x++) {
     for (let y = 0; y <= size; y++) {
-      const srcBit = getBit(x, y, src, rowBytes)
+      const srcBit = getBit(size - y, size - x, src, rowBytes)
       if (srcBit) {
-        setBit(size - y, x, true, dest, rowBytes)
+        setBit(x, y, true, dest, rowBytes)
       }
     }
   }
@@ -62,7 +63,29 @@ export function rotate90(
   return dest
 }
 
-// Mirror vertically (used for ship positions 24-31)
+// Mirror horizontally (used for ship positions 24-31)
+export function mirrorHorizontal(
+  src: Uint8Array,
+  size: number,
+  rowBytes: number
+): Uint8Array {
+  const dest = new Uint8Array(src.length)
+
+  // Based on C code: get_bit(SIZE-x, y) -> put_bit(x, y)
+  // This means: dest(x,y) = src(size-x, y)
+  for (let x = 0; x <= size; x++) {
+    for (let y = 0; y <= size; y++) {
+      const srcBit = getBit(size - x, y, src, rowBytes)
+      if (srcBit) {
+        setBit(x, y, true, dest, rowBytes)
+      }
+    }
+  }
+
+  return dest
+}
+
+// Mirror vertically (used for ship positions 9-23)
 export function mirrorVertical(
   src: Uint8Array,
   width: number,

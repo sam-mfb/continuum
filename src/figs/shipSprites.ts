@@ -1,13 +1,13 @@
 import type { ShipSprite, ShipSpriteSet } from './types'
 import { SHIP_ROTATIONS, SCENTER, SHIPHT } from './types'
-import { rotate90, mirrorVertical } from './rotate'
+import { rotate90CCW, mirrorHorizontal } from './rotate'
 
 // Create a ship sprite set from the 5 base images
 // The rotation scheme creates 32 rotations (11.25° each):
 // - Positions 0-4: Base images (0°, 11.25°, 22.5°, 33.75°, 45°)
 // - Positions 5-8: 90° CCW rotations of 3,2,1,0 (56.25°, 67.5°, 78.75°, 90°)
-// - Positions 9-23: Vertical flips to fill quadrants 2 and 3
-// - Positions 24-31: Vertical mirrors of positions 1-8 for quadrant 4
+// - Positions 9-23: Vertical flips of positions 7→1 and 25→31
+// - Positions 24-31: Horizontal mirrors of positions 8→1 (270°→315°)
 export function createShipSpriteSet(baseShips: ShipSprite[]): ShipSpriteSet {
   const rotations: Record<number, ShipSprite> = {}
 
@@ -27,16 +27,16 @@ export function createShipSpriteSet(baseShips: ShipSprite[]): ShipSpriteSet {
     }
   }
 
-  // Generate positions 5-8 (90° rotations of positions 0-3)
-  // Based on rotate_ship() from Figs.c
+  // Generate positions 5-8 (90° CCW rotations)
+  // Based on rotate_ship() from Figs.c: get_bit(SIZE-y, SIZE-x, ships[k])
   for (let k = 0; k < 4; k++) {
     rotations[8 - k] = {
-      def: rotate90(
+      def: rotate90CCW(
         baseShips[k]?.def ?? new Uint8Array(4 * SHIPHT),
         2 * SCENTER,
         4
       ),
-      mask: rotate90(
+      mask: rotate90CCW(
         baseShips[k]?.mask ?? new Uint8Array(4 * SHIPHT),
         2 * SCENTER,
         4
@@ -44,19 +44,18 @@ export function createShipSpriteSet(baseShips: ShipSprite[]): ShipSpriteSet {
     }
   }
 
-  // Generate positions 24-31 (vertical mirrors of positions 1-8)
+  // Generate positions 24-31 (horizontal mirrors of positions 1-8)
+  // Based on C code: get_bit(SIZE-x, y, ships[k])
   for (let k = 1; k < 9; k++) {
     rotations[32 - k] = {
-      def: mirrorVertical(
+      def: mirrorHorizontal(
         rotations[k]?.def ?? new Uint8Array(4 * SHIPHT),
-        32,
-        SHIPHT,
+        2 * SCENTER,
         4
       ),
-      mask: mirrorVertical(
+      mask: mirrorHorizontal(
         rotations[k]?.mask ?? new Uint8Array(4 * SHIPHT),
-        32,
-        SHIPHT,
+        2 * SCENTER,
         4
       )
     }
