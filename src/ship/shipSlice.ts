@@ -7,6 +7,7 @@ const initialState: ShipState = {
   shiprot: 0,
   fuel: 10000,
   flaming: false,
+  flameBlink: 0,
   thrusting: false,
   firing: false,
   bouncing: false,
@@ -58,14 +59,16 @@ export const shipSlice = createSlice({
 
       state.flaming = false
       if (pressed.has(ShipControl.THRUST) && state.fuel) {
+        /* if bouncing, make weaker to avoid flying through */
         state.dx += (state.bouncing ? 1 : 2) * SHIP.thrustx[state.shiprot]!
         state.dy +=
           (state.bouncing ? 1 : 2) * SHIP.thrustx[(state.shiprot + 24) & 31]!
-        /* if bouncing, make weaker to avoid flying through */
-        // if (--flame_blink)
-        // 	flaming = TRUE;
-        // else
-        // 	flame_blink = 4;
+        if (state.flameBlink) {
+          state.flameBlink--
+          state.flaming = true
+        } else {
+          state.flameBlink = 4
+        }
         state.thrusting = false
         // fuel_minus(FUELBURN);
         // start_sound(THRU_SOUND);

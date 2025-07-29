@@ -1,17 +1,3 @@
-export type Ship = {
-  init_ship: () => void
-  ship_control: () => void
-  move_ship: () => void
-  gray_figure: () => void
-  check_for_bounce: () => void
-  check_figure: () => void
-  kill_ship: () => void
-  shift_figure: () => void
-  full_figure: () => void
-  erase_figure: () => void
-  flame_on: () => void
-}
-
 export enum ShipControl {
   LEFT = 0,
   RIGHT,
@@ -26,6 +12,7 @@ export type ShipState = {
   fuel: number
   /** used for animation */
   flaming: boolean
+  flameBlink: number
   /** used for sound */
   thrusting: boolean
   firing: boolean
