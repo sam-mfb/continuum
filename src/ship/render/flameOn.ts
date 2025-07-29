@@ -30,6 +30,7 @@ export function flameOn(deps: {
     const x = baseX + flamexdisp[rot]! - FCENTER
     
     // y += flamexdisp[(rot+(32-8)) & 31] - FCENTER
+    // Note: (32-8) = 24, and we need to mask with 31 to keep in bounds
     const y = baseY + flamexdisp[(rot + 24) & 31]! - FCENTER
     
     // draw_small(x, y, flames[rot], 7)
@@ -92,13 +93,15 @@ function drawSmall(deps: {
       // This is a 16-bit rotate right - the byte loaded is in the low byte of D0
       // After rotation, bits may spill into both bytes of the 16-bit word
       let wordData = data // Start with byte in low position
-      wordData = ((wordData >>> xBits) | (wordData << (16 - xBits))) & 0xFFFF
+      if (xBits > 0) {
+        wordData = ((wordData >>> xBits) | (wordData << (16 - xBits))) & 0xFFFF
+      }
       
       // eor.b D0, (A0)+
       if (asm.A0 < newScreen.data.length) {
         newScreen.data[asm.A0]! ^= wordData & 0xFF
       }
-      asm.A0++
+      asm.A0++ // Post-increment
       
       // rol.w #8, D0
       // Rotate left by 8 (swap bytes in 16-bit word)
