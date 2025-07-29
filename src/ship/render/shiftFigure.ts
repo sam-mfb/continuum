@@ -68,10 +68,12 @@ export function shiftFigure(deps: {
         const d1 = data & 0xFFFF
         
         // lsr.l x, D0
-        let d0 = data >>> xBits
+        // When xBits is 16, this shifts all bits out, resulting in 0
+        let d0 = xBits < 32 ? (data >>> xBits) : 0
         
         // lsl.w D2, D1
-        let d1Shifted = (d1 << asm.D2) & 0xFFFF
+        // When D2 is 0, no shift occurs
+        let d1Shifted = asm.D2 < 16 ? ((d1 << asm.D2) & 0xFFFF) : 0
         
         // and.l (A0), D0
         if (asm.A0 < newScreen.data.length - 3) {
@@ -83,23 +85,23 @@ export function shiftFigure(deps: {
         }
         
         // and.w 4(A0), D1
-        if (asm.A0 + 4 < newScreen.data.length - 1) {
+        if (asm.A0 + 5 < newScreen.data.length) {
           const screenData2 = (newScreen.data[asm.A0 + 4]! << 8) |
                              newScreen.data[asm.A0 + 5]!
           d1Shifted = d1Shifted & screenData2
+        } else {
+          d1Shifted = 0 // If we can't read, treat as no gray present
         }
         
         // move.w #0, CCR (clear carry flag)
-        let carry = 0
-        
         // roxl.w #1, D1 (rotate left through extend/carry)
-        carry = (d1Shifted >>> 15) & 1
-        d1Shifted = ((d1Shifted << 1) | carry) & 0xFFFF
+        // The carry flag starts at 0, so the first roxl shifts in 0
+        const d1MSB = (d1Shifted >>> 15) & 1
+        d1Shifted = ((d1Shifted << 1) | 0) & 0xFFFF
         
         // roxl.l #1, D0 (rotate left through extend/carry)
-        const newCarry = (d0 >>> 31) & 1
-        d0 = ((d0 << 1) | carry) >>> 0
-        carry = newCarry
+        // This uses the carry from the previous roxl (which is the old MSB of D1)
+        d0 = ((d0 << 1) | d1MSB) >>> 0
         
         // or.l D0, (A0)
         if (asm.A0 < newScreen.data.length - 3) {
@@ -115,7 +117,7 @@ export function shiftFigure(deps: {
         }
         
         // or.w D1, 4(A0)
-        if (asm.A0 + 4 < newScreen.data.length - 1) {
+        if (asm.A0 + 5 < newScreen.data.length) {
           let screenData = (newScreen.data[asm.A0 + 4]! << 8) |
                           newScreen.data[asm.A0 + 5]!
           screenData = screenData | d1Shifted
