@@ -17,10 +17,13 @@ import { ShipControl } from '@/ship/types'
 import { shipControl } from './shipControlThunk'
 import { buildGameStore } from './store'
 import { SCRWTH, VIEWHT } from '@/screen/constants'
-import { getBackground } from '@/walls/render/getBackground'
 import { loadSprites } from '@/store/spritesSlice'
 import { SCENTER } from '@/figs/types'
 import { flameOn } from '@/ship/render/flameOn'
+import { grayFigure } from '@/ship/render/grayFigure'
+import { getBackground } from '@/walls/render/getBackground'
+import { eraseFigure } from '@/ship/render/eraseFigure'
+import { shiftFigure } from '@/ship/render/shiftFigure'
 
 // Configure store with all slices and containment middleware
 const store = buildGameStore()
@@ -154,14 +157,39 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
     rowBytes: 4
   }
 
+  const SHADOW_OFFSET_X = 8
+  const SHADOW_OFFSET_Y = 5
+
+  let renderedBitmap = grayFigure({
+    x: finalState.ship.shipx - (SCENTER - SHADOW_OFFSET_X),
+    y: finalState.ship.shipy - (SCENTER - SHADOW_OFFSET_Y),
+    def: shipMaskBitmap,
+    background: getBackground(
+      finalState.screen.screenx,
+      finalState.screen.screeny
+    )
+  })(bitmap)
+
+  renderedBitmap = eraseFigure({
+    x: finalState.ship.shipx - SCENTER,
+    y: finalState.ship.shipy - SCENTER,
+    def: shipMaskBitmap
+  })(renderedBitmap)
+
+  renderedBitmap = shiftFigure({
+    x: finalState.ship.shipx - (SCENTER - SHADOW_OFFSET_X),
+    y: finalState.ship.shipy - (SCENTER - SHADOW_OFFSET_Y),
+    def: shipMaskBitmap
+  })(renderedBitmap)
+
   // Ship position needs to be offset by SCENTER (15) to account for center point
   // Original: full_figure(shipx-SCENTER, shipy-SCENTER, ship_defs[shiprot], ship_masks[shiprot], SHIPHT)
-  let renderedBitmap = fullFigure({
+  renderedBitmap = fullFigure({
     x: finalState.ship.shipx - SCENTER,
     y: finalState.ship.shipy - SCENTER,
     def: shipDefBitmap,
     mask: shipMaskBitmap
-  })(bitmap)
+  })(renderedBitmap)
 
   // Draw all active ship shots
   for (const shot of finalState.shots.shipshots) {
