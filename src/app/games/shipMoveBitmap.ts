@@ -19,6 +19,7 @@ import { buildGameStore } from './store'
 import { SCRWTH, VIEWHT } from '@/screen/constants'
 import { getBackground } from '@/walls/render/getBackground'
 import { loadSprites } from '@/store/spritesSlice'
+import { SCENTER } from '@/figs/types'
 
 // Configure store with all slices and containment middleware
 const store = buildGameStore()
@@ -158,9 +159,11 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
     rowBytes: 4
   }
   
+  // Ship position needs to be offset by SCENTER (15) to account for center point
+  // Original: full_figure(shipx-SCENTER, shipy-SCENTER, ...)
   let renderedBitmap = drawFigure({
-    x: finalState.ship.shipx,
-    y: finalState.ship.shipy,
+    x: finalState.ship.shipx - SCENTER,
+    y: finalState.ship.shipy - SCENTER,
     def: shipBitmap
   })(bitmap)
 
@@ -168,15 +171,16 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
   for (const shot of finalState.shots.shipshots) {
     if (shot.lifecount > 0) {
       // Convert world coordinates to screen coordinates
-      const shotx = shot.x - finalState.screen.screenx
-      const shoty = shot.y - finalState.screen.screeny
+      // Original: shotx = sp->x - screenx - 1; shoty = sp->y - screeny - 1;
+      const shotx = shot.x - finalState.screen.screenx - 1
+      const shoty = shot.y - finalState.screen.screeny - 1
 
-      // Check if shot is visible on screen (with margin for shot size)
+      // Check if shot is visible on screen (original checks: shotx < SCRWTH-3)
       if (
-        shotx >= -4 &&
-        shotx < SCRWTH + 4 &&
-        shoty >= -4 &&
-        shoty < VIEWHT + 4
+        shotx >= 0 &&
+        shotx < SCRWTH - 3 &&
+        shoty >= 0 &&
+        shoty < VIEWHT - 3
       ) {
         renderedBitmap = drawShipShot({
           x: shotx,
@@ -190,8 +194,8 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
         finalState.screen.screenx > finalState.planet.worldwidth - SCRWTH
       ) {
         const wrappedShotx =
-          shot.x + finalState.planet.worldwidth - finalState.screen.screenx
-        if (wrappedShotx >= -4 && wrappedShotx < SCRWTH + 4) {
+          shot.x + finalState.planet.worldwidth - finalState.screen.screenx - 1
+        if (wrappedShotx >= 0 && wrappedShotx < SCRWTH - 3) {
           renderedBitmap = drawShipShot({
             x: wrappedShotx,
             y: shoty
