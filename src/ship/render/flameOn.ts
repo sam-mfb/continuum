@@ -89,25 +89,28 @@ function drawSmall(deps: {
       defIndex++
       
       // ror.w x, D0
-      // Rotate right by xBits positions (8-bit rotation)
-      data = ((data >>> xBits) | (data << (8 - xBits))) & 0xFF
+      // This is a 16-bit rotate right - the byte loaded is in the low byte of D0
+      // After rotation, bits may spill into both bytes of the 16-bit word
+      let wordData = data // Start with byte in low position
+      wordData = ((wordData >>> xBits) | (wordData << (16 - xBits))) & 0xFFFF
       
       // eor.b D0, (A0)+
       if (asm.A0 < newScreen.data.length) {
-        newScreen.data[asm.A0]! ^= data & 0xFF
+        newScreen.data[asm.A0]! ^= wordData & 0xFF
       }
       asm.A0++
       
       // rol.w #8, D0
       // Rotate left by 8 (swap bytes in 16-bit word)
-      data = ((data << 8) | (data >>> 8)) & 0xFFFF
+      wordData = ((wordData << 8) | (wordData >>> 8)) & 0xFFFF
       
       // eor.b D0, (A0)
       if (asm.A0 < newScreen.data.length) {
-        newScreen.data[asm.A0]! ^= data & 0xFF
+        newScreen.data[asm.A0]! ^= wordData & 0xFF
       }
       
       // adda.w D2, A0
+      // Note: A0 was already incremented by 1, so we add D2 (63) to get to next row
       asm.A0 += asm.D2
       
       // dbf D1, @lp (handled by for loop)
