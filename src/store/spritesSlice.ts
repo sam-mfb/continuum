@@ -145,4 +145,5 @@ export const {
   setDigitChar
 } = spritesSlice.actions
 
+export { spritesSlice }
 export default spritesSlice.reducer

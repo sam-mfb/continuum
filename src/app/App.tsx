@@ -23,6 +23,7 @@ import { bitmapTestRenderer } from './games/bitmapTest'
 import { wallDrawingRenderer } from './games/wallDrawing'
 import { planet3DrawingRenderer } from './games/planet3Drawing'
 import { junctionDrawRenderer } from './games/junctionDraw'
+import { shipMoveBitmapRenderer } from './games/shipMoveBitmap'
 import './App.css'
 
 function App(): React.JSX.Element {
@@ -152,6 +153,11 @@ function App(): React.JSX.Element {
                   type: 'bitmap',
                   name: 'Junction Draw (All 64 Combinations)',
                   bitmapRenderer: junctionDrawRenderer
+                } as BitmapGameDefinition,
+                {
+                  type: 'bitmap',
+                  name: 'Ship Move (Bitmap)',
+                  bitmapRenderer: shipMoveBitmapRenderer
                 } as BitmapGameDefinition
               ]}
               defaultGameIndex={0}
