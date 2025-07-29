@@ -20,6 +20,7 @@ import { SCRWTH, VIEWHT } from '@/screen/constants'
 import { getBackground } from '@/walls/render/getBackground'
 import { loadSprites } from '@/store/spritesSlice'
 import { SCENTER } from '@/figs/types'
+import { flameOn } from '@/ship/render/flameOn'
 
 // Configure store with all slices and containment middleware
 const store = buildGameStore()
@@ -117,40 +118,27 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
   // Get final state for drawing
   const finalState = store.getState()
 
-  // Draw crosshatch background using the proper background pattern
-  const background = getBackground(
-    finalState.screen.screenx,
-    finalState.screen.screeny
-  )
-  
-  // Fill bitmap with background pattern
+  // First, create a crosshatch gray background
+  // IMPORTANT: Pattern must be based on world coordinates, not screen coordinates
   for (let y = 0; y < bitmap.height; y++) {
     for (let x = 0; x < bitmap.width; x++) {
+      // Calculate world position
       const worldX = x + finalState.screen.screenx
       const worldY = y + finalState.screen.screeny
-      const pattern = background[(worldX + worldY) & 1]!
-      
-      // Apply pattern byte by byte for efficiency
-      if (x % 8 === 0 && x + 7 < bitmap.width) {
-        // Full byte
-        const byteIndex = y * bitmap.rowBytes + x / 8
-        bitmap.data[byteIndex] = pattern >>> 24
-      } else {
-        // Individual bit
-        const byteIndex = y * bitmap.rowBytes + Math.floor(x / 8)
+      // Set pixel if worldX + worldY is even (creates fixed checkerboard)
+      if ((worldX + worldY) % 2 === 0) {
+        const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
         const bitIndex = 7 - (x % 8)
-        if (pattern & 0x80000000) {
-          bitmap.data[byteIndex]! |= 1 << bitIndex
-        } else {
-          bitmap.data[byteIndex]! &= ~(1 << bitIndex)
-        }
+        bitmap.data[byteIndex]! |= 1 << bitIndex
       }
     }
   }
 
   // Draw ship using the proper fullFigure function
-  const shipSprite = finalState.sprites.allSprites!.ships.getRotationIndex(finalState.ship.shiprot)
-  
+  const shipSprite = finalState.sprites.allSprites!.ships.getRotationIndex(
+    finalState.ship.shiprot
+  )
+
   // Convert sprite data to MonochromeBitmap format
   const shipDefBitmap: MonochromeBitmap = {
     data: shipSprite.def,
@@ -158,14 +146,14 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
     height: 32,
     rowBytes: 4
   }
-  
+
   const shipMaskBitmap: MonochromeBitmap = {
     data: shipSprite.mask,
     width: 32,
     height: 32,
     rowBytes: 4
   }
-  
+
   // Ship position needs to be offset by SCENTER (15) to account for center point
   // Original: full_figure(shipx-SCENTER, shipy-SCENTER, ship_defs[shiprot], ship_masks[shiprot], SHIPHT)
   let renderedBitmap = fullFigure({
@@ -211,6 +199,20 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
         }
       }
     }
+  }
+
+  if (finalState.ship.flaming) {
+    renderedBitmap = flameOn({
+      x: finalState.ship.shipx,
+      y: finalState.ship.shipy,
+      rot: finalState.ship.shiprot,
+      flames: finalState.sprites.allSprites!.flames.frames.map(f => ({
+        data: f.def,
+        width: 8,
+        height: 7,
+        rowBytes: 1
+      }))
+    })(renderedBitmap)
   }
 
   // Copy rendered bitmap data back to original

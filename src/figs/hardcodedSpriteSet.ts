@@ -27,11 +27,13 @@ export type DigitSpriteSet = {
   getCharacter(char: string | number): Uint8Array | null
 }
 
-// Create flame sprite set
-export function createFlameSpriteSet(): {
+export type FlameSpriteSet = {
   frames: FlameSprite[]
   getFrame(index: number): FlameSprite
-} {
+}
+
+// Create flame sprite set
+export function createFlameSpriteSet(): FlameSpriteSet {
   const frames: FlameSprite[] = flames.map(data => ({
     def: data,
     width: FLAME_WIDTH,
@@ -66,17 +68,17 @@ export function createDigitSpriteSet(): DigitSpriteSet {
   const invertedChars = digits.map(char => {
     const inverted = new Uint8Array(char.length)
     for (let i = 0; i < char.length; i++) {
-      inverted[i] = char[i]! ^ 0xFF
+      inverted[i] = char[i]! ^ 0xff
     }
     return inverted
   })
 
   return {
     characters: invertedChars,
-    
+
     getCharacter(char: string | number): Uint8Array | null {
       let index: number
-      
+
       if (typeof char === 'number') {
         // Direct index
         index = char
@@ -93,7 +95,7 @@ export function createDigitSpriteSet(): DigitSpriteSet {
       } else {
         return null
       }
-      
+
       if (index >= 0 && index < invertedChars.length) {
         return invertedChars[index]!
       }
@@ -101,3 +103,4 @@ export function createDigitSpriteSet(): DigitSpriteSet {
     }
   }
 }
+

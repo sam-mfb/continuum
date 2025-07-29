@@ -1,3 +1,9 @@
+import type {
+  DigitSpriteSet,
+  FlameSpriteSet,
+  StrafeSpriteSet
+} from './hardcodedSpriteSet'
+
 // Sprite dimensions from GW.h
 export const SHIPHT = 32
 export const BUNKHT = 48
@@ -8,11 +14,11 @@ export const SCENTER = 15
 
 // Bunker kinds (in order they appear in the resource)
 export enum BunkerKind {
-  WALL = 0,      // Rotates (16 directions)
-  DIFF = 1,      // Rotates (16 directions)
-  GROUND = 2,    // Animates (8 frames)
-  FOLLOW = 3,    // Animates (8 frames)
-  GENERATOR = 4  // Animates (8 frames)
+  WALL = 0, // Rotates (16 directions)
+  DIFF = 1, // Rotates (16 directions)
+  GROUND = 2, // Animates (8 frames)
+  FOLLOW = 3, // Animates (8 frames)
+  GENERATOR = 4 // Animates (8 frames)
 }
 
 export const BUNKKINDS = 5
@@ -57,11 +63,11 @@ export type BunkerSprite = {
 
 export type BunkerSpriteSet = {
   kinds: {
-    [BunkerKind.WALL]: Record<number, BunkerSprite>      // 16 rotations
-    [BunkerKind.DIFF]: Record<number, BunkerSprite>      // 16 rotations
-    [BunkerKind.GROUND]: BunkerSprite[]                  // 8 animation frames
-    [BunkerKind.FOLLOW]: BunkerSprite[]                  // 8 animation frames
-    [BunkerKind.GENERATOR]: BunkerSprite[]               // 8 animation frames
+    [BunkerKind.WALL]: Record<number, BunkerSprite> // 16 rotations
+    [BunkerKind.DIFF]: Record<number, BunkerSprite> // 16 rotations
+    [BunkerKind.GROUND]: BunkerSprite[] // 8 animation frames
+    [BunkerKind.FOLLOW]: BunkerSprite[] // 8 animation frames
+    [BunkerKind.GENERATOR]: BunkerSprite[] // 8 animation frames
   }
   getSprite(
     kind: BunkerKind,
@@ -122,9 +128,9 @@ export type AllSprites = {
   crater: CraterSprite
   shield: ShieldSprite
   // Hardcoded sprites
-  flames?: any // Will be defined when we add hardcoded sprites
-  strafe?: any
-  digits?: any
+  flames: FlameSpriteSet
+  strafe: StrafeSpriteSet
+  digits: DigitSpriteSet
 }
 
 // Resource layout constants
