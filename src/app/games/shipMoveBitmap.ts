@@ -7,7 +7,7 @@
  */
 
 import type { BitmapRenderer, MonochromeBitmap } from '../../bitmap'
-import { drawFigure } from '../../ship/render/drawFigure'
+import { fullFigure } from '../../ship/render/fullFigure'
 import { drawShipShot } from '../../shots/render/drawShipShot'
 import { shipSlice } from '@/ship/shipSlice'
 import { planetSlice } from '@/planet/planetSlice'
@@ -148,23 +148,31 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
     }
   }
 
-  // Draw ship using the proper drawFigure function
+  // Draw ship using the proper fullFigure function
   const shipSprite = finalState.sprites.allSprites!.ships.getRotationIndex(finalState.ship.shiprot)
   
   // Convert sprite data to MonochromeBitmap format
-  const shipBitmap: MonochromeBitmap = {
+  const shipDefBitmap: MonochromeBitmap = {
     data: shipSprite.def,
     width: 32,
     height: 32,
     rowBytes: 4
   }
   
+  const shipMaskBitmap: MonochromeBitmap = {
+    data: shipSprite.mask,
+    width: 32,
+    height: 32,
+    rowBytes: 4
+  }
+  
   // Ship position needs to be offset by SCENTER (15) to account for center point
-  // Original: full_figure(shipx-SCENTER, shipy-SCENTER, ...)
-  let renderedBitmap = drawFigure({
+  // Original: full_figure(shipx-SCENTER, shipy-SCENTER, ship_defs[shiprot], ship_masks[shiprot], SHIPHT)
+  let renderedBitmap = fullFigure({
     x: finalState.ship.shipx - SCENTER,
     y: finalState.ship.shipy - SCENTER,
-    def: shipBitmap
+    def: shipDefBitmap,
+    mask: shipMaskBitmap
   })(bitmap)
 
   // Draw all active ship shots
