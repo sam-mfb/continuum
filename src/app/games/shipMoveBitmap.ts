@@ -16,7 +16,7 @@ import { shotsSlice } from '@/shots/shotsSlice'
 import { ShipControl } from '@/ship/types'
 import { shipControl } from './shipControlThunk'
 import { buildGameStore } from './store'
-import { SCRWTH, VIEWHT } from '@/screen/constants'
+import { SCRWTH, VIEWHT, TOPMARG, BOTMARG } from '@/screen/constants'
 import { loadSprites } from '@/store/spritesSlice'
 import { SCENTER } from '@/figs/types'
 import { flameOn } from '@/ship/render/flameOn'
@@ -24,45 +24,83 @@ import { grayFigure } from '@/ship/render/grayFigure'
 import { getBackground } from '@/walls/render/getBackground'
 import { eraseFigure } from '@/ship/render/eraseFigure'
 import { shiftFigure } from '@/ship/render/shiftFigure'
+import { whiteTerrain, blackTerrain } from '@/walls/render'
+import { wallsSlice } from '@/walls/wallsSlice'
+import { LINE_KIND } from '@/walls/types'
 
 // Configure store with all slices and containment middleware
 const store = buildGameStore()
 
+// Track initialization state
+let initializationComplete = false
+let initializationError: Error | null = null
+
 // Initialize game on module load
 const initializeGame = async (): Promise<void> => {
-  // Load sprites first
-  await store.dispatch(loadSprites()).unwrap()
+  try {
+    console.log('Starting shipMoveBitmap initialization...')
+    
+    // Load sprites first
+    console.log('Loading sprites...')
+    await store.dispatch(loadSprites()).unwrap()
+    console.log('Sprites loaded successfully')
 
-  // Initialize dummy planet (1000x1000)
-  store.dispatch(
-    planetSlice.actions.loadPlanet({
-      worldwidth: 1000,
-      worldheight: 1000,
-      worldwrap: false,
-      shootslow: 0,
-      xstart: 500,
-      ystart: 500,
-      planetbonus: 0,
-      gravx: 0,
-      gravy: 0,
-      numcraters: 0,
-      lines: [],
-      bunkers: [],
-      fuels: [],
-      craters: []
+    // Load the release galaxy file to get planet data
+    console.log('Loading galaxy file...')
+    const response = await fetch('/src/assets/release_galaxy.bin')
+    if (!response.ok) {
+      throw new Error('Failed to load galaxy file')
+    }
+
+    const arrayBuffer = await response.arrayBuffer()
+    console.log('Galaxy file loaded, size:', arrayBuffer.byteLength)
+    
+    const { parsePlanet } = await import('@/planet/parsePlanet')
+    const { Galaxy } = await import('@/galaxy/methods')
+    
+    const { headerBuffer, planetsBuffer } = Galaxy.splitBuffer(arrayBuffer)
+    const galaxyHeader = Galaxy.parseHeader(headerBuffer)
+    console.log('Galaxy header:', galaxyHeader)
+    
+    // Load planet 1
+    const planet1 = parsePlanet(planetsBuffer, galaxyHeader.indexes, 1)
+    console.log('Planet 1 loaded:', {
+      dimensions: `${planet1.worldwidth}x${planet1.worldheight}`,
+      start: `(${planet1.xstart}, ${planet1.ystart})`,
+      walls: planet1.lines.length,
+      gravity: `(${planet1.gravx}, ${planet1.gravy})`
     })
-  )
+    
+    // Initialize planet
+    store.dispatch(planetSlice.actions.loadPlanet(planet1))
 
-  // Initialize ship at center of viewport
-  store.dispatch(shipSlice.actions.initShip({ x: 256, y: 159 }))
+    // Initialize walls with planet 1's walls
+    store.dispatch(wallsSlice.actions.initWalls({ walls: planet1.lines }))
 
-  // Initialize screen to show ship at world center
-  store.dispatch(
-    screenSlice.actions.setPosition({
-      x: 500 - 256, // World center - screen center
-      y: 500 - 159
-    })
-  )
+    // Initialize ship at center of screen (following Play.c:175-179)
+    const shipScreenX = SCRWTH / 2  // 256
+    const shipScreenY = Math.floor((TOPMARG + BOTMARG) / 2)  // 159
+    
+    store.dispatch(shipSlice.actions.initShip({ 
+      x: shipScreenX, 
+      y: shipScreenY 
+    }))
+
+    // Initialize screen position so ship appears at planet's starting position
+    // screenx = globalx - shipx; screeny = globaly - shipy;
+    store.dispatch(
+      screenSlice.actions.setPosition({
+        x: planet1.xstart - shipScreenX,
+        y: planet1.ystart - shipScreenY
+      })
+    )
+    
+    initializationComplete = true
+    console.log('shipMoveBitmap initialization complete')
+  } catch (error) {
+    console.error('Error initializing shipMoveBitmap:', error)
+    initializationError = error as Error
+  }
 }
 
 // Start initialization
@@ -84,14 +122,28 @@ const getPressedControls = (keysDown: Set<string>): ShipControl[] => {
  * Bitmap renderer for ship movement game
  */
 export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
+  // Check initialization status
+  if (initializationError) {
+    console.error('Initialization failed:', initializationError)
+    bitmap.data.fill(0)
+    return
+  }
+  
+  if (!initializationComplete) {
+    // Still loading
+    bitmap.data.fill(0)
+    return
+  }
+
   const state = store.getState()
 
   // Check if sprites are loaded
   if (!state.sprites.allSprites) {
-    // Show loading message or just clear screen
+    console.error('Sprites not loaded')
     bitmap.data.fill(0)
     return
   }
+  
 
   // Get gravity from planet
   const gravity = {
@@ -137,6 +189,15 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
     }
   }
 
+  // Setup viewport for wall rendering
+  // Calculate screen bounds (right and bottom edges)
+  const viewport = {
+    x: finalState.screen.screenx,
+    y: finalState.screen.screeny,
+    b: finalState.screen.screeny + VIEWHT,  // bottom edge
+    r: finalState.screen.screenx + SCRWTH   // right edge
+  }
+
   // Draw ship using the proper fullFigure function
   const shipSprite = finalState.sprites.allSprites!.ships.getRotationIndex(
     finalState.ship.shiprot
@@ -160,6 +221,8 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
   const SHADOW_OFFSET_X = 8
   const SHADOW_OFFSET_Y = 5
 
+  // Following Play.c order:
+  // 1. gray_figure - ship shadow background
   let renderedBitmap = grayFigure({
     x: finalState.ship.shipx - (SCENTER - SHADOW_OFFSET_X),
     y: finalState.ship.shipy - (SCENTER - SHADOW_OFFSET_Y),
@@ -170,18 +233,62 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
     )
   })(bitmap)
 
+  // 2. white_terrain - wall undersides/junctions
+  renderedBitmap = whiteTerrain({
+    whites: finalState.walls.whites,
+    junctions: finalState.walls.junctions,
+    firstWhite: finalState.walls.firstWhite,
+    organizedWalls: finalState.walls.organizedWalls,
+    viewport: viewport,
+    worldwidth: finalState.planet.worldwidth
+  })(renderedBitmap)
+
+  // 3. black_terrain(L_GHOST) - ghost walls
+  renderedBitmap = blackTerrain({
+    thekind: LINE_KIND.GHOST,
+    kindPointers: finalState.walls.kindPointers,
+    organizedWalls: finalState.walls.organizedWalls,
+    viewport: viewport,
+    worldwidth: finalState.planet.worldwidth
+  })(renderedBitmap)
+
+  // 4. erase_figure - erase ship area
   renderedBitmap = eraseFigure({
     x: finalState.ship.shipx - SCENTER,
     y: finalState.ship.shipy - SCENTER,
     def: shipMaskBitmap
   })(renderedBitmap)
 
+  // 5. check_for_bounce would go here (not implemented yet)
+
+  // 6. black_terrain(L_BOUNCE) - bounce walls
+  renderedBitmap = blackTerrain({
+    thekind: LINE_KIND.BOUNCE,
+    kindPointers: finalState.walls.kindPointers,
+    organizedWalls: finalState.walls.organizedWalls,
+    viewport: viewport,
+    worldwidth: finalState.planet.worldwidth
+  })(renderedBitmap)
+
+  // 7. black_terrain(L_NORMAL) - normal walls
+  renderedBitmap = blackTerrain({
+    thekind: LINE_KIND.NORMAL,
+    kindPointers: finalState.walls.kindPointers,
+    organizedWalls: finalState.walls.organizedWalls,
+    viewport: viewport,
+    worldwidth: finalState.planet.worldwidth
+  })(renderedBitmap)
+
+  // 8. do_bunkers would go here (not implemented yet)
+
+  // 9. shift_figure - ship shadow
   renderedBitmap = shiftFigure({
     x: finalState.ship.shipx - (SCENTER - SHADOW_OFFSET_X),
     y: finalState.ship.shipy - (SCENTER - SHADOW_OFFSET_Y),
     def: shipMaskBitmap
   })(renderedBitmap)
 
+  // 10. full_figure - draw ship
   // Ship position needs to be offset by SCENTER (15) to account for center point
   // Original: full_figure(shipx-SCENTER, shipy-SCENTER, ship_defs[shiprot], ship_masks[shiprot], SHIPHT)
   renderedBitmap = fullFigure({
