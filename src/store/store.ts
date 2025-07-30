@@ -24,7 +24,11 @@ export const store = configureStore({
       serializableCheck: {
         // Ignore ImageData in actions and state
         ignoredActions: ['graphics/loadFile/fulfilled'],
-        ignoredPaths: ['graphics.imageData', 'sprites.allSprites', 'sound.activeSource']
+        ignoredPaths: [
+          'graphics.imageData',
+          'sprites.allSprites',
+          'sound.activeSource'
+        ]
       }
     })
 })

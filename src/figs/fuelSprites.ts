@@ -1,11 +1,11 @@
 import type { FuelSprite, FuelSpriteSet } from './types'
-import { 
-  FUELFRAMES, 
+import {
+  FUELFRAMES,
   FUEL_DRAINING_FRAMES,
   FUEL_TOTAL_FRAMES,
-  FUELHT, 
-  BACKGROUND1, 
-  BACKGROUND2 
+  FUELHT,
+  BACKGROUND1,
+  BACKGROUND2
 } from './types'
 
 // Create a fuel sprite set from extracted arrays
@@ -78,7 +78,8 @@ export function createFuelSpriteSet(fuelArrays: FuelSprite[]): FuelSpriteSet {
     getDrainingFrame(index: number): FuelSprite {
       // Cycle through draining frames
       const sprite = drainingFrames[index % FUEL_DRAINING_FRAMES]
-      if (!sprite) throw new Error(`Draining fuel sprite not found at index ${index}`)
+      if (!sprite)
+        throw new Error(`Draining fuel sprite not found at index ${index}`)
       return sprite
     }
   }

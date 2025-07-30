@@ -32,9 +32,11 @@ function App(): React.JSX.Element {
   )
   const dispatch = useAppDispatch()
   const [showGameStats, setShowGameStats] = useState(false)
-  
+
   // Load sprites when sprites view is first accessed
-  const spritesLoaded = useSelector((state: RootState) => state.sprites.allSprites !== null)
+  const spritesLoaded = useSelector(
+    (state: RootState) => state.sprites.allSprites !== null
+  )
   useEffect(() => {
     if (currentView === 'sprites' && !spritesLoaded) {
       void dispatch(loadSprites())

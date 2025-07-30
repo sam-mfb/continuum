@@ -103,4 +103,3 @@ export function createDigitSpriteSet(): DigitSpriteSet {
     }
   }
 }
-

@@ -34,10 +34,10 @@ export function eraseFigure(deps: {
 
     // andi.w #15, x
     const xBits = x & 15
-    
+
     // moveq #16, D2
     asm.D2 = 16
-    
+
     // sub.w x, D2
     asm.D2 = asm.D2 - xBits
 
@@ -46,7 +46,7 @@ export function eraseFigure(deps: {
 
     // Process each row of the figure
     let defIndex = 0
-    
+
     // @loop: move.l (def)+, D0
     while (true) {
       // Read 32 bits from def
@@ -58,49 +58,50 @@ export function eraseFigure(deps: {
         }
       }
       defIndex += 4
-      
+
       // beq.s @skip - skip if data is zero
       if (data !== 0) {
         // move.w D0, D1
-        const d1 = data & 0xFFFF
-        
+        const d1 = data & 0xffff
+
         // lsr.l x, D0
         const d0 = data >>> xBits
-        
+
         // lsl.w D2, D1
-        const d1Shifted = (d1 << asm.D2) & 0xFFFF
-        
+        const d1Shifted = (d1 << asm.D2) & 0xffff
+
         // not.l D0
         // not.w D1
         const d0Not = ~d0 >>> 0
-        const d1Not = (~d1Shifted & 0xFFFF)
-        
+        const d1Not = ~d1Shifted & 0xffff
+
         // and.l D0, (A0)
         if (asm.A0 < newScreen.data.length - 3) {
-          let screenData = (newScreen.data[asm.A0]! << 24) |
-                          (newScreen.data[asm.A0 + 1]! << 16) |
-                          (newScreen.data[asm.A0 + 2]! << 8) |
-                          newScreen.data[asm.A0 + 3]!
+          let screenData =
+            (newScreen.data[asm.A0]! << 24) |
+            (newScreen.data[asm.A0 + 1]! << 16) |
+            (newScreen.data[asm.A0 + 2]! << 8) |
+            newScreen.data[asm.A0 + 3]!
           screenData = screenData & d0Not
-          newScreen.data[asm.A0]! = (screenData >>> 24) & 0xFF
-          newScreen.data[asm.A0 + 1]! = (screenData >>> 16) & 0xFF
-          newScreen.data[asm.A0 + 2]! = (screenData >>> 8) & 0xFF
-          newScreen.data[asm.A0 + 3]! = screenData & 0xFF
+          newScreen.data[asm.A0]! = (screenData >>> 24) & 0xff
+          newScreen.data[asm.A0 + 1]! = (screenData >>> 16) & 0xff
+          newScreen.data[asm.A0 + 2]! = (screenData >>> 8) & 0xff
+          newScreen.data[asm.A0 + 3]! = screenData & 0xff
         }
-        
+
         // and.w D1, 4(A0)
         if (asm.A0 + 4 < newScreen.data.length - 1) {
-          let screenData = (newScreen.data[asm.A0 + 4]! << 8) |
-                          newScreen.data[asm.A0 + 5]!
+          let screenData =
+            (newScreen.data[asm.A0 + 4]! << 8) | newScreen.data[asm.A0 + 5]!
           screenData = screenData & d1Not
-          newScreen.data[asm.A0 + 4]! = (screenData >>> 8) & 0xFF
-          newScreen.data[asm.A0 + 5]! = screenData & 0xFF
+          newScreen.data[asm.A0 + 4]! = (screenData >>> 8) & 0xff
+          newScreen.data[asm.A0 + 5]! = screenData & 0xff
         }
       }
-      
+
       // @skip: adda.l y, A0
       asm.A0 += rowOffset
-      
+
       // dbf D3, @loop
       if (!asm.instructions.dbra('D3')) {
         break

@@ -704,14 +704,14 @@
 }
 
 .control-group select,
-.control-group input[type="range"] {
+.control-group input[type='range'] {
   width: 100%;
   border: 1px solid #000;
   background: #fff;
   padding: 4px;
 }
 
-.control-group input[type="range"] {
+.control-group input[type='range'] {
   cursor: pointer;
 }
 
@@ -723,7 +723,7 @@
   cursor: pointer;
 }
 
-.checkbox-label input[type="checkbox"] {
+.checkbox-label input[type='checkbox'] {
   width: 16px;
   height: 16px;
   border: 1px solid #000;
@@ -732,12 +732,12 @@
   cursor: pointer;
 }
 
-.checkbox-label input[type="checkbox"]:checked {
+.checkbox-label input[type='checkbox']:checked {
   background: #000;
   position: relative;
 }
 
-.checkbox-label input[type="checkbox"]:checked::after {
+.checkbox-label input[type='checkbox']:checked::after {
   content: '✓';
   color: #fff;
   font-size: 12px;

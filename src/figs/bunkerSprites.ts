@@ -14,16 +14,19 @@ export function createBunkerSpriteSet(
   bunkerArrays: BunkerSprite[][]
 ): BunkerSpriteSet {
   const kinds: BunkerSpriteSet['kinds'] = {
-    [BunkerKind.WALL]: {},      // Will be filled with 16 rotations
-    [BunkerKind.DIFF]: {},      // Will be filled with 16 rotations
-    [BunkerKind.GROUND]: [],    // Will be filled with 8 animation frames
-    [BunkerKind.FOLLOW]: [],    // Will be filled with 8 animation frames
-    [BunkerKind.GENERATOR]: []  // Will be filled with 8 animation frames
+    [BunkerKind.WALL]: {}, // Will be filled with 16 rotations
+    [BunkerKind.DIFF]: {}, // Will be filled with 16 rotations
+    [BunkerKind.GROUND]: [], // Will be filled with 8 animation frames
+    [BunkerKind.FOLLOW]: [], // Will be filled with 8 animation frames
+    [BunkerKind.GENERATOR]: [] // Will be filled with 8 animation frames
   }
 
   // Process rotating bunkers (Wall, Diff)
   for (let kind = 0; kind < BUNKROTKINDS; kind++) {
-    const kindSprites = kinds[kind as BunkerKind] as Record<number, BunkerSprite>
+    const kindSprites = kinds[kind as BunkerKind] as Record<
+      number,
+      BunkerSprite
+    >
     const sourceArray = bunkerArrays[kind]
     if (!sourceArray) continue
 
@@ -47,7 +50,7 @@ export function createBunkerSpriteSet(
       const sourceIdx = i - 4
       const sourceSprite = kindSprites[sourceIdx]
       if (!sourceSprite) continue
-      
+
       kindSprites[i] = {
         def: rotateBunker90CW(sourceSprite.def),
         mask: rotateBunker90CW(sourceSprite.mask),
@@ -94,7 +97,11 @@ export function createBunkerSpriteSet(
             sprite.mask,
             BACKGROUND1
           ),
-          background2: applyBunkerBackground(sprite.def, sprite.mask, BACKGROUND2)
+          background2: applyBunkerBackground(
+            sprite.def,
+            sprite.mask,
+            BACKGROUND2
+          )
         }
       }
     }
@@ -128,9 +135,7 @@ export function createBunkerSpriteSet(
           const frame = animationFrame !== undefined ? animationFrame % 8 : 0
           const animSprite = animatedKind[frame]
           if (!animSprite)
-            throw new Error(
-              `Bunker sprite not found: ${kind} frame ${frame}`
-            )
+            throw new Error(`Bunker sprite not found: ${kind} frame ${frame}`)
           return animSprite
 
         default:

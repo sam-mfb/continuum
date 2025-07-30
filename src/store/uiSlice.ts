@@ -2,7 +2,14 @@ import { createSlice } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
 
 type UIState = {
-  currentView: 'menu' | 'game' | 'settings' | 'galaxy' | 'graphics' | 'sound' | 'sprites'
+  currentView:
+    | 'menu'
+    | 'game'
+    | 'settings'
+    | 'galaxy'
+    | 'graphics'
+    | 'sound'
+    | 'sprites'
   isGamePaused: boolean
   showDebugInfo: boolean
 }

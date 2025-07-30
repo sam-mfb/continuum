@@ -119,4 +119,3 @@ export function grayFigure(deps: {
     return newScreen
   }
 }
-

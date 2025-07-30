@@ -65,14 +65,14 @@ export function createShipSpriteSet(baseShips: ShipSprite[]): ShipSpriteSet {
   // Based on the C code which does: ships[8+k][y*2+x] = ships[8-k][SIZE*2 - y*2 + x]
   // In C, Ship_Pic is int[SHIPHT*2], so y*2+x is indexing ints (2 bytes each)
   // In our TypeScript, we use bytes, so we need to handle this differently
-  
+
   for (let k = 1; k < 9; k++) {
     // Create rotations 8+k (9-16) from 8-k by vertical flip
     const src8k = rotations[8 - k]
     if (src8k) {
       const newDef = new Uint8Array(4 * SHIPHT)
       const newMask = new Uint8Array(4 * SHIPHT)
-      
+
       // Copy entire sprite with vertical flip
       for (let y = 0; y < SHIPHT; y++) {
         for (let byteX = 0; byteX < 4; byteX++) {
@@ -83,17 +83,17 @@ export function createShipSpriteSet(baseShips: ShipSprite[]): ShipSpriteSet {
           newMask[dstIdx] = src8k.mask[srcIdx] ?? 0
         }
       }
-      
+
       rotations[8 + k] = { def: newDef, mask: newMask }
     }
-    
+
     // Create rotations 24-k (23-16) from 24+k by vertical flip
     if (k !== 8) {
       const src24k = rotations[24 + k]
       if (src24k) {
         const newDef = new Uint8Array(4 * SHIPHT)
         const newMask = new Uint8Array(4 * SHIPHT)
-        
+
         // Copy entire sprite with vertical flip
         for (let y = 0; y < SHIPHT; y++) {
           for (let byteX = 0; byteX < 4; byteX++) {
@@ -104,7 +104,7 @@ export function createShipSpriteSet(baseShips: ShipSprite[]): ShipSpriteSet {
             newMask[dstIdx] = src24k.mask[srcIdx] ?? 0
           }
         }
-        
+
         rotations[24 - k] = { def: newDef, mask: newMask }
       }
     }
@@ -131,7 +131,6 @@ export function createShipSpriteSet(baseShips: ShipSprite[]): ShipSpriteSet {
     }
   }
 }
-
 
 // Debug helper to visualize a ship sprite as ASCII art
 export function shipSpriteToAscii(sprite: ShipSprite): string {

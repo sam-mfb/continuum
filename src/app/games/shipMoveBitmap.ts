@@ -39,7 +39,7 @@ let initializationError: Error | null = null
 const initializeGame = async (): Promise<void> => {
   try {
     console.log('Starting shipMoveBitmap initialization...')
-    
+
     // Load sprites first
     console.log('Loading sprites...')
     await store.dispatch(loadSprites()).unwrap()
@@ -54,14 +54,14 @@ const initializeGame = async (): Promise<void> => {
 
     const arrayBuffer = await response.arrayBuffer()
     console.log('Galaxy file loaded, size:', arrayBuffer.byteLength)
-    
+
     const { parsePlanet } = await import('@/planet/parsePlanet')
     const { Galaxy } = await import('@/galaxy/methods')
-    
+
     const { headerBuffer, planetsBuffer } = Galaxy.splitBuffer(arrayBuffer)
     const galaxyHeader = Galaxy.parseHeader(headerBuffer)
     console.log('Galaxy header:', galaxyHeader)
-    
+
     // Load planet 1
     const planet1 = parsePlanet(planetsBuffer, galaxyHeader.indexes, 1)
     console.log('Planet 1 loaded:', {
@@ -70,7 +70,7 @@ const initializeGame = async (): Promise<void> => {
       walls: planet1.lines.length,
       gravity: `(${planet1.gravx}, ${planet1.gravy})`
     })
-    
+
     // Initialize planet
     store.dispatch(planetSlice.actions.loadPlanet(planet1))
 
@@ -78,13 +78,15 @@ const initializeGame = async (): Promise<void> => {
     store.dispatch(wallsSlice.actions.initWalls({ walls: planet1.lines }))
 
     // Initialize ship at center of screen (following Play.c:175-179)
-    const shipScreenX = SCRWTH / 2  // 256
-    const shipScreenY = Math.floor((TOPMARG + BOTMARG) / 2)  // 159
-    
-    store.dispatch(shipSlice.actions.initShip({ 
-      x: shipScreenX, 
-      y: shipScreenY 
-    }))
+    const shipScreenX = SCRWTH / 2 // 256
+    const shipScreenY = Math.floor((TOPMARG + BOTMARG) / 2) // 159
+
+    store.dispatch(
+      shipSlice.actions.initShip({
+        x: shipScreenX,
+        y: shipScreenY
+      })
+    )
 
     // Initialize screen position so ship appears at planet's starting position
     // screenx = globalx - shipx; screeny = globaly - shipy;
@@ -94,7 +96,7 @@ const initializeGame = async (): Promise<void> => {
         y: planet1.ystart - shipScreenY
       })
     )
-    
+
     initializationComplete = true
     console.log('shipMoveBitmap initialization complete')
   } catch (error) {
@@ -128,7 +130,7 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
     bitmap.data.fill(0)
     return
   }
-  
+
   if (!initializationComplete) {
     // Still loading
     bitmap.data.fill(0)
@@ -143,7 +145,6 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
     bitmap.data.fill(0)
     return
   }
-  
 
   // Get gravity from planet
   const gravity = {
@@ -194,8 +195,8 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
   const viewport = {
     x: finalState.screen.screenx,
     y: finalState.screen.screeny,
-    b: finalState.screen.screeny + VIEWHT,  // bottom edge
-    r: finalState.screen.screenx + SCRWTH   // right edge
+    b: finalState.screen.screeny + VIEWHT, // bottom edge
+    r: finalState.screen.screenx + SCRWTH // right edge
   }
 
   // Draw ship using the proper fullFigure function

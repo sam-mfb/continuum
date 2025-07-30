@@ -109,9 +109,7 @@ export function mirrorVertical(
 
 // Special rotation for bunkers - 90° CW rotation
 // Based on the assembly code in rotate_bunker()
-export function rotateBunker90CW(
-  src: Uint8Array
-): Uint8Array {
+export function rotateBunker90CW(src: Uint8Array): Uint8Array {
   const BUNKHT = 48
   const BUNKWD = 48
   const dest = new Uint8Array(6 * BUNKHT)
