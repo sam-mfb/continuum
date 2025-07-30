@@ -34,6 +34,10 @@ const EMPTY_SHOT = [0x6000, 0x9000, 0x9000, 0x6000]
 //
 // const EXPL_RANDS = generateExplRands()
 
+// Random counter constants for shot animation
+const RAND_COUNTER_MIN = 64
+const RAND_COUNTER_RANGE = 63
+
 // Static random counter that persists between calls
 let randCounter = 1
 
@@ -55,7 +59,7 @@ export function drawShipShot(deps: {
 
     // Update random counter
     if (!--randCounter) {
-      randCounter = Math.floor(Math.random() * 63) + 64
+      randCounter = Math.floor(Math.random() * RAND_COUNTER_RANGE) + RAND_COUNTER_MIN
     }
 
     // Create 68K emulator instance

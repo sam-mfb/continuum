@@ -7,7 +7,7 @@ import { jsrWAddress } from '@/asm/assemblyMacros'
  * Draw Figure:  puts the 32 by HEIGHT figure on the screen
  * at given spot.  Used to draw the ship.
  *
- * See draw_figure() in orig/Soruces/Draw.c:32-60
+ * See draw_figure() in orig/Sources/Draw.c:32-60
  */
 export function drawFigure(deps: {
   x: number
