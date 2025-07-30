@@ -559,3 +559,218 @@
 .mac-window-content {
   padding: 0;
 }
+
+/* Sprites View Styles */
+.sprites-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 16px;
+}
+
+.sprites-content {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  min-height: 400px;
+}
+
+.sprites-list {
+  width: 200px;
+  min-width: 200px;
+  border: 2px solid #000;
+  border-top: 2px solid #808080;
+  border-left: 2px solid #808080;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  background: #fff;
+  padding: 8px;
+  overflow-y: auto;
+}
+
+.sprites-list h3 {
+  font-size: 16px;
+  margin: 0 0 8px 0;
+  font-weight: bold;
+}
+
+.sprites-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sprites-list li {
+  padding: 6px 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  margin-bottom: 4px;
+}
+
+.sprites-list li:hover {
+  background: #e0e0e0;
+  border: 1px solid #808080;
+}
+
+.sprites-list li.selected {
+  background: #000;
+  color: #fff;
+  border: 1px solid #000;
+}
+
+.sprite-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.sprite-name {
+  font-weight: bold;
+  text-transform: capitalize;
+}
+
+.sprite-count {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.sprites-viewer {
+  flex: 1;
+  border: 2px solid #000;
+  border-top: 2px solid #808080;
+  border-left: 2px solid #808080;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  background: #fff;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: auto;
+}
+
+.sprites-viewer h3 {
+  font-size: 16px;
+  margin: 0 0 16px 0;
+  font-weight: bold;
+}
+
+.sprite-display {
+  margin: 16px 0;
+}
+
+.sprites-viewer.empty,
+.sprites-viewer.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #808080;
+  font-style: italic;
+}
+
+.sprites-viewer.error {
+  color: #ff0000;
+}
+
+.sprites-controls {
+  width: 300px;
+  min-width: 300px;
+  border: 2px solid #000;
+  border-top: 2px solid #808080;
+  border-left: 2px solid #808080;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  background: #fff;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.sprites-controls h3 {
+  font-size: 16px;
+  margin: 0 0 12px 0;
+  font-weight: bold;
+}
+
+.control-group {
+  margin-bottom: 16px;
+}
+
+.control-group label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 4px;
+  font-weight: bold;
+}
+
+.control-group select,
+.control-group input[type='range'] {
+  width: 100%;
+  border: 1px solid #000;
+  background: #fff;
+  padding: 4px;
+}
+
+.control-group input[type='range'] {
+  cursor: pointer;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.checkbox-label input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  border: 1px solid #000;
+  background: #fff;
+  appearance: none;
+  cursor: pointer;
+}
+
+.checkbox-label input[type='checkbox']:checked {
+  background: #000;
+  position: relative;
+}
+
+.checkbox-label input[type='checkbox']:checked::after {
+  content: '✓';
+  color: #fff;
+  font-size: 12px;
+  position: absolute;
+  top: -2px;
+  left: 1px;
+}
+
+.sprite-info {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #808080;
+}
+
+.sprite-info h4 {
+  font-size: 14px;
+  margin: 0 0 8px 0;
+  font-weight: bold;
+}
+
+.sprite-info p {
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Pixelated canvas rendering */
+.pixelated-canvas {
+  image-rendering: optimizeSpeed;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: -o-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  -ms-interpolation-mode: nearest-neighbor;
+}

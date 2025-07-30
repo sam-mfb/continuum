@@ -118,16 +118,23 @@ export function macPaintToImageData(
 }
 
 /**
- * Decompresses the title page resource data from RSRC 261 (M_TITLEPAGE)
+ * Decompresses compressed bitmap resource data from Continuum's MISC resources
  * Based on expandtitlepage() from orig/Sources/Main.c lines 1063-1086
  *
  * The original function unpacks 72 bytes per line but only uses the first 64 bytes
- * to create a 512x342 pixel bitmap (original Mac screen dimensions)
+ * to create a 512-pixel-wide bitmap. The height varies by resource:
+ * - RSRC 261 (M_TITLEPAGE): 342 lines (SCRHT)
+ * - RSRC 260 (M_FIGS): 684 lines (SCRHT * 2)
+ *
+ * @param compressedData - The compressed bitmap data from the resource
+ * @param height - Number of scanlines to decompress (default: 342)
+ * @returns Decompressed bitmap data (1 bit per pixel, 64 bytes per line)
  */
-export function expandTitlePageToImageData(
-  compressedData: ArrayBuffer
-): Uint8ClampedArray<ArrayBuffer> {
-  const lines = 342 // SCRHT from GW.h
+export function expandTitlePage(
+  compressedData: ArrayBuffer,
+  height: number = 342 // Default to SCRHT from GW.h
+): Uint8Array {
+  const lines = height
   const packedBytes = new Uint8Array(compressedData)
   const unpackedBytes = new Uint8Array(lines * 64) // 64 bytes per line (512 pixels / 8)
   let dataPtr = 0
@@ -148,12 +155,28 @@ export function expandTitlePageToImageData(
 
     // Check if we've run out of data
     if (dataPtr >= packedBytes.length && i < lines - 1) {
-      console.warn(`Title page data ended early at line ${i + 1} of ${lines}`)
+      console.warn(`Data ended early at line ${i + 1} of ${lines}`)
       break
     }
   }
 
-  return bytesToImageData(unpackedBytes)
+  return unpackedBytes
+}
+
+/**
+ * Decompresses compressed bitmap resource data and converts to RGBA ImageData
+ * This is a convenience wrapper around expandTitlePage() that converts the
+ * 1-bit-per-pixel data to RGBA format suitable for HTML Canvas ImageData
+ *
+ * @param compressedData - The compressed bitmap data from the resource
+ * @param height - Number of scanlines to decompress (default: 342)
+ * @returns RGBA image data ready for ImageData constructor
+ */
+export function expandTitlePageToImageData(
+  compressedData: ArrayBuffer,
+  height: number = 342 // Default to SCRHT from GW.h
+): Uint8ClampedArray<ArrayBuffer> {
+  return bytesToImageData(expandTitlePage(compressedData, height))
 }
 
 /**

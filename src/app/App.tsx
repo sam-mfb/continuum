@@ -1,12 +1,17 @@
-import { useState } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
+import { useState, useEffect } from 'react'
+import { useSelector } from 'react-redux'
 import type { RootState } from '../store/store'
+import { useAppDispatch } from '../store/store'
 import { setCurrentView, toggleDebugInfo } from '../store/uiSlice'
+import { loadSprites } from '../store/spritesSlice'
 import { GalaxySelector } from './components/GalaxySelector'
 import { PlanetList } from './components/PlanetList'
 import { PlanetViewer } from './components/PlanetViewer'
 import { GraphicsList } from './components/GraphicsList'
 import { GraphicsViewer } from './components/GraphicsViewer'
+import { SpritesList } from './components/SpritesList'
+import { SpritesViewer } from './components/SpritesViewer'
+import { SpritesControls } from './components/SpritesControls'
 import GameView, {
   type CanvasGameDefinition,
   type BitmapGameDefinition
@@ -18,14 +23,25 @@ import { bitmapTestRenderer } from './games/bitmapTest'
 import { wallDrawingRenderer } from './games/wallDrawing'
 import { planet3DrawingRenderer } from './games/planet3Drawing'
 import { junctionDrawRenderer } from './games/junctionDraw'
+import { shipMoveBitmapRenderer } from './games/shipMoveBitmap'
 import './App.css'
 
 function App(): React.JSX.Element {
   const { currentView, showDebugInfo } = useSelector(
     (state: RootState) => state.ui
   )
-  const dispatch = useDispatch()
+  const dispatch = useAppDispatch()
   const [showGameStats, setShowGameStats] = useState(false)
+
+  // Load sprites when sprites view is first accessed
+  const spritesLoaded = useSelector(
+    (state: RootState) => state.sprites.allSprites !== null
+  )
+  useEffect(() => {
+    if (currentView === 'sprites' && !spritesLoaded) {
+      void dispatch(loadSprites())
+    }
+  }, [currentView, spritesLoaded, dispatch])
 
   return (
     <div className="app">
@@ -67,6 +83,12 @@ function App(): React.JSX.Element {
             onClick={() => dispatch(setCurrentView('sound'))}
           >
             Sound
+          </div>
+          <div
+            className={`menu-item ${currentView === 'sprites' ? 'active' : ''}`}
+            onClick={() => dispatch(setCurrentView('sprites'))}
+          >
+            Sprites
           </div>
           <div
             className={`menu-item ${currentView === 'settings' ? 'active' : ''}`}
@@ -133,6 +155,11 @@ function App(): React.JSX.Element {
                   type: 'bitmap',
                   name: 'Junction Draw (All 64 Combinations)',
                   bitmapRenderer: junctionDrawRenderer
+                } as BitmapGameDefinition,
+                {
+                  type: 'bitmap',
+                  name: 'Ship Move (Bitmap)',
+                  bitmapRenderer: shipMoveBitmapRenderer
                 } as BitmapGameDefinition
               ]}
               defaultGameIndex={0}
@@ -170,6 +197,16 @@ function App(): React.JSX.Element {
           )}
 
           {currentView === 'sound' && <SoundTest />}
+
+          {currentView === 'sprites' && (
+            <div className="sprites-view">
+              <div className="sprites-content">
+                <SpritesList />
+                <SpritesViewer />
+                <SpritesControls />
+              </div>
+            </div>
+          )}
 
           {currentView === 'settings' && (
             <div className="settings-view">
