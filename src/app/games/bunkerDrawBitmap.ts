@@ -24,6 +24,10 @@ const store = configureStore({
 let initializationComplete = false
 let initializationError: Error | null = null
 
+// Define a world larger than the viewport
+const WORLD_WIDTH = 1024
+const WORLD_HEIGHT = 1024
+
 // Animation state for rotating bunkers
 const BUNKFCYCLES = 2  // From GW.h:88 - ticks per animation frame
 const BUNKFRAMES = 8   // Number of animation frames for rotating bunkers
@@ -36,6 +40,12 @@ const animationState = {
   followRot: 0,
   generatorRotCount: BUNKFCYCLES,
   generatorRot: 0
+}
+
+// Viewport state - start centered
+const viewportState = {
+  x: (WORLD_WIDTH - 512) / 2,   // Center horizontally (512 is default bitmap width)
+  y: (WORLD_HEIGHT - 342) / 2   // Center vertically (342 is default bitmap height)
 }
 
 // Initialize game on module load
@@ -90,8 +100,8 @@ function drawSingleBunker(
   
   // Calculate screen position from world position
   // From Bunkers.c:231: bunkx = bp->x - scrnx - xcenter;
-  const screenX = 0 // No scrolling
-  const screenY = 0 // No scrolling
+  const screenX = viewportState.x
+  const screenY = viewportState.y
   const bunkerX = worldX - screenX - xcenter
   const bunkerY = worldY - screenY - ycenter
   
@@ -159,7 +169,7 @@ function drawSingleBunker(
  */
 export const bunkerDrawBitmapRenderer: BitmapRenderer = (
   bitmap,
-  _frame,
+  frame,
   _env
 ) => {
   // Check initialization status
@@ -184,11 +194,36 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
     return
   }
 
+  // Handle keyboard input for viewport movement
+  const moveSpeed = 5
+  if (frame.keysDown.has('ArrowUp')) {
+    viewportState.y = Math.max(0, viewportState.y - moveSpeed)
+  }
+  if (frame.keysDown.has('ArrowDown')) {
+    viewportState.y = Math.min(
+      WORLD_HEIGHT - bitmap.height,
+      viewportState.y + moveSpeed
+    )
+  }
+  if (frame.keysDown.has('ArrowLeft')) {
+    viewportState.x = Math.max(0, viewportState.x - moveSpeed)
+  }
+  if (frame.keysDown.has('ArrowRight')) {
+    viewportState.x = Math.min(
+      WORLD_WIDTH - bitmap.width,
+      viewportState.x + moveSpeed
+    )
+  }
+
   // First, create a crosshatch gray background
+  // IMPORTANT: Pattern must be based on world coordinates, not screen coordinates
   for (let y = 0; y < bitmap.height; y++) {
     for (let x = 0; x < bitmap.width; x++) {
-      // Set pixel if x + y is even (creates fixed checkerboard)
-      if ((x + y) % 2 === 0) {
+      // Calculate world position
+      const worldX = x + viewportState.x
+      const worldY = y + viewportState.y
+      // Set pixel if worldX + worldY is even (creates fixed checkerboard)
+      if ((worldX + worldY) % 2 === 0) {
         const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
         const bitIndex = 7 - (x % 8)
         bitmap.data[byteIndex]! |= 1 << bitIndex
@@ -221,14 +256,18 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
   }
 
   // Draw static bunkers showing first 4 rotations (0, 1, 2, 3)
+  // Center all bunkers in the world
+  const centerX = WORLD_WIDTH / 2
+  const centerY = WORLD_HEIGHT / 2
+  
   // Top row: WALL bunkers
   for (let i = 0; i < 4; i++) {
-    drawSingleBunker(bitmap, BunkerKind.WALL, i, 80 + i * 100, 50)
+    drawSingleBunker(bitmap, BunkerKind.WALL, i, centerX - 150 + i * 100, centerY - 100)
   }
   
   // Second row: DIFF bunkers
   for (let i = 0; i < 4; i++) {
-    drawSingleBunker(bitmap, BunkerKind.DIFF, i, 80 + i * 100, 120)
+    drawSingleBunker(bitmap, BunkerKind.DIFF, i, centerX - 150 + i * 100, centerY - 30)
   }
   
   // Draw animated bunkers
@@ -237,8 +276,8 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
     bitmap, 
     BunkerKind.GROUND, 
     0,  // rotation param ignored for animated bunkers
-    80, 
-    190,
+    centerX - 150, 
+    centerY + 40,
     animationState.groundRot
   )
   
@@ -246,8 +285,8 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
     bitmap,
     BunkerKind.FOLLOW,
     0,
-    180,
-    190,
+    centerX - 50,
+    centerY + 40,
     animationState.followRot
   )
   
@@ -255,8 +294,8 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
     bitmap,
     BunkerKind.GENERATOR,
     0,
-    280,
-    190,
+    centerX + 50,
+    centerY + 40,
     animationState.generatorRot
   )
   
