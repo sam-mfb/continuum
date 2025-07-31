@@ -4,6 +4,11 @@
  * Test game that displays all bunker sprites in the game.
  * Shows all 5 bunker types with their various rotations/animations.
  * Use arrow keys to move the viewport.
+ *
+ * This simulates the game's rendering approach where:
+ * - The screen has a 24-pixel status bar at the top
+ * - Bunkers are positioned in world coordinates
+ * - World coordinates are transformed to viewport coordinates for rendering
  */
 
 import type { BitmapRenderer } from '../../bitmap'
@@ -17,6 +22,7 @@ import {
 } from '../../figs'
 import { buildGameStore } from './store'
 import { loadSprites } from '../../store/spritesSlice'
+import { SBARHT, VIEWHT } from '../../screen/constants'
 
 // Constants from GW.h
 const BUNKER_FRAMES = 8
@@ -33,7 +39,7 @@ const ensureSpritesLoaded = async (): Promise<void> => {
   }
 }
 
-// Viewport state
+// Viewport state (world coordinates)
 const viewportState = {
   x: 0,
   y: 0
@@ -43,7 +49,7 @@ const viewportState = {
 const WORLD_WIDTH = 1024
 const WORLD_HEIGHT = 768
 
-// Grid parameters for bunker layout
+// Grid parameters for bunker layout (world coordinates)
 const GRID_START_X = 50
 const GRID_START_Y = 50
 const GRID_SPACING_X = 100
@@ -107,11 +113,16 @@ export const bunkerDrawRenderer: BitmapRenderer = (bitmap, frame, _env) => {
   }
 
   // Clear bitmap with gray background pattern
+  // Note: In the game, only the viewport area (below status bar) shows the game world
   for (let y = 0; y < bitmap.height; y++) {
     for (let x = 0; x < bitmap.width; x++) {
-      // Calculate world position
+      if (y < SBARHT) {
+        // Status bar area - leave black for now
+        continue
+      }
+      // Calculate world position for viewport area
       const worldX = x + viewportState.x
-      const worldY = y + viewportState.y
+      const worldY = y - SBARHT + viewportState.y
       // Set pixel if worldX + worldY is even (creates fixed checkerboard)
       if ((worldX + worldY) % 2 === 0) {
         const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
@@ -136,22 +147,36 @@ export const bunkerDrawRenderer: BitmapRenderer = (bitmap, frame, _env) => {
       const sprite = kindSprites[rot]
       if (!sprite) continue
 
-      // Calculate grid position
+      // Calculate grid position in world coordinates
       const col = rot % 8
       const row = Math.floor(rot / 8) + kind * 2
-      const x = GRID_START_X + col * GRID_SPACING_X - viewportState.x
-      const y = GRID_START_Y + row * GRID_SPACING_Y - viewportState.y
+      const worldX = GRID_START_X + col * GRID_SPACING_X
+      const worldY = GRID_START_Y + row * GRID_SPACING_Y
 
-      // Skip if off screen
-      if (x < -48 || x >= bitmap.width || y < -48 || y >= bitmap.height - 24) {
+      // Transform to viewport coordinates (relative to viewport top-left)
+      const viewX = worldX - viewportState.x
+      const viewY = worldY - viewportState.y
+
+      // Skip if off screen (viewport is VIEWHT pixels tall)
+      if (
+        viewX < -48 ||
+        viewX >= bitmap.width ||
+        viewY < -48 ||
+        viewY >= VIEWHT
+      ) {
         continue
       }
 
       // Choose rendering function based on rotation
+      // Note: The rendering functions expect viewport Y coordinates (0 = top of viewport)
       if (kind >= BUNKROTKINDS || rot <= 1 || rot >= 9) {
         // Use XOR-based rendering
-        const defBitmap = spriteToBitmap(sprite)
-        workingBitmap = drawBunker({ x, y, def: defBitmap })(workingBitmap)
+        // Calculate alignment for background pattern (from Bunkers.c:145)
+        const align = (worldX + worldY + viewportState.x + viewportState.y) & 1
+        const defBitmap = spriteToBitmap(sprite, align === 1)
+        workingBitmap = drawBunker({ x: viewX, y: viewY, def: defBitmap })(
+          workingBitmap
+        )
       } else {
         // Use mask-based rendering for side views
         const defBitmap = spriteToBitmap(sprite)
@@ -161,9 +186,12 @@ export const bunkerDrawRenderer: BitmapRenderer = (bitmap, frame, _env) => {
           height: 48,
           rowBytes: 6
         }
-        workingBitmap = fullBunker({ x, y, def: defBitmap, mask: maskBitmap })(
-          workingBitmap
-        )
+        workingBitmap = fullBunker({
+          x: viewX,
+          y: viewY,
+          def: defBitmap,
+          mask: maskBitmap
+        })(workingBitmap)
       }
     }
   }
@@ -182,45 +210,59 @@ export const bunkerDrawRenderer: BitmapRenderer = (bitmap, frame, _env) => {
     const sprite = kindSprites[animFrame]
     if (!sprite) continue
 
-    // Calculate position - put animated bunkers below static ones
+    // Calculate position in world coordinates - put animated bunkers below static ones
     const col = kind - BUNKROTKINDS
     const row = 4 + (kind - BUNKROTKINDS)
-    const x = GRID_START_X + col * GRID_SPACING_X * 2 - viewportState.x
-    const y = GRID_START_Y + row * GRID_SPACING_Y - viewportState.y
+    const worldX = GRID_START_X + col * GRID_SPACING_X * 2
+    const worldY = GRID_START_Y + row * GRID_SPACING_Y
+
+    // Transform to viewport coordinates
+    const viewX = worldX - viewportState.x
+    const viewY = worldY - viewportState.y
 
     // Skip if off screen
-    if (x < -48 || x >= bitmap.width || y < -48 || y >= bitmap.height - 24) {
+    if (
+      viewX < -48 ||
+      viewX >= bitmap.width ||
+      viewY < -48 ||
+      viewY >= VIEWHT
+    ) {
       continue
     }
 
     // Animated bunkers always use XOR rendering
-    const defBitmap = spriteToBitmap(sprite)
-    workingBitmap = drawBunker({ x, y, def: defBitmap })(workingBitmap)
+    const align = (worldX + worldY + viewportState.x + viewportState.y) & 1
+    const defBitmap = spriteToBitmap(sprite, align === 1)
+    workingBitmap = drawBunker({ x: viewX, y: viewY, def: defBitmap })(
+      workingBitmap
+    )
 
     // Also show all 8 frames in a row for reference
     for (let frame = 0; frame < BUNKER_FRAMES; frame++) {
       const frameSprite = kindSprites[frame]
       if (!frameSprite) continue
 
-      const frameX =
-        GRID_START_X +
-        (col * GRID_SPACING_X * 2 + 150 + frame * 60) -
-        viewportState.x
-      const frameY = y
+      const frameWorldX = worldX + 150 + frame * 60
+      const frameViewX = frameWorldX - viewportState.x
+      const frameViewY = viewY
 
       if (
-        frameX < -48 ||
-        frameX >= bitmap.width ||
-        frameY < -48 ||
-        frameY >= bitmap.height - 24
+        frameViewX < -48 ||
+        frameViewX >= bitmap.width ||
+        frameViewY < -48 ||
+        frameViewY >= VIEWHT
       ) {
         continue
       }
 
-      const frameBitmap = spriteToBitmap(frameSprite)
-      workingBitmap = drawBunker({ x: frameX, y: frameY, def: frameBitmap })(
-        workingBitmap
-      )
+      const frameAlign =
+        (frameWorldX + worldY + viewportState.x + viewportState.y) & 1
+      const frameBitmap = spriteToBitmap(frameSprite, frameAlign === 1)
+      workingBitmap = drawBunker({
+        x: frameViewX,
+        y: frameViewY,
+        def: frameBitmap
+      })(workingBitmap)
     }
   }
 
