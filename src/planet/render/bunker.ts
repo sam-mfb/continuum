@@ -88,27 +88,35 @@ export function drawBunker(deps: {
     let defIndex = defOffset
 
     // Skip leading blank lines (@skip0s loop at Draw.c:776-783)
-    while (asm.D3 >= 0) {
-      if (defIndex + 5 < def.data.length) {
-        const word1 = (def.data[defIndex]! << 8) | def.data[defIndex + 1]!
-        const long2 =
-          (def.data[defIndex + 2]! << 24) |
-          (def.data[defIndex + 3]! << 16) |
-          (def.data[defIndex + 4]! << 8) |
-          def.data[defIndex + 5]!
-
-        if (word1 !== 0 || long2 !== 0) {
-          // Found non-zero data, back up and start drawing
-          break
-        }
+    // This logic has been corrected to prevent skipping the first non-blank row.
+    let blankLines = 0
+    for (let i = 0; i < height; i++) {
+      const checkIndex = defOffset + i * 6
+      if (checkIndex + 5 >= def.data.length) {
+        blankLines = height // Past end of data, treat as blank
+        break
       }
-
-      asm.A0 += rowOffset
-      defIndex += 6
-      if (!asm.instructions.dbne('D3')) {
-        return newScreen // All blank lines
+      const word1 = (def.data[checkIndex]! << 8) | def.data[checkIndex + 1]!
+      const long2 =
+        (def.data[checkIndex + 2]! << 24) |
+        (def.data[checkIndex + 3]! << 16) |
+        (def.data[checkIndex + 4]! << 8) |
+        def.data[checkIndex + 5]!
+      if (word1 === 0 && long2 === 0) {
+        blankLines++
+      } else {
+        break // Found first non-blank line
       }
     }
+
+    if (blankLines >= height) {
+      return newScreen // All lines were blank
+    }
+
+    // Adjust starting position and height based on skipped lines
+    defIndex += blankLines * 6
+    asm.A0 += blankLines * rowOffset
+    asm.D3 = height - blankLines - 1 // Set loop counter for dbf
 
     // Main drawing loop (@loop at Draw.c:785-819)
     do {
@@ -128,12 +136,12 @@ export function drawBunker(deps: {
         // @onlyright case (Draw.c:802-811)
         defIndex += 2 // Skip left word
 
-        // move.l (def)+, D1 (Draw.c:804)
+        // move.l (def)+, D1 (Draw.c:804) - Corrected data fetching
         let d1 =
-          (def.data[defIndex + 2]! << 24) |
-          (def.data[defIndex + 3]! << 16) |
-          (def.data[defIndex + 4]! << 8) |
-          def.data[defIndex + 5]!
+          (def.data[defIndex]! << 24) |
+          (def.data[defIndex + 1]! << 16) |
+          (def.data[defIndex + 2]! << 8) |
+          def.data[defIndex + 3]!
         defIndex += 4
 
         // and.l D5, D1 (Draw.c:805)
