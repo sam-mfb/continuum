@@ -154,43 +154,43 @@ function applyBunkerBackground(
   const result = new Uint8Array(def.length)
 
   // Match original C code logic from Figs.c:423-435
-  // Original uses 0xAAAAAAAA and 0x55555555 alternating within each row
-  const back1 = background === BACKGROUND1 ? 0xaa : 0x55
-  const back2 = background === BACKGROUND1 ? 0x55 : 0xaa
+  // The original pre-computes: (background & mask) ^ def
 
-  // Process each row (6 bytes for bunkers, 48 rows total)
-  for (let row = 0; row < 48; row++) {
+  // Process each row (6 bytes = 48 pixels for bunkers)
+  // NOTE: Original C code only processes BUNKHT/2 (24) rows, not all 48!
+  // This matches the loop: for (k=0; k < BUNKHT/2; k++)
+  const rowsToProcess = BUNKHT / 2  // 24 rows
+  
+  // True checkerboard pattern - each entire row alternates
+  // For BACKGROUND1 (align=0): even rows = 0xAA, odd rows = 0x55
+  // For BACKGROUND2 (align=1): even rows = 0x55, odd rows = 0xAA
+  
+  for (let row = 0; row < rowsToProcess; row++) {
     const rowOffset = row * 6
     
-    // Check if this row is blank in the original sprite
-    let rowIsBlank = true
-    for (let b = 0; b < 6; b++) {
-      if (def[rowOffset + b] !== 0) {
-        rowIsBlank = false
-        break
-      }
+    // Determine pattern for this entire row based on row parity
+    let rowPattern: number
+    if (background === BACKGROUND1) {
+      rowPattern = (row % 2 === 0) ? 0xaa : 0x55
+    } else {
+      rowPattern = (row % 2 === 0) ? 0x55 : 0xaa
     }
     
-    // If the row is blank in the original, keep it blank in the pre-computed version
-    // This ensures the skip blank lines logic in drawBunker works correctly
-    if (rowIsBlank) {
-      for (let b = 0; b < 6; b++) {
-        result[rowOffset + b] = 0
-      }
-    } else {
-      // First 3 bytes of row use back1
-      for (let b = 0; b < 3; b++) {
-        const idx = rowOffset + b
-        result[idx] = (back1 & mask[idx]!) ^ def[idx]!
-      }
-      
-      // Second 3 bytes of row use back2
-      for (let b = 0; b < 3; b++) {
-        const idx = rowOffset + b + 3
-        result[idx] = (back2 & mask[idx]!) ^ def[idx]!
-      }
+    // Apply the same pattern to all 6 bytes in the row
+    for (let b = 0; b < 6; b++) {
+      const idx = rowOffset + b
+      result[idx] = (rowPattern & mask[idx]!) ^ def[idx]!
     }
   }
 
+  // The original code only processes 24 rows, leaving the bottom 24 rows
+  // as whatever was in the original def data (no background pre-computation)
+  // Copy the remaining rows from the original def
+  const startByte = rowsToProcess * 6  // 144
+  const endByte = BUNKHT * 6  // 288
+  for (let i = startByte; i < endByte; i++) {
+    result[i] = def[i]!
+  }
+  
   return result
 }
