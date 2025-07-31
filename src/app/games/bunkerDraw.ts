@@ -112,14 +112,20 @@ export const bunkerDrawRenderer: BitmapRenderer = (bitmap, frame, _env) => {
     )
   }
 
-  // Clear bitmap with gray background pattern
+  // First, fill the entire bitmap with white (0s)
+  bitmap.data.fill(0)
+  
+  // Then set the status bar area to black (1s)
+  for (let y = 0; y < SBARHT; y++) {
+    for (let byteIdx = 0; byteIdx < bitmap.rowBytes; byteIdx++) {
+      bitmap.data[y * bitmap.rowBytes + byteIdx] = 0xff
+    }
+  }
+  
+  // Draw the gray background pattern in the viewport area
   // Note: In the game, only the viewport area (below status bar) shows the game world
-  for (let y = 0; y < bitmap.height; y++) {
+  for (let y = SBARHT; y < bitmap.height; y++) {
     for (let x = 0; x < bitmap.width; x++) {
-      if (y < SBARHT) {
-        // Status bar area - leave black for now
-        continue
-      }
       // Calculate world position for viewport area
       const worldX = x + viewportState.x
       const worldY = y - SBARHT + viewportState.y
