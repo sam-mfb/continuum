@@ -88,35 +88,42 @@ export function drawBunker(deps: {
     let defIndex = defOffset
 
     // Skip leading blank lines (@skip0s loop at Draw.c:776-783)
-    // This logic has been corrected to prevent skipping the first non-blank row.
-    let blankLines = 0
-    for (let i = 0; i < height; i++) {
-      const checkIndex = defOffset + i * 6
-      if (checkIndex + 5 >= def.data.length) {
-        blankLines = height // Past end of data, treat as blank
+    // Match original behavior: advance screen pointer BEFORE checking
+    while (true) {
+      // adda.w D2, A0 - advance screen pointer first
+      asm.A0 += rowOffset
+      
+      if (defIndex + 5 >= def.data.length) {
+        return newScreen // Past end of data
+      }
+      
+      // move.w (def)+, D0; or.l (def)+, D0
+      const word1 = (def.data[defIndex]! << 8) | def.data[defIndex + 1]!
+      const long2 =
+        (def.data[defIndex + 2]! << 24) |
+        (def.data[defIndex + 3]! << 16) |
+        (def.data[defIndex + 4]! << 8) |
+        def.data[defIndex + 5]!
+      defIndex += 6
+      
+      // Check if non-zero (dbne checks for not equal)
+      if (word1 !== 0 || long2 !== 0) {
+        // Found non-blank line - back up both pointers
+        // subq.w #6, def; suba.w D2, A0
+        defIndex -= 6
+        asm.A0 -= rowOffset
         break
       }
-      const word1 = (def.data[checkIndex]! << 8) | def.data[checkIndex + 1]!
-      const long2 =
-        (def.data[checkIndex + 2]! << 24) |
-        (def.data[checkIndex + 3]! << 16) |
-        (def.data[checkIndex + 4]! << 8) |
-        def.data[checkIndex + 5]!
-      if (word1 === 0 && long2 === 0) {
-        blankLines++
-      } else {
-        break // Found first non-blank line
+      
+      // dbne D3, @skip0s - decrements D3 and branches if not -1
+      asm.D3--
+      if (asm.D3 < 0) {
+        // beq @leave - all lines were blank
+        return newScreen
       }
     }
-
-    if (blankLines >= height) {
-      return newScreen // All lines were blank
-    }
-
-    // Adjust starting position and height based on skipped lines
-    defIndex += blankLines * 6
-    asm.A0 += blankLines * rowOffset
-    asm.D3 = height - blankLines - 1 // Set loop counter for dbf
+    
+    // D3 now contains the remaining height after skipping blank lines
 
     // Main drawing loop (@loop at Draw.c:785-819)
     do {

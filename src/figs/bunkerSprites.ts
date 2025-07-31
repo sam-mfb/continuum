@@ -162,16 +162,33 @@ function applyBunkerBackground(
   for (let row = 0; row < 48; row++) {
     const rowOffset = row * 6
     
-    // First 3 bytes of row use back1
-    for (let b = 0; b < 3; b++) {
-      const idx = rowOffset + b
-      result[idx] = (back1 & mask[idx]!) ^ def[idx]!
+    // Check if this row is blank in the original sprite
+    let rowIsBlank = true
+    for (let b = 0; b < 6; b++) {
+      if (def[rowOffset + b] !== 0) {
+        rowIsBlank = false
+        break
+      }
     }
     
-    // Second 3 bytes of row use back2
-    for (let b = 0; b < 3; b++) {
-      const idx = rowOffset + b + 3
-      result[idx] = (back2 & mask[idx]!) ^ def[idx]!
+    // If the row is blank in the original, keep it blank in the pre-computed version
+    // This ensures the skip blank lines logic in drawBunker works correctly
+    if (rowIsBlank) {
+      for (let b = 0; b < 6; b++) {
+        result[rowOffset + b] = 0
+      }
+    } else {
+      // First 3 bytes of row use back1
+      for (let b = 0; b < 3; b++) {
+        const idx = rowOffset + b
+        result[idx] = (back1 & mask[idx]!) ^ def[idx]!
+      }
+      
+      // Second 3 bytes of row use back2
+      for (let b = 0; b < 3; b++) {
+        const idx = rowOffset + b + 3
+        result[idx] = (back2 & mask[idx]!) ^ def[idx]!
+      }
     }
   }
 
