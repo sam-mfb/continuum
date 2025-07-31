@@ -27,10 +27,10 @@ export type Bunker = {
 }
 
 export enum BunkerKind {
-  NORMAL_SIT_ON_WALL = 0,
-  DIFFERENT_AT_EACH_ORIENTATION = 1,
-  NORMAL_SIT_ON_GROUND = 2,
-  TRACKING = 3,
+  WALL = 0,
+  DIFF = 1,
+  GROUND = 2,
+  FOLLOW = 3,
   GENERATOR = 4
 }
 
