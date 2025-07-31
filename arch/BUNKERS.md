@@ -125,6 +125,49 @@ Features:
 - Aligns with background gray pattern using position-based checkering
 - 48-pixel wide sprites with clipping support
 
+#### Pre-computation Background Pattern Logic (Figs.c:417-439)
+
+The XOR rendering system relies on pre-computed sprites that have the checkerboard background pattern already applied. This optimization is crucial for performance on the original 68K Mac hardware.
+
+**How it works:**
+
+1. **Background Pattern**: The game uses a checkerboard pattern where:
+   - Even rows: 10101010... (0xAA repeated)
+   - Odd rows: 01010101... (0x55 repeated)
+   - This creates the characteristic "gray" appearance
+
+2. **Pre-computation Process**: During initialization, two versions of each bunker sprite are created:
+   ```c
+   for (j=0; j<2; j++)  // Create 2 versions
+   {
+       for (kind=0; kind<BUNKKINDS; kind++)
+           for (i=0; i < 16; i++)
+           {
+               to = bunker_images[j][kind][i];
+               // Apply checkerboard pattern using mask
+               // Each row gets the appropriate pattern (0xAA or 0x55)
+           }
+       // Swap patterns for second version
+       back1 = (int) backgr2;
+       back2 = (int) backgr1;
+   }
+   ```
+
+3. **Runtime Selection**: At render time, the correct pre-computed version is selected:
+   ```c
+   align = (bp->x + bp->y + xcenter + ycenter) & 1;
+   draw_bunker(bunkx, bunky, bunker_images[align][bp->kind][bp->rot]);
+   ```
+   The `align` calculation ensures the pre-computed pattern matches the actual background pattern at that world position.
+
+4. **Why XOR Works**: 
+   - Pre-computed sprite = (background_pattern & mask) ^ original_sprite
+   - At runtime: screen ^ pre_computed = screen ^ ((background & mask) ^ original)
+   - When the screen already contains the background pattern, the XOR operation produces the correct visual result
+   - This avoids the need for expensive mask operations during gameplay
+
+This pre-computation strategy trades memory (storing two versions) for CPU performance, which was critical on the original hardware.
+
 ### 2. `full_bunker()` - Mask-based rendering (Draw.c:826-941)
 
 Used for:
@@ -142,14 +185,23 @@ Features:
 ```c
 if (bp->kind >= BUNKROTKINDS || (bp->rot <= 1 || bp->rot >= 9))
 {
+    // Use XOR rendering with pre-computed background
     align = (bp->x + bp->y + xcenter + ycenter) & 1;
     draw_bunker(bunkx, bunky, bunker_images[align][bp->kind][bp->rot]);
 }
 else
+{
+    // Use mask-based rendering with raw sprites
     full_bunker(bunkx, bunky,
                 bunker_defs[bp->kind][bp->rot],
                 bunker_masks[bp->kind][bp->rot]);
+}
 ```
+
+**Key Points:**
+- `bunker_images[align]` contains pre-computed sprites with background pattern already applied
+- `bunker_defs` and `bunker_masks` contain the raw sprite data without background
+- The `align` parameter (0 or 1) selects which pre-computed version matches the background at the bunker's position
 
 ## Combat Mechanics
 
