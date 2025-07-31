@@ -153,18 +153,26 @@ function applyBunkerBackground(
 ): Uint8Array {
   const result = new Uint8Array(def.length)
 
-  // Process as 16-bit values (2 bytes at a time)
-  for (let i = 0; i < def.length; i += 2) {
-    // Combine two bytes into a 16-bit value (big-endian)
-    const defValue = (def[i]! << 8) | (def[i + 1] ?? 0)
-    const maskValue = (mask[i]! << 8) | (mask[i + 1] ?? 0)
+  // Match original C code logic from Figs.c:423-435
+  // Original uses 0xAAAAAAAA and 0x55555555 alternating within each row
+  const back1 = background === BACKGROUND1 ? 0xaa : 0x55
+  const back2 = background === BACKGROUND1 ? 0x55 : 0xaa
 
-    // Apply formula: (background & mask) ^ def
-    const resultValue = (background & maskValue) ^ defValue
-
-    // Split back into two bytes
-    result[i] = (resultValue >> 8) & 0xff
-    result[i + 1] = resultValue & 0xff
+  // Process each row (6 bytes for bunkers, 48 rows total)
+  for (let row = 0; row < 48; row++) {
+    const rowOffset = row * 6
+    
+    // First 3 bytes of row use back1
+    for (let b = 0; b < 3; b++) {
+      const idx = rowOffset + b
+      result[idx] = (back1 & mask[idx]!) ^ def[idx]!
+    }
+    
+    // Second 3 bytes of row use back2
+    for (let b = 0; b < 3; b++) {
+      const idx = rowOffset + b + 3
+      result[idx] = (back2 & mask[idx]!) ^ def[idx]!
+    }
   }
 
   return result
