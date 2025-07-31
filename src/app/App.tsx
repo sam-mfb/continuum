@@ -24,6 +24,7 @@ import { wallDrawingRenderer } from './games/wallDrawing'
 import { planet3DrawingRenderer } from './games/planet3Drawing'
 import { junctionDrawRenderer } from './games/junctionDraw'
 import { shipMoveBitmapRenderer } from './games/shipMoveBitmap'
+import { bunkerDrawRenderer } from './games/bunkerDraw'
 import './App.css'
 
 function App(): React.JSX.Element {
@@ -160,6 +161,11 @@ function App(): React.JSX.Element {
                   type: 'bitmap',
                   name: 'Ship Move (Bitmap)',
                   bitmapRenderer: shipMoveBitmapRenderer
+                } as BitmapGameDefinition,
+                {
+                  type: 'bitmap',
+                  name: 'Bunker Draw (All Sprites)',
+                  bitmapRenderer: bunkerDrawRenderer
                 } as BitmapGameDefinition
               ]}
               defaultGameIndex={0}

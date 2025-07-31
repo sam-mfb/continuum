@@ -1,0 +1,239 @@
+/**
+ * Bunker Drawing
+ *
+ * Test game that displays all bunker sprites in the game.
+ * Shows all 5 bunker types with their various rotations/animations.
+ * Use arrow keys to move the viewport.
+ */
+
+import type { BitmapRenderer } from '../../bitmap'
+import { cloneBitmap } from '../../bitmap'
+import { drawBunker, fullBunker } from '../../planet/render/bunker'
+import {
+  BUNKROTKINDS,
+  BUNKER_ROTATIONS,
+  type BunkerSprite,
+  type BunkerKind
+} from '../../figs'
+import { buildGameStore } from './store'
+import { loadSprites } from '../../store/spritesSlice'
+
+// Constants from GW.h
+const BUNKER_FRAMES = 8
+
+// Create store instance and load sprites
+const store = buildGameStore()
+let spritesLoaded = false
+
+// Load sprites on first use
+const ensureSpritesLoaded = async (): Promise<void> => {
+  if (!spritesLoaded) {
+    await store.dispatch(loadSprites())
+    spritesLoaded = true
+  }
+}
+
+// Viewport state
+const viewportState = {
+  x: 0,
+  y: 0
+}
+
+// World dimensions
+const WORLD_WIDTH = 1024
+const WORLD_HEIGHT = 768
+
+// Grid parameters for bunker layout
+const GRID_START_X = 50
+const GRID_START_Y = 50
+const GRID_SPACING_X = 100
+const GRID_SPACING_Y = 80
+
+// Helper to create a bitmap from sprite data
+function spriteToBitmap(
+  sprite: BunkerSprite,
+  useBackground: boolean = false
+): { data: Uint8Array; width: number; height: number; rowBytes: number } {
+  const data = useBackground
+    ? sprite.images.background1 || sprite.def
+    : sprite.def
+  return {
+    data: new Uint8Array(data),
+    width: 48,
+    height: 48,
+    rowBytes: 6
+  }
+}
+
+// Animation state
+let frameCounter = 0
+
+/**
+ * Renderer that displays all bunker sprites
+ */
+export const bunkerDrawRenderer: BitmapRenderer = (bitmap, frame, _env) => {
+  // Ensure sprites are loaded
+  const state = store.getState()
+  if (!state.sprites.allSprites) {
+    // Show loading message or return early
+    void ensureSpritesLoaded()
+    return
+  }
+
+  const bunkerSprites = state.sprites.allSprites.bunkers
+
+  // Update animation counter
+  frameCounter++
+
+  // Handle keyboard input for viewport movement
+  const moveSpeed = 10
+  if (frame.keysDown.has('ArrowUp')) {
+    viewportState.y = Math.max(0, viewportState.y - moveSpeed)
+  }
+  if (frame.keysDown.has('ArrowDown')) {
+    viewportState.y = Math.min(
+      WORLD_HEIGHT - bitmap.height,
+      viewportState.y + moveSpeed
+    )
+  }
+  if (frame.keysDown.has('ArrowLeft')) {
+    viewportState.x = Math.max(0, viewportState.x - moveSpeed)
+  }
+  if (frame.keysDown.has('ArrowRight')) {
+    viewportState.x = Math.min(
+      WORLD_WIDTH - bitmap.width,
+      viewportState.x + moveSpeed
+    )
+  }
+
+  // Clear bitmap with gray background pattern
+  for (let y = 0; y < bitmap.height; y++) {
+    for (let x = 0; x < bitmap.width; x++) {
+      // Calculate world position
+      const worldX = x + viewportState.x
+      const worldY = y + viewportState.y
+      // Set pixel if worldX + worldY is even (creates fixed checkerboard)
+      if ((worldX + worldY) % 2 === 0) {
+        const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
+        const bitIndex = 7 - (x % 8)
+        bitmap.data[byteIndex]! |= 1 << bitIndex
+      }
+    }
+  }
+
+  let workingBitmap = cloneBitmap(bitmap)
+
+  // Draw static wall/ground bunkers (kinds 0-1)
+  for (let kind = 0; kind < BUNKROTKINDS; kind++) {
+    const kindSprites = bunkerSprites.kinds[kind as BunkerKind] as Record<
+      number,
+      BunkerSprite
+    >
+    if (!kindSprites) continue
+
+    // Display all 16 rotations
+    for (let rot = 0; rot < BUNKER_ROTATIONS; rot++) {
+      const sprite = kindSprites[rot]
+      if (!sprite) continue
+
+      // Calculate grid position
+      const col = rot % 8
+      const row = Math.floor(rot / 8) + kind * 2
+      const x = GRID_START_X + col * GRID_SPACING_X - viewportState.x
+      const y = GRID_START_Y + row * GRID_SPACING_Y - viewportState.y
+
+      // Skip if off screen
+      if (x < -48 || x >= bitmap.width || y < -48 || y >= bitmap.height - 24) {
+        continue
+      }
+
+      // Choose rendering function based on rotation
+      if (kind >= BUNKROTKINDS || rot <= 1 || rot >= 9) {
+        // Use XOR-based rendering
+        const defBitmap = spriteToBitmap(sprite)
+        workingBitmap = drawBunker({ x, y, def: defBitmap })(workingBitmap)
+      } else {
+        // Use mask-based rendering for side views
+        const defBitmap = spriteToBitmap(sprite)
+        const maskBitmap = {
+          data: new Uint8Array(sprite.mask),
+          width: 48,
+          height: 48,
+          rowBytes: 6
+        }
+        workingBitmap = fullBunker({ x, y, def: defBitmap, mask: maskBitmap })(
+          workingBitmap
+        )
+      }
+    }
+  }
+
+  // Draw animated bunkers (kinds 2-4)
+  for (let kind = BUNKROTKINDS; kind < 5; kind++) {
+    const kindSprites = bunkerSprites.kinds[
+      kind as BunkerKind
+    ] as BunkerSprite[]
+    if (!kindSprites || !Array.isArray(kindSprites)) continue
+
+    // Calculate which frame to show (animate at 1/4 speed for visibility)
+    const animFrame = Math.floor(frameCounter / 4) % BUNKER_FRAMES
+
+    // Display current animation frame
+    const sprite = kindSprites[animFrame]
+    if (!sprite) continue
+
+    // Calculate position - put animated bunkers below static ones
+    const col = kind - BUNKROTKINDS
+    const row = 4 + (kind - BUNKROTKINDS)
+    const x = GRID_START_X + col * GRID_SPACING_X * 2 - viewportState.x
+    const y = GRID_START_Y + row * GRID_SPACING_Y - viewportState.y
+
+    // Skip if off screen
+    if (x < -48 || x >= bitmap.width || y < -48 || y >= bitmap.height - 24) {
+      continue
+    }
+
+    // Animated bunkers always use XOR rendering
+    const defBitmap = spriteToBitmap(sprite)
+    workingBitmap = drawBunker({ x, y, def: defBitmap })(workingBitmap)
+
+    // Also show all 8 frames in a row for reference
+    for (let frame = 0; frame < BUNKER_FRAMES; frame++) {
+      const frameSprite = kindSprites[frame]
+      if (!frameSprite) continue
+
+      const frameX =
+        GRID_START_X +
+        (col * GRID_SPACING_X * 2 + 150 + frame * 60) -
+        viewportState.x
+      const frameY = y
+
+      if (
+        frameX < -48 ||
+        frameX >= bitmap.width ||
+        frameY < -48 ||
+        frameY >= bitmap.height - 24
+      ) {
+        continue
+      }
+
+      const frameBitmap = spriteToBitmap(frameSprite)
+      workingBitmap = drawBunker({ x: frameX, y: frameY, def: frameBitmap })(
+        workingBitmap
+      )
+    }
+  }
+
+  // Copy rendered bitmap back
+  bitmap.data.set(workingBitmap.data)
+
+  // Add labels if viewport is at starting position
+  if (viewportState.x === 0 && viewportState.y === 0) {
+    // Draw text labels would go here - for now just show the layout
+    // Row 0-1: WALLBUNK (16 rotations)
+    // Row 2-3: DIFFBUNK (16 rotations)
+    // Row 4: GROUNDBUNK (animated)
+    // Row 5: FOLLOWBUNK (animated)
+    // Row 6: GENERATORBUNK (animated)
+  }
+}
