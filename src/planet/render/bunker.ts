@@ -332,33 +332,45 @@ export function fullBunker(deps: {
     let maskIndex = maskOffset
 
     // Skip leading blank lines (@skip0s loop at Draw.c:886-896)
-    while (asm.D3 >= 0) {
+    // Match original behavior: advance screen pointer BEFORE checking
+    while (true) {
+      // adda.w D2, A0 - advance screen pointer first
       asm.A0 += rowOffset
+      // addq.w #6, def
       defIndex += 6
-
-      if (maskIndex + 5 < mask.data.length) {
-        const word1 = (mask.data[maskIndex]! << 8) | mask.data[maskIndex + 1]!
-        const long2 =
-          (mask.data[maskIndex + 2]! << 24) |
-          (mask.data[maskIndex + 3]! << 16) |
-          (mask.data[maskIndex + 4]! << 8) |
-          mask.data[maskIndex + 5]!
-        maskIndex += 6
-
-        if (word1 !== 0 || long2 !== 0) {
-          // Found non-zero mask, back up and start drawing
-          asm.D3 = asm.D3 // Store updated height
-          maskIndex -= 6
-          defIndex -= 6
-          asm.A0 -= rowOffset
-          break
-        }
+      
+      if (maskIndex + 5 >= mask.data.length) {
+        return newScreen // Past end of data
       }
-
-      if (!asm.instructions.dbne('D3')) {
-        return newScreen // All blank lines
+      
+      // move.w (mask)+, D0; or.l (mask)+, D0
+      const word1 = (mask.data[maskIndex]! << 8) | mask.data[maskIndex + 1]!
+      const long2 =
+        (mask.data[maskIndex + 2]! << 24) |
+        (mask.data[maskIndex + 3]! << 16) |
+        (mask.data[maskIndex + 4]! << 8) |
+        mask.data[maskIndex + 5]!
+      maskIndex += 6
+      
+      // Check if non-zero (dbne checks for not equal)
+      if (word1 !== 0 || long2 !== 0) {
+        // Found non-blank line - back up all pointers
+        // subq.w #6, mask; subq.w #6, def; suba.w D2, A0
+        maskIndex -= 6
+        defIndex -= 6
+        asm.A0 -= rowOffset
+        break
+      }
+      
+      // dbne D3, @skip0s - decrements D3 and branches if not -1
+      asm.D3--
+      if (asm.D3 < 0) {
+        // beq @leave - all lines were blank
+        return newScreen
       }
     }
+    
+    // D3 now contains the remaining height after skipping blank lines
 
     // Main drawing loop (@loop at Draw.c:898-927)
     while (asm.D3 >= 0) {
