@@ -10,7 +10,6 @@ import { drawBunker } from '../../planet/render/bunker'
 import { loadSprites } from '@/store/spritesSlice'
 import { configureStore } from '@reduxjs/toolkit'
 import spritesReducer from '@/store/spritesSlice'
-import { SCRWTH, VIEWHT } from '@/screen/constants'
 
 // Create minimal store with just sprites
 const store = configureStore({
@@ -96,28 +95,47 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
     return
   }
 
-  // Convert sprite data to MonochromeBitmap format
-  // Bunker sprites are 48 pixels wide, 48 pixels tall
-  const bunkerBitmap: MonochromeBitmap = {
-    data: bunkerSprite.def,
+  // We don't need the original def - we'll use the pre-computed images
+
+  // Define bunker world position to place it at center of screen
+  // Since screenx = screeny = 0 (no scrolling), world pos = screen pos + center offset
+  const bunkerWorldX = 256 // Center of 512 wide screen
+  const bunkerWorldY = 171 // Center of 342 high viewport
+
+  // Get bunker center offsets for WALLBUNK (kind 0) rotation 0
+  const xcenter = 24
+  const ycenter = 26
+
+  // Calculate screen position from world position
+  // From Bunkers.c:231: bunkx = bp->x - scrnx - xcenter;
+  const screenX = 0 // No scrolling
+  const screenY = 0 // No scrolling
+  const bunkerX = bunkerWorldX - screenX - xcenter // 256 - 0 - 24 = 232
+  const bunkerY = bunkerWorldY - screenY - ycenter // 171 - 0 - 26 = 145
+
+  // Calculate alignment for pre-computed image selection
+  // From Bunkers.c:235: align = (bp->x + bp->y + xcenter + ycenter) & 1;
+  // This uses world coordinates, not screen coordinates
+  const align = (bunkerWorldX + bunkerWorldY + xcenter + ycenter) & 1
+
+  // Use the pre-computed image that has the correct background pattern
+  // This matches the original implementation exactly
+  const precomputedBitmap: MonochromeBitmap = {
+    data:
+      align === 0
+        ? bunkerSprite.images.background1
+        : bunkerSprite.images.background2,
     width: 48,
     height: 48,
-    rowBytes: 6 // 48 pixels / 8 bits per byte
+    rowBytes: 6
   }
 
-  // Calculate bunker position (center of screen)
-  // Screen is 512x342, bunker is 48x48
-  const bunkerX = Math.floor(SCRWTH / 2 - 24) // 256 - 24 = 232
-  const bunkerY = Math.floor(VIEWHT / 2 - 24) // 171 - 24 = 147
-
-  // Draw the bunker using XOR operations
-  // WALLBUNK with rotation 0 uses drawBunker (XOR-based) per the architecture
-  // Note: The original code uses pre-computed images with background patterns,
-  // but our implementation XORs directly onto the existing bitmap
+  // Draw the bunker using the pre-computed image
+  // The pre-computed image already has the background pattern XORed in
   const renderedBitmap = drawBunker({
     x: bunkerX,
     y: bunkerY,
-    def: bunkerBitmap
+    def: precomputedBitmap
   })(bitmap)
 
   // Copy rendered bitmap data back to original
