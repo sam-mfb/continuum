@@ -156,16 +156,12 @@ function applyBunkerBackground(
   // Match original C code logic from Figs.c:423-435
   // The original pre-computes: (background & mask) ^ def
 
-  // Process each row (6 bytes = 48 pixels for bunkers)
-  // NOTE: Original C code only processes BUNKHT/2 (24) rows, not all 48!
-  // This matches the loop: for (k=0; k < BUNKHT/2; k++)
-  const rowsToProcess = BUNKHT / 2  // 24 rows
-  
+  // Process ALL rows (48 rows for bunkers)
   // True checkerboard pattern - each entire row alternates
   // For BACKGROUND1 (align=0): even rows = 0xAA, odd rows = 0x55
   // For BACKGROUND2 (align=1): even rows = 0x55, odd rows = 0xAA
   
-  for (let row = 0; row < rowsToProcess; row++) {
+  for (let row = 0; row < BUNKHT; row++) {
     const rowOffset = row * 6
     
     // Determine pattern for this entire row based on row parity
@@ -181,15 +177,6 @@ function applyBunkerBackground(
       const idx = rowOffset + b
       result[idx] = (rowPattern & mask[idx]!) ^ def[idx]!
     }
-  }
-
-  // The original code only processes 24 rows, leaving the bottom 24 rows
-  // as whatever was in the original def data (no background pre-computation)
-  // Copy the remaining rows from the original def
-  const startByte = rowsToProcess * 6  // 144
-  const endByte = BUNKHT * 6  // 288
-  for (let i = startByte; i < endByte; i++) {
-    result[i] = def[i]!
   }
   
   return result
