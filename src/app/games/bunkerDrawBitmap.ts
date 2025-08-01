@@ -6,12 +6,13 @@
  * - Animated bunkers (GROUND, FOLLOW, GENERATOR) that rotate
  */
 
-import type { BitmapRenderer, MonochromeBitmap } from '../../bitmap'
-import { drawBunker, fullBunker } from '../../planet/render/bunker'
+import type { BitmapRenderer } from '../../bitmap'
+import { doBunks } from '../../planet/render/bunker'
 import { loadSprites } from '@/store/spritesSlice'
 import { configureStore } from '@reduxjs/toolkit'
 import spritesReducer from '@/store/spritesSlice'
 import { BunkerKind, BUNKROTKINDS } from '@/figs/types'
+import type { Bunker } from '@/planet/types'
 
 // Create minimal store with just sprites
 const store = configureStore({
@@ -32,14 +33,36 @@ const WORLD_HEIGHT = 1024
 const BUNKFCYCLES = 2 // From GW.h:88 - ticks per animation frame
 const BUNKFRAMES = 8 // Number of animation frames for rotating bunkers
 
-// Track animation counters for each animated bunker
-const animationState = {
-  groundRotCount: BUNKFCYCLES,
-  groundRot: 0,
-  followRotCount: BUNKFCYCLES,
-  followRot: 0,
-  generatorRotCount: BUNKFCYCLES,
-  generatorRot: 0
+// Create bunker array following original game structure
+// In the original, bunkers array has NUMBUNKERS (25) entries
+// We'll create a smaller array for demo purposes
+const bunkers: Bunker[] = [
+  // Top row: WALL bunkers (static, different rotations)
+  { x: 362, y: 412, rot: 0, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.WALL },
+  { x: 462, y: 412, rot: 1, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.WALL },
+  { x: 562, y: 412, rot: 2, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.WALL },
+  { x: 662, y: 412, rot: 3, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.WALL },
+  
+  // Second row: DIFF bunkers (static, different rotations)
+  { x: 362, y: 482, rot: 0, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.DIFF },
+  { x: 462, y: 482, rot: 1, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.DIFF },
+  { x: 562, y: 482, rot: 2, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.DIFF },
+  { x: 662, y: 482, rot: 3, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.DIFF },
+  
+  // Third row: Animated bunkers
+  { x: 362, y: 552, rot: 0, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.GROUND },
+  { x: 462, y: 552, rot: 0, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.FOLLOW },
+  { x: 562, y: 552, rot: 0, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.GENERATOR },
+  
+  // End marker (rot < 0 indicates end of array)
+  { x: 0, y: 0, rot: -1, ranges: [], alive: false, kind: BunkerKind.WALL }
+]
+
+// Track rotation counts for animated bunkers
+const rotCounts = {
+  ground: BUNKFCYCLES,
+  follow: BUNKFCYCLES,
+  generator: BUNKFCYCLES
 }
 
 // Viewport state - start centered
@@ -68,101 +91,6 @@ const initializeGame = async (): Promise<void> => {
 
 // Start initialization
 void initializeGame()
-
-/**
- * Helper function to draw a single bunker
- */
-function drawSingleBunker(
-  bitmap: MonochromeBitmap,
-  kind: BunkerKind,
-  rotation: number,
-  worldX: number,
-  worldY: number,
-  animationFrame?: number
-): void {
-  const state = store.getState()
-
-  // Get the sprite
-  const bunkerSprite = state.sprites.allSprites?.bunkers.getSprite(
-    kind,
-    rotation,
-    animationFrame
-  )
-
-  if (!bunkerSprite) {
-    console.error(`Bunker sprite not found: kind ${kind}, rotation ${rotation}`)
-    return
-  }
-
-  // Get bunker center offsets (simplified - in real game these vary by type/rotation)
-  const xcenter = 24
-  const ycenter = 24
-
-  // Calculate screen position from world position
-  // From Bunkers.c:231: bunkx = bp->x - scrnx - xcenter;
-  const screenX = viewportState.x
-  const screenY = viewportState.y
-  const bunkerX = worldX - screenX - xcenter
-  const bunkerY = worldY - screenY - ycenter
-
-  // Decide which rendering function to use based on bunker type and rotation
-  // From Bunkers.c:232-242
-  if (kind >= BUNKROTKINDS || rotation <= 1 || rotation >= 9) {
-    // Use XOR-based rendering for:
-    // - All animated bunkers
-    // - Static bunkers facing up/down (rot 0-1, 9-15)
-
-    // Calculate alignment for pre-computed image selection
-    // From Bunkers.c:235: align = (bp->x + bp->y + xcenter + ycenter) & 1;
-    const align = (worldX + worldY + xcenter + ycenter) & 1
-
-    // Use the pre-computed image that has the correct background pattern
-    const precomputedBitmap: MonochromeBitmap = {
-      data:
-        align === 0
-          ? bunkerSprite.images.background1
-          : bunkerSprite.images.background2,
-      width: 48,
-      height: 48,
-      rowBytes: 6
-    }
-
-    // Draw the bunker using the pre-computed image
-    const renderedBitmap = drawBunker({
-      x: bunkerX,
-      y: bunkerY,
-      def: precomputedBitmap
-    })(bitmap)
-
-    // Copy rendered bitmap data back to original
-    bitmap.data.set(renderedBitmap.data)
-  } else {
-    // Use mask-based rendering for side-facing static bunkers (rot 2-8)
-    const defBitmap: MonochromeBitmap = {
-      data: bunkerSprite.def,
-      width: 48,
-      height: 48,
-      rowBytes: 6
-    }
-
-    const maskBitmap: MonochromeBitmap = {
-      data: bunkerSprite.mask,
-      width: 48,
-      height: 48,
-      rowBytes: 6
-    }
-
-    const renderedBitmap = fullBunker({
-      x: bunkerX,
-      y: bunkerY,
-      def: defBitmap,
-      mask: maskBitmap
-    })(bitmap)
-
-    // Copy rendered bitmap data back to original
-    bitmap.data.set(renderedBitmap.data)
-  }
-}
 
 /**
  * Bitmap renderer for bunker drawing game
@@ -233,86 +161,53 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
 
   // Update animation state (game runs at 20 FPS)
   // From Bunkers.c:33-44 - animated bunkers update their rotation
-
-  // Ground bunker animation
-  animationState.groundRotCount--
-  if (animationState.groundRotCount <= 0) {
-    animationState.groundRot = (animationState.groundRot + 1) % BUNKFRAMES
-    animationState.groundRotCount = BUNKFCYCLES
+  
+  // Find animated bunkers in the array and update their rotation
+  for (let i = 0; i < bunkers.length; i++) {
+    const bunker = bunkers[i]
+    if (!bunker || bunker.rot < 0) break // End of array
+    
+    if (bunker.kind >= BUNKROTKINDS) {
+      // This is an animated bunker
+      switch (bunker.kind) {
+        case BunkerKind.GROUND:
+          rotCounts.ground--
+          if (rotCounts.ground <= 0) {
+            bunker.rot = (bunker.rot + 1) & (BUNKFRAMES - 1)
+            rotCounts.ground = BUNKFCYCLES
+          }
+          break
+          
+        case BunkerKind.FOLLOW:
+          // Follow bunker rotates 3x slower (Bunkers.c:38)
+          rotCounts.follow--
+          if (rotCounts.follow <= 0) {
+            bunker.rot = (bunker.rot + 1) & (BUNKFRAMES - 1)
+            rotCounts.follow = 3 * BUNKFCYCLES
+          }
+          break
+          
+        case BunkerKind.GENERATOR:
+          rotCounts.generator--
+          if (rotCounts.generator <= 0) {
+            bunker.rot = (bunker.rot + 1) & (BUNKFRAMES - 1)
+            rotCounts.generator = BUNKFCYCLES
+          }
+          break
+      }
+    }
   }
 
-  // Follow bunker animation (but at 3x slower for tracking - Bunkers.c:38)
-  animationState.followRotCount--
-  if (animationState.followRotCount <= 0) {
-    animationState.followRot = (animationState.followRot + 1) % BUNKFRAMES
-    animationState.followRotCount = 3 * BUNKFCYCLES // 3x slower
-  }
-
-  // Generator bunker animation
-  animationState.generatorRotCount--
-  if (animationState.generatorRotCount <= 0) {
-    animationState.generatorRot = (animationState.generatorRot + 1) % BUNKFRAMES
-    animationState.generatorRotCount = BUNKFCYCLES
-  }
-
-  // Draw static bunkers showing first 4 rotations (0, 1, 2, 3)
-  // Center all bunkers in the world
-  const centerX = WORLD_WIDTH / 2
-  const centerY = WORLD_HEIGHT / 2
-
-  // Top row: WALL bunkers
-  for (let i = 0; i < 4; i++) {
-    drawSingleBunker(
-      bitmap,
-      BunkerKind.WALL,
-      i,
-      centerX - 150 + i * 100,
-      centerY - 100
-    )
-  }
-
-  // Second row: DIFF bunkers
-  for (let i = 0; i < 4; i++) {
-    drawSingleBunker(
-      bitmap,
-      BunkerKind.DIFF,
-      i,
-      centerX - 150 + i * 100,
-      centerY - 30
-    )
-  }
-
-  // Draw animated bunkers
-  // Third row: Animated bunkers
-  drawSingleBunker(
-    bitmap,
-    BunkerKind.GROUND,
-    0, // rotation param ignored for animated bunkers
-    centerX - 150,
-    centerY + 40,
-    animationState.groundRot
-  )
-
-  drawSingleBunker(
-    bitmap,
-    BunkerKind.FOLLOW,
-    0,
-    centerX - 50,
-    centerY + 40,
-    animationState.followRot
-  )
-
-  drawSingleBunker(
-    bitmap,
-    BunkerKind.GENERATOR,
-    0,
-    centerX + 50,
-    centerY + 40,
-    animationState.generatorRot
-  )
-
-  // Add labels (would need text rendering, so just add a comment)
-  // Row 1: WALL bunkers at rotations 0, 1, 2, 3
-  // Row 2: DIFF bunkers at rotations 0, 1, 2, 3
-  // Row 3: GROUND (rotating), FOLLOW (tracking, slow), GENERATOR (rotating)
+  // Draw all bunkers using doBunks
+  const bunkerSprites = state.sprites.allSprites.bunkers
+  
+  const renderedBitmap = doBunks({
+    bunkrec: bunkers,
+    scrnx: viewportState.x,
+    scrny: viewportState.y,
+    bunkerSprites: bunkerSprites
+  })(bitmap)
+  
+  // Copy rendered bitmap data back to original
+  bitmap.data.set(renderedBitmap.data)
 }
