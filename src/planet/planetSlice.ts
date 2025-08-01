@@ -58,7 +58,7 @@ export const planetSlice = createSlice({
           if (bunk.rotcount === undefined) {
             bunk.rotcount = BUNKFCYCLES
           }
-          
+
           // Decrement rotation counter
           bunk.rotcount--
 

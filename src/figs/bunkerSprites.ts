@@ -110,11 +110,7 @@ export function createBunkerSpriteSet(
   return {
     kinds,
 
-    getSprite(
-      kind: BunkerKind,
-      rotation: number,
-      animationFrame?: number
-    ): BunkerSprite {
+    getSprite(kind: BunkerKind, rotation: number): BunkerSprite {
       switch (kind) {
         case BunkerKind.WALL:
         case BunkerKind.DIFF:
