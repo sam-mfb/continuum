@@ -1,4 +1,5 @@
 import type { MonochromeBitmap } from '@/bitmap'
+import { cloneBitmap } from '@/bitmap'
 import { SBARHT } from '@/screen/constants'
 
 /**
@@ -19,12 +20,15 @@ export function drawDotSafe(
   y: number,
   screen: MonochromeBitmap
 ): MonochromeBitmap {
+  // Clone the bitmap to ensure immutability
+  const result = cloneBitmap(screen)
+  
   // add.w #SBARHT, y /* move to view area */ (Draw.c:584)
   const adjustedY = y + SBARHT
 
   // Calculate byte position in screen buffer
   // FIND_WADDRESS(x, y) (Draw.c:586)
-  const rowOffset = adjustedY * screen.rowBytes
+  const rowOffset = adjustedY * result.rowBytes
   const byteX = Math.floor(x / 8)
   const bitX = x & 7
 
@@ -36,29 +40,29 @@ export function drawDotSafe(
 
   // Check bounds
   const byteIndex1 = rowOffset + byteX
-  const byteIndex2 = rowOffset + screen.rowBytes + byteX // Next row (64 bytes in original)
+  const byteIndex2 = rowOffset + result.rowBytes + byteX // Next row (64 bytes in original)
 
-  if (byteIndex1 >= 0 && byteIndex1 < screen.data.length) {
+  if (byteIndex1 >= 0 && byteIndex1 < result.data.length) {
     // or.l D0, (A0) (Draw.c:590)
     // First row of the dot
-    screen.data[byteIndex1]! |= bitMask
+    result.data[byteIndex1]! |= bitMask
 
     // Handle case where dot spans two bytes
-    if (bitX >= 7 && byteX + 1 < screen.rowBytes) {
-      screen.data[byteIndex1 + 1]! |= 0x80 // Leftmost bit
+    if (bitX >= 7 && byteX + 1 < result.rowBytes) {
+      result.data[byteIndex1 + 1]! |= 0x80 // Leftmost bit
     }
   }
 
-  if (byteIndex2 >= 0 && byteIndex2 < screen.data.length) {
+  if (byteIndex2 >= 0 && byteIndex2 < result.data.length) {
     // or.l D0, 64(A0) (Draw.c:591)
     // Second row of the dot
-    screen.data[byteIndex2]! |= bitMask
+    result.data[byteIndex2]! |= bitMask
 
     // Handle case where dot spans two bytes
-    if (bitX >= 7 && byteX + 1 < screen.rowBytes) {
-      screen.data[byteIndex2 + 1]! |= 0x80 // Leftmost bit
+    if (bitX >= 7 && byteX + 1 < result.rowBytes) {
+      result.data[byteIndex2 + 1]! |= 0x80 // Leftmost bit
     }
   }
 
-  return screen
+  return result
 }

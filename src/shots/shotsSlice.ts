@@ -45,22 +45,36 @@ export const shotsSlice = createSlice({
       for (i = 0; i < SHOT.NUMBULLETS && state.shipshots[i]!.lifecount; i++) {}
 
       if (i < SHOT.NUMBULLETS && !shielding) {
-        const sp = { ...state.shipshots[i]! }
         const yrot = (shiprot + 24) & 31
-        sp.h = SHOT.shotvecs[shiprot]! + (dx >> 5)
-        sp.v = SHOT.shotvecs[yrot]! + (dy >> 5)
-        sp.x8 = globalx << 3
-        sp.y8 = globaly << 3
-        sp.lifecount = SHOT.SHOTLEN
-        sp.btime = 0
-        setLife()
-        if (sp.lifecount > 0) {
-          sp.x8 += SHOT.shotvecs[shiprot]!
-          sp.y8 += SHOT.shotvecs[yrot]!
-          sp.lifecount--
+        
+        // Create new shot object
+        let newShot: ShotRec = {
+          ...state.shipshots[i]!,
+          h: SHOT.shotvecs[shiprot]! + (dx >> 5),
+          v: SHOT.shotvecs[yrot]! + (dy >> 5),
+          x8: globalx << 3,
+          y8: globaly << 3,
+          lifecount: SHOT.SHOTLEN,
+          btime: 0
         }
-        if (sp.lifecount == 0) bounceShot()
-        state.shipshots[i] = sp
+        
+        setLife()
+        
+        if (newShot.lifecount > 0) {
+          newShot = {
+            ...newShot,
+            x8: newShot.x8 + SHOT.shotvecs[shiprot]!,
+            y8: newShot.y8 + SHOT.shotvecs[yrot]!,
+            lifecount: newShot.lifecount - 1
+          }
+        }
+        
+        if (newShot.lifecount == 0) bounceShot()
+        
+        // Create new array with updated shot
+        state.shipshots = state.shipshots.map((shot, index) => 
+          index === i ? newShot : shot
+        )
       }
     },
     startStrafe: (
