@@ -4,7 +4,7 @@ import { BUNKHT, BUNKROTKINDS, type BunkerSpriteSet } from '@/figs/types'
 import { build68kArch } from '@/asm/emulator'
 import { jsrWAddress } from '@/asm/assemblyMacros'
 import type { Bunker } from '../types'
-import { xbcenter, ybcenter } from '@/figs/hardcodedSprites'
+import { xbcenter, ybcenter } from '../constants'
 
 /**
  * From do_bunks() in orig/Sources/Bunkers.c at 213-245

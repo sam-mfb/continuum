@@ -93,13 +93,13 @@ export const planetSlice = createSlice({
     initializeBunkers: state => {
       for (let i = 0; i < state.bunkers.length; i++) {
         const bunk = state.bunkers[i]!
-        
+
         // Check for end marker
         if (bunk.rot < 0) break
-        
+
         // Set all bunkers to alive
         bunk.alive = true
-        
+
         // For animated bunkers, set random initial rotation and counter
         if (bunk.kind >= BUNKROTKINDS) {
           // Random rotation (0 to BUNKFRAMES-1)
@@ -107,7 +107,7 @@ export const planetSlice = createSlice({
           // Random rotation counter (0 to BUNKFCYCLES-1)
           bunk.rotcount = Math.floor(Math.random() * BUNKFCYCLES)
         }
-        
+
         // Special case: DIFF bunkers with rotation 2 are harder to kill
         if (bunk.kind === BunkerKind.DIFF && (bunk.rot & 3) === 2) {
           bunk.rotcount = 3
@@ -117,5 +117,6 @@ export const planetSlice = createSlice({
   }
 })
 
-export const { loadPlanet, updateBunkerRotations, initializeBunkers } = planetSlice.actions
+export const { loadPlanet, updateBunkerRotations, initializeBunkers } =
+  planetSlice.actions
 export default planetSlice.reducer

@@ -93,7 +93,6 @@ const spritesSlice = createSlice({
       state.rotation = 0
     },
 
-
     setFuelFrame: (state, action: PayloadAction<number>) => {
       state.fuelFrame = action.payload
     },
