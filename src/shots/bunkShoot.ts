@@ -12,54 +12,90 @@ import { rint } from '@/shared/rint'
  * Create a shot for following bunker
  * See orig/Sources/Bunkers.c at follow_shot():97-116
  */
-function followShot(
-  bp: Bunker,
-  sp: ShotRec,
-  deps: {
-    globalx: number
-    globaly: number
-    worldwidth: number
-    worldwrap: boolean
-  }
-): void {
-  const straight = aimBunk(bp, deps)
-  let angle: number
+function followShot(deps: {
+  bp: Bunker
+  globalx: number
+  globaly: number
+  worldwidth: number
+  worldwrap: boolean
+}): (sp: ShotRec) => ShotRec {
+  return sp => {
+    const straight = aimBunk(deps.bp, deps)
+    let angle: number
 
-  if (straight === 0) {
-    /* if aiming at ship */
-    angle = aimDir(bp, deps)
-  } else {
-    angle = (bp.rot * 45) >> 1
-    const dang = aimDir(bp, deps) - angle
-    if ((dang > 90 && dang < 270) || dang < -90) {
-      angle += 180
+    if (straight === 0) {
+      /* if aiming at ship */
+      angle = aimDir(deps.bp, deps)
+    } else {
+      angle = (deps.bp.rot * 45) >> 1
+      const dang = aimDir(deps.bp, deps) - angle
+      if ((dang > 90 && dang < 270) || dang < -90) {
+        angle += 180
+      }
     }
+    angle *= 64
+    angle = Math.floor(angle / 45) /* *(512/360) => 0-511 */
+    
+    return randShot({ loangle: angle - 2, hiangle: angle + 2 })(sp)
   }
-  angle *= 64
-  angle = Math.floor(angle / 45) /* *(512/360) => 0-511 */
-  randShot(angle - 2, angle + 2, sp)
 }
 
 /**
  * Set shot velocity based on angle
  * See orig/Sources/Bunkers.c at rand_shot():193-209
  */
-function randShot(loangle: number, hiangle: number, sp: ShotRec): void {
-  let angle = rint(hiangle - loangle + 1) + loangle
-  angle &= 511
-  const intangle = angle >> 4
-  angle &= 15
-  const yangle = (intangle + 24) & 31
+function randShot(deps: {
+  loangle: number
+  hiangle: number
+}): (sp: ShotRec) => ShotRec {
+  return sp => {
+    let angle = rint(deps.hiangle - deps.loangle + 1) + deps.loangle
+    angle &= 511
+    const intangle = angle >> 4
+    angle &= 15
+    const yangle = (intangle + 24) & 31
 
-  sp.h =
-    SHOT.shotvecs[intangle]! +
-    ((angle *
-      (SHOT.shotvecs[(intangle + 1) & 31]! - SHOT.shotvecs[intangle]!)) >>
-      4)
-  sp.v =
-    SHOT.shotvecs[yangle]! +
-    ((angle * (SHOT.shotvecs[(yangle + 1) & 31]! - SHOT.shotvecs[yangle]!)) >>
-      4)
+    const h =
+      SHOT.shotvecs[intangle]! +
+      ((angle *
+        (SHOT.shotvecs[(intangle + 1) & 31]! - SHOT.shotvecs[intangle]!)) >>
+        4)
+    const v =
+      SHOT.shotvecs[yangle]! +
+      ((angle * (SHOT.shotvecs[(yangle + 1) & 31]! - SHOT.shotvecs[yangle]!)) >>
+        4)
+
+    return {
+      ...sp,
+      h,
+      v
+    }
+  }
+}
+
+/**
+ * Initialize shot position and properties based on bunker
+ */
+function initializeShot(deps: {
+  bp: Bunker
+  lifecount: number
+}): (sp: ShotRec) => ShotRec {
+  return sp => {
+    const { bp, lifecount } = deps
+    const x8 = (bp.x + xbshotstart[bp.kind]![bp.rot]!) << 3
+    const y8 = (bp.y + ybshotstart[bp.kind]![bp.rot]!) << 3
+    
+    return {
+      ...sp,
+      x8,
+      y8,
+      x: x8 >> 3,
+      y: y8 >> 3,
+      lifecount,
+      btime: 0,
+      hitlineId: ''
+    }
+  }
 }
 
 /**
@@ -82,11 +118,11 @@ export function bunkShoot(deps: {
     const { screenx, screenr, screeny, screenb, bunkrecs, worldwidth } = deps
 
     // Find first empty shot slot
-    let i = 0
+    let shotIndex = 0
     let sp: ShotRec | undefined
-    for (i = 0; i < SHOT.NUMSHOTS && bunkshots[i]!.lifecount; i++);
-    if (i === SHOT.NUMSHOTS) return bunkshots /* no space in shot array */
-    sp = bunkshots[i]!
+    for (shotIndex = 0; shotIndex < SHOT.NUMSHOTS && bunkshots[shotIndex]!.lifecount; shotIndex++);
+    if (shotIndex === SHOT.NUMSHOTS) return bunkshots /* no space in shot array */
+    sp = bunkshots[shotIndex]!
 
     // Calculate screen boundaries for eligible bunkers
     const left = screenx - SHOT.SHOOTMARG
@@ -105,7 +141,7 @@ export function bunkShoot(deps: {
     const eligible = new Array<number>(PLANET.NUMBUNKERS).fill(0)
     let sum = 0
 
-    for (i = 0; i < bunkrecs.length && bunkrecs[i]!.rot >= 0; i++) {
+    for (let i = 0; i < bunkrecs.length && bunkrecs[i]!.rot >= 0; i++) {
       const bp = bunkrecs[i]!
       if (
         bp.alive &&
@@ -139,31 +175,32 @@ export function bunkShoot(deps: {
 
     // Select random weighted bunker
     sum = rint(sum)
-    for (i = 0; ; i++) {
+    let bunkerIndex = 0
+    for (bunkerIndex = 0; ; bunkerIndex++) {
       /* find n'th alive bunker */
-      if ((sum -= eligible[i]!) < 0) {
+      if ((sum -= eligible[bunkerIndex]!) < 0) {
         break
       }
     }
-    const bp = bunkrecs[i]! /* bp points to the bunker */
+    const bp = bunkrecs[bunkerIndex]! /* bp points to the bunker */
 
-    // Create the shot
-    i = rint(2)
-    if (bp.kind === BunkerKind.FOLLOW) {
-      followShot(bp, sp, deps)
-    } else {
-      randShot(bp.ranges[i]!.low, bp.ranges[i]!.high, sp)
-    }
-
-    // Set shot position and properties
-    sp.x8 = (bp.x + xbshotstart[bp.kind]![bp.rot]!) << 3
-    sp.y8 = (bp.y + ybshotstart[bp.kind]![bp.rot]!) << 3
-    sp.x = sp.x8 >> 3
-    sp.y = sp.y8 >> 3
-    sp.lifecount = SHOT.BUNKSHLEN
-    sp.btime = 0
-    // set_life(sp, NULL) - we'll handle hitlineId separately
-    sp.hitlineId = ''
+    // Create the shot using transformer functions
+    const rangeIndex = rint(2)
+    
+    // Create a new shot with velocity based on bunker type
+    const velocityTransformer = bp.kind === BunkerKind.FOLLOW
+      ? followShot({ bp, ...deps })
+      : randShot({ loangle: bp.ranges[rangeIndex]!.low, hiangle: bp.ranges[rangeIndex]!.high })
+    
+    // Apply transformations to create new shot
+    const newShot = initializeShot({ 
+      bp, 
+      lifecount: SHOT.BUNKSHLEN 
+    })(velocityTransformer(sp))
+    
+    // Update the shot in the array immutably
+    const newBunkshots = [...bunkshots]
+    newBunkshots[shotIndex] = newShot
 
     // Play sound based on bunker position
     for (let bunkx = bp.x; bunkx < worldwidth << 1; bunkx += worldwidth) {
@@ -184,6 +221,6 @@ export function bunkShoot(deps: {
       }
     }
 
-    return bunkshots
+    return newBunkshots
   }
 }
