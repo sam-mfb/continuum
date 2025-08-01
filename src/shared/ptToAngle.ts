@@ -1,21 +1,21 @@
 /**
  * Mimics the Mac Toolbox PtToAngle function
  *
- * PtToAngle measures the angle from the center of a rectangle to a point,
- * with angles measured clockwise from East (right) in the Mac coordinate system.
+ * PtToAngle measures the angle from the center of a rectangle to a point.
  *
- * In Mac coordinates:
- * - Y increases downward
- * - 0° = East (right)
- * - 90° = South (down)
- * - 180° = West (left)
- * - 270° = North (up)
+ * The Mac PtToAngle function returns angles where:
+ * - Y increases downward (screen coordinates)
+ * - 0° = North (up)
+ * - 90° = East (right)
+ * - 180° = South (down)  
+ * - 270° = West (left)
+ * - Angles are measured clockwise from North
  *
  * @param centerX - X coordinate of the center point
  * @param centerY - Y coordinate of the center point
  * @param pointX - X coordinate of the target point
  * @param pointY - Y coordinate of the target point
- * @returns Angle in degrees (0-359), measured clockwise from East
+ * @returns Angle in degrees (0-359), measured clockwise from North
  */
 export function ptToAngle(
   centerX: number,
@@ -35,6 +35,12 @@ export function ptToAngle(
 
   // Convert to 0-359 range (Math.atan2 returns -180 to 180)
   if (angle < 0) angle += 360
+
+  // The Mac PtToAngle appears to be rotated 90° CW from Math.atan2
+  // Math.atan2: 0° = East, 90° = South (Y down)
+  // Mac PtToAngle: 0° = North, 90° = East
+  // So we need to add 90° to convert
+  angle = (angle + 90) % 360
 
   return Math.floor(angle)
 }

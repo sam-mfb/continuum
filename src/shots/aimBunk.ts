@@ -16,14 +16,6 @@ export function aimBunk(
 ): number {
   let angle = aimDir(bunk, deps) /* 0-359 */
 
-  // The sprite frames are oriented differently than the angle system:
-  // - Angle 0° = East, but Frame 0 = North
-  // - So we need to rotate by -90° (or +270°) to convert angle to frame
-  angle += 270
-  if (angle >= 360) {
-    angle -= 360
-  }
-
   angle += 11
   if (angle >= 360) {
     angle -= 360

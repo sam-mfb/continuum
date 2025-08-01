@@ -29,10 +29,8 @@ export function aimDir(
     }
   }
 
-  // Calculate the target position after wrapping
-  const targetX = bp.x + delH
-  const targetY = bp.y + delV
-
-  // Use PtToAngle to get the angle
-  return ptToAngle(bp.x, bp.y, targetX, targetY)
+  // The original uses PtToAngle with a Rect centered at origin (-10,-10,10,10)
+  // and passes the delta vector as the point
+  // This calculates angle from (0,0) to (delH, delV)
+  return ptToAngle(0, 0, delH, delV)
 }
