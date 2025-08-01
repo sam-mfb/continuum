@@ -54,29 +54,32 @@ export const planetSlice = createSlice({
 
         // Only process animated bunkers
         if (bunk.kind >= BUNKROTKINDS) {
-          // Decrement rotation counter if it exists
-          if (bunk.rotcount !== undefined) {
-            bunk.rotcount--
+          // Initialize rotcount if it doesn't exist
+          if (bunk.rotcount === undefined) {
+            bunk.rotcount = BUNKFCYCLES
+          }
+          
+          // Decrement rotation counter
+          bunk.rotcount--
 
-            // If counter reaches 0, update rotation
-            if (bunk.rotcount <= 0) {
-              if (bunk.kind === BunkerKind.FOLLOW) {
-                // Following bunker tracks the player
-                const rotChange = aimBunk(bunk, {
-                  globalx,
-                  globaly,
-                  worldwidth: state.worldwidth,
-                  worldwrap: state.worldwrap
-                })
-                bunk.rot += rotChange
-                bunk.rot &= BUNKFRAMES - 1
-                bunk.rotcount = 3 * BUNKFCYCLES // 3x slower rotation
-              } else {
-                // Other animated bunkers just rotate
-                bunk.rot++
-                bunk.rot &= BUNKFRAMES - 1
-                bunk.rotcount = BUNKFCYCLES
-              }
+          // If counter reaches 0, update rotation
+          if (bunk.rotcount <= 0) {
+            if (bunk.kind === BunkerKind.FOLLOW) {
+              // Following bunker tracks the player
+              const rotChange = aimBunk(bunk, {
+                globalx,
+                globaly,
+                worldwidth: state.worldwidth,
+                worldwrap: state.worldwrap
+              })
+              bunk.rot += rotChange
+              bunk.rot &= BUNKFRAMES - 1
+              bunk.rotcount = 3 * BUNKFCYCLES // 3x slower rotation
+            } else {
+              // Other animated bunkers just rotate
+              bunk.rot++
+              bunk.rot &= BUNKFRAMES - 1
+              bunk.rotcount = BUNKFCYCLES
             }
           }
         }

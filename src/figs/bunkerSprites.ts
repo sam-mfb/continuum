@@ -130,9 +130,9 @@ export function createBunkerSpriteSet(
         case BunkerKind.GROUND:
         case BunkerKind.FOLLOW:
         case BunkerKind.GENERATOR:
-          // Animated bunkers
+          // Animated bunkers - for these, rotation IS the animation frame
           const animatedKind = kinds[kind] as BunkerSprite[]
-          const frame = animationFrame !== undefined ? animationFrame % 8 : 0
+          const frame = rotation % 8
           const animSprite = animatedKind[frame]
           if (!animSprite)
             throw new Error(`Bunker sprite not found: ${kind} frame ${frame}`)
