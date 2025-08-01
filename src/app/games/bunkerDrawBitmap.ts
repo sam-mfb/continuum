@@ -313,4 +313,22 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
 
   // Copy rendered bitmap data back to original
   bitmap.data.set(renderedBitmap.data)
+  
+  // Draw a black box to indicate the mock ship position (center of screen)
+  const shipX = bitmap.width / 2 - 4 // Center minus half of 8px
+  const shipY = bitmap.height / 2 - 4
+  
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      const pixelX = shipX + x
+      const pixelY = shipY + y
+      
+      // Make sure we're within bounds
+      if (pixelX >= 0 && pixelX < bitmap.width && pixelY >= 0 && pixelY < bitmap.height) {
+        const byteIndex = Math.floor(pixelY * bitmap.rowBytes + pixelX / 8)
+        const bitIndex = 7 - (pixelX % 8)
+        bitmap.data[byteIndex]! |= 1 << bitIndex
+      }
+    }
+  }
 }
