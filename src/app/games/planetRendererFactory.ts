@@ -12,6 +12,39 @@ import { wallsActions } from '../../walls/wallsSlice'
 import { gameViewActions } from '../../store/gameViewSlice'
 import { LINE_KIND } from '../../walls/types'
 import { VIEWHT } from '../../screen/constants'
+import { doBunks } from '@/planet/render/bunker'
+import { loadSprites } from '@/store/spritesSlice'
+import { configureStore } from '@reduxjs/toolkit'
+import spritesReducer from '@/store/spritesSlice'
+import planetReducer, {
+  loadPlanet,
+  updateBunkerRotations
+} from '@/planet/planetSlice'
+
+// Create a store for sprites and planet data
+let spritesLoaded = false
+let spritesLoading = false
+
+// Create store with sprites and planet slices
+const bunkerStore = configureStore({
+  reducer: {
+    sprites: spritesReducer,
+    planet: planetReducer
+  }
+})
+
+// Load sprites once
+const ensureSpritesLoaded = async (): Promise<void> => {
+  if (spritesLoaded || spritesLoading) return
+  spritesLoading = true
+  try {
+    await bunkerStore.dispatch(loadSprites()).unwrap()
+    spritesLoaded = true
+  } catch (error) {
+    console.error('Failed to load sprites:', error)
+    spritesLoading = false
+  }
+}
 
 /**
  * Creates a bitmap renderer for a specific planet
@@ -22,6 +55,12 @@ export const createPlanetRenderer: PlanetRendererFactory = (
 ): BitmapRenderer => {
   // Initialize walls for this planet
   store.dispatch(wallsActions.initWalls({ walls: planet.lines }))
+
+  // Load planet data into bunker store
+  bunkerStore.dispatch(loadPlanet(planet))
+
+  // Ensure sprites are loaded
+  void ensureSpritesLoaded()
 
   // Initialize viewport to planet's starting position
   // Note: bitmap dimensions are 512x342, but viewable area is 512x318 (VIEWHT)
@@ -153,6 +192,31 @@ export const createPlanetRenderer: PlanetRendererFactory = (
 
     // Copy rendered bitmap data back to original
     bitmap.data.set(renderedBitmap.data)
+
+    // Check if sprites are loaded before drawing bunkers
+    const bunkerState = bunkerStore.getState()
+    if (bunkerState.sprites.allSprites) {
+      // Update bunker rotations for animated bunkers
+      // Use planet center as a mock ship position for FOLLOW bunkers
+      const globalx = currentViewport.x + bitmap.width / 2
+      const globaly = currentViewport.y + bitmap.height / 2
+      bunkerStore.dispatch(updateBunkerRotations({ globalx, globaly }))
+
+      // Get updated planet state with rotated bunkers
+      const planetState = bunkerStore.getState().planet
+
+      // Draw bunkers
+      const bunkerSprites = bunkerState.sprites.allSprites.bunkers
+      const bunkerBitmap = doBunks({
+        bunkrec: planetState.bunkers,
+        scrnx: currentViewport.x,
+        scrny: currentViewport.y,
+        bunkerSprites: bunkerSprites
+      })(bitmap)
+
+      // Copy bunker bitmap data back to original
+      bitmap.data.set(bunkerBitmap.data)
+    }
   }
 
   return renderer

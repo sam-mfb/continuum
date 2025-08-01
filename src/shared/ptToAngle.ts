@@ -7,7 +7,7 @@
  * - Y increases downward (screen coordinates)
  * - 0° = North (up)
  * - 90° = East (right)
- * - 180° = South (down)  
+ * - 180° = South (down)
  * - 270° = West (left)
  * - Angles are measured clockwise from North
  *
