@@ -5,6 +5,7 @@ export const SHOT = {
   ],
   NUMBULLETS: 6 /* number of ship's shots at once	*/,
   NUMSHOTS: 20 /* number of bunker shots at once	*/,
+  SHOOTMARG: 300 /* distance from screen bunkers fire*/,
   SHOTLEN: 35 /* cycles bullets keep going		*/,
   BUNKSHLEN: 30 /* cycles bunk shots keep going	*/
 } as const

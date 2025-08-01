@@ -3,6 +3,7 @@ export const SCRWTH = 512 // Screen width
 export const SCRHT = 342 // Screen height
 export const SBARHT = 24 // Status bar height
 export const VIEWHT = SCRHT - SBARHT // 318 - Viewable game area height
+export const SOFTBORDER = 200
 
 // Ship containment margins
 export const LEFTMARG = 170 // Left margin for ship movement

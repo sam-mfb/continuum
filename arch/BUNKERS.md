@@ -132,11 +132,13 @@ The XOR rendering system relies on pre-computed sprites that have the checkerboa
 **How it works:**
 
 1. **Background Pattern**: The game uses a checkerboard pattern where:
+
    - Even rows: 10101010... (0xAA repeated)
    - Odd rows: 01010101... (0x55 repeated)
    - This creates the characteristic "gray" appearance
 
 2. **Pre-computation Process**: During initialization, two versions of each bunker sprite are created:
+
    ```c
    for (j=0; j<2; j++)  // Create 2 versions
    {
@@ -154,13 +156,15 @@ The XOR rendering system relies on pre-computed sprites that have the checkerboa
    ```
 
 3. **Runtime Selection**: At render time, the correct pre-computed version is selected:
+
    ```c
    align = (bp->x + bp->y + xcenter + ycenter) & 1;
    draw_bunker(bunkx, bunky, bunker_images[align][bp->kind][bp->rot]);
    ```
+
    The `align` calculation ensures the pre-computed pattern matches the actual background pattern at that world position.
 
-4. **Why XOR Works**: 
+4. **Why XOR Works**:
    - Pre-computed sprite = (background_pattern & mask) ^ original_sprite
    - At runtime: screen ^ pre_computed = screen ^ ((background & mask) ^ original)
    - When the screen already contains the background pattern, the XOR operation produces the correct visual result
@@ -199,6 +203,7 @@ else
 ```
 
 **Key Points:**
+
 - `bunker_images[align]` contains pre-computed sprites with background pattern already applied
 - `bunker_defs` and `bunker_masks` contain the raw sprite data without background
 - The `align` parameter (0 or 1) selects which pre-computed version matches the background at the bunker's position

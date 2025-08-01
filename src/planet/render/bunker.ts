@@ -92,11 +92,11 @@ export function drawBunker(deps: {
     while (true) {
       // adda.w D2, A0 - advance screen pointer first
       asm.A0 += rowOffset
-      
+
       if (defIndex + 5 >= def.data.length) {
         return newScreen // Past end of data
       }
-      
+
       // move.w (def)+, D0; or.l (def)+, D0
       const word1 = (def.data[defIndex]! << 8) | def.data[defIndex + 1]!
       const long2 =
@@ -105,7 +105,7 @@ export function drawBunker(deps: {
         (def.data[defIndex + 4]! << 8) |
         def.data[defIndex + 5]!
       defIndex += 6
-      
+
       // Check if non-zero (dbne checks for not equal)
       if (word1 !== 0 || long2 !== 0) {
         // Found non-blank line - back up both pointers
@@ -114,7 +114,7 @@ export function drawBunker(deps: {
         asm.A0 -= rowOffset
         break
       }
-      
+
       // dbne D3, @skip0s - decrements D3 and branches if not -1
       asm.D3--
       if (asm.D3 < 0) {
@@ -122,7 +122,7 @@ export function drawBunker(deps: {
         return newScreen
       }
     }
-    
+
     // D3 now contains the remaining height after skipping blank lines
 
     // Main drawing loop (@loop at Draw.c:785-819)
@@ -338,11 +338,11 @@ export function fullBunker(deps: {
       asm.A0 += rowOffset
       // addq.w #6, def
       defIndex += 6
-      
+
       if (maskIndex + 5 >= mask.data.length) {
         return newScreen // Past end of data
       }
-      
+
       // move.w (mask)+, D0; or.l (mask)+, D0
       const word1 = (mask.data[maskIndex]! << 8) | mask.data[maskIndex + 1]!
       const long2 =
@@ -351,7 +351,7 @@ export function fullBunker(deps: {
         (mask.data[maskIndex + 4]! << 8) |
         mask.data[maskIndex + 5]!
       maskIndex += 6
-      
+
       // Check if non-zero (dbne checks for not equal)
       if (word1 !== 0 || long2 !== 0) {
         // Found non-blank line - back up all pointers
@@ -361,7 +361,7 @@ export function fullBunker(deps: {
         asm.A0 -= rowOffset
         break
       }
-      
+
       // dbne D3, @skip0s - decrements D3 and branches if not -1
       asm.D3--
       if (asm.D3 < 0) {
@@ -369,7 +369,7 @@ export function fullBunker(deps: {
         return newScreen
       }
     }
-    
+
     // D3 now contains the remaining height after skipping blank lines
 
     // Main drawing loop (@loop at Draw.c:898-927)

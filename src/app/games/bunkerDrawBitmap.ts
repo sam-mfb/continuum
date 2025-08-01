@@ -29,8 +29,8 @@ const WORLD_WIDTH = 1024
 const WORLD_HEIGHT = 1024
 
 // Animation state for rotating bunkers
-const BUNKFCYCLES = 2  // From GW.h:88 - ticks per animation frame
-const BUNKFRAMES = 8   // Number of animation frames for rotating bunkers
+const BUNKFCYCLES = 2 // From GW.h:88 - ticks per animation frame
+const BUNKFRAMES = 8 // Number of animation frames for rotating bunkers
 
 // Track animation counters for each animated bunker
 const animationState = {
@@ -44,8 +44,8 @@ const animationState = {
 
 // Viewport state - start centered
 const viewportState = {
-  x: (WORLD_WIDTH - 512) / 2,   // Center horizontally (512 is default bitmap width)
-  y: (WORLD_HEIGHT - 342) / 2   // Center vertically (342 is default bitmap height)
+  x: (WORLD_WIDTH - 512) / 2, // Center horizontally (512 is default bitmap width)
+  y: (WORLD_HEIGHT - 342) / 2 // Center vertically (342 is default bitmap height)
 }
 
 // Initialize game on module load
@@ -81,41 +81,41 @@ function drawSingleBunker(
   animationFrame?: number
 ): void {
   const state = store.getState()
-  
+
   // Get the sprite
   const bunkerSprite = state.sprites.allSprites?.bunkers.getSprite(
     kind,
     rotation,
     animationFrame
   )
-  
+
   if (!bunkerSprite) {
     console.error(`Bunker sprite not found: kind ${kind}, rotation ${rotation}`)
     return
   }
-  
+
   // Get bunker center offsets (simplified - in real game these vary by type/rotation)
   const xcenter = 24
   const ycenter = 24
-  
+
   // Calculate screen position from world position
   // From Bunkers.c:231: bunkx = bp->x - scrnx - xcenter;
   const screenX = viewportState.x
   const screenY = viewportState.y
   const bunkerX = worldX - screenX - xcenter
   const bunkerY = worldY - screenY - ycenter
-  
+
   // Decide which rendering function to use based on bunker type and rotation
   // From Bunkers.c:232-242
   if (kind >= BUNKROTKINDS || rotation <= 1 || rotation >= 9) {
     // Use XOR-based rendering for:
     // - All animated bunkers
     // - Static bunkers facing up/down (rot 0-1, 9-15)
-    
+
     // Calculate alignment for pre-computed image selection
     // From Bunkers.c:235: align = (bp->x + bp->y + xcenter + ycenter) & 1;
     const align = (worldX + worldY + xcenter + ycenter) & 1
-    
+
     // Use the pre-computed image that has the correct background pattern
     const precomputedBitmap: MonochromeBitmap = {
       data:
@@ -126,14 +126,14 @@ function drawSingleBunker(
       height: 48,
       rowBytes: 6
     }
-    
+
     // Draw the bunker using the pre-computed image
     const renderedBitmap = drawBunker({
       x: bunkerX,
       y: bunkerY,
       def: precomputedBitmap
     })(bitmap)
-    
+
     // Copy rendered bitmap data back to original
     bitmap.data.set(renderedBitmap.data)
   } else {
@@ -144,21 +144,21 @@ function drawSingleBunker(
       height: 48,
       rowBytes: 6
     }
-    
+
     const maskBitmap: MonochromeBitmap = {
       data: bunkerSprite.mask,
       width: 48,
       height: 48,
       rowBytes: 6
     }
-    
+
     const renderedBitmap = fullBunker({
       x: bunkerX,
       y: bunkerY,
       def: defBitmap,
       mask: maskBitmap
     })(bitmap)
-    
+
     // Copy rendered bitmap data back to original
     bitmap.data.set(renderedBitmap.data)
   }
@@ -233,21 +233,21 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
 
   // Update animation state (game runs at 20 FPS)
   // From Bunkers.c:33-44 - animated bunkers update their rotation
-  
+
   // Ground bunker animation
   animationState.groundRotCount--
   if (animationState.groundRotCount <= 0) {
     animationState.groundRot = (animationState.groundRot + 1) % BUNKFRAMES
     animationState.groundRotCount = BUNKFCYCLES
   }
-  
+
   // Follow bunker animation (but at 3x slower for tracking - Bunkers.c:38)
   animationState.followRotCount--
   if (animationState.followRotCount <= 0) {
     animationState.followRot = (animationState.followRot + 1) % BUNKFRAMES
-    animationState.followRotCount = 3 * BUNKFCYCLES  // 3x slower
+    animationState.followRotCount = 3 * BUNKFCYCLES // 3x slower
   }
-  
+
   // Generator bunker animation
   animationState.generatorRotCount--
   if (animationState.generatorRotCount <= 0) {
@@ -259,28 +259,40 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
   // Center all bunkers in the world
   const centerX = WORLD_WIDTH / 2
   const centerY = WORLD_HEIGHT / 2
-  
+
   // Top row: WALL bunkers
   for (let i = 0; i < 4; i++) {
-    drawSingleBunker(bitmap, BunkerKind.WALL, i, centerX - 150 + i * 100, centerY - 100)
+    drawSingleBunker(
+      bitmap,
+      BunkerKind.WALL,
+      i,
+      centerX - 150 + i * 100,
+      centerY - 100
+    )
   }
-  
+
   // Second row: DIFF bunkers
   for (let i = 0; i < 4; i++) {
-    drawSingleBunker(bitmap, BunkerKind.DIFF, i, centerX - 150 + i * 100, centerY - 30)
+    drawSingleBunker(
+      bitmap,
+      BunkerKind.DIFF,
+      i,
+      centerX - 150 + i * 100,
+      centerY - 30
+    )
   }
-  
+
   // Draw animated bunkers
   // Third row: Animated bunkers
   drawSingleBunker(
-    bitmap, 
-    BunkerKind.GROUND, 
-    0,  // rotation param ignored for animated bunkers
-    centerX - 150, 
+    bitmap,
+    BunkerKind.GROUND,
+    0, // rotation param ignored for animated bunkers
+    centerX - 150,
     centerY + 40,
     animationState.groundRot
   )
-  
+
   drawSingleBunker(
     bitmap,
     BunkerKind.FOLLOW,
@@ -289,7 +301,7 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
     centerY + 40,
     animationState.followRot
   )
-  
+
   drawSingleBunker(
     bitmap,
     BunkerKind.GENERATOR,
@@ -298,7 +310,7 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
     centerY + 40,
     animationState.generatorRot
   )
-  
+
   // Add labels (would need text rendering, so just add a comment)
   // Row 1: WALL bunkers at rotations 0, 1, 2, 3
   // Row 2: DIFF bunkers at rotations 0, 1, 2, 3

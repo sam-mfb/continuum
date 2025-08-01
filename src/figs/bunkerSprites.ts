@@ -160,24 +160,24 @@ function applyBunkerBackground(
   // True checkerboard pattern - each entire row alternates
   // For BACKGROUND1 (align=0): even rows = 0xAA, odd rows = 0x55
   // For BACKGROUND2 (align=1): even rows = 0x55, odd rows = 0xAA
-  
+
   for (let row = 0; row < BUNKHT; row++) {
     const rowOffset = row * 6
-    
+
     // Determine pattern for this entire row based on row parity
     let rowPattern: number
     if (background === BACKGROUND1) {
-      rowPattern = (row % 2 === 0) ? 0xaa : 0x55
+      rowPattern = row % 2 === 0 ? 0xaa : 0x55
     } else {
-      rowPattern = (row % 2 === 0) ? 0x55 : 0xaa
+      rowPattern = row % 2 === 0 ? 0x55 : 0xaa
     }
-    
+
     // Apply the same pattern to all 6 bytes in the row
     for (let b = 0; b < 6; b++) {
       const idx = rowOffset + b
       result[idx] = (rowPattern & mask[idx]!) ^ def[idx]!
     }
   }
-  
+
   return result
 }
