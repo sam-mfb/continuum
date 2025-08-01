@@ -5,7 +5,6 @@ import {
   setRotation,
   setScale,
   setBunkerKind,
-  setBunkerVariation,
   setFuelFrame,
   setShardKind,
   setFlameFrame,
@@ -22,7 +21,6 @@ export const SpritesControls: React.FC = () => {
     rotation,
     scale,
     bunkerKind,
-    bunkerVariation,
     fuelFrame,
     shardKind,
     flameFrame,
@@ -41,7 +39,7 @@ export const SpritesControls: React.FC = () => {
       case 'ship':
         return 31
       case 'bunker':
-        return bunkerKind < 2 ? 15 : 0 // Only Wall and Diff rotate
+        return bunkerKind < 2 ? 15 : 7 // Wall/Diff have 16 rotations, animated have 8 frames
       case 'shard':
         return 15
       default:
@@ -73,21 +71,6 @@ export const SpritesControls: React.FC = () => {
               <option value="4">Generator</option>
             </select>
           </div>
-
-          {bunkerKind >= 2 && (
-            <div className="control-group">
-              <label>Animation Frame: {bunkerVariation}</label>
-              <input
-                type="range"
-                min="0"
-                max="7"
-                value={bunkerVariation}
-                onChange={e =>
-                  dispatch(setBunkerVariation(Number(e.target.value)))
-                }
-              />
-            </div>
-          )}
         </>
       )}
 

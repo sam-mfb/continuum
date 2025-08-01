@@ -11,7 +11,6 @@ export const SpritesViewer: React.FC = () => {
     rotation,
     scale,
     bunkerKind,
-    bunkerVariation,
     fuelFrame,
     shardKind,
     flameFrame,
@@ -48,11 +47,7 @@ export const SpritesViewer: React.FC = () => {
         }
 
         case 'bunker': {
-          const sprite = allSprites.bunkers.getSprite(
-            bunkerKind,
-            rotation,
-            bunkerVariation
-          )
+          const sprite = allSprites.bunkers.getSprite(bunkerKind, rotation)
           spriteData = showMask ? sprite.mask : sprite.def
           width = 48
           height = 48
@@ -171,7 +166,6 @@ export const SpritesViewer: React.FC = () => {
     rotation,
     scale,
     bunkerKind,
-    bunkerVariation,
     fuelFrame,
     shardKind,
     flameFrame,

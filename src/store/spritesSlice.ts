@@ -28,7 +28,6 @@ type SpritesState = {
 
   // Type-specific settings
   bunkerKind: BunkerKind
-  bunkerVariation: number
   fuelFrame: number
   shardKind: number
   flameFrame: number
@@ -47,7 +46,6 @@ const initialState: SpritesState = {
   scale: 4,
 
   bunkerKind: 0,
-  bunkerVariation: 0,
   fuelFrame: 0,
   shardKind: 0,
   flameFrame: 0,
@@ -95,9 +93,6 @@ const spritesSlice = createSlice({
       state.rotation = 0
     },
 
-    setBunkerVariation: (state, action: PayloadAction<number>) => {
-      state.bunkerVariation = action.payload
-    },
 
     setFuelFrame: (state, action: PayloadAction<number>) => {
       state.fuelFrame = action.payload
@@ -143,7 +138,6 @@ export const {
   setRotation,
   setScale,
   setBunkerKind,
-  setBunkerVariation,
   setFuelFrame,
   setShardKind,
   setFlameFrame,
