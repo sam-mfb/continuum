@@ -173,6 +173,30 @@ const createInitialPlanetState = (): PlanetState => {
       alive: true,
       kind: BunkerKind.GENERATOR
     },
+    
+    // Bunkers near world edges to test wrapping
+    {
+      x: 50, // Near left edge
+      y: 512,
+      rot: 0,
+      ranges: [
+        { low: 0, high: 100 },
+        { low: 200, high: 300 }
+      ],
+      alive: true,
+      kind: BunkerKind.WALL
+    },
+    {
+      x: WORLD_WIDTH - 50, // Near right edge
+      y: 512,
+      rot: 0,
+      ranges: [
+        { low: 0, high: 100 },
+        { low: 200, high: 300 }
+      ],
+      alive: true,
+      kind: BunkerKind.WALL
+    },
 
     // End marker (rot < 0 indicates end of array)
     { x: 0, y: 0, rot: -1, ranges: [], alive: false, kind: BunkerKind.WALL }
@@ -259,8 +283,12 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
     return
   }
 
+  // Get current planet state
+  const planetState = state.planet
+
   // Handle keyboard input for viewport movement
   const moveSpeed = 5
+  
   if (frame.keysDown.has('ArrowUp')) {
     viewportState.y = Math.max(0, viewportState.y - moveSpeed)
   }
@@ -271,22 +299,39 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
     )
   }
   if (frame.keysDown.has('ArrowLeft')) {
-    viewportState.x = Math.max(0, viewportState.x - moveSpeed)
+    viewportState.x -= moveSpeed
+    if (planetState.worldwrap) {
+      // Wrap around if we go negative
+      viewportState.x = ((viewportState.x % WORLD_WIDTH) + WORLD_WIDTH) % WORLD_WIDTH
+    } else {
+      // Clamp to world bounds for non-wrapping worlds
+      viewportState.x = Math.max(0, viewportState.x)
+    }
   }
   if (frame.keysDown.has('ArrowRight')) {
-    viewportState.x = Math.min(
-      WORLD_WIDTH - bitmap.width,
-      viewportState.x + moveSpeed
-    )
+    viewportState.x += moveSpeed
+    if (planetState.worldwrap) {
+      // Wrap around if we exceed world width
+      viewportState.x = viewportState.x % WORLD_WIDTH
+    } else {
+      // Clamp to world bounds for non-wrapping worlds
+      viewportState.x = Math.min(WORLD_WIDTH - bitmap.width, viewportState.x)
+    }
   }
 
   // First, create a crosshatch gray background
   // IMPORTANT: Pattern must be based on world coordinates, not screen coordinates
   for (let y = 0; y < bitmap.height; y++) {
     for (let x = 0; x < bitmap.width; x++) {
-      // Calculate world position
-      const worldX = x + viewportState.x
+      // Calculate world position, handling wrapping
+      let worldX = x + viewportState.x
       const worldY = y + viewportState.y
+      
+      // For wrapping worlds, normalize worldX to be within world bounds
+      if (planetState.worldwrap) {
+        worldX = ((worldX % WORLD_WIDTH) + WORLD_WIDTH) % WORLD_WIDTH
+      }
+      
       // Set pixel if worldX + worldY is even (creates fixed checkerboard)
       if ((worldX + worldY) % 2 === 0) {
         const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
@@ -303,9 +348,6 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
   const globaly = viewportState.y + bitmap.height / 2 - SBARHT
 
   store.dispatch(updateBunkerRotations({ globalx, globaly }))
-
-  // Get current planet state
-  const planetState = store.getState().planet
 
   // Check if bunkers should shoot this frame (probabilistic based on shootslow)
   // if (rint(100) < shootslow) bunk_shoot(); (Bunkers.c:30-31)
