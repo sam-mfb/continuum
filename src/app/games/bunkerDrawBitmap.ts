@@ -16,14 +16,18 @@ import planetReducer, {
   updateBunkerRotations,
   initializeBunkers
 } from '@/planet/planetSlice'
+import shotsReducer, { bunkShoot, moveBullets } from '@/shots/shotsSlice'
 import { BunkerKind } from '@/figs/types'
 import type { Bunker, PlanetState } from '@/planet/types'
+import { drawDotSafe } from '@/shots/render/drawDotSafe'
+import { rint } from '@/shared/rint'
 
-// Create store with sprites and planet slices
+// Create store with sprites, planet, and shots slices
 const store = configureStore({
   reducer: {
     sprites: spritesReducer,
-    planet: planetReducer
+    planet: planetReducer,
+    shots: shotsReducer
   }
 })
 
@@ -37,6 +41,9 @@ const WORLD_HEIGHT = 1024
 
 // Create initial planet state with bunkers
 const createInitialPlanetState = (): PlanetState => {
+  // Use shootslow = 12 like the original example planet
+  const SHOOT_SLOW = 12 // 12% chance per frame to shoot
+
   const bunkers: Bunker[] = [
     // Top row: WALL bunkers (static, different rotations)
     {
@@ -173,7 +180,7 @@ const createInitialPlanetState = (): PlanetState => {
     worldwidth: WORLD_WIDTH,
     worldheight: WORLD_HEIGHT,
     worldwrap: false,
-    shootslow: 0,
+    shootslow: SHOOT_SLOW,
     xstart: 512,
     ystart: 512,
     planetbonus: 0,
@@ -297,6 +304,36 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
   // Get current planet state
   const planetState = store.getState().planet
 
+  // Check if bunkers should shoot this frame (probabilistic based on shootslow)
+  // if (rint(100) < shootslow) bunk_shoot(); (Bunkers.c:30-31)
+  if (rint(100) < planetState.shootslow) {
+    // Calculate screen boundaries for shot eligibility
+    const screenb = viewportState.y + bitmap.height
+    const screenr = viewportState.x + bitmap.width
+
+    store.dispatch(
+      bunkShoot({
+        screenx: viewportState.x,
+        screenr: screenr,
+        screeny: viewportState.y,
+        screenb: screenb,
+        bunkrecs: planetState.bunkers,
+        worldwidth: planetState.worldwidth,
+        worldwrap: planetState.worldwrap,
+        globalx: globalx,
+        globaly: globaly
+      })
+    )
+  }
+
+  // Move all bunker shots
+  store.dispatch(
+    moveBullets({
+      worldwidth: planetState.worldwidth,
+      worldwrap: planetState.worldwrap
+    })
+  )
+
   // Draw all bunkers using doBunks
   const bunkerSprites = state.sprites.allSprites.bunkers
 
@@ -309,6 +346,25 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
 
   // Copy rendered bitmap data back to original
   bitmap.data.set(renderedBitmap.data)
+
+  // Draw all bunker shots
+  const updatedShotsState = store.getState().shots
+  for (const shot of updatedShotsState.bunkshots) {
+    if (shot.lifecount > 0) {
+      // Check if shot is visible on screen
+      const shotScreenX = shot.x - viewportState.x
+      const shotScreenY = shot.y - viewportState.y
+
+      if (
+        shotScreenX >= 0 &&
+        shotScreenX < bitmap.width - 1 &&
+        shotScreenY >= 0 &&
+        shotScreenY < bitmap.height - 1
+      ) {
+        drawDotSafe(shotScreenX, shotScreenY, bitmap)
+      }
+    }
+  }
 
   // Draw a black box to indicate the mock ship position (center of screen)
   const shipX = bitmap.width / 2 - 4 // Center minus half of 8px

@@ -2,8 +2,8 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { ShotRec, ShotsState } from './types'
 import { SHOT } from './constants'
 import type { Bunker } from '@/planet/types'
-import { bunkShoot } from './bunkShoot'
-import { startStrafe } from './startStrafe'
+import { bunkShoot as bunkShootFn } from './bunkShoot'
+import { startStrafe as startStrafeFn } from './startStrafe'
 
 const initializeShot = (): ShotRec => ({
   x: 0,
@@ -72,7 +72,7 @@ export const shotsSlice = createSlice({
       }>
     ) => {
       const { x, y, dir } = action.payload
-      state.strafes = startStrafe(x, y, dir)(state.strafes)
+      state.strafes = startStrafeFn(x, y, dir)(state.strafes)
     },
     moveShipshots: (
       state,
@@ -100,7 +100,7 @@ export const shotsSlice = createSlice({
         globaly: number
       }>
     ) => {
-      state.bunkshots = bunkShoot(action.payload)(state.bunkshots)
+      state.bunkshots = bunkShootFn(action.payload)(state.bunkshots)
     }
   }
 })
@@ -151,3 +151,12 @@ function moveShot(
 // function legalAngle() {}
 //
 function bounceShot(): void {}
+
+export const {
+  initShipshot,
+  startStrafe,
+  moveShipshots,
+  moveBullets,
+  bunkShoot
+} = shotsSlice.actions
+export default shotsSlice.reducer
