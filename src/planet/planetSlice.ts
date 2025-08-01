@@ -84,9 +84,38 @@ export const planetSlice = createSlice({
           }
         }
       }
+    },
+
+    /**
+     * Initialize bunkers for a new planet/game
+     * Based on init_planet() at Play.c:137-147
+     */
+    initializeBunkers: state => {
+      for (let i = 0; i < state.bunkers.length; i++) {
+        const bunk = state.bunkers[i]!
+        
+        // Check for end marker
+        if (bunk.rot < 0) break
+        
+        // Set all bunkers to alive
+        bunk.alive = true
+        
+        // For animated bunkers, set random initial rotation and counter
+        if (bunk.kind >= BUNKROTKINDS) {
+          // Random rotation (0 to BUNKFRAMES-1)
+          bunk.rot = Math.floor(Math.random() * BUNKFRAMES)
+          // Random rotation counter (0 to BUNKFCYCLES-1)
+          bunk.rotcount = Math.floor(Math.random() * BUNKFCYCLES)
+        }
+        
+        // Special case: DIFF bunkers with rotation 2 are harder to kill
+        if (bunk.kind === BunkerKind.DIFF && (bunk.rot & 3) === 2) {
+          bunk.rotcount = 3
+        }
+      }
     }
   }
 })
 
-export const { loadPlanet, updateBunkerRotations } = planetSlice.actions
+export const { loadPlanet, updateBunkerRotations, initializeBunkers } = planetSlice.actions
 export default planetSlice.reducer

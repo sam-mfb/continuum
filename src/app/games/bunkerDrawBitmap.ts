@@ -13,7 +13,8 @@ import { configureStore } from '@reduxjs/toolkit'
 import spritesReducer from '@/store/spritesSlice'
 import planetReducer, {
   loadPlanet,
-  updateBunkerRotations
+  updateBunkerRotations,
+  initializeBunkers
 } from '@/planet/planetSlice'
 import { BunkerKind } from '@/figs/types'
 import type { Bunker, PlanetState } from '@/planet/types'
@@ -33,9 +34,6 @@ let initializationError: Error | null = null
 // Define a world larger than the viewport
 const WORLD_WIDTH = 1024
 const WORLD_HEIGHT = 1024
-
-// Animation state for rotating bunkers
-const BUNKFCYCLES = 2 // From GW.h:88 - ticks per animation frame
 
 // Create initial planet state with bunkers
 const createInitialPlanetState = (): PlanetState => {
@@ -132,12 +130,11 @@ const createInitialPlanetState = (): PlanetState => {
       kind: BunkerKind.DIFF
     },
 
-    // Third row: Animated bunkers (with rotcount initialized)
+    // Third row: Animated bunkers (rotcount will be initialized by reducer)
     {
       x: 362,
       y: 552,
       rot: 0,
-      rotcount: BUNKFCYCLES,
       ranges: [
         { low: 0, high: 100 },
         { low: 200, high: 300 }
@@ -149,7 +146,6 @@ const createInitialPlanetState = (): PlanetState => {
       x: 462,
       y: 552,
       rot: 0,
-      rotcount: BUNKFCYCLES,
       ranges: [
         { low: 0, high: 100 },
         { low: 200, high: 300 }
@@ -161,7 +157,6 @@ const createInitialPlanetState = (): PlanetState => {
       x: 562,
       y: 552,
       rot: 0,
-      rotcount: BUNKFCYCLES,
       ranges: [
         { low: 0, high: 100 },
         { low: 200, high: 300 }
@@ -211,6 +206,7 @@ const initializeGame = async (): Promise<void> => {
     // Initialize planet state with bunkers
     console.log('Initializing planet state...')
     store.dispatch(loadPlanet(createInitialPlanetState()))
+    store.dispatch(initializeBunkers())
     console.log('Planet state initialized')
 
     initializationComplete = true
