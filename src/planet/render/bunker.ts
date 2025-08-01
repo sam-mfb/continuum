@@ -1,8 +1,98 @@
 import { cloneBitmap, type MonochromeBitmap } from '@/bitmap'
 import { SBARHT, SCRWTH, VIEWHT } from '@/screen/constants'
-import { BUNKHT } from '@/figs/types'
+import { BUNKHT, BUNKROTKINDS, type BunkerSpriteSet } from '@/figs/types'
 import { build68kArch } from '@/asm/emulator'
 import { jsrWAddress } from '@/asm/assemblyMacros'
+import type { Bunker } from '../types'
+import { xbcenter, ybcenter } from '@/figs/hardcodedSprites'
+
+/**
+ * From do_bunks() in orig/Sources/Bunkers.c at 213-245
+ *
+ # Selects and calls correct bunker drawing routines
+ # for bunkers that are in the viewport
+ */
+export function doBunks(deps: {
+  readonly bunkrec: readonly Bunker[]
+  scrnx: number
+  scrny: number
+  bunkerSprites: BunkerSpriteSet
+}): (screen: MonochromeBitmap) => MonochromeBitmap {
+  return screen => {
+    const { bunkrec, scrnx, scrny, bunkerSprites } = deps
+
+    let newScreen = cloneBitmap(screen)
+    
+    // Calculate visible area bounds
+    const left = scrnx - 48
+    const right = scrnx + SCRWTH + 48
+    
+    // Process each bunker
+    for (const bp of bunkrec) {
+      // Check for end of bunker array (rot < 0 marks end)
+      if (bp.rot < 0) break
+      
+      // Check if bunker is within horizontal bounds and alive
+      if (bp.alive && bp.x > left && bp.x < right) {
+        // Get bunker center offsets for this type and rotation
+        const ycenter = ybcenter[bp.kind]![bp.rot]!
+        const bunky = bp.y - scrny - ycenter
+        
+        // Check if bunker is within vertical bounds
+        if (bunky > -48 && bunky < VIEWHT) {
+          const xcenter = xbcenter[bp.kind]![bp.rot]!
+          const bunkx = bp.x - scrnx - xcenter
+          
+          // Get the bunker sprite
+          const bunkerSprite = bunkerSprites.getSprite(bp.kind, bp.rot)
+          
+          // Determine which drawing function to use
+          if (bp.kind >= BUNKROTKINDS || bp.rot <= 1 || bp.rot >= 9) {
+            // Use XOR drawing for rotating bunkers or up/down facing bunkers
+            const align = (bp.x + bp.y + xcenter + ycenter) & 1
+            
+            // Convert Uint8Array to MonochromeBitmap with pre-computed background
+            const image: MonochromeBitmap = {
+              width: 48,
+              height: BUNKHT,
+              data: align === 0 ? bunkerSprite.images.background1 : bunkerSprite.images.background2,
+              rowBytes: 6 // 48 pixels / 8 bits per byte
+            }
+            
+            newScreen = drawBunker({
+              x: bunkx,
+              y: bunky,
+              def: image
+            })(newScreen)
+          } else {
+            // Use masked drawing for side-facing static bunkers
+            const def: MonochromeBitmap = {
+              width: 48,
+              height: BUNKHT,
+              data: bunkerSprite.def,
+              rowBytes: 6 // 48 pixels / 8 bits per byte
+            }
+            const mask: MonochromeBitmap = {
+              width: 48,
+              height: BUNKHT,
+              data: bunkerSprite.mask,
+              rowBytes: 6 // 48 pixels / 8 bits per byte
+            }
+            
+            newScreen = fullBunker({
+              x: bunkx,
+              y: bunky,
+              def: def,
+              mask: mask
+            })(newScreen)
+          }
+        }
+      }
+    }
+    
+    return newScreen
+  }
+}
 
 /**
  * From draw_bunker() in orig/Sources/Draw.c at 715-823
