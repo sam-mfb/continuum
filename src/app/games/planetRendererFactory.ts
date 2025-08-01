@@ -9,6 +9,7 @@ import type { PlanetState } from '../../planet/types'
 import type { BitmapRenderer } from '../../bitmap'
 import { whiteTerrain, blackTerrain } from '../../walls/render'
 import { wallsActions } from '../../walls/wallsSlice'
+import { screenSlice } from '../../screen/screenSlice'
 import { gameViewActions } from '../../store/gameViewSlice'
 import { LINE_KIND } from '../../walls/types'
 import { VIEWHT } from '../../screen/constants'
@@ -68,31 +69,32 @@ export const createPlanetRenderer: PlanetRendererFactory = (
   const bitmapWidth = 512
 
   // Apply constraints based on whether planet wraps
-  const initialViewport = {
-    x: planet.worldwrap
-      ? planet.xstart - bitmapWidth / 2 // No X constraints for circular planets
-      : Math.max(
-          0,
-          Math.min(
-            planet.worldwidth - bitmapWidth,
-            planet.xstart - bitmapWidth / 2
-          )
-        ),
-    y: Math.max(
-      0,
-      Math.min(planet.worldheight - VIEWHT, planet.ystart - VIEWHT / 2)
-    )
-  }
-  store.dispatch(gameViewActions.setViewport(initialViewport))
+  const initialX = planet.worldwrap
+    ? planet.xstart - bitmapWidth / 2 // No X constraints for circular planets
+    : Math.max(
+        0,
+        Math.min(
+          planet.worldwidth - bitmapWidth,
+          planet.xstart - bitmapWidth / 2
+        )
+      )
+  const initialY = Math.max(
+    0,
+    Math.min(planet.worldheight - VIEWHT, planet.ystart - VIEWHT / 2)
+  )
+  
+  store.dispatch(screenSlice.actions.setPosition({ x: initialX, y: initialY }))
+  store.dispatch(gameViewActions.setInitialized())
 
   // Return the renderer function
   const renderer: BitmapRenderer = (bitmap, frame, _env) => {
     const state = store.getState()
-    const { walls, gameView } = state
+    const { walls, gameView, screen } = state
 
     // If viewport is not initialized, ensure we use the initial viewport
     if (!gameView.initialized) {
-      store.dispatch(gameViewActions.setViewport(initialViewport))
+      store.dispatch(screenSlice.actions.setPosition({ x: initialX, y: initialY }))
+      store.dispatch(gameViewActions.setInitialized())
       return // Skip this frame to avoid jump
     }
 
@@ -116,8 +118,8 @@ export const createPlanetRenderer: PlanetRendererFactory = (
 
     // Update viewport if there's movement
     if (dx !== 0 || dy !== 0) {
-      let newX = gameView.viewport.x + dx
-      let newY = gameView.viewport.y + dy
+      let newX = screen.screenx + dx
+      let newY = screen.screeny + dy
 
       if (planet.worldwrap) {
         // For circular planets: wrap X coordinate
@@ -132,19 +134,19 @@ export const createPlanetRenderer: PlanetRendererFactory = (
       // Use VIEWHT instead of bitmap.height to account for status bar
       newY = Math.max(0, Math.min(planet.worldheight - VIEWHT, newY))
 
-      store.dispatch(gameViewActions.setViewport({ x: newX, y: newY }))
+      store.dispatch(screenSlice.actions.setPosition({ x: newX, y: newY }))
     }
 
     // Get updated viewport after potential movement
-    const currentViewport = store.getState().gameView.viewport
+    const currentScreen = store.getState().screen
 
     // Create crosshatch gray background
     // Pattern must be based on world coordinates, not screen coordinates
     for (let y = 0; y < bitmap.height; y++) {
       for (let x = 0; x < bitmap.width; x++) {
         // Calculate world position
-        const worldX = x + currentViewport.x
-        const worldY = y + currentViewport.y
+        const worldX = x + currentScreen.screenx
+        const worldY = y + currentScreen.screeny
         // Set pixel if worldX + worldY is even (creates fixed checkerboard)
         if ((worldX + worldY) % 2 === 0) {
           const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
@@ -156,10 +158,10 @@ export const createPlanetRenderer: PlanetRendererFactory = (
 
     // Set up viewport for rendering
     const viewport = {
-      x: currentViewport.x,
-      y: currentViewport.y,
-      b: currentViewport.y + bitmap.height, // bottom
-      r: currentViewport.x + bitmap.width // right
+      x: currentScreen.screenx,
+      y: currentScreen.screeny,
+      b: currentScreen.screeny + bitmap.height, // bottom
+      r: currentScreen.screenx + bitmap.width // right
     }
 
     // First render white terrain (undersides, patches, junctions)
@@ -199,8 +201,8 @@ export const createPlanetRenderer: PlanetRendererFactory = (
     if (bunkerState.sprites.allSprites) {
       // Update bunker rotations for animated bunkers
       // Use planet center as a mock ship position for FOLLOW bunkers
-      const globalx = currentViewport.x + bitmap.width / 2
-      const globaly = currentViewport.y + bitmap.height / 2
+      const globalx = currentScreen.screenx + bitmap.width / 2
+      const globaly = currentScreen.screeny + bitmap.height / 2
       bunkerStore.dispatch(updateBunkerRotations({ globalx, globaly }))
 
       // Get updated planet state with rotated bunkers
@@ -212,14 +214,14 @@ export const createPlanetRenderer: PlanetRendererFactory = (
       // Draw bunkers at normal position
       let bunkerBitmap = doBunks({
         bunkrec: planetState.bunkers,
-        scrnx: currentViewport.x,
-        scrny: currentViewport.y,
+        scrnx: currentScreen.screenx,
+        scrny: currentScreen.screeny,
         bunkerSprites: bunkerSprites
       })(bitmap)
       
       // If wrapping world and near right edge, draw wrapped bunkers
       const onRightSide = isOnRightSide(
-        currentViewport.x,
+        currentScreen.screenx,
         bitmap.width,
         planet.worldwidth,
         planet.worldwrap
@@ -228,8 +230,8 @@ export const createPlanetRenderer: PlanetRendererFactory = (
       if (onRightSide) {
         bunkerBitmap = doBunks({
           bunkrec: planetState.bunkers,
-          scrnx: currentViewport.x - planet.worldwidth,
-          scrny: currentViewport.y,
+          scrnx: currentScreen.screenx - planet.worldwidth,
+          scrny: currentScreen.screeny,
           bunkerSprites: bunkerSprites
         })(bunkerBitmap) // Pass already-rendered bitmap
       }

@@ -4,6 +4,7 @@ import { createMonochromeBitmap, clearBitmap, bitmapToCanvas } from '@/bitmap'
 import { createPlanetRenderer } from '../games/planetRendererFactory'
 import { wallsActions } from '@/walls/wallsSlice'
 import { gameViewActions } from '@/store/gameViewSlice'
+import { screenSlice } from '@/screen/screenSlice'
 import type { PlanetState } from '@/planet/types'
 import type { BitmapRenderer, MonochromeBitmap } from '@/bitmap'
 import type { GameRendererStore } from '../games/types'
@@ -39,13 +40,15 @@ export const PlanetGameViewer = (): JSX.Element => {
 
     // Clear previous walls and viewport when planet changes
     dispatch(wallsActions.clearWalls())
-    dispatch(gameViewActions.resetViewport())
+    dispatch(gameViewActions.resetInitialized())
+    dispatch(screenSlice.actions.setPosition({ x: 0, y: 0 }))
 
     // Create renderer for the selected planet
     const gameStore: GameRendererStore = {
       getState: () => ({
         walls: store.getState().walls,
-        gameView: store.getState().gameView
+        gameView: store.getState().gameView,
+        screen: store.getState().screen
       }),
       dispatch: dispatch
     }

@@ -8,6 +8,7 @@ import spritesReducer from './spritesSlice'
 import soundReducer from '../sound/soundSlice'
 import { wallsSlice } from '../walls/wallsSlice'
 import gameViewReducer from './gameViewSlice'
+import { screenSlice } from '../screen/screenSlice'
 
 export const store = configureStore({
   reducer: {
@@ -17,7 +18,8 @@ export const store = configureStore({
     sprites: spritesReducer,
     sound: soundReducer,
     walls: wallsSlice.reducer,
-    gameView: gameViewReducer
+    gameView: gameViewReducer,
+    screen: screenSlice.reducer
   },
   middleware: getDefaultMiddleware =>
     getDefaultMiddleware({
