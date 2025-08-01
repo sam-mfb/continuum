@@ -38,22 +38,132 @@ const BUNKFRAMES = 8 // Number of animation frames for rotating bunkers
 // We'll create a smaller array for demo purposes
 const bunkers: Bunker[] = [
   // Top row: WALL bunkers (static, different rotations)
-  { x: 362, y: 412, rot: 0, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.WALL },
-  { x: 462, y: 412, rot: 1, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.WALL },
-  { x: 562, y: 412, rot: 2, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.WALL },
-  { x: 662, y: 412, rot: 3, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.WALL },
-  
+  {
+    x: 362,
+    y: 412,
+    rot: 0,
+    ranges: [
+      { low: 0, high: 100 },
+      { low: 200, high: 300 }
+    ],
+    alive: true,
+    kind: BunkerKind.WALL
+  },
+  {
+    x: 462,
+    y: 412,
+    rot: 1,
+    ranges: [
+      { low: 0, high: 100 },
+      { low: 200, high: 300 }
+    ],
+    alive: true,
+    kind: BunkerKind.WALL
+  },
+  {
+    x: 562,
+    y: 412,
+    rot: 2,
+    ranges: [
+      { low: 0, high: 100 },
+      { low: 200, high: 300 }
+    ],
+    alive: true,
+    kind: BunkerKind.WALL
+  },
+  {
+    x: 662,
+    y: 412,
+    rot: 3,
+    ranges: [
+      { low: 0, high: 100 },
+      { low: 200, high: 300 }
+    ],
+    alive: true,
+    kind: BunkerKind.WALL
+  },
+
   // Second row: DIFF bunkers (static, different rotations)
-  { x: 362, y: 482, rot: 0, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.DIFF },
-  { x: 462, y: 482, rot: 1, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.DIFF },
-  { x: 562, y: 482, rot: 2, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.DIFF },
-  { x: 662, y: 482, rot: 3, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.DIFF },
-  
+  {
+    x: 362,
+    y: 482,
+    rot: 0,
+    ranges: [
+      { low: 0, high: 100 },
+      { low: 200, high: 300 }
+    ],
+    alive: true,
+    kind: BunkerKind.DIFF
+  },
+  {
+    x: 462,
+    y: 482,
+    rot: 1,
+    ranges: [
+      { low: 0, high: 100 },
+      { low: 200, high: 300 }
+    ],
+    alive: true,
+    kind: BunkerKind.DIFF
+  },
+  {
+    x: 562,
+    y: 482,
+    rot: 2,
+    ranges: [
+      { low: 0, high: 100 },
+      { low: 200, high: 300 }
+    ],
+    alive: true,
+    kind: BunkerKind.DIFF
+  },
+  {
+    x: 662,
+    y: 482,
+    rot: 3,
+    ranges: [
+      { low: 0, high: 100 },
+      { low: 200, high: 300 }
+    ],
+    alive: true,
+    kind: BunkerKind.DIFF
+  },
+
   // Third row: Animated bunkers
-  { x: 362, y: 552, rot: 0, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.GROUND },
-  { x: 462, y: 552, rot: 0, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.FOLLOW },
-  { x: 562, y: 552, rot: 0, ranges: [{low: 0, high: 100}, {low: 200, high: 300}], alive: true, kind: BunkerKind.GENERATOR },
-  
+  {
+    x: 362,
+    y: 552,
+    rot: 0,
+    ranges: [
+      { low: 0, high: 100 },
+      { low: 200, high: 300 }
+    ],
+    alive: true,
+    kind: BunkerKind.GROUND
+  },
+  {
+    x: 462,
+    y: 552,
+    rot: 0,
+    ranges: [
+      { low: 0, high: 100 },
+      { low: 200, high: 300 }
+    ],
+    alive: true,
+    kind: BunkerKind.FOLLOW
+  },
+  {
+    x: 562,
+    y: 552,
+    rot: 0,
+    ranges: [
+      { low: 0, high: 100 },
+      { low: 200, high: 300 }
+    ],
+    alive: true,
+    kind: BunkerKind.GENERATOR
+  },
+
   // End marker (rot < 0 indicates end of array)
   { x: 0, y: 0, rot: -1, ranges: [], alive: false, kind: BunkerKind.WALL }
 ]
@@ -161,12 +271,12 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
 
   // Update animation state (game runs at 20 FPS)
   // From Bunkers.c:33-44 - animated bunkers update their rotation
-  
+
   // Find animated bunkers in the array and update their rotation
   for (let i = 0; i < bunkers.length; i++) {
     const bunker = bunkers[i]
     if (!bunker || bunker.rot < 0) break // End of array
-    
+
     if (bunker.kind >= BUNKROTKINDS) {
       // This is an animated bunker
       switch (bunker.kind) {
@@ -177,7 +287,7 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
             rotCounts.ground = BUNKFCYCLES
           }
           break
-          
+
         case BunkerKind.FOLLOW:
           // Follow bunker rotates 3x slower (Bunkers.c:38)
           rotCounts.follow--
@@ -186,7 +296,7 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
             rotCounts.follow = 3 * BUNKFCYCLES
           }
           break
-          
+
         case BunkerKind.GENERATOR:
           rotCounts.generator--
           if (rotCounts.generator <= 0) {
@@ -200,14 +310,14 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
 
   // Draw all bunkers using doBunks
   const bunkerSprites = state.sprites.allSprites.bunkers
-  
+
   const renderedBitmap = doBunks({
     bunkrec: bunkers,
     scrnx: viewportState.x,
     scrny: viewportState.y,
     bunkerSprites: bunkerSprites
   })(bitmap)
-  
+
   // Copy rendered bitmap data back to original
   bitmap.data.set(renderedBitmap.data)
 }
