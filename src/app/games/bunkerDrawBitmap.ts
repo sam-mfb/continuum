@@ -22,6 +22,7 @@ import type { Bunker, PlanetState } from '@/planet/types'
 import { drawDotSafe } from '@/shots/render/drawDotSafe'
 import { rint } from '@/shared/rint'
 import { SBARHT } from '@/screen/constants'
+import { isOnRightSide } from '@/shared/viewport'
 
 // Create store with sprites, planet, and shots slices
 const store = configureStore({
@@ -180,7 +181,7 @@ const createInitialPlanetState = (): PlanetState => {
   return {
     worldwidth: WORLD_WIDTH,
     worldheight: WORLD_HEIGHT,
-    worldwrap: false,
+    worldwrap: true, // Enable wrapping to test the feature
     shootslow: SHOOT_SLOW,
     xstart: 512,
     ystart: 512,
@@ -339,12 +340,30 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
   // Draw all bunkers using doBunks
   const bunkerSprites = state.sprites.allSprites.bunkers
 
-  const renderedBitmap = doBunks({
+  // Draw bunkers at normal position
+  let renderedBitmap = doBunks({
     bunkrec: planetState.bunkers,
     scrnx: viewportState.x,
     scrny: viewportState.y,
     bunkerSprites: bunkerSprites
   })(bitmap)
+
+  // If wrapping world and near right edge, draw wrapped bunkers
+  const onRightSide = isOnRightSide(
+    viewportState.x,
+    bitmap.width,
+    planetState.worldwidth,
+    planetState.worldwrap
+  )
+  
+  if (onRightSide) {
+    renderedBitmap = doBunks({
+      bunkrec: planetState.bunkers,
+      scrnx: viewportState.x - planetState.worldwidth,
+      scrny: viewportState.y,
+      bunkerSprites: bunkerSprites
+    })(renderedBitmap) // Pass already-rendered bitmap
+  }
 
   // Copy rendered bitmap data back to original
   bitmap.data.set(renderedBitmap.data)
@@ -353,7 +372,7 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
   const updatedShotsState = store.getState().shots
   for (const shot of updatedShotsState.bunkshots) {
     if (shot.lifecount > 0) {
-      // Check if shot is visible on screen
+      // Check if shot is visible on screen at normal position
       const shotScreenX = shot.x - viewportState.x
       const shotScreenY = shot.y - viewportState.y
 
@@ -364,6 +383,20 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
         shotScreenY < bitmap.height - 1
       ) {
         drawDotSafe(shotScreenX, shotScreenY, bitmap)
+      }
+      
+      // If wrapping world and near right edge, also check wrapped position
+      if (onRightSide) {
+        const wrappedScreenX = shot.x - (viewportState.x - planetState.worldwidth)
+        
+        if (
+          wrappedScreenX >= 0 &&
+          wrappedScreenX < bitmap.width - 1 &&
+          shotScreenY >= 0 &&
+          shotScreenY < bitmap.height - 1
+        ) {
+          drawDotSafe(wrappedScreenX, shotScreenY, bitmap)
+        }
       }
     }
   }

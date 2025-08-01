@@ -12,6 +12,7 @@ import { wallsActions } from '../../walls/wallsSlice'
 import { gameViewActions } from '../../store/gameViewSlice'
 import { LINE_KIND } from '../../walls/types'
 import { VIEWHT } from '../../screen/constants'
+import { isOnRightSide } from '@/shared/viewport'
 import { doBunks } from '@/planet/render/bunker'
 import { loadSprites } from '@/store/spritesSlice'
 import { configureStore } from '@reduxjs/toolkit'
@@ -207,12 +208,31 @@ export const createPlanetRenderer: PlanetRendererFactory = (
 
       // Draw bunkers
       const bunkerSprites = bunkerState.sprites.allSprites.bunkers
-      const bunkerBitmap = doBunks({
+      
+      // Draw bunkers at normal position
+      let bunkerBitmap = doBunks({
         bunkrec: planetState.bunkers,
         scrnx: currentViewport.x,
         scrny: currentViewport.y,
         bunkerSprites: bunkerSprites
       })(bitmap)
+      
+      // If wrapping world and near right edge, draw wrapped bunkers
+      const onRightSide = isOnRightSide(
+        currentViewport.x,
+        bitmap.width,
+        planet.worldwidth,
+        planet.worldwrap
+      )
+      
+      if (onRightSide) {
+        bunkerBitmap = doBunks({
+          bunkrec: planetState.bunkers,
+          scrnx: currentViewport.x - planet.worldwidth,
+          scrny: currentViewport.y,
+          bunkerSprites: bunkerSprites
+        })(bunkerBitmap) // Pass already-rendered bitmap
+      }
 
       // Copy bunker bitmap data back to original
       bitmap.data.set(bunkerBitmap.data)
