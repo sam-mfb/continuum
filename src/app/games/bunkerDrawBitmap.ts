@@ -173,7 +173,7 @@ const createInitialPlanetState = (): PlanetState => {
       alive: true,
       kind: BunkerKind.GENERATOR
     },
-    
+
     // Bunkers near world edges to test wrapping
     {
       x: 50, // Near left edge
@@ -288,7 +288,7 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
 
   // Handle keyboard input for viewport movement
   const moveSpeed = 5
-  
+
   if (frame.keysDown.has('ArrowUp')) {
     viewportState.y = Math.max(0, viewportState.y - moveSpeed)
   }
@@ -302,7 +302,8 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
     viewportState.x -= moveSpeed
     if (planetState.worldwrap) {
       // Wrap around if we go negative
-      viewportState.x = ((viewportState.x % WORLD_WIDTH) + WORLD_WIDTH) % WORLD_WIDTH
+      viewportState.x =
+        ((viewportState.x % WORLD_WIDTH) + WORLD_WIDTH) % WORLD_WIDTH
     } else {
       // Clamp to world bounds for non-wrapping worlds
       viewportState.x = Math.max(0, viewportState.x)
@@ -326,12 +327,12 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
       // Calculate world position, handling wrapping
       let worldX = x + viewportState.x
       const worldY = y + viewportState.y
-      
+
       // For wrapping worlds, normalize worldX to be within world bounds
       if (planetState.worldwrap) {
         worldX = ((worldX % WORLD_WIDTH) + WORLD_WIDTH) % WORLD_WIDTH
       }
-      
+
       // Set pixel if worldX + worldY is even (creates fixed checkerboard)
       if ((worldX + worldY) % 2 === 0) {
         const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
@@ -397,7 +398,7 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
     planetState.worldwidth,
     planetState.worldwrap
   )
-  
+
   if (onRightSide) {
     renderedBitmap = doBunks({
       bunkrec: planetState.bunkers,
@@ -406,9 +407,6 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
       bunkerSprites: bunkerSprites
     })(renderedBitmap) // Pass already-rendered bitmap
   }
-
-  // Copy rendered bitmap data back to original
-  bitmap.data.set(renderedBitmap.data)
 
   // Draw all bunker shots
   const updatedShotsState = store.getState().shots
@@ -424,24 +422,28 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
         shotScreenY >= 0 &&
         shotScreenY < bitmap.height - 1
       ) {
-        drawDotSafe(shotScreenX, shotScreenY, bitmap)
+        renderedBitmap = drawDotSafe(shotScreenX, shotScreenY, renderedBitmap)
       }
-      
+
       // If wrapping world and near right edge, also check wrapped position
       if (onRightSide) {
-        const wrappedScreenX = shot.x - (viewportState.x - planetState.worldwidth)
-        
+        const wrappedScreenX =
+          shot.x - (viewportState.x - planetState.worldwidth)
+
         if (
           wrappedScreenX >= 0 &&
           wrappedScreenX < bitmap.width - 1 &&
           shotScreenY >= 0 &&
           shotScreenY < bitmap.height - 1
         ) {
-          drawDotSafe(wrappedScreenX, shotScreenY, bitmap)
+          renderedBitmap = drawDotSafe(wrappedScreenX, shotScreenY, renderedBitmap)
         }
       }
     }
   }
+
+  // Copy rendered bitmap data back to original
+  bitmap.data.set(renderedBitmap.data)
 
   // Draw a black box to indicate the mock ship position (center of screen)
   const shipX = bitmap.width / 2 - 4 // Center minus half of 8px
