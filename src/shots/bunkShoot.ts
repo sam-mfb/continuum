@@ -5,84 +5,9 @@ import { SHOT } from './constants'
 import { SCRWTH, SOFTBORDER } from '@/screen/constants'
 import { xbshotstart, ybshotstart } from '@/figs/hardcodedSprites'
 import { PLANET } from '@/planet/constants'
-
-// Helper to mimic rint(n) - random integer from 0 to n-1
-function rint(n: number): number {
-  return Math.floor(Math.random() * n)
-}
-
-/**
- * Calculate angle from bunker to ship
- * See orig/Sources/Bunkers.c at aim_dir():77-94
- */
-function aimDir(
-  bp: Bunker,
-  deps: {
-    globalx: number
-    globaly: number
-    worldwidth: number
-    worldwrap: boolean
-  }
-): number {
-  const { globalx, globaly, worldwidth, worldwrap } = deps
-
-  // Calculate delta to ship
-  let delV = globaly - bp.y
-  let delH = globalx - bp.x
-
-  // Handle world wrap to find shortest path
-  if (worldwrap) {
-    if (delH > worldwidth >> 1) {
-      delH -= worldwidth
-    } else if (delH < -(worldwidth >> 1)) {
-      delH += worldwidth
-    }
-  }
-
-  // PtToAngle equivalent - calculate angle in degrees
-  let angle = (Math.atan2(delV, delH) * 180) / Math.PI
-
-  // Convert from math angle (-180 to 180) to game angle (0-359)
-  angle = (90 - angle + 360) % 360
-
-  return Math.floor(angle)
-}
-
-/**
- * Calculate rotation direction for following bunker
- * See orig/Sources/Bunkers.c at aim_bunk():53-74
- */
-function aimBunk(
-  bunk: Bunker,
-  deps: {
-    globalx: number
-    globaly: number
-    worldwidth: number
-    worldwrap: boolean
-  }
-): number {
-  let angle = aimDir(bunk, deps) /* 0-359 */
-  angle += 11
-  if (angle >= 360) {
-    angle -= 360
-  }
-  angle = (angle << 1) / 45 /* / 22.5 => 0-15 */
-  if (angle >= 8) {
-    angle -= 8 /* 0-7 */
-  }
-  angle = Math.floor(angle)
-
-  let diff = angle - bunk.rot
-  if (diff < 0) {
-    diff += 8
-  }
-
-  if (diff === 0) {
-    return 0
-  } else {
-    return diff < 4 ? 1 : -1
-  }
-}
+import { aimBunk } from './aimBunk'
+import { aimDir } from './aimDir'
+import { rint } from '@/shared/rint'
 
 /**
  * Create a shot for following bunker

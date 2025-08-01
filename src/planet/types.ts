@@ -21,6 +21,7 @@ export type Bunker = {
   x: number
   y: number
   rot: number
+  rotcount?: number // Animation counter for rotating bunkers
   ranges: BunkerRange[]
   alive: boolean
   kind: BunkerKind
