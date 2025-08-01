@@ -15,8 +15,7 @@ export function aimBunk(
   }
 ): number {
   let angle = aimDir(bunk, deps) /* 0-359 */
-  const originalAngle = angle
-  
+
   // The sprite frames are oriented differently than the angle system:
   // - Angle 0° = East, but Frame 0 = North
   // - So we need to rotate by -90° (or +270°) to convert angle to frame
@@ -24,7 +23,7 @@ export function aimBunk(
   if (angle >= 360) {
     angle -= 360
   }
-  
+
   angle += 11
   if (angle >= 360) {
     angle -= 360
@@ -34,12 +33,6 @@ export function aimBunk(
     angle -= 8 /* 0-7 */
   }
   angle = Math.floor(angle)
-
-  // Debug: log angle calculations
-  const dx = deps.globalx - bunk.x
-  const dy = deps.globaly - bunk.y
-  console.log(`FOLLOW bunker at (${bunk.x},${bunk.y}) targeting (${deps.globalx},${deps.globaly})`)
-  console.log(`  Delta: (${dx},${dy}), aimDir: ${originalAngle}°, target rot: ${angle}, current rot: ${bunk.rot}`)
 
   let diff = angle - bunk.rot
   if (diff < 0) {
