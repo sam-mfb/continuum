@@ -20,11 +20,10 @@ export function aimBunk(
   if (angle >= 360) {
     angle -= 360
   }
-  angle = (angle << 1) / 45 /* / 22.5 => 0-15 */
+  angle = Math.floor((angle << 1) / 45) /* / 22.5 => 0-15 */
   if (angle >= 8) {
     angle -= 8 /* 0-7 */
   }
-  angle = Math.floor(angle)
 
   let diff = angle - bunk.rot
   if (diff < 0) {

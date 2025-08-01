@@ -36,7 +36,7 @@ function followShot(
     }
   }
   angle *= 64
-  angle /= 45 /* *(512/360) => 0-511 */
+  angle = Math.floor(angle / 45) /* *(512/360) => 0-511 */
   randShot(angle - 2, angle + 2, sp)
 }
 
