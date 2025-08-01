@@ -11,6 +11,13 @@ export const SHOT = {
 } as const
 
 /**
+ * Strafe constants
+ * From orig/Sources/GW.h (lines 64, 124)
+ */
+export const NUMSTRAFES = 5 /* max strafes at once */
+export const STRAFE_LIFE = 4 /* cycles strafes live */
+
+/**
  * Bunker shot start positions for different bunker types and rotations
  * From orig/Sources/Figs.c at xbshotstart (line 87) and ybshotstart (line 95)
  *

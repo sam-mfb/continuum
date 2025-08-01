@@ -3,6 +3,7 @@ import type { ShotRec, ShotsState } from './types'
 import { SHOT } from './constants'
 import type { Bunker } from '@/planet/types'
 import { bunkShoot } from './bunkShoot'
+import { startStrafe } from './startStrafe'
 
 const initializeShot = (): ShotRec => ({
   x: 0,
@@ -19,7 +20,8 @@ const initializeShot = (): ShotRec => ({
 
 const initialState: ShotsState = {
   shipshots: Array.from({ length: SHOT.NUMBULLETS }, initializeShot),
-  bunkshots: Array.from({ length: SHOT.NUMSHOTS }, initializeShot)
+  bunkshots: Array.from({ length: SHOT.NUMSHOTS }, initializeShot),
+  strafes: []
 }
 
 export const shotsSlice = createSlice({
@@ -61,13 +63,29 @@ export const shotsSlice = createSlice({
         state.shipshots[i] = sp
       }
     },
-    moveBullets: (
+    startStrafe: (
+      state,
+      action: PayloadAction<{
+        x: number
+        y: number
+        dir: number
+      }>
+    ) => {
+      const { x, y, dir } = action.payload
+      state.strafes = startStrafe(x, y, dir)(state.strafes)
+    },
+    moveShipshots: (
       state,
       action: PayloadAction<{ worldwidth: number; worldwrap: boolean }>
     ) => {
       state.shipshots = state.shipshots.map(s => moveShot(s, action.payload))
     },
-    moveShipshots: () => {},
+    moveBullets: (
+      state,
+      action: PayloadAction<{ worldwidth: number; worldwrap: boolean }>
+    ) => {
+      state.bunkshots = state.bunkshots.map(s => moveShot(s, action.payload))
+    },
     bunkShoot: (
       state,
       action: PayloadAction<{

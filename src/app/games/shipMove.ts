@@ -84,7 +84,7 @@ export const shipMoveGameLoop: GameLoopFunction = (ctx, frame, _env) => {
 
   // Move all bullets
   store.dispatch(
-    shotsSlice.actions.moveBullets({
+    shotsSlice.actions.moveShipshots({
       worldwidth: state.planet.worldwidth,
       worldwrap: state.planet.worldwrap
     })
