@@ -21,6 +21,7 @@ import { BunkerKind } from '@/figs/types'
 import type { Bunker, PlanetState } from '@/planet/types'
 import { drawDotSafe } from '@/shots/render/drawDotSafe'
 import { rint } from '@/shared/rint'
+import { SBARHT } from '@/screen/constants'
 
 // Create store with sprites, planet, and shots slices
 const store = configureStore({
@@ -297,7 +298,8 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
   // Update animation state using the reducer
   // The follow bunker needs ship position - use viewport center as mock ship position
   const globalx = viewportState.x + bitmap.width / 2
-  const globaly = viewportState.y + bitmap.height / 2
+  // Adjust Y to account for status bar - the game world Y coordinates don't include SBARHT
+  const globaly = viewportState.y + bitmap.height / 2 - SBARHT
 
   store.dispatch(updateBunkerRotations({ globalx, globaly }))
 
