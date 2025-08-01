@@ -1,6 +1,8 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { ShotRec, ShotsState } from './types'
 import { SHOT } from './constants'
+import type { Bunker } from '@/planet/types'
+import { bunkShoot } from './bunkShoot'
 
 const initializeShot = (): ShotRec => ({
   x: 0,
@@ -65,7 +67,23 @@ export const shotsSlice = createSlice({
     ) => {
       state.shipshots = state.shipshots.map(s => moveShot(s, action.payload))
     },
-    moveShipshots: () => {}
+    moveShipshots: () => {},
+    bunkShoot: (
+      state,
+      action: PayloadAction<{
+        screenx: number
+        screenr: number
+        screeny: number
+        screenb: number
+        readonly bunkrecs: readonly Bunker[]
+        worldwidth: number
+        worldwrap: boolean
+        globalx: number
+        globaly: number
+      }>
+    ) => {
+      state.bunkshots = bunkShoot(action.payload)(state.bunkshots)
+    }
   }
 })
 
