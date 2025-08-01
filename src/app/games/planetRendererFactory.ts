@@ -69,15 +69,15 @@ export const createPlanetRenderer: PlanetRendererFactory = (
   const bitmapWidth = 512
 
   // Apply constraints based on whether planet wraps
-  const initialX = planet.worldwrap
-    ? planet.xstart - bitmapWidth / 2 // No X constraints for circular planets
-    : Math.max(
-        0,
-        Math.min(
-          planet.worldwidth - bitmapWidth,
-          planet.xstart - bitmapWidth / 2
-        )
-      )
+  let initialX = planet.xstart - bitmapWidth / 2
+  
+  if (planet.worldwrap) {
+    // For circular planets: ensure X is properly wrapped
+    initialX = ((initialX % planet.worldwidth) + planet.worldwidth) % planet.worldwidth
+  } else {
+    // For non-circular planets: clamp X to world boundaries
+    initialX = Math.max(0, Math.min(planet.worldwidth - bitmapWidth, initialX))
+  }
   const initialY = Math.max(
     0,
     Math.min(planet.worldheight - VIEWHT, planet.ystart - VIEWHT / 2)
@@ -145,8 +145,14 @@ export const createPlanetRenderer: PlanetRendererFactory = (
     for (let y = 0; y < bitmap.height; y++) {
       for (let x = 0; x < bitmap.width; x++) {
         // Calculate world position
-        const worldX = x + currentScreen.screenx
+        let worldX = x + currentScreen.screenx
         const worldY = y + currentScreen.screeny
+        
+        // Normalize worldX for wrapping worlds to ensure consistent pattern
+        if (planet.worldwrap) {
+          worldX = ((worldX % planet.worldwidth) + planet.worldwidth) % planet.worldwidth
+        }
+        
         // Set pixel if worldX + worldY is even (creates fixed checkerboard)
         if ((worldX + worldY) % 2 === 0) {
           const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
