@@ -11,13 +11,18 @@ import { doBunks } from '../../planet/render/bunker'
 import { loadSprites } from '@/store/spritesSlice'
 import { configureStore } from '@reduxjs/toolkit'
 import spritesReducer from '@/store/spritesSlice'
-import { BunkerKind, BUNKROTKINDS } from '@/figs/types'
-import type { Bunker } from '@/planet/types'
+import planetReducer, {
+  loadPlanet,
+  updateBunkerRotations
+} from '@/planet/planetSlice'
+import { BunkerKind } from '@/figs/types'
+import type { Bunker, PlanetState } from '@/planet/types'
 
-// Create minimal store with just sprites
+// Create store with sprites and planet slices
 const store = configureStore({
   reducer: {
-    sprites: spritesReducer
+    sprites: spritesReducer,
+    planet: planetReducer
   }
 })
 
@@ -31,148 +36,160 @@ const WORLD_HEIGHT = 1024
 
 // Animation state for rotating bunkers
 const BUNKFCYCLES = 2 // From GW.h:88 - ticks per animation frame
-const BUNKFRAMES = 8 // Number of animation frames for rotating bunkers
 
-// Create bunker array following original game structure
-// In the original, bunkers array has NUMBUNKERS (25) entries
-// We'll create a smaller array for demo purposes
-const bunkers: Bunker[] = [
-  // Top row: WALL bunkers (static, different rotations)
-  {
-    x: 362,
-    y: 412,
-    rot: 0,
-    ranges: [
-      { low: 0, high: 100 },
-      { low: 200, high: 300 }
-    ],
-    alive: true,
-    kind: BunkerKind.WALL
-  },
-  {
-    x: 462,
-    y: 412,
-    rot: 1,
-    ranges: [
-      { low: 0, high: 100 },
-      { low: 200, high: 300 }
-    ],
-    alive: true,
-    kind: BunkerKind.WALL
-  },
-  {
-    x: 562,
-    y: 412,
-    rot: 2,
-    ranges: [
-      { low: 0, high: 100 },
-      { low: 200, high: 300 }
-    ],
-    alive: true,
-    kind: BunkerKind.WALL
-  },
-  {
-    x: 662,
-    y: 412,
-    rot: 3,
-    ranges: [
-      { low: 0, high: 100 },
-      { low: 200, high: 300 }
-    ],
-    alive: true,
-    kind: BunkerKind.WALL
-  },
+// Create initial planet state with bunkers
+const createInitialPlanetState = (): PlanetState => {
+  const bunkers: Bunker[] = [
+    // Top row: WALL bunkers (static, different rotations)
+    {
+      x: 362,
+      y: 412,
+      rot: 0,
+      ranges: [
+        { low: 0, high: 100 },
+        { low: 200, high: 300 }
+      ],
+      alive: true,
+      kind: BunkerKind.WALL
+    },
+    {
+      x: 462,
+      y: 412,
+      rot: 1,
+      ranges: [
+        { low: 0, high: 100 },
+        { low: 200, high: 300 }
+      ],
+      alive: true,
+      kind: BunkerKind.WALL
+    },
+    {
+      x: 562,
+      y: 412,
+      rot: 2,
+      ranges: [
+        { low: 0, high: 100 },
+        { low: 200, high: 300 }
+      ],
+      alive: true,
+      kind: BunkerKind.WALL
+    },
+    {
+      x: 662,
+      y: 412,
+      rot: 3,
+      ranges: [
+        { low: 0, high: 100 },
+        { low: 200, high: 300 }
+      ],
+      alive: true,
+      kind: BunkerKind.WALL
+    },
 
-  // Second row: DIFF bunkers (static, different rotations)
-  {
-    x: 362,
-    y: 482,
-    rot: 0,
-    ranges: [
-      { low: 0, high: 100 },
-      { low: 200, high: 300 }
-    ],
-    alive: true,
-    kind: BunkerKind.DIFF
-  },
-  {
-    x: 462,
-    y: 482,
-    rot: 1,
-    ranges: [
-      { low: 0, high: 100 },
-      { low: 200, high: 300 }
-    ],
-    alive: true,
-    kind: BunkerKind.DIFF
-  },
-  {
-    x: 562,
-    y: 482,
-    rot: 2,
-    ranges: [
-      { low: 0, high: 100 },
-      { low: 200, high: 300 }
-    ],
-    alive: true,
-    kind: BunkerKind.DIFF
-  },
-  {
-    x: 662,
-    y: 482,
-    rot: 3,
-    ranges: [
-      { low: 0, high: 100 },
-      { low: 200, high: 300 }
-    ],
-    alive: true,
-    kind: BunkerKind.DIFF
-  },
+    // Second row: DIFF bunkers (static, different rotations)
+    {
+      x: 362,
+      y: 482,
+      rot: 0,
+      ranges: [
+        { low: 0, high: 100 },
+        { low: 200, high: 300 }
+      ],
+      alive: true,
+      kind: BunkerKind.DIFF
+    },
+    {
+      x: 462,
+      y: 482,
+      rot: 1,
+      ranges: [
+        { low: 0, high: 100 },
+        { low: 200, high: 300 }
+      ],
+      alive: true,
+      kind: BunkerKind.DIFF
+    },
+    {
+      x: 562,
+      y: 482,
+      rot: 2,
+      ranges: [
+        { low: 0, high: 100 },
+        { low: 200, high: 300 }
+      ],
+      alive: true,
+      kind: BunkerKind.DIFF
+    },
+    {
+      x: 662,
+      y: 482,
+      rot: 3,
+      ranges: [
+        { low: 0, high: 100 },
+        { low: 200, high: 300 }
+      ],
+      alive: true,
+      kind: BunkerKind.DIFF
+    },
 
-  // Third row: Animated bunkers
-  {
-    x: 362,
-    y: 552,
-    rot: 0,
-    ranges: [
-      { low: 0, high: 100 },
-      { low: 200, high: 300 }
-    ],
-    alive: true,
-    kind: BunkerKind.GROUND
-  },
-  {
-    x: 462,
-    y: 552,
-    rot: 0,
-    ranges: [
-      { low: 0, high: 100 },
-      { low: 200, high: 300 }
-    ],
-    alive: true,
-    kind: BunkerKind.FOLLOW
-  },
-  {
-    x: 562,
-    y: 552,
-    rot: 0,
-    ranges: [
-      { low: 0, high: 100 },
-      { low: 200, high: 300 }
-    ],
-    alive: true,
-    kind: BunkerKind.GENERATOR
-  },
+    // Third row: Animated bunkers (with rotcount initialized)
+    {
+      x: 362,
+      y: 552,
+      rot: 0,
+      rotcount: BUNKFCYCLES,
+      ranges: [
+        { low: 0, high: 100 },
+        { low: 200, high: 300 }
+      ],
+      alive: true,
+      kind: BunkerKind.GROUND
+    },
+    {
+      x: 462,
+      y: 552,
+      rot: 0,
+      rotcount: BUNKFCYCLES,
+      ranges: [
+        { low: 0, high: 100 },
+        { low: 200, high: 300 }
+      ],
+      alive: true,
+      kind: BunkerKind.FOLLOW
+    },
+    {
+      x: 562,
+      y: 552,
+      rot: 0,
+      rotcount: BUNKFCYCLES,
+      ranges: [
+        { low: 0, high: 100 },
+        { low: 200, high: 300 }
+      ],
+      alive: true,
+      kind: BunkerKind.GENERATOR
+    },
 
-  // End marker (rot < 0 indicates end of array)
-  { x: 0, y: 0, rot: -1, ranges: [], alive: false, kind: BunkerKind.WALL }
-]
+    // End marker (rot < 0 indicates end of array)
+    { x: 0, y: 0, rot: -1, ranges: [], alive: false, kind: BunkerKind.WALL }
+  ]
 
-// Track rotation counts for animated bunkers
-const rotCounts = {
-  ground: BUNKFCYCLES,
-  follow: BUNKFCYCLES,
-  generator: BUNKFCYCLES
+  return {
+    worldwidth: WORLD_WIDTH,
+    worldheight: WORLD_HEIGHT,
+    worldwrap: false,
+    shootslow: 0,
+    xstart: 512,
+    ystart: 512,
+    planetbonus: 0,
+    gravx: 0,
+    gravy: 0,
+    numcraters: 0,
+    lines: [],
+    bunkers,
+    fuels: [],
+    craters: []
+  }
 }
 
 // Viewport state - start centered
@@ -190,6 +207,11 @@ const initializeGame = async (): Promise<void> => {
     console.log('Loading sprites...')
     await store.dispatch(loadSprites()).unwrap()
     console.log('Sprites loaded successfully')
+
+    // Initialize planet state with bunkers
+    console.log('Initializing planet state...')
+    store.dispatch(loadPlanet(createInitialPlanetState()))
+    console.log('Planet state initialized')
 
     initializationComplete = true
     console.log('bunkerDrawBitmap initialization complete')
@@ -269,50 +291,21 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
     }
   }
 
-  // Update animation state (game runs at 20 FPS)
-  // From Bunkers.c:33-44 - animated bunkers update their rotation
+  // Update animation state using the reducer
+  // The follow bunker needs ship position - use viewport center as mock ship position
+  const globalx = viewportState.x + bitmap.width / 2
+  const globaly = viewportState.y + bitmap.height / 2
 
-  // Find animated bunkers in the array and update their rotation
-  for (let i = 0; i < bunkers.length; i++) {
-    const bunker = bunkers[i]
-    if (!bunker || bunker.rot < 0) break // End of array
+  store.dispatch(updateBunkerRotations({ globalx, globaly }))
 
-    if (bunker.kind >= BUNKROTKINDS) {
-      // This is an animated bunker
-      switch (bunker.kind) {
-        case BunkerKind.GROUND:
-          rotCounts.ground--
-          if (rotCounts.ground <= 0) {
-            bunker.rot = (bunker.rot + 1) & (BUNKFRAMES - 1)
-            rotCounts.ground = BUNKFCYCLES
-          }
-          break
-
-        case BunkerKind.FOLLOW:
-          // Follow bunker rotates 3x slower (Bunkers.c:38)
-          rotCounts.follow--
-          if (rotCounts.follow <= 0) {
-            bunker.rot = (bunker.rot + 1) & (BUNKFRAMES - 1)
-            rotCounts.follow = 3 * BUNKFCYCLES
-          }
-          break
-
-        case BunkerKind.GENERATOR:
-          rotCounts.generator--
-          if (rotCounts.generator <= 0) {
-            bunker.rot = (bunker.rot + 1) & (BUNKFRAMES - 1)
-            rotCounts.generator = BUNKFCYCLES
-          }
-          break
-      }
-    }
-  }
+  // Get current planet state
+  const planetState = store.getState().planet
 
   // Draw all bunkers using doBunks
   const bunkerSprites = state.sprites.allSprites.bunkers
 
   const renderedBitmap = doBunks({
-    bunkrec: bunkers,
+    bunkrec: planetState.bunkers,
     scrnx: viewportState.x,
     scrny: viewportState.y,
     bunkerSprites: bunkerSprites
