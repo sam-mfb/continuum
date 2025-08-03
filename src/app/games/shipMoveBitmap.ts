@@ -12,7 +12,7 @@ import { drawShipShot } from '../../shots/render/drawShipShot'
 import { shipSlice } from '@/ship/shipSlice'
 import { planetSlice } from '@/planet/planetSlice'
 import { screenSlice } from '@/screen/screenSlice'
-import { shotsSlice } from '@/shots/shotsSlice'
+import { shotsSlice, clearAllShots } from '@/shots/shotsSlice'
 import { ShipControl } from '@/ship/types'
 import { shipControl } from './shipControlThunk'
 import { buildGameStore } from './store'
@@ -108,6 +108,32 @@ const initializeGame = async (): Promise<void> => {
 // Start initialization
 void initializeGame()
 
+const resetGame = (): void => {
+  const state = store.getState()
+  
+  // Reset ship to center of screen
+  const shipScreenX = SCRWTH / 2 // 256
+  const shipScreenY = Math.floor((TOPMARG + BOTMARG) / 2) // 159
+  
+  store.dispatch(
+    shipSlice.actions.resetShip({
+      x: shipScreenX,
+      y: shipScreenY
+    })
+  )
+  
+  // Reset screen position to planet's starting position
+  store.dispatch(
+    screenSlice.actions.resetScreen({
+      x: state.planet.xstart - shipScreenX,
+      y: state.planet.ystart - shipScreenY
+    })
+  )
+  
+  // Clear all shots
+  store.dispatch(clearAllShots())
+}
+
 const getPressedControls = (keysDown: Set<string>): ShipControl[] => {
   const controls: ShipControl[] = []
 
@@ -144,6 +170,12 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
     console.error('Sprites not loaded')
     bitmap.data.fill(0)
     return
+  }
+
+  // Check for ESC key to reset game
+  if (frame.keysDown.has('Escape')) {
+    resetGame()
+    // Continue with normal rendering after reset
   }
 
   // Get gravity from planet

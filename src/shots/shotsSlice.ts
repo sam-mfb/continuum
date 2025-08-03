@@ -115,6 +115,14 @@ export const shotsSlice = createSlice({
       }>
     ) => {
       state.bunkshots = bunkShootFn(action.payload)(state.bunkshots)
+    },
+    clearAllShots: state => {
+      // Reset all ship shots
+      state.shipshots = state.shipshots.map(() => initializeShot())
+      // Reset all bunk shots
+      state.bunkshots = state.bunkshots.map(() => initializeShot())
+      // Reset all strafes
+      state.strafes = state.strafes.map(() => ({ x: 0, y: 0, lifecount: 0, rot: 0 }))
     }
   }
 })
@@ -171,6 +179,7 @@ export const {
   startStrafe,
   moveShipshots,
   moveBullets,
-  bunkShoot
+  bunkShoot,
+  clearAllShots
 } = shotsSlice.actions
 export default shotsSlice.reducer
