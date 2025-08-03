@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { ShotRec, ShotsState } from './types'
-import { SHOT } from './constants'
+import { SHOT, NUMSTRAFES } from './constants'
 import type { Bunker } from '@/planet/types'
 import { bunkShoot as bunkShootFn } from './bunkShoot'
 import { startStrafe as startStrafeFn } from './startStrafe'
@@ -21,7 +21,7 @@ const initializeShot = (): ShotRec => ({
 const initialState: ShotsState = {
   shipshots: Array.from({ length: SHOT.NUMBULLETS }, initializeShot),
   bunkshots: Array.from({ length: SHOT.NUMSHOTS }, initializeShot),
-  strafes: []
+  strafes: Array.from({ length: NUMSTRAFES }, () => ({ x: 0, y: 0, lifecount: 0, rot: 0 }))
 }
 
 export const shotsSlice = createSlice({

@@ -179,11 +179,11 @@ export function bunkShoot(deps: {
     if (sum === 0) return bunkshots /* no bunker to shoot */
 
     // Select random weighted bunker
-    sum = rint(sum)
+    let selectedSum = rint(sum)
     let bunkerIndex = 0
     for (bunkerIndex = 0; ; bunkerIndex++) {
       /* find n'th alive bunker */
-      if ((sum -= eligible[bunkerIndex]!) < 0) {
+      if ((selectedSum -= eligible[bunkerIndex]!) < 0) {
         break
       }
     }
