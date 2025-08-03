@@ -9,14 +9,12 @@ import { drawMedium } from './drawMedium'
  * From draw_fuels() in orig/Sources/Terrain.c at 293-313
  *
  * Draws all visible fuel cells in the viewport using drawMedium.
- * Handles world wrapping for fuel cells near screen edges.
+ * This is a pure rendering function - wrapping logic should be handled by the caller.
  */
 export function drawFuels(deps: {
   readonly fuels: readonly Fuel[]
   scrnx: number
   scrny: number
-  worldwidth: number
-  on_right_side: boolean
   fuelSprites: {
     getFrame(frame: number): {
       images: {
@@ -33,7 +31,7 @@ export function drawFuels(deps: {
   }
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
-    const { fuels, scrnx, scrny, worldwidth, on_right_side, fuelSprites } = deps
+    const { fuels, scrnx, scrny, fuelSprites } = deps
 
     let newScreen = screen
 
@@ -85,53 +83,6 @@ export function drawFuels(deps: {
             def: fuelImage,
             height: FUELHT
           })(newScreen)
-        }
-      }
-    }
-
-    // Handle world wrapping - draw fuels on right side if needed (Terrain.c:288-289)
-    if (on_right_side) {
-      const wrappedScrnx = scrnx - worldwidth
-      const wrappedLeft = wrappedScrnx - FUELCENTER
-      const wrappedRight = wrappedScrnx + (FUELCENTER + SCRWTH)
-
-      for (const fp of fuels) {
-        // Check for end marker
-        if (fp.x >= 10000) break
-
-        // Check if fuel is visible when world-wrapped
-        if (fp.x > wrappedLeft && fp.x < wrappedRight) {
-          const fuely = fp.y - scrny - FUELCENTER
-
-          if (fuely > -FUELHT && fuely < VIEWHT) {
-            const rot = (fp.x + fp.y) & 1
-
-            // Get the appropriate fuel sprite based on currentfig (same logic as above)
-            let fuelSprite
-            if (fp.currentfig >= FUELFRAMES) {
-              fuelSprite = fuelSprites.emptyCell
-            } else {
-              fuelSprite = fuelSprites.getFrame(fp.currentfig)
-            }
-
-            const fuelImage: MonochromeBitmap = {
-              width: 32,
-              height: FUELHT,
-              data:
-                rot === 0
-                  ? fuelSprite.images.background1
-                  : fuelSprite.images.background2,
-              rowBytes: 4
-            }
-
-            // Draw with world-wrapped X coordinate
-            newScreen = drawMedium({
-              x: fp.x - scrnx + worldwidth - FUELCENTER,
-              y: fuely,
-              def: fuelImage,
-              height: FUELHT
-            })(newScreen)
-          }
         }
       }
     }

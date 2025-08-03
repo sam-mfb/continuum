@@ -239,13 +239,22 @@ export const fuelDrawBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
     fuels: planetState.fuels,
     scrnx: viewportState.x,
     scrny: viewportState.y,
-    worldwidth: planetState.worldwidth,
-    on_right_side: onRightSide,
     fuelSprites: fuelSprites
   })
 
   // Apply fuel drawing to the bitmap
-  const renderedBitmap = drawFuelsFunc(bitmap)
+  let renderedBitmap = drawFuelsFunc(bitmap)
+
+  // Handle world wrapping - call drawFuels again with wrapped coordinates
+  if (onRightSide) {
+    const drawFuelsWrapped = drawFuels({
+      fuels: planetState.fuels,
+      scrnx: viewportState.x - planetState.worldwidth,
+      scrny: viewportState.y,
+      fuelSprites: fuelSprites
+    })
+    renderedBitmap = drawFuelsWrapped(renderedBitmap)
+  }
 
   // Copy rendered bitmap data back to original
   bitmap.data.set(renderedBitmap.data)
