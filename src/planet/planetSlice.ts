@@ -1,12 +1,14 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { PlanetState } from './types'
 import { BunkerKind } from './types'
-import { BUNKROTKINDS } from '@/figs/types'
+import { BUNKROTKINDS, FUELFRAMES } from '@/figs/types'
 import { aimBunk } from '@/shots/aimBunk'
+import { rint } from '@/shared/rint'
 
 // Constants from GW.h
 const BUNKFRAMES = 8
 const BUNKFCYCLES = 2
+const FUELFCYCLES = 2
 
 const initialState: PlanetState = {
   worldwidth: 0,
@@ -113,10 +115,67 @@ export const planetSlice = createSlice({
           bunk.rotcount = 3
         }
       }
+    },
+
+    /**
+     * Update fuel cell animations
+     * Based on the for loop in do_fuels() at Terrain.c:274-286
+     */
+    updateFuelAnimations: state => {
+      // Random fuel to flash this frame (Terrain.c:272)
+      const flash = rint(state.fuels.length)
+
+      // Update animations for all fuel cells (Terrain.c:274-286)
+      for (let f = 0; f < state.fuels.length; f++) {
+        const fp = state.fuels[f]!
+
+        // Check for end marker
+        if (fp.x >= 10000) break
+
+        // Only animate if fuel is alive
+        if (fp.alive) {
+          if (f === flash) {
+            // Flash effect - set to one of last two frames (Terrain.c:277-280)
+            fp.currentfig = FUELFRAMES - 2 + rint(2)
+            fp.figcount = 1
+          } else if (fp.figcount <= 0) {
+            // Advance to next animation frame (Terrain.c:281-286)
+            fp.currentfig++
+            if (fp.currentfig >= FUELFRAMES - 2) {
+              fp.currentfig = 0
+            }
+            fp.figcount = 1
+          } else {
+            // Decrement frame counter
+            fp.figcount--
+          }
+        }
+      }
+    },
+
+    /**
+     * Initialize fuel cells for a new planet/game
+     * Based on init_planet() at Play.c:148-153
+     */
+    initializeFuels: state => {
+      for (const fp of state.fuels) {
+        // Check for end marker
+        if (fp.x >= 10000) break
+
+        // Set all fuels to alive with random animation state
+        fp.alive = true
+        fp.currentfig = rint(FUELFRAMES)
+        fp.figcount = rint(FUELFCYCLES)
+      }
     }
   }
 })
 
-export const { loadPlanet, updateBunkerRotations, initializeBunkers } =
-  planetSlice.actions
+export const {
+  loadPlanet,
+  updateBunkerRotations,
+  initializeBunkers,
+  updateFuelAnimations,
+  initializeFuels
+} = planetSlice.actions
 export default planetSlice.reducer
