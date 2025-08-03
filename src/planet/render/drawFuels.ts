@@ -24,6 +24,18 @@ export function drawFuels(deps: {
         background2: Uint8Array
       }
     }
+    getDrainingFrame(frame: number): {
+      images: {
+        background1: Uint8Array
+        background2: Uint8Array
+      }
+    }
+    emptyCell: {
+      images: {
+        background1: Uint8Array
+        background2: Uint8Array
+      }
+    }
   }
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
@@ -50,8 +62,23 @@ export function drawFuels(deps: {
           // Determine which background pattern to use (Terrain.c:308)
           const rot = (fp.x + fp.y) & 1
 
-          // Get the appropriate fuel sprite
-          const fuelSprite = fuelSprites.getFrame(fp.currentfig)
+          // Get the appropriate fuel sprite based on state
+          let fuelSprite
+          if (!fp.alive) {
+            // Dead fuel cells show empty sprite
+            fuelSprite = fuelSprites.emptyCell
+          } else if (fp.currentfig < FUELFRAMES) {
+            // Normal animation frames (0-5)
+            fuelSprite = fuelSprites.getFrame(fp.currentfig)
+          } else if (fp.currentfig < FUELFRAMES + 2) {
+            // Draining frames (6-7)
+            fuelSprite = fuelSprites.getDrainingFrame(
+              fp.currentfig - FUELFRAMES
+            )
+          } else {
+            // Empty frame (8) - though alive fuels shouldn't normally reach this
+            fuelSprite = fuelSprites.emptyCell
+          }
 
           // Convert Uint8Array to MonochromeBitmap
           const fuelImage: MonochromeBitmap = {
@@ -91,7 +118,20 @@ export function drawFuels(deps: {
 
           if (fuely > -FUELHT && fuely < VIEWHT) {
             const rot = (fp.x + fp.y) & 1
-            const fuelSprite = fuelSprites.getFrame(fp.currentfig)
+
+            // Get the appropriate fuel sprite based on state (same logic as above)
+            let fuelSprite
+            if (!fp.alive) {
+              fuelSprite = fuelSprites.emptyCell
+            } else if (fp.currentfig < FUELFRAMES) {
+              fuelSprite = fuelSprites.getFrame(fp.currentfig)
+            } else if (fp.currentfig < FUELFRAMES + 2) {
+              fuelSprite = fuelSprites.getDrainingFrame(
+                fp.currentfig - FUELFRAMES
+              )
+            } else {
+              fuelSprite = fuelSprites.emptyCell
+            }
 
             const fuelImage: MonochromeBitmap = {
               width: 32,
