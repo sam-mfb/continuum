@@ -32,7 +32,12 @@ export const planetSlice = createSlice({
   initialState,
   reducers: {
     loadPlanet: (_state, action: PayloadAction<PlanetState>) => {
-      return action.payload
+      // Ensure fuels array exists
+      const newState = action.payload
+      if (!newState.fuels) {
+        newState.fuels = []
+      }
+      return newState
     },
 
     /**
@@ -122,12 +127,18 @@ export const planetSlice = createSlice({
      * Based on the for loop in do_fuels() at Terrain.c:274-286
      */
     updateFuelAnimations: state => {
+      // Check if fuels array exists and has elements
+      if (!state.fuels || state.fuels.length === 0) return
+      
       // Random fuel to flash this frame (Terrain.c:272)
       const flash = rint(state.fuels.length)
 
       // Update animations for all fuel cells (Terrain.c:274-286)
       for (let f = 0; f < state.fuels.length; f++) {
-        const fp = state.fuels[f]!
+        const fp = state.fuels[f]
+        
+        // Skip undefined or null elements
+        if (!fp) continue
 
         // Check for end marker
         if (fp.x >= 10000) break
@@ -158,7 +169,13 @@ export const planetSlice = createSlice({
      * Based on init_planet() at Play.c:148-153
      */
     initializeFuels: state => {
+      // Check if fuels array exists and has elements
+      if (!state.fuels || state.fuels.length === 0) return
+      
       for (const fp of state.fuels) {
+        // Skip undefined or null elements
+        if (!fp) continue
+        
         // Check for end marker
         if (fp.x >= 10000) break
 

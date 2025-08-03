@@ -41,6 +41,9 @@ export function drawFuels(deps: {
 
     // Process each fuel cell (Terrain.c:302-312)
     for (const fp of fuels) {
+      // Skip undefined or null elements
+      if (!fp) continue
+      
       // Check for end marker (Terrain.c:302)
       if (fp.x >= 10000) break
 

@@ -20,8 +20,11 @@ import { configureStore } from '@reduxjs/toolkit'
 import spritesReducer from '@/store/spritesSlice'
 import planetReducer, {
   loadPlanet,
-  updateBunkerRotations
+  updateBunkerRotations,
+  initializeFuels,
+  updateFuelAnimations
 } from '@/planet/planetSlice'
+import { drawFuels } from '@/planet/render/drawFuels'
 
 // Create a store for sprites and planet data
 let spritesLoaded = false
@@ -60,6 +63,9 @@ export const createPlanetRenderer: PlanetRendererFactory = (
 
   // Load planet data into bunker store
   bunkerStore.dispatch(loadPlanet(planet))
+  
+  // Initialize fuels with random animation states
+  bunkerStore.dispatch(initializeFuels())
 
   // Ensure sprites are loaded
   void ensureSpritesLoaded()
@@ -249,6 +255,36 @@ export const createPlanetRenderer: PlanetRendererFactory = (
 
       // Copy bunker bitmap data back to original
       bitmap.data.set(bunkerBitmap.data)
+      
+      // Update fuel cell animations
+      bunkerStore.dispatch(updateFuelAnimations())
+      
+      // Get updated planet state with animated fuels
+      const updatedPlanetState = bunkerStore.getState().planet
+      
+      // Draw fuel cells
+      const fuelSprites = bunkerState.sprites.allSprites.fuels
+      
+      // Draw fuels at normal position
+      let fuelBitmap = drawFuels({
+        fuels: updatedPlanetState.fuels,
+        scrnx: currentScreen.screenx,
+        scrny: currentScreen.screeny,
+        fuelSprites: fuelSprites
+      })(bitmap)
+      
+      // If wrapping world and near right edge, draw wrapped fuels
+      if (onRightSide) {
+        fuelBitmap = drawFuels({
+          fuels: updatedPlanetState.fuels,
+          scrnx: currentScreen.screenx - planet.worldwidth,
+          scrny: currentScreen.screeny,
+          fuelSprites: fuelSprites
+        })(fuelBitmap)
+      }
+      
+      // Copy fuel bitmap data back to original
+      bitmap.data.set(fuelBitmap.data)
     }
   }
 
