@@ -70,10 +70,11 @@ export const createPlanetRenderer: PlanetRendererFactory = (
 
   // Apply constraints based on whether planet wraps
   let initialX = planet.xstart - bitmapWidth / 2
-  
+
   if (planet.worldwrap) {
     // For circular planets: ensure X is properly wrapped
-    initialX = ((initialX % planet.worldwidth) + planet.worldwidth) % planet.worldwidth
+    initialX =
+      ((initialX % planet.worldwidth) + planet.worldwidth) % planet.worldwidth
   } else {
     // For non-circular planets: clamp X to world boundaries
     initialX = Math.max(0, Math.min(planet.worldwidth - bitmapWidth, initialX))
@@ -82,7 +83,7 @@ export const createPlanetRenderer: PlanetRendererFactory = (
     0,
     Math.min(planet.worldheight - VIEWHT, planet.ystart - VIEWHT / 2)
   )
-  
+
   store.dispatch(screenSlice.actions.setPosition({ x: initialX, y: initialY }))
   store.dispatch(gameViewActions.setInitialized())
 
@@ -93,7 +94,9 @@ export const createPlanetRenderer: PlanetRendererFactory = (
 
     // If viewport is not initialized, ensure we use the initial viewport
     if (!gameView.initialized) {
-      store.dispatch(screenSlice.actions.setPosition({ x: initialX, y: initialY }))
+      store.dispatch(
+        screenSlice.actions.setPosition({ x: initialX, y: initialY })
+      )
       store.dispatch(gameViewActions.setInitialized())
       return // Skip this frame to avoid jump
     }
@@ -147,12 +150,14 @@ export const createPlanetRenderer: PlanetRendererFactory = (
         // Calculate world position
         let worldX = x + currentScreen.screenx
         const worldY = y + currentScreen.screeny
-        
+
         // Normalize worldX for wrapping worlds to ensure consistent pattern
         if (planet.worldwrap) {
-          worldX = ((worldX % planet.worldwidth) + planet.worldwidth) % planet.worldwidth
+          worldX =
+            ((worldX % planet.worldwidth) + planet.worldwidth) %
+            planet.worldwidth
         }
-        
+
         // Set pixel if worldX + worldY is even (creates fixed checkerboard)
         if ((worldX + worldY) % 2 === 0) {
           const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
@@ -216,7 +221,7 @@ export const createPlanetRenderer: PlanetRendererFactory = (
 
       // Draw bunkers
       const bunkerSprites = bunkerState.sprites.allSprites.bunkers
-      
+
       // Draw bunkers at normal position
       let bunkerBitmap = doBunks({
         bunkrec: planetState.bunkers,
@@ -224,7 +229,7 @@ export const createPlanetRenderer: PlanetRendererFactory = (
         scrny: currentScreen.screeny,
         bunkerSprites: bunkerSprites
       })(bitmap)
-      
+
       // If wrapping world and near right edge, draw wrapped bunkers
       const onRightSide = isOnRightSide(
         currentScreen.screenx,
@@ -232,7 +237,7 @@ export const createPlanetRenderer: PlanetRendererFactory = (
         planet.worldwidth,
         planet.worldwrap
       )
-      
+
       if (onRightSide) {
         bunkerBitmap = doBunks({
           bunkrec: planetState.bunkers,

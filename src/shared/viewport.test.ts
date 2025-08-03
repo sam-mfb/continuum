@@ -18,7 +18,7 @@ describe('isOnRightSide', () => {
   it('returns true when viewport is at exact threshold', () => {
     // viewport at 464 + width 512 = 976, which equals 1024 - 48
     expect(isOnRightSide(464, 512, 1024, true)).toBe(false)
-    // viewport at 465 + width 512 = 977, which is > 1024 - 48 = 976  
+    // viewport at 465 + width 512 = 977, which is > 1024 - 48 = 976
     expect(isOnRightSide(465, 512, 1024, true)).toBe(true)
   })
 })

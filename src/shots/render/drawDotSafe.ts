@@ -22,7 +22,7 @@ export function drawDotSafe(
 ): MonochromeBitmap {
   // Clone the bitmap to ensure immutability
   const result = cloneBitmap(screen)
-  
+
   // add.w #SBARHT, y /* move to view area */ (Draw.c:584)
   const adjustedY = y + SBARHT
 

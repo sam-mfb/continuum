@@ -35,7 +35,7 @@ function followShot(deps: {
     }
     angle *= 64
     angle = Math.floor(angle / 45) /* *(512/360) => 0-511 */
-    
+
     return randShot({ loangle: angle - 2, hiangle: angle + 2 })(sp)
   }
 }
@@ -84,7 +84,7 @@ function initializeShot(deps: {
     const { bp, lifecount } = deps
     const x8 = (bp.x + xbshotstart[bp.kind]![bp.rot]!) << 3
     const y8 = (bp.y + ybshotstart[bp.kind]![bp.rot]!) << 3
-    
+
     return {
       ...sp,
       x8,
@@ -120,8 +120,13 @@ export function bunkShoot(deps: {
     // Find first empty shot slot
     let shotIndex = 0
     let sp: ShotRec | undefined
-    for (shotIndex = 0; shotIndex < SHOT.NUMSHOTS && bunkshots[shotIndex]!.lifecount; shotIndex++);
-    if (shotIndex === SHOT.NUMSHOTS) return bunkshots /* no space in shot array */
+    for (
+      shotIndex = 0;
+      shotIndex < SHOT.NUMSHOTS && bunkshots[shotIndex]!.lifecount;
+      shotIndex++
+    );
+    if (shotIndex === SHOT.NUMSHOTS)
+      return bunkshots /* no space in shot array */
     sp = bunkshots[shotIndex]!
 
     // Calculate screen boundaries for eligible bunkers
@@ -186,18 +191,22 @@ export function bunkShoot(deps: {
 
     // Create the shot using transformer functions
     const rangeIndex = rint(2)
-    
+
     // Create a new shot with velocity based on bunker type
-    const velocityTransformer = bp.kind === BunkerKind.FOLLOW
-      ? followShot({ bp, ...deps })
-      : randShot({ loangle: bp.ranges[rangeIndex]!.low, hiangle: bp.ranges[rangeIndex]!.high })
-    
+    const velocityTransformer =
+      bp.kind === BunkerKind.FOLLOW
+        ? followShot({ bp, ...deps })
+        : randShot({
+            loangle: bp.ranges[rangeIndex]!.low,
+            hiangle: bp.ranges[rangeIndex]!.high
+          })
+
     // Apply transformations to create new shot
-    const newShot = initializeShot({ 
-      bp, 
-      lifecount: SHOT.BUNKSHLEN 
+    const newShot = initializeShot({
+      bp,
+      lifecount: SHOT.BUNKSHLEN
     })(velocityTransformer(sp))
-    
+
     // Update the shot in the array immutably
     const newBunkshots = [...bunkshots]
     newBunkshots[shotIndex] = newShot

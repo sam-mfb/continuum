@@ -46,7 +46,7 @@ export const shotsSlice = createSlice({
 
       if (i < SHOT.NUMBULLETS && !shielding) {
         const yrot = (shiprot + 24) & 31
-        
+
         // Create new shot object
         let newShot: ShotRec = {
           ...state.shipshots[i]!,
@@ -57,9 +57,9 @@ export const shotsSlice = createSlice({
           lifecount: SHOT.SHOTLEN,
           btime: 0
         }
-        
+
         setLife()
-        
+
         if (newShot.lifecount > 0) {
           newShot = {
             ...newShot,
@@ -68,11 +68,11 @@ export const shotsSlice = createSlice({
             lifecount: newShot.lifecount - 1
           }
         }
-        
+
         if (newShot.lifecount == 0) bounceShot()
-        
+
         // Create new array with updated shot
-        state.shipshots = state.shipshots.map((shot, index) => 
+        state.shipshots = state.shipshots.map((shot, index) =>
           index === i ? newShot : shot
         )
       }

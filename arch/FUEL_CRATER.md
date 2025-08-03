@@ -5,6 +5,7 @@ This document describes how fuel cells and craters are implemented in the origin
 ## Fuel Cells
 
 ### Data Structure
+
 - Stored in `fuelrec fuels[NUMFUELS]` array (defined in Terrain.c:14)
 - Each fuel cell contains:
   - `x, y`: Position coordinates
@@ -13,7 +14,9 @@ This document describes how fuel cells and craters are implemented in the origin
   - `figcount`: Frame counter for animation timing
 
 ### Initialization and Loading
+
 1. **Level Loading** (Main.c `get_planet()` function):
+
    - Fuel cell positions are read from the level file
    - Positions loaded into the `fuels` array (Main.c:808-815)
    - Cells with coordinates > 4000 are marked as end-of-list (x = 10000)
@@ -25,7 +28,9 @@ This document describes how fuel cells and craters are implemented in the origin
    - Each cell gets random frame counter: `figcount = rint(FUELFCYCLES)`
 
 ### Rendering Process
+
 1. **Animation Update** (`do_fuels()` in Terrain.c:267-290):
+
    - Called each frame from `move_and_display()`
    - Random "flash" effect: one random fuel cell per frame flashes bright
    - Normal cells cycle through animation frames
@@ -39,6 +44,7 @@ This document describes how fuel cells and craters are implemented in the origin
    - Uses `draw_medium()` to render the fuel cell sprite
 
 ### Collection Mechanics
+
 - Collection happens in `ship_control()` when shield is active (Play.c:512-524)
 - Process:
   1. Check if shield key is pressed and fuel > 0
@@ -53,6 +59,7 @@ This document describes how fuel cells and craters are implemented in the origin
 ## Craters
 
 ### Data Structure
+
 - Stored in `craterrec craters[NUMCRATERS]` array (Terrain.c:15)
 - Constants:
   - `NUMCRATERS = 50`: Maximum total craters
@@ -61,7 +68,9 @@ This document describes how fuel cells and craters are implemented in the origin
 - `numcraters`: Current count of active craters
 
 ### Initialization and Loading
+
 1. **Level Loading** (Main.c `get_planet()`):
+
    - `numcraters` count read from level file (Main.c:768/852)
    - First 25 crater positions loaded from file (Main.c:817/895)
    - These are pre-placed craters defined in level design
@@ -77,6 +86,7 @@ This document describes how fuel cells and craters are implemented in the origin
    - Can add up to 25 more craters (50 total maximum)
 
 ### Rendering
+
 - **Drawing** (`draw_craters()` in Terrain.c:507-527):
   - Called from `move_and_display()` each frame
   - Iterates through all craters from 0 to `numcraters`
@@ -85,6 +95,7 @@ This document describes how fuel cells and craters are implemented in the origin
   - Uses `draw_medium()` to render crater sprites
 
 ### Key Characteristics
+
 - **Permanence**: Craters cannot be removed once created
 - **Mixed Origin**: Some from level data, others from gameplay
 - **Visual Variety**: Alternating images create visual diversity
@@ -92,11 +103,11 @@ This document describes how fuel cells and craters are implemented in the origin
 
 ## Summary of Differences
 
-| Aspect | Fuel Cells | Craters |
-|--------|------------|---------|
-| Positions | All pre-defined in level | First 25 pre-placed, rest dynamic |
-| Can be removed | Yes (collected) | No (permanent) |
-| Animation | Yes (cycling frames) | No |
-| Player interaction | Yes (shield collection) | No |
-| Maximum count | Fixed by level | 50 total (25 pre + 25 dynamic) |
-| State tracking | Position, alive, animation | Position only |
+| Aspect             | Fuel Cells                 | Craters                           |
+| ------------------ | -------------------------- | --------------------------------- |
+| Positions          | All pre-defined in level   | First 25 pre-placed, rest dynamic |
+| Can be removed     | Yes (collected)            | No (permanent)                    |
+| Animation          | Yes (cycling frames)       | No                                |
+| Player interaction | Yes (shield collection)    | No                                |
+| Maximum count      | Fixed by level             | 50 total (25 pre + 25 dynamic)    |
+| State tracking     | Position, alive, animation | Position only                     |

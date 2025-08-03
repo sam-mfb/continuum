@@ -436,7 +436,11 @@ export const bunkerDrawBitmapRenderer: BitmapRenderer = (
           shotScreenY >= 0 &&
           shotScreenY < bitmap.height - 1
         ) {
-          renderedBitmap = drawDotSafe(wrappedScreenX, shotScreenY, renderedBitmap)
+          renderedBitmap = drawDotSafe(
+            wrappedScreenX,
+            shotScreenY,
+            renderedBitmap
+          )
         }
       }
     }

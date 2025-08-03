@@ -29,7 +29,7 @@ export function startStrafe(
     //     str = p; (Terrain.c:387-389)
     let oldestStrafeIndex = 0
     let lowestLifecount = strafes[0]!.lifecount
-    
+
     for (let i = 0; i < NUMSTRAFES && lowestLifecount > 0; i++) {
       const strafe = strafes[i]!
       if (strafe.lifecount < lowestLifecount) {
@@ -43,7 +43,7 @@ export function startStrafe(
     // str->y = y; (Terrain.c:391)
     // str->lifecount = STRAFE_LIFE; (Terrain.c:392)
     // str->rot = dir; (Terrain.c:393)
-    return strafes.map((strafe, index) => 
+    return strafes.map((strafe, index) =>
       index === oldestStrafeIndex
         ? { x, y, lifecount: STRAFE_LIFE, rot: dir }
         : strafe
