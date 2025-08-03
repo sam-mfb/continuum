@@ -6,6 +6,10 @@ export const PLANET = {
   NUMCRATERS: 50
 }
 
+// Fuel cell constants from GW.h
+export const FUELCENTER = 16 // center of top from top left
+export const CRATERCENTER = 16 // center of crater from top left
+
 /**
  * Bunker center positions for different bunker types and rotations
  * From orig/Sources/Figs.c at xbcenter (line 103) and ybcenter (line 111)
