@@ -1,6 +1,7 @@
 export type ShotsState = {
   shipshots: ShotRec[]
   bunkshots: ShotRec[]
+  strafes: StrafeRec[]
 }
 
 /**
@@ -26,4 +27,15 @@ export type ShotRec = {
   btime: number
   /** id of line that it hits (ref in original */
   hitlineId: string /* not in original (which used pointer) */
+}
+
+/**
+ * Strafe record structure
+ * From orig/Sources/GW.h at straferec (line not specified in original)
+ */
+export type StrafeRec = {
+  x: number
+  y: number
+  lifecount: number
+  rot: number
 }

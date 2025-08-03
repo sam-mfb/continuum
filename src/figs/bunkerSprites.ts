@@ -110,11 +110,7 @@ export function createBunkerSpriteSet(
   return {
     kinds,
 
-    getSprite(
-      kind: BunkerKind,
-      rotation: number,
-      animationFrame?: number
-    ): BunkerSprite {
+    getSprite(kind: BunkerKind, rotation: number): BunkerSprite {
       switch (kind) {
         case BunkerKind.WALL:
         case BunkerKind.DIFF:
@@ -130,9 +126,9 @@ export function createBunkerSpriteSet(
         case BunkerKind.GROUND:
         case BunkerKind.FOLLOW:
         case BunkerKind.GENERATOR:
-          // Animated bunkers
+          // Animated bunkers - for these, rotation IS the animation frame
           const animatedKind = kinds[kind] as BunkerSprite[]
-          const frame = animationFrame !== undefined ? animationFrame % 8 : 0
+          const frame = rotation % 8
           const animSprite = animatedKind[frame]
           if (!animSprite)
             throw new Error(`Bunker sprite not found: ${kind} frame ${frame}`)
@@ -153,18 +149,30 @@ function applyBunkerBackground(
 ): Uint8Array {
   const result = new Uint8Array(def.length)
 
-  // Process as 16-bit values (2 bytes at a time)
-  for (let i = 0; i < def.length; i += 2) {
-    // Combine two bytes into a 16-bit value (big-endian)
-    const defValue = (def[i]! << 8) | (def[i + 1] ?? 0)
-    const maskValue = (mask[i]! << 8) | (mask[i + 1] ?? 0)
+  // Match original C code logic from Figs.c:423-435
+  // The original pre-computes: (background & mask) ^ def
 
-    // Apply formula: (background & mask) ^ def
-    const resultValue = (background & maskValue) ^ defValue
+  // Process ALL rows (48 rows for bunkers)
+  // True checkerboard pattern - each entire row alternates
+  // For BACKGROUND1 (align=0): even rows = 0xAA, odd rows = 0x55
+  // For BACKGROUND2 (align=1): even rows = 0x55, odd rows = 0xAA
 
-    // Split back into two bytes
-    result[i] = (resultValue >> 8) & 0xff
-    result[i + 1] = resultValue & 0xff
+  for (let row = 0; row < BUNKHT; row++) {
+    const rowOffset = row * 6
+
+    // Determine pattern for this entire row based on row parity
+    let rowPattern: number
+    if (background === BACKGROUND1) {
+      rowPattern = row % 2 === 0 ? 0xaa : 0x55
+    } else {
+      rowPattern = row % 2 === 0 ? 0x55 : 0xaa
+    }
+
+    // Apply the same pattern to all 6 bytes in the row
+    for (let b = 0; b < 6; b++) {
+      const idx = rowOffset + b
+      result[idx] = (rowPattern & mask[idx]!) ^ def[idx]!
+    }
   }
 
   return result

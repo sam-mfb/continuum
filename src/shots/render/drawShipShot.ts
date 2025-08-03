@@ -59,7 +59,8 @@ export function drawShipShot(deps: {
 
     // Update random counter
     if (!--randCounter) {
-      randCounter = Math.floor(Math.random() * RAND_COUNTER_RANGE) + RAND_COUNTER_MIN
+      randCounter =
+        Math.floor(Math.random() * RAND_COUNTER_RANGE) + RAND_COUNTER_MIN
     }
 
     // Create 68K emulator instance

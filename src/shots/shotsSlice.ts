@@ -1,6 +1,9 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { ShotRec, ShotsState } from './types'
-import { SHOT } from './constants'
+import { SHOT, NUMSTRAFES } from './constants'
+import type { Bunker } from '@/planet/types'
+import { bunkShoot as bunkShootFn } from './bunkShoot'
+import { startStrafe as startStrafeFn } from './startStrafe'
 
 const initializeShot = (): ShotRec => ({
   x: 0,
@@ -17,7 +20,8 @@ const initializeShot = (): ShotRec => ({
 
 const initialState: ShotsState = {
   shipshots: Array.from({ length: SHOT.NUMBULLETS }, initializeShot),
-  bunkshots: Array.from({ length: SHOT.NUMSHOTS }, initializeShot)
+  bunkshots: Array.from({ length: SHOT.NUMSHOTS }, initializeShot),
+  strafes: Array.from({ length: NUMSTRAFES }, () => ({ x: 0, y: 0, lifecount: 0, rot: 0 }))
 }
 
 export const shotsSlice = createSlice({
@@ -41,31 +45,77 @@ export const shotsSlice = createSlice({
       for (i = 0; i < SHOT.NUMBULLETS && state.shipshots[i]!.lifecount; i++) {}
 
       if (i < SHOT.NUMBULLETS && !shielding) {
-        const sp = { ...state.shipshots[i]! }
         const yrot = (shiprot + 24) & 31
-        sp.h = SHOT.shotvecs[shiprot]! + (dx >> 5)
-        sp.v = SHOT.shotvecs[yrot]! + (dy >> 5)
-        sp.x8 = globalx << 3
-        sp.y8 = globaly << 3
-        sp.lifecount = SHOT.SHOTLEN
-        sp.btime = 0
-        setLife()
-        if (sp.lifecount > 0) {
-          sp.x8 += SHOT.shotvecs[shiprot]!
-          sp.y8 += SHOT.shotvecs[yrot]!
-          sp.lifecount--
+
+        // Create new shot object
+        let newShot: ShotRec = {
+          ...state.shipshots[i]!,
+          h: SHOT.shotvecs[shiprot]! + (dx >> 5),
+          v: SHOT.shotvecs[yrot]! + (dy >> 5),
+          x8: globalx << 3,
+          y8: globaly << 3,
+          lifecount: SHOT.SHOTLEN,
+          btime: 0
         }
-        if (sp.lifecount == 0) bounceShot()
-        state.shipshots[i] = sp
+
+        setLife()
+
+        if (newShot.lifecount > 0) {
+          newShot = {
+            ...newShot,
+            x8: newShot.x8 + SHOT.shotvecs[shiprot]!,
+            y8: newShot.y8 + SHOT.shotvecs[yrot]!,
+            lifecount: newShot.lifecount - 1
+          }
+        }
+
+        if (newShot.lifecount == 0) bounceShot()
+
+        // Create new array with updated shot
+        state.shipshots = state.shipshots.map((shot, index) =>
+          index === i ? newShot : shot
+        )
       }
     },
-    moveBullets: (
+    startStrafe: (
+      state,
+      action: PayloadAction<{
+        x: number
+        y: number
+        dir: number
+      }>
+    ) => {
+      const { x, y, dir } = action.payload
+      state.strafes = startStrafeFn(x, y, dir)(state.strafes)
+    },
+    moveShipshots: (
       state,
       action: PayloadAction<{ worldwidth: number; worldwrap: boolean }>
     ) => {
       state.shipshots = state.shipshots.map(s => moveShot(s, action.payload))
     },
-    moveShipshots: () => {}
+    moveBullets: (
+      state,
+      action: PayloadAction<{ worldwidth: number; worldwrap: boolean }>
+    ) => {
+      state.bunkshots = state.bunkshots.map(s => moveShot(s, action.payload))
+    },
+    bunkShoot: (
+      state,
+      action: PayloadAction<{
+        screenx: number
+        screenr: number
+        screeny: number
+        screenb: number
+        readonly bunkrecs: readonly Bunker[]
+        worldwidth: number
+        worldwrap: boolean
+        globalx: number
+        globaly: number
+      }>
+    ) => {
+      state.bunkshots = bunkShootFn(action.payload)(state.bunkshots)
+    }
   }
 })
 
@@ -115,3 +165,12 @@ function moveShot(
 // function legalAngle() {}
 //
 function bounceShot(): void {}
+
+export const {
+  initShipshot,
+  startStrafe,
+  moveShipshots,
+  moveBullets,
+  bunkShoot
+} = shotsSlice.actions
+export default shotsSlice.reducer

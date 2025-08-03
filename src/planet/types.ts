@@ -21,16 +21,17 @@ export type Bunker = {
   x: number
   y: number
   rot: number
+  rotcount?: number // Animation counter for rotating bunkers
   ranges: BunkerRange[]
   alive: boolean
   kind: BunkerKind
 }
 
 export enum BunkerKind {
-  NORMAL_SIT_ON_WALL = 0,
-  DIFFERENT_AT_EACH_ORIENTATION = 1,
-  NORMAL_SIT_ON_GROUND = 2,
-  TRACKING = 3,
+  WALL = 0,
+  DIFF = 1,
+  GROUND = 2,
+  FOLLOW = 3,
   GENERATOR = 4
 }
 

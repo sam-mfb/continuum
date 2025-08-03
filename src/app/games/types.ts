@@ -2,6 +2,7 @@ import type { BitmapRenderer } from '../../bitmap'
 import type { PlanetState } from '../../planet/types'
 import type { WallsState } from '../../walls/types'
 import type { GameViewState } from '../../store/gameViewSlice'
+import type { ScreenState } from '../../screen/types'
 import type { AppDispatch } from '../../store/store'
 
 /**
@@ -12,6 +13,7 @@ export type GameRendererStore = {
   getState(): {
     walls: WallsState
     gameView: GameViewState
+    screen: ScreenState
   }
   dispatch: AppDispatch
 }
