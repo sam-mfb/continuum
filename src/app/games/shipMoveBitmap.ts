@@ -27,6 +27,7 @@ import { shiftFigure } from '@/ship/render/shiftFigure'
 import { whiteTerrain, blackTerrain } from '@/walls/render'
 import { wallsSlice } from '@/walls/wallsSlice'
 import { LINE_KIND } from '@/walls/types'
+import { checkFigure } from '@/collision/checkFigure'
 
 // Configure store with all slices and containment middleware
 const store = buildGameStore()
@@ -313,6 +314,20 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
   })(renderedBitmap)
 
   // 8. do_bunkers would go here (not implemented yet)
+
+  // Check for collision after drawing all lethal objects
+  // Following Play.c:243-245 pattern
+  const collision = checkFigure(renderedBitmap, {
+    x: finalState.ship.shipx - SCENTER,
+    y: finalState.ship.shipy - SCENTER,
+    height: 32, // SHIPHT
+    def: shipMaskBitmap
+  })
+
+  if (collision) {
+    resetGame()
+    // Continue rendering to show the reset state
+  }
 
   // 9. shift_figure - ship shadow
   renderedBitmap = shiftFigure({
