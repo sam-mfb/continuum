@@ -56,10 +56,11 @@ export function drawFuels(deps: {
           // Determine which background pattern to use (Terrain.c:308)
           const rot = (fp.x + fp.y) & 1
 
-          // Get the appropriate fuel sprite based on state
+          // Get the appropriate fuel sprite based on currentfig
+          // Just like the original: fuel_images[rot][fp->currentfig]
           let fuelSprite
-          if (!fp.alive || fp.currentfig >= FUELFRAMES) {
-            // Dead fuel cells or frame 8+ show empty sprite
+          if (fp.currentfig >= FUELFRAMES) {
+            // Empty cell (frame 8+)
             fuelSprite = fuelSprites.emptyCell
           } else {
             // Animation frames (0-7)
@@ -105,9 +106,9 @@ export function drawFuels(deps: {
           if (fuely > -FUELHT && fuely < VIEWHT) {
             const rot = (fp.x + fp.y) & 1
 
-            // Get the appropriate fuel sprite based on state (same logic as above)
+            // Get the appropriate fuel sprite based on currentfig (same logic as above)
             let fuelSprite
-            if (!fp.alive || fp.currentfig >= FUELFRAMES) {
+            if (fp.currentfig >= FUELFRAMES) {
               fuelSprite = fuelSprites.emptyCell
             } else {
               fuelSprite = fuelSprites.getFrame(fp.currentfig)

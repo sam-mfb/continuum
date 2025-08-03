@@ -14,8 +14,7 @@ import { configureStore } from '@reduxjs/toolkit'
 import spritesReducer from '@/store/spritesSlice'
 import planetReducer, {
   loadPlanet,
-  updateFuelAnimations,
-  initializeFuels
+  updateFuelAnimations
 } from '@/planet/planetSlice'
 import type { Fuel, PlanetState } from '@/planet/types'
 import { isOnRightSide } from '@/shared/viewport'
@@ -101,7 +100,11 @@ const viewportState = {
 // Initialize game on module load
 const initializeGame = async (): Promise<void> => {
   try {
-    console.log('Starting fuelDrawBitmap initialization...')
+    console.log(
+      'Starting fuelDrawBitmap initialization...',
+      'FUELFRAMES=',
+      FUELFRAMES
+    )
 
     // Load sprites
     console.log('Loading sprites...')
@@ -110,8 +113,15 @@ const initializeGame = async (): Promise<void> => {
 
     // Initialize planet state with fuels
     console.log('Initializing planet state...')
-    store.dispatch(loadPlanet(createInitialPlanetState()))
-    store.dispatch(initializeFuels())
+    const planetState = createInitialPlanetState()
+    console.log(
+      'Empty fuel cells:',
+      planetState.fuels
+        .filter(f => !f.alive)
+        .map(f => ({ x: f.x, y: f.y, currentfig: f.currentfig }))
+    )
+    store.dispatch(loadPlanet(planetState))
+    // Don't call initializeFuels() - we want to keep our test fuel states as-is
     console.log('Planet state initialized')
 
     initializationComplete = true
