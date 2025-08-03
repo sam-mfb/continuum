@@ -25,6 +25,7 @@ import planetReducer, {
   updateFuelAnimations
 } from '@/planet/planetSlice'
 import { drawFuels } from '@/planet/render/drawFuels'
+import { drawCraters } from '@/planet/render/drawCraters'
 
 // Create a store for sprites and planet data
 let spritesLoaded = false
@@ -285,6 +286,22 @@ export const createPlanetRenderer: PlanetRendererFactory = (
       
       // Copy fuel bitmap data back to original
       bitmap.data.set(fuelBitmap.data)
+      
+      // Draw craters (world wrapping is handled internally by drawCraters)
+      const craterSprite = bunkerState.sprites.allSprites.crater
+      
+      const craterBitmap = drawCraters({
+        craters: updatedPlanetState.craters,
+        numcraters: updatedPlanetState.numcraters,
+        scrnx: currentScreen.screenx,
+        scrny: currentScreen.screeny,
+        worldwidth: planet.worldwidth,
+        on_right_side: onRightSide,
+        craterImages: craterSprite.images
+      })(bitmap)
+      
+      // Copy crater bitmap data back to original
+      bitmap.data.set(craterBitmap.data)
     }
   }
 
