@@ -25,6 +25,7 @@ import { planet3DrawingRenderer } from './games/planet3Drawing'
 import { junctionDrawRenderer } from './games/junctionDraw'
 import { shipMoveBitmapRenderer } from './games/shipMoveBitmap'
 import { bunkerDrawBitmapRenderer } from './games/bunkerDrawBitmap'
+import { fuelDrawBitmapRenderer } from './games/fuelDrawBitmap'
 import './App.css'
 
 function App(): React.JSX.Element {
@@ -166,6 +167,11 @@ function App(): React.JSX.Element {
                   type: 'bitmap',
                   name: 'Bunker Draw',
                   bitmapRenderer: bunkerDrawBitmapRenderer
+                } as BitmapGameDefinition,
+                {
+                  type: 'bitmap',
+                  name: 'Fuel Draw',
+                  bitmapRenderer: fuelDrawBitmapRenderer
                 } as BitmapGameDefinition
               ]}
               defaultGameIndex={0}
