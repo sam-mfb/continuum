@@ -82,17 +82,15 @@ export const SpritesControls: React.FC = () => {
             value={fuelFrame}
             onChange={e => dispatch(setFuelFrame(Number(e.target.value)))}
           >
-            <optgroup label="Normal Animation">
-              <option value="0">Normal 1</option>
-              <option value="1">Normal 2</option>
-              <option value="2">Normal 3</option>
-              <option value="3">Normal 4</option>
-              <option value="4">Normal 5</option>
-              <option value="5">Normal 6</option>
-            </optgroup>
-            <optgroup label="Draining">
-              <option value="6">Draining 1</option>
-              <option value="7">Draining 2</option>
+            <optgroup label="Animation Frames">
+              <option value="0">Frame 1</option>
+              <option value="1">Frame 2</option>
+              <option value="2">Frame 3</option>
+              <option value="3">Frame 4</option>
+              <option value="4">Frame 5</option>
+              <option value="5">Frame 6</option>
+              <option value="6">Flash 1</option>
+              <option value="7">Flash 2</option>
             </optgroup>
             <option value="8">Empty Cell</option>
           </select>
@@ -234,8 +232,9 @@ export const SpritesControls: React.FC = () => {
         )}
         {selectedType === 'fuel' && (
           <p>
-            Fuel cells have 6 normal animation frames, 2 draining frames when
-            being collected, and an empty cell frame after collection.
+            Fuel cells have 8 animation frames. Frames 1-6 cycle during normal
+            animation, frames 7-8 are used for the flash effect. Frame 9 shows
+            the empty cell after collection.
           </p>
         )}
         {selectedType === 'shard' && (

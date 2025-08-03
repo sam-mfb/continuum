@@ -57,14 +57,11 @@ export const SpritesViewer: React.FC = () => {
 
         case 'fuel': {
           let sprite: FuelSprite
-          if (fuelFrame < 6) {
-            // Normal animation frames
+          if (fuelFrame < 8) {
+            // Animation frames (0-7)
             sprite = allSprites.fuels.getFrame(fuelFrame)
-          } else if (fuelFrame < 8) {
-            // Draining frames
-            sprite = allSprites.fuels.getDrainingFrame(fuelFrame - 6)
           } else {
-            // Empty cell
+            // Empty cell (frame 8)
             sprite = allSprites.fuels.emptyCell
           }
           spriteData = showMask ? sprite.mask : sprite.def

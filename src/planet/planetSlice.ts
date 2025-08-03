@@ -8,7 +8,7 @@ import { rint } from '@/shared/rint'
 // Constants from GW.h
 const BUNKFRAMES = 8
 const BUNKFCYCLES = 2
-const FUELFCYCLES = 2
+const FUELFCYCLES = 3 // From GW.h - cycles each frame stays
 
 const initialState: PlanetState = {
   worldwidth: 0,

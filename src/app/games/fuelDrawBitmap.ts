@@ -19,6 +19,7 @@ import planetReducer, {
 } from '@/planet/planetSlice'
 import type { Fuel, PlanetState } from '@/planet/types'
 import { isOnRightSide } from '@/shared/viewport'
+import { FUELFRAMES } from '@/figs/types'
 
 // Create store with sprites and planet slices
 const store = configureStore({
@@ -47,11 +48,11 @@ const createInitialPlanetState = (): PlanetState => {
     { x: 500, y: 300, alive: true, currentfig: 4, figcount: 1 },
     { x: 550, y: 300, alive: true, currentfig: 5, figcount: 1 },
 
-    // Row of empty fuel cells (not alive)
-    { x: 300, y: 350, alive: false, currentfig: 8, figcount: 0 },
-    { x: 350, y: 350, alive: false, currentfig: 8, figcount: 0 },
-    { x: 400, y: 350, alive: false, currentfig: 8, figcount: 0 },
-    { x: 450, y: 350, alive: false, currentfig: 8, figcount: 0 },
+    // Row of empty fuel cells (not alive) - should use FUELFRAMES (8) as per Play.c:519
+    { x: 300, y: 350, alive: false, currentfig: FUELFRAMES, figcount: 0 },
+    { x: 350, y: 350, alive: false, currentfig: FUELFRAMES, figcount: 0 },
+    { x: 400, y: 350, alive: false, currentfig: FUELFRAMES, figcount: 0 },
+    { x: 450, y: 350, alive: false, currentfig: FUELFRAMES, figcount: 0 },
 
     // More animated fuel cells at different positions
     { x: 600, y: 400, alive: true, currentfig: 0, figcount: 1 },

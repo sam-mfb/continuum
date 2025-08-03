@@ -1,7 +1,6 @@
 import type { FuelSprite, FuelSpriteSet } from './types'
 import {
   FUELFRAMES,
-  FUEL_DRAINING_FRAMES,
   FUEL_TOTAL_FRAMES,
   FUELHT,
   BACKGROUND1,
@@ -10,28 +9,13 @@ import {
 
 // Create a fuel sprite set from extracted arrays
 export function createFuelSpriteSet(fuelArrays: FuelSprite[]): FuelSpriteSet {
-  const normalFrames: FuelSprite[] = []
-  const drainingFrames: FuelSprite[] = []
+  const frames: FuelSprite[] = []
 
-  // Process normal animation frames (0-5)
+  // Process all animation frames (0-7)
   for (let i = 0; i < FUELFRAMES; i++) {
     const sprite = fuelArrays[i]
     if (!sprite) continue
-    normalFrames[i] = {
-      def: new Uint8Array(sprite.def),
-      mask: new Uint8Array(sprite.mask),
-      images: {
-        background1: applyFuelBackground(sprite.def, sprite.mask, BACKGROUND1),
-        background2: applyFuelBackground(sprite.def, sprite.mask, BACKGROUND2)
-      }
-    }
-  }
-
-  // Process draining frames (6-7)
-  for (let i = 0; i < FUEL_DRAINING_FRAMES; i++) {
-    const sprite = fuelArrays[FUELFRAMES + i]
-    if (!sprite) continue
-    drainingFrames[i] = {
+    frames[i] = {
       def: new Uint8Array(sprite.def),
       mask: new Uint8Array(sprite.mask),
       images: {
@@ -64,22 +48,13 @@ export function createFuelSpriteSet(fuelArrays: FuelSprite[]): FuelSpriteSet {
   }
 
   return {
-    frames: normalFrames,
-    drainingFrames,
+    frames,
     emptyCell: emptySprite,
 
     getFrame(index: number): FuelSprite {
-      // Cycle through normal animation frames
-      const sprite = normalFrames[index % FUELFRAMES]
+      // Return the requested frame directly (no cycling)
+      const sprite = frames[index]
       if (!sprite) throw new Error(`Fuel sprite not found at index ${index}`)
-      return sprite
-    },
-
-    getDrainingFrame(index: number): FuelSprite {
-      // Cycle through draining frames
-      const sprite = drainingFrames[index % FUEL_DRAINING_FRAMES]
-      if (!sprite)
-        throw new Error(`Draining fuel sprite not found at index ${index}`)
       return sprite
     }
   }
