@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { checkFigure } from './checkFigure'
 import type { MonochromeBitmap } from '@/bitmap'
 import { createMonochromeBitmap } from '@/bitmap/create'
+import { SBARHT } from '@/screen/constants'
 
 // Helper to create a 32-pixel wide mask with specific bit patterns
 function createMask(patterns: number[], height: number): MonochromeBitmap {
@@ -56,12 +57,12 @@ describe('checkFigure - Basic Collision Detection', () => {
 
   it('Simple collision - aligned position', () => {
     const screen = createMonochromeBitmap(128, 64)
-    // For even row (y=0), background mask is 0x55555555
+    // For y=0 + SBARHT=24 (even row), background mask is 0x55555555
     // Bit 1 is set (position x=1), so place pixel there
     const mask = createMask([0x40000000], 1) // Single pixel at x=1
 
-    // Place pixel at (1, 0) - a position where background mask allows detection
-    setScreenPixel(screen, 1, 0)
+    // Place pixel at (1, 24) - where checkFigure will actually look
+    setScreenPixel(screen, 1, SBARHT)
 
     const result = checkFigure(screen, { x: 0, y: 0, height: 1, def: mask })
     expect(result).toBe(true)
@@ -71,8 +72,8 @@ describe('checkFigure - Basic Collision Detection', () => {
     const screen = createMonochromeBitmap(128, 64)
     const mask = createMask([0x80000000], 1) // Single pixel in top-left
 
-    // Place pixel at (5, 0)
-    setScreenPixel(screen, 5, 0)
+    // Place pixel at (5, 24)
+    setScreenPixel(screen, 5, SBARHT)
 
     // Position mask at x=5 to collide
     const result = checkFigure(screen, { x: 5, y: 0, height: 1, def: mask })
@@ -101,8 +102,8 @@ describe('checkFigure - Background Pattern Tests', () => {
     const screen = createMonochromeBitmap(128, 64)
     const mask = createMask([0xffffffff], 1) // Full row of pixels
 
-    // Fill even row (y=0) with dither pattern
-    fillScreenRow(screen, 0, PATTERN_EVEN)
+    // Fill row at y=SBARHT (y=24, even row) with dither pattern
+    fillScreenRow(screen, SBARHT, PATTERN_EVEN)
 
     // Should not collide with background pattern on even row
     const result = checkFigure(screen, { x: 0, y: 0, height: 1, def: mask })
@@ -113,8 +114,8 @@ describe('checkFigure - Background Pattern Tests', () => {
     const screen = createMonochromeBitmap(128, 64)
     const mask = createMask([0xffffffff], 1) // Full row of pixels
 
-    // Fill odd row (y=1) with dither pattern
-    fillScreenRow(screen, 1, PATTERN_ODD)
+    // Fill row at y=SBARHT+1 (y=25, odd row) with dither pattern
+    fillScreenRow(screen, SBARHT + 1, PATTERN_ODD)
 
     // Should not collide with background pattern on odd row
     const result = checkFigure(screen, { x: 0, y: 1, height: 1, def: mask })
@@ -129,10 +130,11 @@ describe('checkFigure - Background Pattern Tests', () => {
     const mask = createMask([0x55555555], 1)
 
     // Fill screen with background pattern AND an object
-    fillScreenRow(screen, 0, PATTERN_EVEN)
+    fillScreenRow(screen, SBARHT, PATTERN_EVEN)
     // Add object pixels at white background positions
-    if (screen.data.length > 0) {
-      screen.data[0] = (screen.data[0] ?? 0) | 0x55 // Add pixels where background is white
+    const rowOffset = SBARHT * screen.rowBytes
+    if (rowOffset < screen.data.length) {
+      screen.data[rowOffset] = (screen.data[rowOffset] ?? 0) | 0x55 // Add pixels where background is white
     }
 
     const result = checkFigure(screen, { x: 0, y: 0, height: 1, def: mask })
@@ -145,9 +147,9 @@ describe('checkFigure - Background Pattern Tests', () => {
     const mask = createMask([0xaaaaaaaa], 1)
 
     // Fill screen with background pattern AND an object
-    fillScreenRow(screen, 1, PATTERN_ODD)
+    fillScreenRow(screen, SBARHT + 1, PATTERN_ODD)
     // Add object pixels at white background positions
-    const rowByteIndex = screen.rowBytes
+    const rowByteIndex = (SBARHT + 1) * screen.rowBytes
     if (rowByteIndex < screen.data.length) {
       screen.data[rowByteIndex] = (screen.data[rowByteIndex] ?? 0) | 0xaa
     }
@@ -161,7 +163,7 @@ describe('checkFigure - Background Pattern Tests', () => {
     const mask = createMask([0x80000000], 1) // Single pixel at x=0
 
     // Place a screen pixel at x=0 (a "black" background position for even rows)
-    setScreenPixel(screen, 0, 0)
+    setScreenPixel(screen, 0, SBARHT)
 
     // Even though both mask and screen have pixels at (0,0),
     // collision is NOT detected because x=0 is filtered by background mask
@@ -174,7 +176,7 @@ describe('checkFigure - Background Pattern Tests', () => {
     const mask = createMask([0x40000000], 1) // Single pixel at x=1
 
     // Place a screen pixel at x=1 (a "white" background position for even rows)
-    setScreenPixel(screen, 1, 0)
+    setScreenPixel(screen, 1, SBARHT)
 
     // Collision IS detected because x=1 is allowed by background mask
     const result = checkFigure(screen, { x: 0, y: 0, height: 1, def: mask })
@@ -187,11 +189,11 @@ describe('checkFigure - Background Pattern Tests', () => {
     const mask = createMask([0x80000000, 0x80000000], 2)
 
     // Place pixels at x=0 on both rows
-    setScreenPixel(screen, 0, 0) // Row 0
-    setScreenPixel(screen, 0, 1) // Row 1
+    setScreenPixel(screen, 0, SBARHT) // Row 0 + SBARHT
+    setScreenPixel(screen, 0, SBARHT + 1) // Row 1 + SBARHT
 
-    // For even row (y=0): x=0 is black position (no collision)
-    // For odd row (y=1): x=0 is white position (collision detected)
+    // For even row (y=0+SBARHT=24): x=0 is black position (no collision)
+    // For odd row (y=1+SBARHT=25): x=0 is white position (collision detected)
     const result = checkFigure(screen, { x: 0, y: 0, height: 2, def: mask })
     expect(result).toBe(true) // Collision on second row
   })
@@ -202,18 +204,18 @@ describe('checkFigure - Background Pattern Tests', () => {
     const mask = createMask([0xffffffff, 0xffffffff], 2)
 
     // Fill screen with standard dithered background pattern
-    fillScreenRow(screen, 0, PATTERN_EVEN) // y=0: 10101010...
-    fillScreenRow(screen, 1, PATTERN_ODD) // y=1: 01010101...
+    fillScreenRow(screen, SBARHT, PATTERN_EVEN) // y=SBARHT: 10101010...
+    fillScreenRow(screen, SBARHT + 1, PATTERN_ODD) // y=SBARHT+1: 01010101...
 
-    // Place a single object pixel at (x=0, y=1)
+    // Place a single object pixel at (x=0, y=SBARHT+1)
     // This pixel is at a position where:
     // - Row 0 background mask (0x55555555) would ignore it (bit 0 is 0)
     // - Row 1 background mask after rotation (0x2AAAAAAA) would NOT ignore it (bit 0 is 1)
-    setScreenPixel(screen, 0, 1)
+    setScreenPixel(screen, 0, SBARHT + 1)
 
     // Test 2-row mask starting at (0,0)
     // If implementation correctly rotates the background mask for each row,
-    // it should detect the collision at (0,1)
+    // it should detect the collision at (0,SBARHT+1)
     const result = checkFigure(screen, { x: 0, y: 0, height: 2, def: mask })
     expect(result).toBe(true)
   })
@@ -226,7 +228,7 @@ describe('checkFigure - Overflow Testing', () => {
     const mask = createMask([0x00000001], 1) // Rightmost pixel
 
     // Place pixel at x=47 (within 48-pixel check region)
-    setScreenPixel(screen, 47, 0)
+    setScreenPixel(screen, 47, SBARHT)
 
     // Position mask at x=16 so rightmost pixel lands at x=47
     const result = checkFigure(screen, { x: 16, y: 0, height: 1, def: mask })
@@ -258,7 +260,7 @@ describe('checkFigure - Overflow Testing', () => {
     // Place pixel at x=41 to collide with mask pixels
     // But x=41 falls on even position, so for y=0 it would be masked out
     // Use x=40 instead (bit position where background mask allows detection)
-    setScreenPixel(screen, 41, 0)
+    setScreenPixel(screen, 41, SBARHT)
 
     // For x=24, word boundary starts at x=16, check region is [16, 64)
     const result = checkFigure(screen, { x: 24, y: 0, height: 1, def: mask })
@@ -282,7 +284,7 @@ describe('checkFigure - 50% Resolution Behavior', () => {
 
     // Place a vertical line on screen at x=0
     for (let y = 0; y < 4; y++) {
-      setScreenPixel(screen, 0, y)
+      setScreenPixel(screen, 0, SBARHT + y)
     }
 
     // No collision detected because x=0 is filtered on even rows
@@ -297,8 +299,8 @@ describe('checkFigure - 50% Resolution Behavior', () => {
     const mask = createMask([0xc0000000], 1) // Pixels at x=0 and x=1
 
     // Place pixels at both positions
-    setScreenPixel(screen, 0, 0)
-    setScreenPixel(screen, 1, 0)
+    setScreenPixel(screen, 0, SBARHT)
+    setScreenPixel(screen, 1, SBARHT)
 
     // Even though x=0 is filtered, x=1 ensures collision detection
     const result = checkFigure(screen, { x: 0, y: 0, height: 1, def: mask })
@@ -326,7 +328,7 @@ describe('checkFigure - Complex Scenarios', () => {
     // Place some terrain on screen that intersects with the mask
     for (let y = 2; y < 5; y++) {
       for (let x = 8; x < 16; x++) {
-        setScreenPixel(screen, x, y)
+        setScreenPixel(screen, x, SBARHT + y)
       }
     }
 

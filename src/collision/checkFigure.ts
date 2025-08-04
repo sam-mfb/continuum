@@ -1,5 +1,5 @@
 import type { MonochromeBitmap } from '@/bitmap'
-import { BACKGROUND_PATTERNS } from '../screen/constants'
+import { BACKGROUND_PATTERNS, SBARHT } from '../screen/constants'
 
 // Constants for collision detection
 const SPRITE_WIDTH_PIXELS = 32
@@ -21,7 +21,10 @@ export function checkFigure(
     def: MonochromeBitmap
   }
 ): boolean {
-  const { x, y, height, def } = args
+  const { x, height, def } = args
+  
+  // Adjust y to account for status bar at top of screen (following orig/Sources/Draw.c:227-273)
+  const y = args.y + SBARHT
 
   // Validate that def is 32 pixels wide
   if (def.width !== SPRITE_WIDTH_PIXELS) {
