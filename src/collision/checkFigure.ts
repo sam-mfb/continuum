@@ -69,11 +69,18 @@ export function checkFigure(
 
     // Shift sprite data to align with screen position
     const mainData = spriteData >>> bitShift
-    const overflowData = (spriteData << (16 - bitShift)) >>> 16
+    
+    // Calculate overflow data from ONLY the lower 16 bits
+    // This matches the original assembly: move.w D0, D1 (copies lower 16 bits)
+    const lowerBits = spriteData & 0xFFFF
+    const overflowData = (lowerBits << (16 - bitShift)) & 0xFFFF
 
     // Apply background mask to ignore dithered background
     const maskedMain = mainData & backgroundMask
-    const maskedOverflow = overflowData & (backgroundMask >>> 0)
+    
+    // Apply ONLY the lower 16 bits of background mask to overflow
+    // This matches the original assembly: and.w back, D1 (16-bit AND)
+    const maskedOverflow = overflowData & (backgroundMask & 0xFFFF)
 
     // Check main 32-bit region
     if (maskedMain !== 0) {
