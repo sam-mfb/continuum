@@ -165,7 +165,7 @@ int height;			// Height of mask in pixels (width is always 32)
 	back = background[1 - (y & 1)];
 
 	// Adjust y to account for status bar at top of screen
-	y += SBARHT;  // SBARHT = 25 pixels (GW.h)
+	y += SBARHT;  // SBARHT = 24 pixels (GW.h)
 	asm
 	{
 		// Save D3 register as we'll use it as a counter
