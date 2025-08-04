@@ -260,12 +260,8 @@ describe('checkFigure - Overflow Testing', () => {
     // Mask with pixels in the right half (bits 16-31)
     const mask = createMask([0x0000ffff], 1) // Right 16 pixels of 32-pixel mask
 
-    // When mask is at x=24:
-    // - Left 16 pixels (empty) are at positions [24, 39]
-    // - Right 16 pixels (filled) are at positions [40, 55]
-    // Place pixel at x=41 to collide with mask pixels
-    // But x=41 falls on even position, so for y=0 it would be masked out
-    // Use x=40 instead (bit position where background mask allows detection)
+    // When mask is at x=24, the right 16 pixels are at positions [40, 55]
+    // Place pixel at x=41 (odd position, allowed by background mask)
     setScreenPixel(screen, 41, SBARHT)
 
     // For x=24, word boundary starts at x=16, check region is [16, 64)
@@ -359,28 +355,10 @@ describe('checkFigure - Overflow Calculation Tests', () => {
     // Lower: 0000000000000001 (0x0001)
     const mask = createMask([0xAAAA0001], 1)
     
-    // At x=15:
-    // - Word boundary is 0
-    // - Bit shift = 15
-    // - Main data: 0xAAAA0001 >>> 15 = 0x00015554
-    // - Only lower 16 bits (0x0001) contribute to overflow
-    // - Overflow: (0x0001 << 1) & 0xFFFF = 0x0002
-    // - This is bit 1 of overflow region
-    // - Screen position = 0 + 32 + 30 = 62
-    
-    // But wait, the test has already placed pixel at x=16
-    // Let's check what the actual positioning should be:
-    // At x=15, overflow = (0x0001 << (16-15)) = 0x0002
-    // This is bit 30 of the 32-bit overflow word (counting from left)
-    // Screen byte offset = 0, overflow starts at byte 4
-    // Bit 30 is in byte 7, bit position 6
-    // That's screen x position = 8*7 + (7-6) = 56 + 1 = 57
-    
-    // Actually, let me reconsider. With our 16-bit overflow:
-    // Overflow = 0x0002, which is bit 1 (counting from right in 16-bit word)
-    // This appears at screen position 32 + (16 - 2) = 46
-    
-    // Use odd row to make position 46 detectable
+    // At x=15, only lower 16 bits (0x0001) contribute to overflow
+    // Overflow = (0x0001 << 1) = 0x0002 (bit 1)
+    // This appears at screen position 46
+    // Use odd row where position 46 is detectable
     setScreenPixel(screen, 46, SBARHT + 1)
     
     const result = checkFigure(screen, { x: 15, y: 1, height: 1, def: mask })
@@ -418,31 +396,9 @@ describe('checkFigure - Overflow Masking Tests', () => {
     // For even row (y=0), background mask is 0x55555555
     // Lower 16 bits: 0x5555 (0101010101010101)
     
-    // At x=17:
-    // - Word boundary is 16
-    // - Bit shift = 1
-    // - Main data: 0x0000FFFF >>> 1 = 0x00007FFF
-    // - Overflow: (0xFFFF << 15) & 0xFFFF = 0x8000
-    // - After masking with lower 16 bits of background (0x5555): 0x8000 & 0x5555 = 0x0000
-    // - So we need to test a different position
-    
-    // At x=16:
-    // - Word boundary is 16
-    // - Bit shift = 0
-    // - No main data (all in overflow)
-    // - Overflow: (0xFFFF << 16) & 0xFFFF = 0x0000 (shifts out)
-    
-    // Let's use x=1 instead:
-    // - Word boundary is 0
-    // - Bit shift = 1  
-    // - Overflow: (0xFFFF << 15) & 0xFFFF = 0x8000
-    // - After masking: 0x8000 & 0x5555 = 0x0000 (bit 15 is not in mask)
-    
-    // We need a position where overflow bits align with mask bits
-    // Try x=2:
-    // - Overflow: (0xFFFF << 14) & 0xFFFF = 0xC000 (bits 14-15)
-    // - After masking: 0xC000 & 0x5555 = 0x4000 (bit 14 allowed)
-    // - Bit 14 appears at screen position 32 + 1 = 33
+    // At x=2, overflow = (0xFFFF << 14) = 0xC000
+    // After masking with 0x5555: 0xC000 & 0x5555 = 0x4000 (bit 14 allowed)
+    // Bit 14 appears at screen position 33
     
     setScreenPixel(screen, 33, SBARHT)
     const result = checkFigure(screen, { x: 2, y: 0, height: 1, def: mask })
@@ -484,13 +440,7 @@ describe('checkFigure - Debug Overflow', () => {
     let result = checkFigure(screen, { x: 0, y: 0, height: 1, def: mask })
     expect(result).toBe(false)
     
-    // Try with odd row where bit 0 is allowed (odd row mask = 0xAAAAAAAA)
-    // Actually, 0xAAAAAAAA = 10101010..., so bit 0 is masked out (0)
-    // Bit 1 is allowed (1). So bit 0 is never allowed!
-    
-    // Let's use a different bit that's allowed
-    // Bit 1 (0x00000002) corresponds to screen position 30
-    // But position 30 is even (masked out). Let's use bit 0 which maps to position 31
+    // Let's use bit 0 which maps to position 31 (odd, allowed)
     const mask2 = createMask([0x00000001], 1) // Bit 0 -> screen pos 31
     screen.data.fill(0)
     setScreenPixel(screen, 31, SBARHT) // Even row, position 31 allowed (odd)
@@ -534,13 +484,7 @@ describe('checkFigure - Word Boundary Edge Cases', () => {
   it('overflow calculation at various shifts', () => {
     const screen = createMonochromeBitmap(128, 64)
     
-    // Use bit 8 (0x0100) instead - when shifted right by 1, becomes 0x80
-    // But 0x80 is also masked out... Let's use bit 7 (0x0080)
-    // Actually, let's think about which bits are allowed:
-    // 0x55555555 = 01010101 01010101 01010101 01010101
-    // Reading from right to left (bit 0 to 31):
-    // Bit 0: 0 (masked), Bit 1: 1 (allowed), Bit 2: 0 (masked), Bit 3: 1 (allowed)...
-    // So ODD numbered bits are allowed: 1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31
+    // Background mask 0x55555555 allows odd-numbered bit positions
     // Bit 26 (0x04000000) maps to screen position 5 (odd, allowed)
     const mask = createMask([0x04000000], 1)
     
