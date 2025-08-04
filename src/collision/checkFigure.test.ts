@@ -5,6 +5,12 @@ import { createMonochromeBitmap } from '@/bitmap/create'
 import { SBARHT } from '@/screen/constants'
 
 // Helper to create a 32-pixel wide mask with specific bit patterns
+// IMPORTANT: Sprite bit N maps to screen pixel position (31 - N)
+// Examples:
+//   Bit 31 (0x80000000) -> screen position 0
+//   Bit 30 (0x40000000) -> screen position 1
+//   Bit 1  (0x00000002) -> screen position 30
+//   Bit 0  (0x00000001) -> screen position 31
 function createMask(patterns: number[], height: number): MonochromeBitmap {
   const mask = createMonochromeBitmap(32, height)
   for (let y = 0; y < height && y < patterns.length; y++) {
@@ -465,7 +471,7 @@ describe('checkFigure - Overflow Masking Tests', () => {
   })
 })
 
-describe.skip('checkFigure - Debug Overflow', () => {
+describe('checkFigure - Debug Overflow', () => {
   it('debug: understand word boundary behavior', () => {
     const screen = createMonochromeBitmap(128, 64)
     
@@ -483,9 +489,11 @@ describe.skip('checkFigure - Debug Overflow', () => {
     // Bit 1 is allowed (1). So bit 0 is never allowed!
     
     // Let's use a different bit that's allowed
-    const mask2 = createMask([0x00000002], 1) // Bit 1
+    // Bit 1 (0x00000002) corresponds to screen position 30
+    // But position 30 is even (masked out). Let's use bit 0 which maps to position 31
+    const mask2 = createMask([0x00000001], 1) // Bit 0 -> screen pos 31
     screen.data.fill(0)
-    setScreenPixel(screen, 1, SBARHT) // Even row, position 1 allowed
+    setScreenPixel(screen, 31, SBARHT) // Even row, position 31 allowed (odd)
     result = checkFigure(screen, { x: 0, y: 0, height: 1, def: mask2 })
     expect(result).toBe(true)
     
@@ -523,7 +531,7 @@ describe('checkFigure - Word Boundary Edge Cases', () => {
     expect(result).toBe(true)
   })
 
-  it.skip('overflow calculation at various shifts', () => {
+  it('overflow calculation at various shifts', () => {
     const screen = createMonochromeBitmap(128, 64)
     
     // Use bit 8 (0x0100) instead - when shifted right by 1, becomes 0x80
@@ -533,34 +541,34 @@ describe('checkFigure - Word Boundary Edge Cases', () => {
     // Reading from right to left (bit 0 to 31):
     // Bit 0: 0 (masked), Bit 1: 1 (allowed), Bit 2: 0 (masked), Bit 3: 1 (allowed)...
     // So ODD numbered bits are allowed: 1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31
-    // Let's use bit 25 (0x02000000)
-    const mask = createMask([0x02000000], 1)
+    // Bit 26 (0x04000000) maps to screen position 5 (odd, allowed)
+    const mask = createMask([0x04000000], 1)
     
     // Test a simple case where bit stays in main region
     screen.data.fill(0)
-    setScreenPixel(screen, 25, SBARHT) // Bit 25 at position 25
+    setScreenPixel(screen, 5, SBARHT) // Screen position 5
     let result = checkFigure(screen, { x: 0, y: 0, height: 1, def: mask })
     expect(result).toBe(true)
     
     // Test with a bit that will be allowed after shift
-    // Use bit position that becomes an allowed position
-    const mask2 = createMask([0x00000002], 1) // Bit 1 (allowed in mask)
+    // Bit 30 (0x40000000) maps to screen position 1 (odd, allowed)
+    const mask2 = createMask([0x40000000], 1) // Bit 30
     screen.data.fill(0)
     setScreenPixel(screen, 1, SBARHT)
     result = checkFigure(screen, { x: 0, y: 0, height: 1, def: mask2 })
     expect(result).toBe(true)
   })
 
-  it.skip('no collision when only upper 16 bits have pixels', () => {
+  it('no collision when only upper 16 bits have pixels', () => {
     const screen = createMonochromeBitmap(128, 64)
     
     // Only upper 16 bits have pixels
-    // Use bit 25 which is allowed by mask (odd position)
-    const mask = createMask([0x02000000], 1) // Bit 25
+    // Bit 26 (0x04000000) maps to screen position 5 (odd, allowed)
+    const mask = createMask([0x04000000], 1) // Bit 26
     
     // Test that main collision works
     screen.data.fill(0)
-    setScreenPixel(screen, 25, SBARHT) // Bit 25 at position 25
+    setScreenPixel(screen, 5, SBARHT) // Screen position 5
     let result = checkFigure(screen, { x: 0, y: 0, height: 1, def: mask })
     expect(result).toBe(true)
     
