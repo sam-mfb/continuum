@@ -236,8 +236,21 @@ export const explosionBitmapRenderer: BitmapRenderer = (
   // Get final state for drawing
   const finalState = store.getState()
 
-  // Clear bitmap to black
-  bitmap.data.fill(0xff)
+  // First, create a crosshatch gray background
+  // IMPORTANT: Pattern must be based on world coordinates, not screen coordinates
+  for (let y = 0; y < bitmap.height; y++) {
+    for (let x = 0; x < bitmap.width; x++) {
+      // Calculate world position
+      const worldX = x + finalState.screen.screenx
+      const worldY = y + finalState.screen.screeny
+      // Set pixel if worldX + worldY is even (creates fixed checkerboard)
+      if ((worldX + worldY) % 2 === 0) {
+        const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
+        const bitIndex = 7 - (x % 8)
+        bitmap.data[byteIndex]! |= 1 << bitIndex
+      }
+    }
+  }
 
   // Get ship sprite
   const shipSprite = finalState.sprites.allSprites!.ships.getRotationIndex(
