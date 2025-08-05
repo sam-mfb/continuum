@@ -111,18 +111,18 @@ void initializeGame()
 
 const resetGame = (): void => {
   const state = store.getState()
-  
+
   // Reset ship to center of screen
   const shipScreenX = SCRWTH / 2 // 256
   const shipScreenY = Math.floor((TOPMARG + BOTMARG) / 2) // 159
-  
+
   store.dispatch(
     shipSlice.actions.resetShip({
       x: shipScreenX,
       y: shipScreenY
     })
   )
-  
+
   // Reset screen position to planet's starting position
   store.dispatch(
     screenSlice.actions.resetScreen({
@@ -130,7 +130,7 @@ const resetGame = (): void => {
       y: state.planet.ystart - shipScreenY
     })
   )
-  
+
   // Clear all shots
   store.dispatch(clearAllShots())
 }

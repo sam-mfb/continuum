@@ -51,7 +51,7 @@ start_death()
 {
     set_screen(front_screen, 0L);  // "this is obnoxious!"
     start_sound(EXP2_SOUND);
-    
+
     start_blowup((shipx + screenx) % worldwidth, shipy + screeny,
                     SHIPSPARKS,         // 100 sparks
                     16, SH_SP_SPEED16,  // Speed parameters
@@ -60,6 +60,7 @@ start_death()
 ```
 
 The explosion creates:
+
 - **100 sparks** (`SHIPSPARKS` = `NUMSPARKS` = 100)
 - **Random directions** (360-degree spread)
 - **Variable speed** (base 16 + random 0-50 units)
@@ -86,12 +87,12 @@ Each frame decrements the death counter:
 ```c
 if (dead_count && !--dead_count)    // When countdown reaches 0
     if( numships--)                  // If lives remain
-    {   
+    {
         fuel = FUELSTART;            // Reset fuel to full
         init_ship();                 // Respawn ship
     }
     else
-    {   
+    {
         endofgame = TRUE;            // Game over
         return;
     }
@@ -100,6 +101,7 @@ if (dead_count && !--dead_count)    // When countdown reaches 0
 ### 6. Respawn (`init_ship()` at Play.c:162)
 
 When respawning:
+
 - Ship returns to level start position (`xstart`, `ystart`)
 - Velocity reset to zero
 - Rotation reset to 0 (facing up) unless in autopilot mode
@@ -113,6 +115,7 @@ When respawning:
 ### Level Completion During Death
 
 If the planet ends while the ship is dead (Play.c:109-114):
+
 ```c
 if (endofplanet)
 {
@@ -133,6 +136,7 @@ The comment "this is obnoxious!" in `start_death()` refers to drawing directly t
 ## Constants
 
 From GW.h:
+
 - `DEAD_TIME`: 80 frames (4 seconds)
 - `NUMSPARKS`: 100 sparks in explosion
 - `SHIPSPARKS`: Same as NUMSPARKS

@@ -5,6 +5,7 @@ This document describes how explosions work in Continuum, covering both ship and
 ## Overview
 
 Continuum uses a dual particle system for explosions:
+
 1. **Shards** - Large rotating debris pieces (visual sprites)
 2. **Sparks** - Small point particles (single pixels)
 
@@ -53,6 +54,7 @@ typedef struct {
 ### Ship Explosion
 
 Triggered by `start_death()` (Terrain.c:411):
+
 - **100 sparks** spread in 360 degrees
 - **35-55 frame lifetime** (1.75-2.75 seconds at 20 FPS)
 - **No shards** (ship vaporizes completely)
@@ -62,6 +64,7 @@ Triggered by `start_death()` (Terrain.c:411):
 ### Bunker Explosion
 
 Triggered by `start_explosion()` (Terrain.c:315):
+
 - **5 shards** with directional spread
 - **20 sparks** in 180-degree arc facing shot
 - Shards: 25-40 frame lifetime
@@ -84,10 +87,10 @@ start_explosion(x, y, dir, kind)
         // Set velocity based on direction
         // Assign rotation and spin
     }
-    
+
     // Check ship explosion priority
     if (totalsparks == NUMSPARKS && sparksalive) return;
-    
+
     // Create 20 sparks
     totalsparks = sparksalive = EXPLSPARKS;
     for (shot=sparks; shot < sparks+EXPLSPARKS; shot++) {
@@ -138,7 +141,7 @@ draw_explosions()
             sp->rot16 = (sp->rot16 + sp->rotspeed) & 255;  // Rotate
             // Draw if on screen
         }
-    
+
     // Update sparks
     if (sparksalive)
         for(shot=sparks, i=0; i < totalsparks; shot++, i++)
@@ -157,12 +160,14 @@ draw_explosions()
 ## Physics
 
 ### Shards
+
 - **Friction**: Velocity reduced by 1/32 each frame (`h >> SH_SLOW`)
 - **Gravity**: Affected by gravity generators
 - **Rotation**: Continuous spin at individual rates
 - **World wrap**: Handled for horizontal movement
 
 ### Sparks
+
 - **Friction**: More aggressive than shards (`(h+4) >> 3`)
 - **No gravity**: Sparks are too light
 - **World wrap**: Horizontal wrapping only
@@ -171,18 +176,22 @@ draw_explosions()
 ## Rendering
 
 ### Shard Rendering
+
 ```c
 draw_shard(x, y, shard_images[kind][dither][rotation], SHARDHT);
 ```
+
 - Uses rotating sprites (16 angles)
 - Sprite selected by bunker type
 - Dithering: `[(x+y) & 1]` for variety
 - Height: `SHARDHT` pixels
 
 ### Spark Rendering
+
 ```c
 draw_spark_safe(x, y);
 ```
+
 - Single pixel points
 - No rotation or sprites
 - "Safe" version handles screen boundaries
@@ -190,6 +199,7 @@ draw_spark_safe(x, y);
 ## Priority System
 
 Ship explosions have absolute priority:
+
 ```c
 if (totalsparks == NUMSPARKS && sparksalive) return;
 ```
@@ -199,6 +209,7 @@ This ensures the dramatic 100-spark ship death is never interrupted by bunker ex
 ## Constants
 
 ### Shard Constants
+
 - `NUMSHARDS`: 15 (total shard slots)
 - `EXPLSHARDS`: 5 (shards per bunker explosion)
 - `SH_LIFE`: 25 (base lifetime frames)
@@ -210,6 +221,7 @@ This ensures the dramatic 100-spark ship death is never interrupted by bunker ex
 - `SH_DISTRIB`: 20 (spawn area size)
 
 ### Spark Constants
+
 - `NUMSPARKS`: 100 (total spark slots)
 - `SHIPSPARKS`: 100 (sparks for ship death)
 - `EXPLSPARKS`: 20 (sparks per bunker)

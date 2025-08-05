@@ -313,14 +313,14 @@ describe('checkFigure - 50% Resolution Behavior', () => {
 describe('checkFigure - Overflow Calculation Tests', () => {
   it('overflow calculation uses only lower 16 bits of sprite data', () => {
     const screen = createMonochromeBitmap(128, 64)
-    
+
     // Create a mask with pixels ONLY in the upper 16 bits (bits 16-31)
     // The lower 16 bits are all zeros
-    const mask = createMask([0xFFFF0000], 1) // Upper 16 bits set
-    
+    const mask = createMask([0xffff0000], 1) // Upper 16 bits set
+
     // Place a pixel at x=17 (where bit 17 of the mask would land when positioned at x=1)
     setScreenPixel(screen, 17, SBARHT)
-    
+
     // Position mask at x=1 (non-aligned)
     // Since the lower 16 bits are all 0, the overflow should be 0
     // No collision should be detected
@@ -330,18 +330,18 @@ describe('checkFigure - Overflow Calculation Tests', () => {
 
   it('overflow with rightmost bit of sprite', () => {
     const screen = createMonochromeBitmap(128, 64)
-    
+
     // Test overflow behavior with a simple case
     // Use even row where odd positions are allowed (mask 0x55555555)
     const mask = createMask([0x00000001], 1) // Bit 0 (rightmost)
-    
+
     // Position at x=18:
     // - Word boundary is 16
     // - Bit shift = 18 & 15 = 2
     // - Overflow: (0x0001 << 14) & 0xFFFF = 0x4000
     // - 0x4000 is bit 14, which appears at position 48 + 1 = 49
     // - Position 49 is odd, allowed on even rows
-    
+
     setScreenPixel(screen, 49, SBARHT) // Even row
     const result = checkFigure(screen, { x: 18, y: 0, height: 1, def: mask })
     expect(result).toBe(true)
@@ -349,37 +349,37 @@ describe('checkFigure - Overflow Calculation Tests', () => {
 
   it('overflow calculation with different upper and lower patterns', () => {
     const screen = createMonochromeBitmap(128, 64)
-    
+
     // Pattern: upper bits have different pattern than lower bits
     // Upper: 1010101010101010 (0xAAAA)
     // Lower: 0000000000000001 (0x0001)
-    const mask = createMask([0xAAAA0001], 1)
-    
+    const mask = createMask([0xaaaa0001], 1)
+
     // At x=15, only lower 16 bits (0x0001) contribute to overflow
     // Overflow = (0x0001 << 1) = 0x0002 (bit 1)
     // This appears at screen position 46
     // Use odd row where position 46 is detectable
     setScreenPixel(screen, 46, SBARHT + 1)
-    
+
     const result = checkFigure(screen, { x: 15, y: 1, height: 1, def: mask })
     expect(result).toBe(true)
   })
 
   it('no false collision from upper bits in overflow region', () => {
     const screen = createMonochromeBitmap(128, 64)
-    
+
     // Upper bits set, lower bits clear
-    const mask = createMask([0xFFFF0000], 1)
-    
+    const mask = createMask([0xffff0000], 1)
+
     // Don't place any pixels on screen
     // If the overflow calculation incorrectly includes upper bits,
     // it might still detect a "collision" with background mask
-    
+
     // Position at x=15 - this maximizes overflow (only 1 bit stays in main)
     // With correct implementation: overflow = 0 (lower bits are 0)
     // With buggy implementation: overflow contains upper bits
     const result = checkFigure(screen, { x: 15, y: 0, height: 1, def: mask })
-    
+
     // Should detect collision from main data (bit 16 at position 0)
     // but NOT from overflow
     expect(result).toBe(false) // No pixels on screen to collide with
@@ -389,17 +389,17 @@ describe('checkFigure - Overflow Calculation Tests', () => {
 describe('checkFigure - Overflow Masking Tests', () => {
   it('overflow masking uses only lower 16 bits of background mask', () => {
     const screen = createMonochromeBitmap(128, 64)
-    
+
     // Create a sprite with all lower 16 bits set
-    const mask = createMask([0x0000FFFF], 1)
-    
+    const mask = createMask([0x0000ffff], 1)
+
     // For even row (y=0), background mask is 0x55555555
     // Lower 16 bits: 0x5555 (0101010101010101)
-    
+
     // At x=2, overflow = (0xFFFF << 14) = 0xC000
     // After masking with 0x5555: 0xC000 & 0x5555 = 0x4000 (bit 14 allowed)
     // Bit 14 appears at screen position 33
-    
+
     setScreenPixel(screen, 33, SBARHT)
     const result = checkFigure(screen, { x: 2, y: 0, height: 1, def: mask })
     expect(result).toBe(true)
@@ -407,20 +407,23 @@ describe('checkFigure - Overflow Masking Tests', () => {
 
   it('background mask rotation affects overflow masking correctly', () => {
     const screen = createMonochromeBitmap(128, 64)
-    
+
     // Sprite with bit 15 set (will overflow)
-    const mask = createMask([
-      0x00010000, // Bit 15 set
-      0x00010000  // Same pattern
-    ], 2)
-    
+    const mask = createMask(
+      [
+        0x00010000, // Bit 15 set
+        0x00010000 // Same pattern
+      ],
+      2
+    )
+
     // First row: even (mask 0x55555555)
     // Second row: after rotation
-    
+
     // Place pixel at overflow position for both rows
     setScreenPixel(screen, 16, SBARHT) // First row
     setScreenPixel(screen, 16, SBARHT + 1) // Second row
-    
+
     // The rotation should affect whether collision is detected
     const result = checkFigure(screen, { x: 1, y: 0, height: 2, def: mask })
     expect(result).toBe(true)
@@ -430,23 +433,23 @@ describe('checkFigure - Overflow Masking Tests', () => {
 describe('checkFigure - Debug Overflow', () => {
   it('debug: understand word boundary behavior', () => {
     const screen = createMonochromeBitmap(128, 64)
-    
+
     // Test with bit 0 (rightmost) - this is what overflows first
     const mask = createMask([0x00000001], 1)
-    
+
     // At x=0, no shift, no overflow
     // But bit 0 is at an even position, masked out for even rows
     setScreenPixel(screen, 0, SBARHT)
     let result = checkFigure(screen, { x: 0, y: 0, height: 1, def: mask })
     expect(result).toBe(false)
-    
+
     // Let's use bit 0 which maps to position 31 (odd, allowed)
     const mask2 = createMask([0x00000001], 1) // Bit 0 -> screen pos 31
     screen.data.fill(0)
     setScreenPixel(screen, 31, SBARHT) // Even row, position 31 allowed (odd)
     result = checkFigure(screen, { x: 0, y: 0, height: 1, def: mask2 })
     expect(result).toBe(true)
-    
+
     // Test overflow at x=18 with bit 0
     screen.data.fill(0)
     setScreenPixel(screen, 49, SBARHT) // Overflow to odd position
@@ -458,42 +461,42 @@ describe('checkFigure - Debug Overflow', () => {
 describe('checkFigure - Word Boundary Edge Cases', () => {
   it('sprite crossing word boundary with specific pattern', () => {
     const screen = createMonochromeBitmap(128, 64)
-    
+
     // Pattern with different upper and lower halves
-    const mask = createMask([0x5555AAAA], 1)
-    
+    const mask = createMask([0x5555aaaa], 1)
+
     // Test at x=13 (crosses word boundary)
     const shift = 13
-    
+
     // Calculate where the correct overflow bits should be
     // Only lower 16 bits (0xAAAA) should contribute to overflow
-    const lowerBits = 0xAAAA
-    const overflowPattern = (lowerBits << (16 - shift)) & 0xFFFF
-    
+    const lowerBits = 0xaaaa
+    const overflowPattern = (lowerBits << (16 - shift)) & 0xffff
+
     // Place pixels based on correct overflow calculation
     for (let bit = 0; bit < 16; bit++) {
       if (overflowPattern & (1 << (15 - bit))) {
         setScreenPixel(screen, 32 + bit, SBARHT)
       }
     }
-    
+
     const result = checkFigure(screen, { x: 13, y: 0, height: 1, def: mask })
     expect(result).toBe(true)
   })
 
   it('overflow calculation at various shifts', () => {
     const screen = createMonochromeBitmap(128, 64)
-    
+
     // Background mask 0x55555555 allows odd-numbered bit positions
     // Bit 26 (0x04000000) maps to screen position 5 (odd, allowed)
     const mask = createMask([0x04000000], 1)
-    
+
     // Test a simple case where bit stays in main region
     screen.data.fill(0)
     setScreenPixel(screen, 5, SBARHT) // Screen position 5
     let result = checkFigure(screen, { x: 0, y: 0, height: 1, def: mask })
     expect(result).toBe(true)
-    
+
     // Test with a bit that will be allowed after shift
     // Bit 30 (0x40000000) maps to screen position 1 (odd, allowed)
     const mask2 = createMask([0x40000000], 1) // Bit 30
@@ -505,31 +508,32 @@ describe('checkFigure - Word Boundary Edge Cases', () => {
 
   it('no collision when only upper 16 bits have pixels', () => {
     const screen = createMonochromeBitmap(128, 64)
-    
+
     // Only upper 16 bits have pixels
     // Bit 26 (0x04000000) maps to screen position 5 (odd, allowed)
     const mask = createMask([0x04000000], 1) // Bit 26
-    
+
     // Test that main collision works
     screen.data.fill(0)
     setScreenPixel(screen, 5, SBARHT) // Screen position 5
     let result = checkFigure(screen, { x: 0, y: 0, height: 1, def: mask })
     expect(result).toBe(true)
-    
+
     // Now test that overflow region stays empty
-    // Place pixels only in overflow region  
+    // Place pixels only in overflow region
     screen.data.fill(0)
-    for (let x = 32; x < 48; x += 2) { // Only odd positions to match mask
+    for (let x = 32; x < 48; x += 2) {
+      // Only odd positions to match mask
       setScreenPixel(screen, x + 1, SBARHT)
     }
-    
+
     // No collision should occur at positions that would create overflow
     // since upper 16 bits (bit 24) don't contribute to overflow
     for (let x = 9; x < 16; x++) {
       // At these positions, bit 24 would be in overflow region
       // but since only lower 16 bits contribute to overflow, no collision
       const result = checkFigure(screen, { x, y: 0, height: 1, def: mask })
-      expect(result).toBe(false, `False positive at x=${x}`)
+      expect(result).toBe(false)
     }
   })
 })

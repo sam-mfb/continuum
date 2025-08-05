@@ -21,7 +21,12 @@ const initializeShot = (): ShotRec => ({
 const initialState: ShotsState = {
   shipshots: Array.from({ length: SHOT.NUMBULLETS }, initializeShot),
   bunkshots: Array.from({ length: SHOT.NUMSHOTS }, initializeShot),
-  strafes: Array.from({ length: NUMSTRAFES }, () => ({ x: 0, y: 0, lifecount: 0, rot: 0 }))
+  strafes: Array.from({ length: NUMSTRAFES }, () => ({
+    x: 0,
+    y: 0,
+    lifecount: 0,
+    rot: 0
+  }))
 }
 
 export const shotsSlice = createSlice({
@@ -122,7 +127,12 @@ export const shotsSlice = createSlice({
       // Reset all bunk shots
       state.bunkshots = state.bunkshots.map(() => initializeShot())
       // Reset all strafes
-      state.strafes = state.strafes.map(() => ({ x: 0, y: 0, lifecount: 0, rot: 0 }))
+      state.strafes = state.strafes.map(() => ({
+        x: 0,
+        y: 0,
+        lifecount: 0,
+        rot: 0
+      }))
     }
   }
 })

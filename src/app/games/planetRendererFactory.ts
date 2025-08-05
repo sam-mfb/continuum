@@ -64,7 +64,7 @@ export const createPlanetRenderer: PlanetRendererFactory = (
 
   // Load planet data into bunker store
   bunkerStore.dispatch(loadPlanet(planet))
-  
+
   // Initialize fuels with random animation states
   bunkerStore.dispatch(initializeFuels())
 
@@ -256,16 +256,16 @@ export const createPlanetRenderer: PlanetRendererFactory = (
 
       // Copy bunker bitmap data back to original
       bitmap.data.set(bunkerBitmap.data)
-      
+
       // Update fuel cell animations
       bunkerStore.dispatch(updateFuelAnimations())
-      
+
       // Get updated planet state with animated fuels
       const updatedPlanetState = bunkerStore.getState().planet
-      
+
       // Draw fuel cells
       const fuelSprites = bunkerState.sprites.allSprites.fuels
-      
+
       // Draw fuels at normal position
       let fuelBitmap = drawFuels({
         fuels: updatedPlanetState.fuels,
@@ -273,7 +273,7 @@ export const createPlanetRenderer: PlanetRendererFactory = (
         scrny: currentScreen.screeny,
         fuelSprites: fuelSprites
       })(bitmap)
-      
+
       // If wrapping world and near right edge, draw wrapped fuels
       if (onRightSide) {
         fuelBitmap = drawFuels({
@@ -283,13 +283,13 @@ export const createPlanetRenderer: PlanetRendererFactory = (
           fuelSprites: fuelSprites
         })(fuelBitmap)
       }
-      
+
       // Copy fuel bitmap data back to original
       bitmap.data.set(fuelBitmap.data)
-      
+
       // Draw craters (world wrapping is handled internally by drawCraters)
       const craterSprite = bunkerState.sprites.allSprites.crater
-      
+
       const craterBitmap = drawCraters({
         craters: updatedPlanetState.craters,
         numcraters: updatedPlanetState.numcraters,
@@ -299,7 +299,7 @@ export const createPlanetRenderer: PlanetRendererFactory = (
         on_right_side: onRightSide,
         craterImages: craterSprite.images
       })(bitmap)
-      
+
       // Copy crater bitmap data back to original
       bitmap.data.set(craterBitmap.data)
     }

@@ -21,7 +21,7 @@ export function drawSparkSafe(deps: {
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
     const { x, y } = deps
-    
+
     // Clone the bitmap to ensure immutability
     const result = cloneBitmap(screen)
 

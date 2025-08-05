@@ -22,7 +22,7 @@ export function checkFigure(
   }
 ): boolean {
   const { x, height, def } = args
-  
+
   // Adjust y to account for status bar at top of screen (following orig/Sources/Draw.c:227-273)
   const y = args.y + SBARHT
 
@@ -69,18 +69,18 @@ export function checkFigure(
 
     // Shift sprite data to align with screen position
     const mainData = spriteData >>> bitShift
-    
+
     // Calculate overflow data from ONLY the lower 16 bits
     // This matches the original assembly: move.w D0, D1 (copies lower 16 bits)
-    const lowerBits = spriteData & 0xFFFF
-    const overflowData = (lowerBits << (16 - bitShift)) & 0xFFFF
+    const lowerBits = spriteData & 0xffff
+    const overflowData = (lowerBits << (16 - bitShift)) & 0xffff
 
     // Apply background mask to ignore dithered background
     const maskedMain = mainData & backgroundMask
-    
+
     // Apply ONLY the lower 16 bits of background mask to overflow
     // This matches the original assembly: and.w back, D1 (16-bit AND)
-    const maskedOverflow = overflowData & (backgroundMask & 0xFFFF)
+    const maskedOverflow = overflowData & (backgroundMask & 0xffff)
 
     // Check main 32-bit region
     if (maskedMain !== 0) {

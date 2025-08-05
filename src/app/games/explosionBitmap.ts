@@ -13,26 +13,37 @@ import { shipSlice } from '@/ship/shipSlice'
 import { planetSlice } from '@/planet/planetSlice'
 import { screenSlice } from '@/screen/screenSlice'
 import { buildGameStore } from './store'
-import { SCRWTH, VIEWHT, TOPMARG, BOTMARG } from '@/screen/constants'
+import { SCRWTH, TOPMARG, BOTMARG } from '@/screen/constants'
 import { loadSprites } from '@/store/spritesSlice'
 import { SCENTER } from '@/figs/types'
 import { getBackground } from '@/walls/render/getBackground'
 import { grayFigure } from '@/ship/render/grayFigure'
 import { eraseFigure } from '@/ship/render/eraseFigure'
 import { shiftFigure } from '@/ship/render/shiftFigure'
-import { 
-  explosionsSlice, 
+import {
+  explosionsSlice,
   startBlowup,
-  updateExplosions 
+  updateExplosions
 } from '@/explosions/explosionsSlice'
 import { drawExplosions } from '@/explosions/render/drawExplosions'
 import { gravityVector } from '@/shared/gravityVector'
-import { SHIPSPARKS, SH_SP_SPEED16, SH_SPARKLIFE, SH_SPADDLIFE } from '@/explosions/constants'
+import {
+  SHIPSPARKS,
+  SH_SP_SPEED16,
+  SH_SPARKLIFE,
+  SH_SPADDLIFE
+} from '@/explosions/constants'
+import type { ExplosionsState } from '@/explosions/types'
 
 // Configure store with explosions slice
 const store = buildGameStore({
   explosions: explosionsSlice.reducer
 })
+
+// Type for our extended state
+type ExtendedGameState = ReturnType<typeof store.getState> & {
+  explosions: ExplosionsState
+}
 
 // Track initialization state
 let initializationComplete = false
@@ -115,14 +126,14 @@ const resetGame = (): void => {
   // Reset ship to center of screen
   const shipScreenX = SCRWTH / 2 // 256
   const shipScreenY = Math.floor((TOPMARG + BOTMARG) / 2) // 159
-  
+
   store.dispatch(
     shipSlice.actions.resetShip({
       x: shipScreenX,
       y: shipScreenY
     })
   )
-  
+
   // Clear explosion state
   store.dispatch(explosionsSlice.actions.clearExplosions())
   explosionTriggered = false
@@ -131,11 +142,11 @@ const resetGame = (): void => {
 
 const triggerExplosion = (): void => {
   const state = store.getState()
-  
+
   // Get ship position in world coordinates
   const worldX = state.ship.shipx + state.screen.screenx
   const worldY = state.ship.shipy + state.screen.screeny
-  
+
   // Trigger ship explosion using start_blowup pattern from start_death()
   // start_blowup((shipx + screenx) % worldwidth, shipy + screeny, ...)
   store.dispatch(
@@ -143,13 +154,13 @@ const triggerExplosion = (): void => {
       x: worldX % state.planet.worldwidth,
       y: worldY,
       numspks: SHIPSPARKS,
-      minsp: 16,  // From start_death() call in Terrain.c:417
+      minsp: 16, // From start_death() call in Terrain.c:417
       addsp: SH_SP_SPEED16,
       minlife: SH_SPARKLIFE,
       addlife: SH_SPADDLIFE
     })
   )
-  
+
   explosionTriggered = true
   explosionFrame = 0
 }
@@ -157,7 +168,11 @@ const triggerExplosion = (): void => {
 /**
  * Bitmap renderer for explosion game
  */
-export const explosionBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
+export const explosionBitmapRenderer: BitmapRenderer = (
+  bitmap,
+  frame,
+  _env
+) => {
   // Check initialization status
   if (initializationError) {
     console.error('Initialization failed:', initializationError)
@@ -188,9 +203,12 @@ export const explosionBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => 
   // Update explosion if active
   if (explosionTriggered) {
     explosionFrame++
-    
+
     // Update explosion physics
-    const gravityVectorFunc = (x: number, y: number) => 
+    const gravityVectorFunc = (
+      x: number,
+      y: number
+    ): { xg: number; yg: number } =>
       gravityVector({
         x,
         y,
@@ -200,7 +218,7 @@ export const explosionBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => 
         worldwidth: state.planet.worldwidth,
         worldwrap: state.planet.worldwrap
       })
-    
+
     store.dispatch(
       updateExplosions({
         worldwidth: state.planet.worldwidth,
@@ -208,7 +226,7 @@ export const explosionBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => 
         gravityVector: gravityVectorFunc
       })
     )
-    
+
     // Reset after EXPLOSION_DURATION frames
     if (explosionFrame >= EXPLOSION_DURATION) {
       resetGame()
@@ -283,13 +301,14 @@ export const explosionBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => 
 
   // Draw explosions if active
   if (explosionTriggered) {
+    const extendedState = finalState as ExtendedGameState
     // For now, use empty shard images array since we haven't loaded them yet
     renderedBitmap = drawExplosions({
-      explosions: finalState.explosions,
-      screenx: finalState.screen.screenx,
-      screeny: finalState.screen.screeny,
-      worldwidth: finalState.planet.worldwidth,
-      worldwrap: finalState.planet.worldwrap,
+      explosions: extendedState.explosions,
+      screenx: extendedState.screen.screenx,
+      screeny: extendedState.screen.screeny,
+      worldwidth: extendedState.planet.worldwidth,
+      worldwrap: extendedState.planet.worldwrap,
       shardImages: [] // TODO: Load and provide actual shard images
     })(renderedBitmap)
   }

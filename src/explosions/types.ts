@@ -29,7 +29,7 @@ export type ShardRec = {
 
 /**
  * Spark (particle) record for explosions
- * 
+ *
  * Note: Original game reused ShotRec for sparks, but we use a dedicated
  * type for clarity. The fields map to the ShotRec fields used for sparks.
  */
