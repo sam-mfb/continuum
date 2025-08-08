@@ -104,11 +104,8 @@ export function shardTestBitmap(deps: {
       // Get the sprite for this rotation
       const sprite = shardImages.getSprite(kind, rotation)
 
-      // Calculate alignment - this is the key!
-      // We need to match how the explosion game does it
-      const screenSwap = (screenX + screenY) & 1
-      const worldAlign = (worldX + worldY) & 1
-      const align = worldAlign ^ screenSwap
+      // Calculate alignment - matches original: (sp->x + sp->y) & 1
+      const align = (worldX + worldY) & 1
 
       // Use pre-rendered image based on alignment
       const imageData =
@@ -150,10 +147,8 @@ export function shardTestBitmap(deps: {
 
     const sprite = shardImages.getSprite(kind, testRotation)
     
-    // Calculate alignment with screen swap
-    const screenSwap = (screenX + screenY) & 1
-    const worldAlign = (worldX + worldY) & 1
-    const align = worldAlign ^ screenSwap
+    // Calculate alignment - matches original: (sp->x + sp->y) & 1
+    const align = (worldX + worldY) & 1
     
     const imageData =
       align === 0 ? sprite.images.background1 : sprite.images.background2
@@ -196,10 +191,8 @@ export function shardTestBitmap(deps: {
 
     const sprite = shardImages.getSprite(kind, testRotation)
 
-    // Phase-aware background select (match explosion renderer)
-    const screenSwap = (screenX + screenY) & 1
-    const worldAlign = (worldX + worldY) & 1
-    const align = worldAlign ^ screenSwap
+    // Calculate alignment - matches original: (sp->x + sp->y) & 1
+    const align = (worldX + worldY) & 1
 
     const imageData =
       align === 0 ? sprite.images.background1 : sprite.images.background2
@@ -237,9 +230,8 @@ export function shardTestBitmap(deps: {
       }
 
       const sprite = shardImages.getSprite(kind, testRotation)
-      const screenSwap = (screenX + screenY) & 1
-      const worldAlign = (wx + worldY) & 1
-      const align = worldAlign ^ screenSwap
+      // Calculate alignment - matches original: (sp->x + sp->y) & 1
+      const align = (wx + worldY) & 1
       const imageData =
         align === 0 ? sprite.images.background1 : sprite.images.background2
 
