@@ -169,9 +169,9 @@ export const explosionsSlice = createSlice({
         spark.lifecount = SPARKLIFE + Math.floor(Math.random() * SPADDLIFE)
 
         // rand_shot(loangle, hiangle, shot) (Terrain.c:370)
-        const angleRange = (hiangle - loangle + 512) & 511
+        // Matches: angle = rint(hiangle-loangle+1) + loangle;
         const angle =
-          (Math.floor(Math.random() * (angleRange + 1)) + loangle) & 511
+          (Math.floor(Math.random() * (hiangle - loangle + 1)) + loangle) & 511
         const intangle = angle >> 4
         const fracangle = angle & 15
 

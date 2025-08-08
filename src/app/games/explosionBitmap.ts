@@ -177,11 +177,8 @@ const triggerBunkerExplosion = (): void => {
   const worldX = BUNKER_X + state.screen.screenx
   const worldY = BUNKER_Y + state.screen.screeny
 
-  // Calculate direction from ship to bunker for explosion spread
-  // ptToAngle expects 4 parameters: centerX, centerY, pointX, pointY
-  const angle = ptToAngle(state.ship.shipx, state.ship.shipy, BUNKER_X, BUNKER_Y)
-  // Convert angle (0-511) to rotation (0-15) as expected by startExplosion
-  const rotation = Math.floor(angle / 32) & 15
+  // Use the bunker's actual rotation (north-facing = 0)
+  const bunkerRotation = 0 // North-facing bunker
 
   // Trigger bunker explosion using startExplosion
   // Based on start_explosion() in Terrain.c:315
@@ -189,8 +186,8 @@ const triggerBunkerExplosion = (): void => {
     startExplosion({
       x: worldX % state.planet.worldwidth,
       y: worldY,
-      dir: rotation, // Pass rotation (0-15), not angle (0-511)
-      kind: 0 // First bunker type
+      dir: bunkerRotation, // Use bunker's rotation, not angle from ship
+      kind: 0 // First bunker type (WALL)
     })
   )
 
