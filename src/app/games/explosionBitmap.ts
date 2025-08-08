@@ -207,6 +207,8 @@ export const explosionBitmapRenderer: BitmapRenderer = (
   frame,
   _env
 ) => {
+  // Clear the bitmap each frame so background and XOR sprites start from a known state
+  bitmap.data.fill(0)
   // Check initialization status
   if (initializationError) {
     console.error('Initialization failed:', initializationError)
@@ -216,7 +218,6 @@ export const explosionBitmapRenderer: BitmapRenderer = (
 
   if (!initializationComplete) {
     // Still loading
-    bitmap.data.fill(0)
     return
   }
 
@@ -225,7 +226,6 @@ export const explosionBitmapRenderer: BitmapRenderer = (
   // Check if sprites are loaded
   if (!state.sprites.allSprites) {
     console.error('Sprites not loaded')
-    bitmap.data.fill(0)
     return
   }
 

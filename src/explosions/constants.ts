@@ -12,7 +12,8 @@ export const SH_SPEED = 32 // speed factor of shard (*256)
 export const SH_ADDSPEED = 16 // possible amount over above
 export const SH_SLOW = 5 // slow factor (0=stop, 1=1/2...)
 export const SH_SPIN2 = 64 // max speed of shard spin (*2*16)
-export const SHARDHT = 8 // height of shard sprites (assumed)
+// Shards are 16x16 sprites (see figs/types.ts)
+export const SHARDHT = 16 // height of shard sprites
 
 // Spark constants
 export const NUMSPARKS = 100 // number of sparks in explosions
