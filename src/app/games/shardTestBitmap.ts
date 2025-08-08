@@ -80,8 +80,8 @@ export function shardTestBitmap(deps: {
   // Show all 16 rotations for kind 0 (first bunker type)
   const kind = 0
   const spacing = 40
-  // Place shards at fixed world positions
-  const worldStartX = 200
+  // Place shards starting near the right edge so the cluster is partly off-screen
+  const worldStartX = bitmap.width - 8
   const worldStartY = 200
 
   // Draw 4x4 grid of rotations (16 total)
@@ -135,7 +135,7 @@ export function shardTestBitmap(deps: {
   const testRotation = 0
   const testWorldY = 400
   for (let i = 0; i < 8; i++) {
-    const worldX = 200 + i * 30 // Vary x position to test different alignments
+    const worldX = worldStartX + i * 30 // Vary x position near right edge
     const worldY = testWorldY
     
     // Calculate screen position
@@ -175,7 +175,7 @@ export function shardTestBitmap(deps: {
   // Draw another row using raw def data
   const rawTestWorldY = 500
   for (let i = 0; i < 8; i++) {
-    const worldX = 200 + i * 30
+    const worldX = worldStartX + i * 30
     const worldY = rawTestWorldY
     
     // Calculate screen position
@@ -209,7 +209,7 @@ export function shardTestBitmap(deps: {
   // This helps expose any phase mismatches between precomputed background and 32-bit write position
   const phaseSweepY = 600
   for (let i = 0; i < 32; i++) {
-    const worldX = 200 + i // 1px steps
+    const worldX = worldStartX + i // 1px steps near right edge
     const worldY = phaseSweepY
 
     // Calculate screen position
