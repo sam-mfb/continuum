@@ -51,10 +51,9 @@ export function drawExplosions(deps: {
         if (shard.y > screeny && shard.y < botShard) {
           // Check horizontal bounds and draw (Terrain.c:468-471)
           if (shard.x > screenx && shard.x < rightShard) {
-            // Phase-aware background choice: world parity XOR viewport phase
-            // Matches shardTestBitmap and keeps precompute in phase with 32-bit write
-            const screenSwap = (screenx + screeny) & 1
-            const align = ((shard.x + shard.y) & 1) ^ screenSwap
+            // Select pre-computed sprite based on world position parity
+            // Matches original: shard_images[sp->kind][(sp->x+sp->y) & 1][sp->rot16 >> 4]
+            const align = (shard.x + shard.y) & 1
             const rotation = shard.rot16 >> 4
 
             // Get the sprite for this shard type and rotation
@@ -88,10 +87,9 @@ export function drawExplosions(deps: {
             shard.x > screenx - worldwidth &&
             shard.x < rightShard - worldwidth
           ) {
-            // For wrapped copy, compute parity at WRAPPED world X and include viewport phase
-            const screenSwap = (screenx + screeny) & 1
-            const wrappedX = ((shard.x + worldwidth) % worldwidth + worldwidth) % worldwidth
-            const align = ((wrappedX + shard.y) & 1) ^ screenSwap
+            // Use same alignment as original - based on original world position
+            // Matches original: shard_images[sp->kind][(sp->x+sp->y) & 1][sp->rot16 >> 4]
+            const align = (shard.x + shard.y) & 1
             const rotation = shard.rot16 >> 4
 
             // Get the sprite for this shard type and rotation

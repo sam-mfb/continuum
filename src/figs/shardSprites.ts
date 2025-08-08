@@ -57,12 +57,13 @@ export function createShardSpriteSet(
 
       // Shards use alternating background alignment
       for (let align = 0; align < 2; align++) {
-        const bg = align === 0 ? BACKGROUND1 : BACKGROUND2
         const target =
           align === 0 ? sprite.images.background1 : sprite.images.background2
 
         for (let y = 0; y < SHARDHT; y++) {
-          const rowBg = ((y + align) & 1) === 0 ? bg : ~bg
+          // Select background based on (y + align) & 1, matching original:
+          // back[(y + align) & 1] where back[0]=BACKGROUND1, back[1]=BACKGROUND2
+          const rowBg = ((y + align) & 1) === 0 ? BACKGROUND1 : BACKGROUND2
           const bgByte = (rowBg >> 16) & 0xffff // Use middle 16 bits
 
           // Process 2 bytes per row
