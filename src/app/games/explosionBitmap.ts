@@ -22,17 +22,11 @@ import { eraseFigure } from '@/ship/render/eraseFigure'
 import { shiftFigure } from '@/ship/render/shiftFigure'
 import {
   explosionsSlice,
-  startBlowup,
+  startShipDeath,
   updateExplosions
 } from '@/explosions/explosionsSlice'
 import { drawExplosions } from '@/explosions/render/drawExplosions'
 import { gravityVector } from '@/shared/gravityVector'
-import {
-  SHIPSPARKS,
-  SH_SP_SPEED16,
-  SH_SPARKLIFE,
-  SH_SPADDLIFE
-} from '@/explosions/constants'
 import type { ExplosionsState } from '@/explosions/types'
 
 // Configure store with explosions slice
@@ -147,17 +141,12 @@ const triggerExplosion = (): void => {
   const worldX = state.ship.shipx + state.screen.screenx
   const worldY = state.ship.shipy + state.screen.screeny
 
-  // Trigger ship explosion using start_blowup pattern from start_death()
-  // start_blowup((shipx + screenx) % worldwidth, shipy + screeny, ...)
+  // Trigger ship explosion using startShipDeath
+  // Based on start_death() in Terrain.c:411
   store.dispatch(
-    startBlowup({
+    startShipDeath({
       x: worldX % state.planet.worldwidth,
-      y: worldY,
-      numspks: SHIPSPARKS,
-      minsp: 16, // From start_death() call in Terrain.c:417
-      addsp: SH_SP_SPEED16,
-      minlife: SH_SPARKLIFE,
-      addlife: SH_SPADDLIFE
+      y: worldY
     })
   )
 

@@ -149,11 +149,19 @@ export const explosionsSlice = createSlice({
         // Directional spread in 180-degree arc facing shot (Terrain.c:342)
         // Original uses rand_shot(dir-128, dir+127, shot)
         const spreadAngle = dir + Math.floor(Math.random() * 256) - 128
-        const tableIndex = (spreadAngle >> 4) & 31
+        const angle = spreadAngle & 511
+        const intangle = angle >> 4
+        const fracangle = angle & 15
 
-        // Get velocity components
-        const baseH = shotvecs[tableIndex]!
-        const baseV = shotvecs[(tableIndex + 24) & 31]!
+        // Interpolate between adjacent shotvecs values for smooth angles
+        const h1 = shotvecs[intangle & 31]!
+        const h2 = shotvecs[(intangle + 1) & 31]!
+        const baseH = h1 + ((fracangle * (h2 - h1)) >> 4)
+
+        const yangle = (intangle + 24) & 31
+        const v1 = shotvecs[yangle]!
+        const v2 = shotvecs[(yangle + 1) & 31]!
+        const baseV = v1 + ((fracangle * (v2 - v1)) >> 4)
 
         // Apply speed (Terrain.c:343-344)
         const speed = SP_SPEED16 + Math.floor(Math.random() * SP_SPEED16)
@@ -196,16 +204,23 @@ export const explosionsSlice = createSlice({
         spark.lifecount =
           SH_SPARKLIFE + Math.floor(Math.random() * SH_SPADDLIFE)
 
-        // Random 360-degree spread
+        // Random 360-degree spread (rand_shot(0, 511, shot))
         const angle = Math.floor(Math.random() * 512)
-        const tableIndex = angle >> 4 // Convert to 0-31 range
+        const intangle = angle >> 4 // Integer angle (0-31)
+        const fracangle = angle & 15 // Fractional part for interpolation
 
-        // Get base velocity components from shotvecs table
-        const baseH = shotvecs[tableIndex & 31]!
-        const baseV = shotvecs[(tableIndex + 24) & 31]!
+        // Interpolate between adjacent shotvecs values for smooth angles
+        const h1 = shotvecs[intangle & 31]!
+        const h2 = shotvecs[(intangle + 1) & 31]!
+        const baseH = h1 + ((fracangle * (h2 - h1)) >> 4)
 
-        // Apply speed
-        const speed = SH_SP_SPEED16
+        const yangle = (intangle + 24) & 31
+        const v1 = shotvecs[yangle]!
+        const v2 = shotvecs[(yangle + 1) & 31]!
+        const baseV = v1 + ((fracangle * (v2 - v1)) >> 4)
+
+        // Apply speed (minsp=16, addsp=SH_SP_SPEED16 from start_death)
+        const speed = 16 + Math.floor(Math.random() * SH_SP_SPEED16)
         spark.h = (speed * baseH) >> 4
         spark.v = (speed * baseV) >> 4
       }
@@ -246,11 +261,18 @@ export const explosionsSlice = createSlice({
 
         // rand_shot(0, 511, shot) - random direction across full circle
         const angle = Math.floor(Math.random() * 512)
-        const tableIndex = angle >> 4 // Convert to 0-31 range for shotvecs table
+        const intangle = angle >> 4 // Integer angle (0-31)
+        const fracangle = angle & 15 // Fractional part for interpolation
 
-        // Get base velocity components from shotvecs table
-        const baseH = shotvecs[tableIndex]!
-        const baseV = shotvecs[(tableIndex + 24) & 31]!
+        // Interpolate between adjacent shotvecs values for smooth angles
+        const h1 = shotvecs[intangle & 31]!
+        const h2 = shotvecs[(intangle + 1) & 31]!
+        const baseH = h1 + ((fracangle * (h2 - h1)) >> 4)
+
+        const yangle = (intangle + 24) & 31
+        const v1 = shotvecs[yangle]!
+        const v2 = shotvecs[(yangle + 1) & 31]!
+        const baseV = v1 + ((fracangle * (v2 - v1)) >> 4)
 
         // Calculate speed (Terrain.c:439)
         const speed = minsp + Math.floor(Math.random() * addsp)
