@@ -171,39 +171,7 @@ export function shardTestBitmap(deps: {
     })(result)
   }
 
-  // Test raw def data (no pre-rendering) for comparison
-  // Draw another row using raw def data
-  const rawTestWorldY = 500
-  for (let i = 0; i < 8; i++) {
-    const worldX = worldStartX + i * 30
-    const worldY = rawTestWorldY
-    
-    // Calculate screen position
-    const screenPosX = worldX - screenX
-    const screenPosY = worldY - screenY
-    
-    // Skip if not visible
-    if (screenPosX < -SHARDHT || screenPosX >= result.width || 
-        screenPosY < -SHARDHT || screenPosY >= result.height) {
-      continue
-    }
-
-    const sprite = shardImages.getSprite(kind, testRotation)
-
-    // Use raw def data instead of pre-rendered
-    const defData = sprite.def
-    const uint16Def = new Uint16Array(defData.length / 2)
-    for (let j = 0; j < uint16Def.length; j++) {
-      uint16Def[j] = (defData[j * 2]! << 8) | defData[j * 2 + 1]!
-    }
-
-    result = drawShard({
-      x: screenPosX,
-      y: screenPosY,
-      def: uint16Def,
-      height: SHARDHT
-    })(result)
-  }
+  // (Removed raw non-precomputed examples)
 
   // Phase sweep row: exercise all x bit offsets (x & 15) across 32 positions
   // This helps expose any phase mismatches between precomputed background and 32-bit write position
