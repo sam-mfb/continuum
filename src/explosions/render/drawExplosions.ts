@@ -54,7 +54,9 @@ export function drawExplosions(deps: {
             // Phase-aware background choice: world parity XOR viewport phase
             // Matches shardTestBitmap and keeps precompute in phase with 32-bit write
             const screenSwap = (screenx + screeny) & 1
-            const align = ((shard.x + shard.y) & 1) ^ screenSwap
+            const xScreen = shard.x - screenx
+            const laneParity = ((xScreen >> 3) & 1)
+            const align = ((shard.x + shard.y) & 1) ^ screenSwap ^ laneParity
             const rotation = shard.rot16 >> 4
 
             // Get the sprite for this shard type and rotation
@@ -91,7 +93,9 @@ export function drawExplosions(deps: {
             // For wrapped copy, compute parity at WRAPPED world X and include viewport phase
             const wrappedX = ((shard.x + worldwidth) % worldwidth + worldwidth) % worldwidth
             const screenSwap = (screenx + screeny) & 1
-            const align = ((wrappedX + shard.y) & 1) ^ screenSwap
+            const xScreenWrapped = shard.x - screenx + worldwidth
+            const laneParityWrapped = ((xScreenWrapped >> 3) & 1)
+            const align = ((wrappedX + shard.y) & 1) ^ screenSwap ^ laneParityWrapped
             const rotation = shard.rot16 >> 4
 
             // Get the sprite for this shard type and rotation
