@@ -51,15 +51,12 @@ export function drawExplosions(deps: {
         if (shard.y > screeny && shard.y < botShard) {
           // Check horizontal bounds and draw (Terrain.c:468-471)
           if (shard.x > screenx && shard.x < rightShard) {
+            // Calculate dithering based on world position (not screen position)
             const align = (shard.x + shard.y) & 1
             const rotation = shard.rot16 >> 4
-            // In the original, kind is used to select between different shard types
-            // Each shard type has 2 variants (for the two backgrounds)
-            // So we use kind * 2 + align to get the right variant
-            const sprite = shardImages?.getSprite(
-              shard.kind * 2 + align,
-              rotation
-            )
+            
+            // Get the sprite for this shard type and rotation
+            const sprite = shardImages?.getSprite(shard.kind, rotation)
 
             if (sprite) {
               // Use pre-rendered image based on alignment
@@ -89,12 +86,12 @@ export function drawExplosions(deps: {
             shard.x > screenx - worldwidth &&
             shard.x < rightShard - worldwidth
           ) {
+            // Calculate dithering based on world position (not screen position)
             const align = (shard.x + shard.y) & 1
             const rotation = shard.rot16 >> 4
-            const sprite = shardImages?.getSprite(
-              shard.kind * 2 + align,
-              rotation
-            )
+            
+            // Get the sprite for this shard type and rotation
+            const sprite = shardImages?.getSprite(shard.kind, rotation)
 
             if (sprite) {
               // Use pre-rendered image based on alignment
