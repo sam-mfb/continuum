@@ -54,7 +54,7 @@ export function drawExplosions(deps: {
             // Calculate dithering based on world position (not screen position)
             const align = (shard.x + shard.y) & 1
             const rotation = shard.rot16 >> 4
-            
+
             // Get the sprite for this shard type and rotation
             const sprite = shardImages?.getSprite(shard.kind, rotation)
 
@@ -89,7 +89,7 @@ export function drawExplosions(deps: {
             // Calculate dithering based on world position (not screen position)
             const align = (shard.x + shard.y) & 1
             const rotation = shard.rot16 >> 4
-            
+
             // Get the sprite for this shard type and rotation
             const sprite = shardImages?.getSprite(shard.kind, rotation)
 

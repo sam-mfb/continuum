@@ -106,22 +106,19 @@ export const explosionsSlice = createSlice({
 
         // Calculate angle based on bunker type (Terrain.c:335-338)
         let angle: number
-        if (kind >= 2) { // BUNKROTKINDS = 2
+        if (kind >= 2) {
+          // BUNKROTKINDS = 2
           // Rotating bunkers: random direction
           angle = Math.floor(Math.random() * 32)
         } else {
           // Static bunkers: directional spread based on bunker rotation
-          // In the original, dir is actually the bunker rotation (0-15)
-          // For now, use a random spread since we're triggering from ship position
-          // angle = (rint(15) - 7 + (rot<<1)) & 31
-          // But we passed an angle, so convert it to rotation first
-          const rot = Math.floor(dir / 32) & 15 // Convert 0-511 to 0-15
-          angle = (Math.floor(Math.random() * 15) - 7 + (rot << 1)) & 31
+          // dir is the bunker rotation (0-15) as passed from kill_bunker
+          angle = (Math.floor(Math.random() * 15) - 7 + (dir << 1)) & 31
         }
-        
+
         // Calculate velocity (Terrain.c:339-341)
         const speed = SH_SPEED + Math.floor(Math.random() * SH_ADDSPEED)
-        
+
         // Get velocity components from shotvecs table and multiply by speed
         // Note: velocity is stored as fixed-point with 8 bits of fraction
         shard.h = shotvecs[angle]! * speed
@@ -141,26 +138,40 @@ export const explosionsSlice = createSlice({
         return
       }
 
-      // Create 20 sparks with directional spread (Terrain.c:337-345)
+      // Create 20 sparks with directional spread (Terrain.c:355-374)
       state.totalsparks = EXPLSPARKS
       state.sparksalive = EXPLSPARKS
+
+      // Calculate angle range for sparks (Terrain.c:355-364)
+      let loangle: number, hiangle: number
+      if (kind >= 2) {
+        // BUNKROTKINDS = 2
+        // Rotating bunkers: full 360 degree spread
+        loangle = 0
+        hiangle = 511
+      } else {
+        // Static bunkers: 180 degree spread based on direction
+        // dir is the bunker rotation (0-15) as passed from kill_bunker
+        loangle = ((dir - 4) & 15) << 5 // << 5 = * 32 to convert to 0-511 range
+        hiangle = loangle + 256 // 180 degrees (256 = 512/2)
+      }
 
       for (let i = 0; i < EXPLSPARKS && i < NUMSPARKS; i++) {
         const spark = state.sparks[i]!
 
-        // Set position (Terrain.c:340)
+        // Set position (Terrain.c:367-368)
         spark.x8 = x << 3
         spark.y8 = y << 3
         spark.x = x
         spark.y = y
 
-        // Set lifetime (Terrain.c:341)
+        // Set lifetime (Terrain.c:369)
         spark.lifecount = SPARKLIFE + Math.floor(Math.random() * SPADDLIFE)
 
-        // Directional spread in 180-degree arc facing shot (Terrain.c:342)
-        // Original uses rand_shot(dir-128, dir+127, shot)
-        const spreadAngle = dir + Math.floor(Math.random() * 256) - 128
-        const angle = spreadAngle & 511
+        // rand_shot(loangle, hiangle, shot) (Terrain.c:370)
+        const angleRange = (hiangle - loangle + 512) & 511
+        const angle =
+          (Math.floor(Math.random() * (angleRange + 1)) + loangle) & 511
         const intangle = angle >> 4
         const fracangle = angle & 15
 
@@ -174,8 +185,9 @@ export const explosionsSlice = createSlice({
         const v2 = shotvecs[(yangle + 1) & 31]!
         const baseV = v1 + ((fracangle * (v2 - v1)) >> 4)
 
-        // Apply speed (Terrain.c:343-344)
-        const speed = SP_SPEED16 + Math.floor(Math.random() * SP_SPEED16)
+        // Apply speed (Terrain.c:371-373)
+        // speed = 8 + rint(SP_SPEED16)
+        const speed = 8 + Math.floor(Math.random() * SP_SPEED16)
         spark.h = (speed * baseH) >> 4
         spark.v = (speed * baseV) >> 4
       }
@@ -358,9 +370,11 @@ export const explosionsSlice = createSlice({
             spark.y8 += spark.v
 
             // Handle world wrapping (Terrain.c:490-493)
+            // Note: These are separate if statements in original, not else-if
             if (spark.x8 < 0) {
               spark.x8 += worldwth8
-            } else if (spark.x8 >= worldwth8) {
+            }
+            if (spark.x8 >= worldwth8) {
               spark.x8 -= worldwth8
             }
 
