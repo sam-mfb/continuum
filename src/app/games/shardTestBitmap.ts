@@ -204,6 +204,95 @@ export function shardTestBitmap(deps: {
       height: SHARDHT
     })(result)
   }
+
+  // Phase sweep row: exercise all x bit offsets (x & 15) across 32 positions
+  // This helps expose any phase mismatches between precomputed background and 32-bit write position
+  const phaseSweepY = 600
+  for (let i = 0; i < 32; i++) {
+    const worldX = 200 + i // 1px steps
+    const worldY = phaseSweepY
+
+    // Calculate screen position
+    const screenPosX = worldX - screenX
+    const screenPosY = worldY - screenY
+
+    // Skip if not visible
+    if (
+      screenPosX < -SHARDHT ||
+      screenPosX >= result.width ||
+      screenPosY < -SHARDHT ||
+      screenPosY >= result.height
+    ) {
+      continue
+    }
+
+    const sprite = shardImages.getSprite(kind, testRotation)
+
+    // Phase-aware background select (match explosion renderer)
+    const screenSwap = (screenX + screenY) & 1
+    const worldAlign = (worldX + worldY) & 1
+    const align = worldAlign ^ screenSwap
+
+    const imageData =
+      align === 0 ? sprite.images.background1 : sprite.images.background2
+
+    const uint16Def = new Uint16Array(imageData.length / 2)
+    for (let j = 0; j < uint16Def.length; j++) {
+      uint16Def[j] = (imageData[j * 2]! << 8) | imageData[j * 2 + 1]!
+    }
+
+    result = drawShard({
+      x: screenPosX,
+      y: screenPosY,
+      def: uint16Def,
+      height: SHARDHT
+    })(result)
+  }
+
+  // Wrap behavior test: draw near the world right edge and also draw wrapped copies
+  const wrapTestY = 650
+  for (let i = 0; i < 32; i++) {
+    const baseX = WORLD_WIDTH - 20 // near right edge
+    const worldX = baseX + i
+    const worldY = wrapTestY
+
+    const drawAt = (wx: number): void => {
+      const screenPosX = wx - screenX
+      const screenPosY = worldY - screenY
+      if (
+        screenPosX < -SHARDHT ||
+        screenPosX >= result.width ||
+        screenPosY < -SHARDHT ||
+        screenPosY >= result.height
+      ) {
+        return
+      }
+
+      const sprite = shardImages.getSprite(kind, testRotation)
+      const screenSwap = (screenX + screenY) & 1
+      const worldAlign = (wx + worldY) & 1
+      const align = worldAlign ^ screenSwap
+      const imageData =
+        align === 0 ? sprite.images.background1 : sprite.images.background2
+
+      const uint16Def = new Uint16Array(imageData.length / 2)
+      for (let j = 0; j < uint16Def.length; j++) {
+        uint16Def[j] = (imageData[j * 2]! << 8) | imageData[j * 2 + 1]!
+      }
+
+      result = drawShard({
+        x: screenPosX,
+        y: screenPosY,
+        def: uint16Def,
+        height: SHARDHT
+      })(result)
+    }
+
+    // Primary and wrapped positions
+    drawAt(worldX)
+    drawAt(worldX - WORLD_WIDTH)
+    drawAt(worldX + WORLD_WIDTH)
+  }
   
   return result
 }
@@ -226,7 +315,7 @@ export const shardTestBitmapRenderer: BitmapRenderer = (bitmap, frame) => {
   }
 
   // Handle keyboard input for viewport movement
-  const moveSpeed = 5
+  const moveSpeed = 1
 
   if (frame.keysDown.has('ArrowUp')) {
     viewportState.y = Math.max(0, viewportState.y - moveSpeed)
