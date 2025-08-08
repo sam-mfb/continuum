@@ -5,6 +5,7 @@ import type { ExplosionsState } from '../types'
 import { SHARDHT, NUMSHARDS, NUMSPARKS } from '../constants'
 import { drawShard } from './drawShard'
 import { drawSparkSafe } from './drawSparkSafe'
+import type { ShardSpriteSet } from '@/figs/types'
 
 /**
  * Render all active explosions (shards and sparks)
@@ -19,7 +20,7 @@ import { drawSparkSafe } from './drawSparkSafe'
  * @param deps.screeny - Screen y position in world coordinates
  * @param deps.worldwidth - World width for wrapping
  * @param deps.worldwrap - Whether world wraps horizontally
- * @param deps.shardImages - Shard sprite data indexed by [kind][rotation][frame]
+ * @param deps.shardImages - Shard sprite set with sprites indexed by kind and rotation
  * @returns Transform function that draws all explosions on a bitmap
  */
 export function drawExplosions(deps: {
@@ -28,7 +29,7 @@ export function drawExplosions(deps: {
   screeny: number
   worldwidth: number
   worldwrap: boolean
-  shardImages: Uint16Array[][][]
+  shardImages: ShardSpriteSet | null
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
     const { explosions, screenx, screeny, worldwidth, worldwrap, shardImages } =
@@ -50,15 +51,33 @@ export function drawExplosions(deps: {
         if (shard.y > screeny && shard.y < botShard) {
           // Check horizontal bounds and draw (Terrain.c:468-471)
           if (shard.x > screenx && shard.x < rightShard) {
-            const rotation = (shard.x + shard.y) & 1
-            const frame = shard.rot16 >> 4
-            const sprite = shardImages[shard.kind]?.[rotation]?.[frame]
+            const align = (shard.x + shard.y) & 1
+            const rotation = shard.rot16 >> 4
+            // In the original, kind is used to select between different shard types
+            // Each shard type has 2 variants (for the two backgrounds)
+            // So we use kind * 2 + align to get the right variant
+            const sprite = shardImages?.getSprite(
+              shard.kind * 2 + align,
+              rotation
+            )
 
             if (sprite) {
+              // Use pre-rendered image based on alignment
+              const imageData =
+                align === 0
+                  ? sprite.images.background1
+                  : sprite.images.background2
+
+              // Convert Uint8Array to Uint16Array (big-endian)
+              const uint16Def = new Uint16Array(imageData.length / 2)
+              for (let i = 0; i < uint16Def.length; i++) {
+                uint16Def[i] = (imageData[i * 2]! << 8) | imageData[i * 2 + 1]!
+              }
+
               result = drawShard({
                 x: shard.x - screenx,
                 y: shard.y - screeny,
-                def: sprite,
+                def: uint16Def,
                 height: SHARDHT
               })(result)
             }
@@ -70,15 +89,30 @@ export function drawExplosions(deps: {
             shard.x > screenx - worldwidth &&
             shard.x < rightShard - worldwidth
           ) {
-            const rotation = (shard.x + shard.y) & 1
-            const frame = shard.rot16 >> 4
-            const sprite = shardImages[shard.kind]?.[rotation]?.[frame]
+            const align = (shard.x + shard.y) & 1
+            const rotation = shard.rot16 >> 4
+            const sprite = shardImages?.getSprite(
+              shard.kind * 2 + align,
+              rotation
+            )
 
             if (sprite) {
+              // Use pre-rendered image based on alignment
+              const imageData =
+                align === 0
+                  ? sprite.images.background1
+                  : sprite.images.background2
+
+              // Convert Uint8Array to Uint16Array (big-endian)
+              const uint16Def = new Uint16Array(imageData.length / 2)
+              for (let i = 0; i < uint16Def.length; i++) {
+                uint16Def[i] = (imageData[i * 2]! << 8) | imageData[i * 2 + 1]!
+              }
+
               result = drawShard({
                 x: shard.x - screenx + worldwidth,
                 y: shard.y - screeny,
-                def: sprite,
+                def: uint16Def,
                 height: SHARDHT
               })(result)
             }
