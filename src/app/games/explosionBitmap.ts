@@ -179,7 +179,9 @@ const triggerBunkerExplosion = (): void => {
 
   // Calculate direction from ship to bunker for explosion spread
   // ptToAngle expects 4 parameters: centerX, centerY, pointX, pointY
-  const dir = ptToAngle(state.ship.shipx, state.ship.shipy, BUNKER_X, BUNKER_Y)
+  const angle = ptToAngle(state.ship.shipx, state.ship.shipy, BUNKER_X, BUNKER_Y)
+  // Convert angle (0-511) to rotation (0-15) as expected by startExplosion
+  const rotation = Math.floor(angle / 32) & 15
 
   // Trigger bunker explosion using startExplosion
   // Based on start_explosion() in Terrain.c:315
@@ -187,7 +189,7 @@ const triggerBunkerExplosion = (): void => {
     startExplosion({
       x: worldX % state.planet.worldwidth,
       y: worldY,
-      dir: dir,
+      dir: rotation, // Pass rotation (0-15), not angle (0-511)
       kind: 0 // First bunker type
     })
   )

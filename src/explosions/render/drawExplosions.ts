@@ -51,8 +51,13 @@ export function drawExplosions(deps: {
         if (shard.y > screeny && shard.y < botShard) {
           // Check horizontal bounds and draw (Terrain.c:468-471)
           if (shard.x > screenx && shard.x < rightShard) {
-            // Calculate dithering based on world position (not screen position)
-            const align = (shard.x + shard.y) & 1
+            // The original uses (sp->x + sp->y) & 1, but this needs to account
+            // for how the background patterns are swapped based on screen position
+            // When (screenx + screeny) & 1 is 1, the patterns are swapped
+            const screenSwap = (screenx + screeny) & 1
+            const worldAlign = (shard.x + shard.y) & 1
+            // XOR with screenSwap to get the correct alignment
+            const align = worldAlign ^ screenSwap
             const rotation = shard.rot16 >> 4
 
             // Get the sprite for this shard type and rotation
@@ -86,8 +91,10 @@ export function drawExplosions(deps: {
             shard.x > screenx - worldwidth &&
             shard.x < rightShard - worldwidth
           ) {
-            // Calculate dithering based on world position (not screen position)
-            const align = (shard.x + shard.y) & 1
+            // Same alignment calculation as above
+            const screenSwap = (screenx + screeny) & 1
+            const worldAlign = (shard.x + shard.y) & 1
+            const align = worldAlign ^ screenSwap
             const rotation = shard.rot16 >> 4
 
             // Get the sprite for this shard type and rotation

@@ -1,6 +1,4 @@
 import type { MonochromeBitmap, BitmapRenderer } from '@/bitmap'
-import { createMonochromeBitmap as createBitmap } from '@/bitmap'
-import { SCRWTH, VIEWHT } from '@/screen/constants'
 import type { ShardSpriteSet } from '@/figs/types'
 import { drawShard } from '@/explosions/render/drawShard'
 import { SHARDHT } from '@/figs/types'
@@ -11,6 +9,16 @@ import type { RootState } from '@/store/store'
 // State
 let initializationComplete = false
 let initializationError: Error | null = null
+
+// Viewport state - for scrolling around
+const viewportState = {
+  x: 0,
+  y: 0
+}
+
+// Define a larger world to scroll through
+const WORLD_WIDTH = 1024
+const WORLD_HEIGHT = 768
 
 // Initialize sprites on module load
 const initializeGame = async (): Promise<void> => {
@@ -38,45 +46,69 @@ void initializeGame()
  * Displays shards at different rotations and positions on a gray background
  */
 export function shardTestBitmap(deps: {
+  bitmap: MonochromeBitmap
   shardImages: ShardSpriteSet | null
+  screenX: number
+  screenY: number
 }): MonochromeBitmap {
-  const { shardImages } = deps
+  const { bitmap, shardImages, screenX, screenY } = deps
+  
+  // We'll accumulate changes to this bitmap
+  let result = bitmap
 
-  // Create screen with gray dithered background
-  let screen = createBitmap(SCRWTH, VIEWHT)
-
-  // Fill with dithered gray pattern (alternating scanlines)
-  for (let y = 0; y < VIEWHT; y++) {
-    const pattern = y % 2 === 0 ? 0xaa : 0x55
-    for (let x = 0; x < SCRWTH; x += 8) {
-      const byteOffset = y * screen.rowBytes + Math.floor(x / 8)
-      screen.data[byteOffset] = pattern
+  // Fill with dithered gray pattern based on WORLD coordinates
+  // This matches what the explosion game does
+  for (let y = 0; y < result.height; y++) {
+    for (let x = 0; x < result.width; x++) {
+      // Calculate world position
+      const worldX = x + screenX
+      const worldY = y + screenY
+      // Set pixel if worldX + worldY is even (creates fixed checkerboard)
+      if ((worldX + worldY) % 2 === 0) {
+        const byteIndex = Math.floor(y * result.rowBytes + x / 8)
+        const bitIndex = 7 - (x % 8)
+        result.data[byteIndex]! |= 1 << bitIndex
+      }
     }
   }
 
   if (!shardImages) {
-    return screen
+    return result
   }
 
-  // Display shards in a grid pattern
+  // Display shards in a grid pattern at WORLD positions
   // Show all 16 rotations for kind 0 (first bunker type)
   const kind = 0
   const spacing = 40
-  const startX = 20
-  const startY = 20
+  // Place shards at fixed world positions
+  const worldStartX = 200
+  const worldStartY = 200
 
   // Draw 4x4 grid of rotations (16 total)
   for (let row = 0; row < 4; row++) {
     for (let col = 0; col < 4; col++) {
       const rotation = row * 4 + col
-      const x = startX + col * spacing
-      const y = startY + row * spacing
+      const worldX = worldStartX + col * spacing
+      const worldY = worldStartY + row * spacing
+      
+      // Calculate screen position
+      const screenPosX = worldX - screenX
+      const screenPosY = worldY - screenY
+      
+      // Skip if not visible
+      if (screenPosX < -SHARDHT || screenPosX >= result.width || 
+          screenPosY < -SHARDHT || screenPosY >= result.height) {
+        continue
+      }
 
       // Get the sprite for this rotation
       const sprite = shardImages.getSprite(kind, rotation)
 
-      // Calculate alignment based on world position
-      const align = (x + y) & 1
+      // Calculate alignment - this is the key!
+      // We need to match how the explosion game does it
+      const screenSwap = (screenX + screenY) & 1
+      const worldAlign = (worldX + worldY) & 1
+      const align = worldAlign ^ screenSwap
 
       // Use pre-rendered image based on alignment
       const imageData =
@@ -88,37 +120,41 @@ export function shardTestBitmap(deps: {
         uint16Def[i] = (imageData[i * 2]! << 8) | imageData[i * 2 + 1]!
       }
 
-      screen = drawShard({
-        x,
-        y,
+      result = drawShard({
+        x: screenPosX,
+        y: screenPosY,
         def: uint16Def,
         height: SHARDHT
-      })(screen)
+      })(result)
 
-      // Draw rotation number below each shard
-      // This is just for reference - we'll draw a simple marker
-      const markerY = y + SHARDHT + 4
-      if (markerY < VIEWHT) {
-        const markerByteX = Math.floor(x / 8)
-        const markerBit = 7 - (x % 8)
-        const byteOffset = markerY * screen.rowBytes + markerByteX
-        if (byteOffset < screen.data.length) {
-          // Draw a small dot to mark the position
-          screen.data[byteOffset]! |= 1 << markerBit
-        }
-      }
     }
   }
 
   // Also test different positions with same rotation
   // Draw a row of shards with rotation 0 at different x positions
   const testRotation = 0
-  const testY = 200
+  const testWorldY = 400
   for (let i = 0; i < 8; i++) {
-    const x = 10 + i * 20 // Vary x position to test different alignments
+    const worldX = 200 + i * 30 // Vary x position to test different alignments
+    const worldY = testWorldY
+    
+    // Calculate screen position
+    const screenPosX = worldX - screenX
+    const screenPosY = worldY - screenY
+    
+    // Skip if not visible
+    if (screenPosX < -SHARDHT || screenPosX >= result.width || 
+        screenPosY < -SHARDHT || screenPosY >= result.height) {
+      continue
+    }
 
     const sprite = shardImages.getSprite(kind, testRotation)
-    const align = (x + testY) & 1
+    
+    // Calculate alignment with screen swap
+    const screenSwap = (screenX + screenY) & 1
+    const worldAlign = (worldX + worldY) & 1
+    const align = worldAlign ^ screenSwap
+    
     const imageData =
       align === 0 ? sprite.images.background1 : sprite.images.background2
 
@@ -127,19 +163,30 @@ export function shardTestBitmap(deps: {
       uint16Def[j] = (imageData[j * 2]! << 8) | imageData[j * 2 + 1]!
     }
 
-    screen = drawShard({
-      x,
-      y: testY,
+    result = drawShard({
+      x: screenPosX,
+      y: screenPosY,
       def: uint16Def,
       height: SHARDHT
-    })(screen)
+    })(result)
   }
 
   // Test raw def data (no pre-rendering) for comparison
   // Draw another row using raw def data
-  const rawTestY = 240
+  const rawTestWorldY = 500
   for (let i = 0; i < 8; i++) {
-    const x = 10 + i * 20
+    const worldX = 200 + i * 30
+    const worldY = rawTestWorldY
+    
+    // Calculate screen position
+    const screenPosX = worldX - screenX
+    const screenPosY = worldY - screenY
+    
+    // Skip if not visible
+    if (screenPosX < -SHARDHT || screenPosX >= result.width || 
+        screenPosY < -SHARDHT || screenPosY >= result.height) {
+      continue
+    }
 
     const sprite = shardImages.getSprite(kind, testRotation)
 
@@ -150,21 +197,21 @@ export function shardTestBitmap(deps: {
       uint16Def[j] = (defData[j * 2]! << 8) | defData[j * 2 + 1]!
     }
 
-    screen = drawShard({
-      x,
-      y: rawTestY,
+    result = drawShard({
+      x: screenPosX,
+      y: screenPosY,
       def: uint16Def,
       height: SHARDHT
-    })(screen)
+    })(result)
   }
-
-  return screen
+  
+  return result
 }
 
 /**
  * Bitmap renderer for shard test
  */
-export const shardTestBitmapRenderer: BitmapRenderer = bitmap => {
+export const shardTestBitmapRenderer: BitmapRenderer = (bitmap, frame) => {
   // Check initialization status
   if (initializationError) {
     console.error('Initialization failed:', initializationError)
@@ -178,13 +225,55 @@ export const shardTestBitmapRenderer: BitmapRenderer = bitmap => {
     return
   }
 
+  // Handle keyboard input for viewport movement
+  const moveSpeed = 5
+
+  if (frame.keysDown.has('ArrowUp')) {
+    viewportState.y = Math.max(0, viewportState.y - moveSpeed)
+  }
+  if (frame.keysDown.has('ArrowDown')) {
+    viewportState.y = Math.min(
+      WORLD_HEIGHT - bitmap.height,
+      viewportState.y + moveSpeed
+    )
+  }
+  if (frame.keysDown.has('ArrowLeft')) {
+    viewportState.x = Math.max(0, viewportState.x - moveSpeed)
+  }
+  if (frame.keysDown.has('ArrowRight')) {
+    viewportState.x = Math.min(
+      WORLD_WIDTH - bitmap.width,
+      viewportState.x + moveSpeed
+    )
+  }
+
   // Get shard images from store
   const state = store.getState() as RootState
   const shardImages = state.sprites.allSprites?.shards || null
 
-  // Render the static test
-  const rendered = shardTestBitmap({ shardImages })
+  // Clear bitmap first
+  bitmap.data.fill(0)
 
-  // Copy rendered bitmap to output
+  // Render the test and get the updated bitmap
+  const rendered = shardTestBitmap({ 
+    bitmap,
+    shardImages,
+    screenX: viewportState.x,
+    screenY: viewportState.y
+  })
+  
+  // Copy the rendered result back to the output bitmap
   bitmap.data.set(rendered.data)
+  
+  // Draw viewport position indicator in top-left corner for debugging
+  // Just draw a small indicator box in the corner to show we're scrolling
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      const x = 4 + i
+      const y = 4 + j
+      const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
+      const bitIndex = 7 - (x % 8)
+      bitmap.data[byteIndex]! |= 1 << bitIndex
+    }
+  }
 }
