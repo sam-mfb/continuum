@@ -1,29 +1,19 @@
 /**
  * Explosion Bitmap Game
  *
- * A bitmap-based game that demonstrates the explosion system.
- * Shows a ship in the center of the screen. When spacebar is pressed,
- * it triggers a ship explosion. When '1' is pressed, it triggers a bunker
- * explosion. After 80 frames (4 seconds at 20 FPS), everything resets
- * so it can be done again.
+ * A comprehensive test of the explosion system showing all bunker types
+ * at various rotations. Press keys to trigger explosions for each bunker.
+ * After explosions complete, bunkers reset.
  */
 
 import type { BitmapRenderer, MonochromeBitmap } from '../../bitmap'
-import { fullFigure } from '../../ship/render/fullFigure'
-import { shipSlice } from '@/ship/shipSlice'
 import { planetSlice } from '@/planet/planetSlice'
 import { screenSlice } from '@/screen/screenSlice'
 import { buildGameStore } from './store'
-import { SCRWTH, TOPMARG, BOTMARG } from '@/screen/constants'
 import { loadSprites } from '@/store/spritesSlice'
-import { SCENTER } from '@/figs/types'
-import { getBackground } from '@/walls/render/getBackground'
-import { grayFigure } from '@/ship/render/grayFigure'
-import { eraseFigure } from '@/ship/render/eraseFigure'
-import { shiftFigure } from '@/ship/render/shiftFigure'
+import { xbcenter, ybcenter } from '@/planet/constants'
 import {
   explosionsSlice,
-  startShipDeath,
   startExplosion,
   updateExplosions
 } from '@/explosions/explosionsSlice'
@@ -31,7 +21,6 @@ import { drawExplosions } from '@/explosions/render/drawExplosions'
 import { gravityVector } from '@/shared/gravityVector'
 import type { ExplosionsState } from '@/explosions/types'
 import { drawBunker } from '@/planet/render/bunker'
-import { ptToAngle } from '@/shared/ptToAngle'
 
 // Configure store with explosions slice
 const store = buildGameStore({
@@ -47,16 +36,114 @@ type ExtendedGameState = ReturnType<typeof store.getState> & {
 let initializationComplete = false
 let initializationError: Error | null = null
 
-// Track explosion state
-let shipExplosionTriggered = false
-let bunkerExplosionTriggered = false
-let explosionFrame = 0
-const EXPLOSION_DURATION = 80 // 4 seconds at 20 FPS (from DEAD_TIME in GW.h)
+// Bunker configuration
+interface BunkerConfig {
+  kind: number
+  rotation: number
+  x: number
+  y: number
+  key: string
+  alive: boolean
+  explosionFrame: number
+}
 
-// Bunker state - positioned to the right of the ship
-let bunkerAlive = true
-const BUNKER_X = SCRWTH / 2 + 80 // 80 pixels to the right of center
-const BUNKER_Y = Math.floor((TOPMARG + BOTMARG) / 2) // Same height as ship
+// Layout bunkers in a grid
+// 5 bunker types (0-4), various rotations for each
+const bunkers: BunkerConfig[] = []
+const BUNKER_SPACING_X = 30
+const BUNKER_SPACING_Y = 50
+const START_X = 20
+const START_Y = 40
+
+// WALL (kind 0) - show all 16 rotations (0-15)
+// Row 1: rotations 0-7 (N, NNE, NE, ENE, E, ESE, SE, SSE)
+for (let i = 0; i < 8; i++) {
+  bunkers.push({
+    kind: 0,
+    rotation: i,
+    x: START_X + i * BUNKER_SPACING_X,
+    y: START_Y,
+    key: `Digit${i + 1}`, // Keys 1-8
+    alive: true,
+    explosionFrame: 0
+  })
+}
+// Row 2: rotations 8-15 (S, SSW, SW, WSW, W, WNW, NW, NNW)
+const wallKeys2 = ['KeyQ', 'KeyW', 'KeyE', 'KeyR', 'KeyT', 'KeyY', 'KeyU', 'KeyI']
+for (let i = 0; i < 8; i++) {
+  bunkers.push({
+    kind: 0,
+    rotation: i + 8,
+    x: START_X + i * BUNKER_SPACING_X,
+    y: START_Y + BUNKER_SPACING_Y,
+    key: wallKeys2[i]!,
+    alive: true,
+    explosionFrame: 0
+  })
+}
+
+// DIFF (kind 1) - show all 16 rotations
+// Row 3: rotations 0-7
+const diffKeys1 = ['KeyA', 'KeyS', 'KeyD', 'KeyF', 'KeyG', 'KeyH', 'KeyJ', 'KeyK']
+for (let i = 0; i < 8; i++) {
+  bunkers.push({
+    kind: 1,
+    rotation: i,
+    x: START_X + i * BUNKER_SPACING_X,
+    y: START_Y + BUNKER_SPACING_Y * 2,
+    key: diffKeys1[i]!,
+    alive: true,
+    explosionFrame: 0
+  })
+}
+// Row 4: rotations 8-15
+const diffKeys2 = ['KeyZ', 'KeyX', 'KeyC', 'KeyV', 'KeyB', 'KeyN', 'KeyM', 'Comma']
+for (let i = 0; i < 8; i++) {
+  bunkers.push({
+    kind: 1,
+    rotation: i + 8,
+    x: START_X + i * BUNKER_SPACING_X,
+    y: START_Y + BUNKER_SPACING_Y * 3,
+    key: diffKeys2[i]!,
+    alive: true,
+    explosionFrame: 0
+  })
+}
+
+// GROUND (kind 2) - just show one (animation frame 0)
+bunkers.push({
+  kind: 2,
+  rotation: 0, // Animation frame 0
+  x: START_X + 9 * BUNKER_SPACING_X,
+  y: START_Y,
+  key: 'KeyO',
+  alive: true,
+  explosionFrame: 0
+})
+
+// FOLLOW (kind 3) - just show one (animation frame 0)
+bunkers.push({
+  kind: 3,
+  rotation: 0, // Animation frame 0
+  x: START_X + 9 * BUNKER_SPACING_X,
+  y: START_Y + BUNKER_SPACING_Y,
+  key: 'KeyP',
+  alive: true,
+  explosionFrame: 0
+})
+
+// GENERATOR (kind 4) - just show one (animation frame 0)
+bunkers.push({
+  kind: 4,
+  rotation: 0, // Animation frame 0
+  x: START_X + 9 * BUNKER_SPACING_X,
+  y: START_Y + BUNKER_SPACING_Y * 2,
+  key: 'KeyL',
+  alive: true,
+  explosionFrame: 0
+})
+
+const EXPLOSION_DURATION = 80 // 4 seconds at 20 FPS
 
 // Initialize game on module load
 const initializeGame = async (): Promise<void> => {
@@ -96,18 +183,7 @@ const initializeGame = async (): Promise<void> => {
     // Initialize planet
     store.dispatch(planetSlice.actions.loadPlanet(planet1))
 
-    // Initialize ship at center of screen
-    const shipScreenX = SCRWTH / 2 // 256
-    const shipScreenY = Math.floor((TOPMARG + BOTMARG) / 2) // 159
-
-    store.dispatch(
-      shipSlice.actions.initShip({
-        x: shipScreenX,
-        y: shipScreenY
-      })
-    )
-
-    // Initialize screen position so ship appears at center
+    // Initialize screen position at origin
     store.dispatch(
       screenSlice.actions.setPosition({
         x: 0,
@@ -126,74 +202,38 @@ const initializeGame = async (): Promise<void> => {
 // Start initialization
 void initializeGame()
 
-const resetGame = (): void => {
-  // Reset ship to center of screen
-  const shipScreenX = SCRWTH / 2 // 256
-  const shipScreenY = Math.floor((TOPMARG + BOTMARG) / 2) // 159
-
-  store.dispatch(
-    shipSlice.actions.resetShip({
-      x: shipScreenX,
-      y: shipScreenY
-    })
-  )
-
-  // Clear explosion state
-  store.dispatch(explosionsSlice.actions.clearExplosions())
-  shipExplosionTriggered = false
-  bunkerExplosionTriggered = false
-  explosionFrame = 0
-
-  // Reset bunker
-  bunkerAlive = true
-}
-
-const triggerShipExplosion = (): void => {
-  const state = store.getState()
-
-  // Get ship position in world coordinates
-  const worldX = state.ship.shipx + state.screen.screenx
-  const worldY = state.ship.shipy + state.screen.screeny
-
-  // Trigger ship explosion using startShipDeath
-  // Based on start_death() in Terrain.c:411
-  store.dispatch(
-    startShipDeath({
-      x: worldX % state.planet.worldwidth,
-      y: worldY
-    })
-  )
-
-  shipExplosionTriggered = true
-  explosionFrame = 0
-}
-
-const triggerBunkerExplosion = (): void => {
-  if (!bunkerAlive) return
+const triggerBunkerExplosion = (bunker: BunkerConfig): void => {
+  if (!bunker.alive) return
 
   const state = store.getState()
 
-  // Get bunker position in world coordinates
-  const worldX = BUNKER_X + state.screen.screenx
-  const worldY = BUNKER_Y + state.screen.screeny
+  // Get bunker CENTER in world coordinates
+  // bunker.x/y is the top-left corner for rendering, but explosion needs center
+  // Use the actual center offsets for this bunker type and rotation
+  const centerOffsetX = xbcenter[bunker.kind]?.[bunker.rotation] ?? 24
+  const centerOffsetY = ybcenter[bunker.kind]?.[bunker.rotation] ?? 24
+  const worldX = bunker.x + centerOffsetX + state.screen.screenx
+  const worldY = bunker.y + centerOffsetY + state.screen.screeny
 
-  // Use the bunker's actual rotation (north-facing = 0)
-  const bunkerRotation = 0 // North-facing bunker
+  // For animated bunkers (kinds 2-4), use rotation 0 for direction
+  // For static bunkers (kinds 0-1), use the actual rotation
+  const dir = bunker.kind >= 2 ? 0 : bunker.rotation
 
-  // Trigger bunker explosion using startExplosion
-  // Based on start_explosion() in Terrain.c:315
+  // Debug: log what we're triggering
+  console.log(`Exploding bunker: kind=${bunker.kind}, rotation=${bunker.rotation}, dir=${dir}`)
+  
+  // Trigger bunker explosion
   store.dispatch(
     startExplosion({
       x: worldX % state.planet.worldwidth,
       y: worldY,
-      dir: bunkerRotation, // Use bunker's rotation, not angle from ship
-      kind: 0 // First bunker type (WALL)
+      dir,
+      kind: bunker.kind
     })
   )
 
-  bunkerAlive = false
-  bunkerExplosionTriggered = true
-  explosionFrame = 0
+  bunker.alive = false
+  bunker.explosionFrame = 0
 }
 
 /**
@@ -204,8 +244,9 @@ export const explosionBitmapRenderer: BitmapRenderer = (
   frame,
   _env
 ) => {
-  // Clear the bitmap each frame so background and XOR sprites start from a known state
+  // Clear the bitmap each frame
   bitmap.data.fill(0)
+  
   // Check initialization status
   if (initializationError) {
     console.error('Initialization failed:', initializationError)
@@ -227,19 +268,28 @@ export const explosionBitmapRenderer: BitmapRenderer = (
   }
 
   // Handle key presses
-  if (frame.keysDown.has('Space') && !shipExplosionTriggered) {
-    triggerShipExplosion()
+  for (const bunker of bunkers) {
+    if (frame.keysDown.has(bunker.key) && bunker.alive) {
+      triggerBunkerExplosion(bunker)
+    }
   }
 
-  if (frame.keysDown.has('Digit1') && !bunkerExplosionTriggered) {
-    triggerBunkerExplosion()
+  // Update explosion physics
+  let anyExplosionActive = false
+  for (const bunker of bunkers) {
+    if (!bunker.alive) {
+      bunker.explosionFrame++
+      anyExplosionActive = true
+      
+      // Reset bunker after explosion completes
+      if (bunker.explosionFrame >= EXPLOSION_DURATION) {
+        bunker.alive = true
+        bunker.explosionFrame = 0
+      }
+    }
   }
 
-  // Update explosion if active
-  if (shipExplosionTriggered || bunkerExplosionTriggered) {
-    explosionFrame++
-
-    // Update explosion physics
+  if (anyExplosionActive) {
     const gravityVectorFunc = (
       x: number,
       y: number
@@ -249,7 +299,7 @@ export const explosionBitmapRenderer: BitmapRenderer = (
         y,
         gravx: state.planet.gravx,
         gravy: state.planet.gravy,
-        gravityPoints: [], // No gravity points for now
+        gravityPoints: [],
         worldwidth: state.planet.worldwidth,
         worldwrap: state.planet.worldwrap
       })
@@ -261,18 +311,12 @@ export const explosionBitmapRenderer: BitmapRenderer = (
         gravityVector: gravityVectorFunc
       })
     )
-
-    // Reset after EXPLOSION_DURATION frames
-    if (explosionFrame >= EXPLOSION_DURATION) {
-      resetGame()
-    }
   }
 
   // Get final state for drawing
   const finalState = store.getState()
 
-  // First, create a crosshatch gray background
-  // IMPORTANT: Pattern must be based on world coordinates, not screen coordinates
+  // Create a crosshatch gray background
   for (let y = 0; y < bitmap.height; y++) {
     for (let x = 0; x < bitmap.width; x++) {
       // Calculate world position
@@ -287,95 +331,41 @@ export const explosionBitmapRenderer: BitmapRenderer = (
     }
   }
 
-  // Get ship sprite
-  const shipSprite = finalState.sprites.allSprites!.ships.getRotationIndex(
-    finalState.ship.shiprot
-  )
-
-  // Convert sprite data to MonochromeBitmap format
-  const shipDefBitmap: MonochromeBitmap = {
-    data: shipSprite.def,
-    width: 32,
-    height: 32,
-    rowBytes: 4
-  }
-
-  const shipMaskBitmap: MonochromeBitmap = {
-    data: shipSprite.mask,
-    width: 32,
-    height: 32,
-    rowBytes: 4
-  }
-
-  const SHADOW_OFFSET_X = 8
-  const SHADOW_OFFSET_Y = 5
-
-  // Only draw ship if ship explosion hasn't been triggered
   let renderedBitmap = bitmap
-  if (!shipExplosionTriggered) {
-    // 1. gray_figure - ship shadow background
-    renderedBitmap = grayFigure({
-      x: finalState.ship.shipx - (SCENTER - SHADOW_OFFSET_X),
-      y: finalState.ship.shipy - (SCENTER - SHADOW_OFFSET_Y),
-      def: shipMaskBitmap,
-      background: getBackground(
-        finalState.screen.screenx,
-        finalState.screen.screeny
-      )
-    })(renderedBitmap)
 
-    // 2. erase_figure - erase ship area
-    renderedBitmap = eraseFigure({
-      x: finalState.ship.shipx - SCENTER,
-      y: finalState.ship.shipy - SCENTER,
-      def: shipMaskBitmap
-    })(renderedBitmap)
-
-    // 3. shift_figure - ship shadow
-    renderedBitmap = shiftFigure({
-      x: finalState.ship.shipx - (SCENTER - SHADOW_OFFSET_X),
-      y: finalState.ship.shipy - (SCENTER - SHADOW_OFFSET_Y),
-      def: shipMaskBitmap
-    })(renderedBitmap)
-
-    // 4. full_figure - draw ship
-    renderedBitmap = fullFigure({
-      x: finalState.ship.shipx - SCENTER,
-      y: finalState.ship.shipy - SCENTER,
-      def: shipDefBitmap,
-      mask: shipMaskBitmap
-    })(renderedBitmap)
-  }
-
-  // Draw bunker if alive
-  if (bunkerAlive && finalState.sprites.allSprites) {
+  // Draw all bunkers
+  if (finalState.sprites.allSprites) {
     const bunkerSprites = finalState.sprites.allSprites.bunkers
-    // Use the first bunker type (kind 0)
-    const bunkerSprite = bunkerSprites.getSprite(0, 0) // kind 0, rotation 0
+    
+    for (const bunker of bunkers) {
+      if (bunker.alive) {
+        const bunkerSprite = bunkerSprites.getSprite(bunker.kind, bunker.rotation)
+        
+        if (bunkerSprite) {
+          // Use pre-rendered image based on alignment
+          const align = (bunker.x + bunker.y) & 1
+          const bunkerBitmap: MonochromeBitmap = {
+            data:
+              align === 0
+                ? bunkerSprite.images.background1
+                : bunkerSprite.images.background2,
+            width: 48,
+            height: 32,
+            rowBytes: 6
+          }
 
-    if (bunkerSprite) {
-      // Use pre-rendered image based on alignment (like doBunks does)
-      const align = (BUNKER_X + BUNKER_Y) & 1
-      const bunkerBitmap: MonochromeBitmap = {
-        data:
-          align === 0
-            ? bunkerSprite.images.background1
-            : bunkerSprite.images.background2,
-        width: 48,
-        height: 32,
-        rowBytes: 6
+          renderedBitmap = drawBunker({
+            x: bunker.x,
+            y: bunker.y,
+            def: bunkerBitmap
+          })(renderedBitmap)
+        }
       }
-
-      renderedBitmap = drawBunker({
-        x: BUNKER_X,
-        y: BUNKER_Y,
-        def: bunkerBitmap
-      })(renderedBitmap)
     }
   }
 
-  // Draw explosions if active
-  if (shipExplosionTriggered || bunkerExplosionTriggered) {
+  // Draw explosions if any are active
+  if (anyExplosionActive) {
     const extendedState = finalState as ExtendedGameState
 
     // Get shard images from sprites
@@ -390,6 +380,16 @@ export const explosionBitmapRenderer: BitmapRenderer = (
       shardImages
     })(renderedBitmap)
   }
+
+  // Instructions text would go here, but we need to implement drawSmall first
+  // Keys:
+  // 1-8: WALL rotations 0-7 (N to SSE)
+  // Q-I: WALL rotations 8-15 (S to NNW)
+  // A-K: DIFF rotations 0-7
+  // Z-M,comma: DIFF rotations 8-15
+  // O: GROUND (omnidirectional)
+  // P: FOLLOW (omnidirectional)
+  // L: GENERATOR (omnidirectional)
 
   // Copy rendered bitmap data back to original
   bitmap.data.set(renderedBitmap.data)

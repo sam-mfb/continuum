@@ -114,6 +114,10 @@ export const explosionsSlice = createSlice({
           // Static bunkers: directional spread based on bunker rotation
           // dir is the bunker rotation (0-15) as passed from kill_bunker
           angle = (Math.floor(Math.random() * 15) - 7 + (dir << 1)) & 31
+          // Debug: log the angle calculation
+          if (i === 0) {
+            console.log(`Shard angles for dir=${dir}: center=${dir << 1}, range=${((dir << 1) - 7) & 31} to ${((dir << 1) + 7) & 31}`)
+          }
         }
 
         // Calculate velocity (Terrain.c:339-341)
@@ -124,12 +128,18 @@ export const explosionsSlice = createSlice({
         shard.h = shotvecs[angle]! * speed
         shard.v = shotvecs[(angle + 24) & 31]! * speed
 
-        // Set rotation and spin (Terrain.c:331-332)
+        // Set rotation and spin (Terrain.c:345-346)
         shard.rot16 = Math.floor(Math.random() * 256)
         shard.rotspeed = Math.floor(Math.random() * SH_SPIN2) - SH_SPIN2 / 2
 
-        // Set kind (Terrain.c:333)
-        shard.kind = kind
+        // Set kind (Terrain.c:347-350)
+        // Special logic for DIFF bunkers (kind 1) with even rotations
+        if (kind === 1 && (dir & 1) === 0) {
+          // Use special shard types 5 or 6 based on rotation
+          shard.kind = (dir & 3) ? 6 : 5
+        } else {
+          shard.kind = kind
+        }
       }
 
       // Check ship explosion priority (Terrain.c:335-336)

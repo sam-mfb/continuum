@@ -32,8 +32,10 @@ export const BUNKER_ROTATIONS = 16
 export const FUELFRAMES = 8
 export const FUEL_TOTAL_FRAMES = 9
 
-// Shard kinds
-export const SHARDKINDS = 5
+// Shard kinds (from GW.h)
+// Kinds 0-4 correspond to bunker types
+// Kinds 5-6 are special types used for DIFF bunker explosions
+export const SHARDKINDS = 7
 
 // Background patterns for alternating scanlines
 export const BACKGROUND1 = 0xaaaaaaaa
