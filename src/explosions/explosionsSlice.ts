@@ -104,17 +104,28 @@ export const explosionsSlice = createSlice({
         // Set lifetime (Terrain.c:325)
         shard.lifecount = SH_LIFE + Math.floor(Math.random() * SH_ADDLIFE)
 
-        // Calculate velocity based on direction (Terrain.c:328-330)
-        const tableIndex = dir >> 4 // Convert to 0-31 range
+        // Calculate angle based on bunker type (Terrain.c:335-338)
+        let angle: number
+        if (kind >= 2) { // BUNKROTKINDS = 2
+          // Rotating bunkers: random direction
+          angle = Math.floor(Math.random() * 32)
+        } else {
+          // Static bunkers: directional spread based on bunker rotation
+          // In the original, dir is actually the bunker rotation (0-15)
+          // For now, use a random spread since we're triggering from ship position
+          // angle = (rint(15) - 7 + (rot<<1)) & 31
+          // But we passed an angle, so convert it to rotation first
+          const rot = Math.floor(dir / 32) & 15 // Convert 0-511 to 0-15
+          angle = (Math.floor(Math.random() * 15) - 7 + (rot << 1)) & 31
+        }
+        
+        // Calculate velocity (Terrain.c:339-341)
         const speed = SH_SPEED + Math.floor(Math.random() * SH_ADDSPEED)
-
-        // Get velocity components from shotvecs table
-        const baseH = shotvecs[tableIndex]!
-        const baseV = shotvecs[(tableIndex + 24) & 31]!
-
-        // Apply speed (multiply by 256 then divide by 16 = multiply by 16)
-        shard.h = (speed * baseH) >> 4
-        shard.v = (speed * baseV) >> 4
+        
+        // Get velocity components from shotvecs table and multiply by speed
+        // Note: velocity is stored as fixed-point with 8 bits of fraction
+        shard.h = shotvecs[angle]! * speed
+        shard.v = shotvecs[(angle + 24) & 31]! * speed
 
         // Set rotation and spin (Terrain.c:331-332)
         shard.rot16 = Math.floor(Math.random() * 256)
