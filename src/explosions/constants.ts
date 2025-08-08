@@ -20,10 +20,10 @@ export const NUMSPARKS = 100 // number of sparks in explosions
 export const SHIPSPARKS = NUMSPARKS // number of sparks in ship blowup
 export const EXPLSPARKS = 20 // number of sparks in bunker death
 export const SPARKLIFE = 10 // minimum life of bunker spark
-export const SPADDLIFE = 20 // possible longer than SPARKLIFE
+export const SPADDLIFE = 10 // possible longer than SPARKLIFE
 export const SH_SPARKLIFE = 35 // minimum life of ship spark
 export const SH_SPADDLIFE = 20 // possible longer than SPARKLIFE
-export const SP_SPEED16 = 8 // base speed factor of bunker spark (*16)
+export const SP_SPEED16 = 40 // speed factor of bunker spark (*16)
 export const SH_SP_SPEED16 = 50 // speed factor of ship spark (*16)
 
 // Gravity for explosions
