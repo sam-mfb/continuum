@@ -44,3 +44,26 @@ export const ybshotstart: number[][] = [
   [-3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3, -3],
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 ]
+
+/**
+ * Strafe direction lookup tables
+ * From orig/Sources/Terrain.c (lines 233-240)
+ *
+ * Used by getstrafedir() to determine sprite rotation based on:
+ * - Wall slope and orientation
+ * - Whether shot approaches from above or below
+ * - Whether wall is bounce or standard type
+ *
+ * Index: [from_above][wall_slope + 5]
+ * wall_slope ranges from -5 to 5 for different wall angles
+ * -1 means no strafe effect for that angle
+ */
+export const bouncedirtable: number[][] = [
+  [8, 7, 6, 5, -1, -1, -1, 11, 10, 9, 8], // From below
+  [0, 15, 14, 13, -1, -1, -1, 3, 2, 1, 0] // From above
+]
+
+export const stdirtable: number[][] = [
+  [8, 7, 6, 5, -1, -1, -1, -1, -1, 9, 8], // From below
+  [-1, -1, -1, -1, -1, -1, -1, 3, 2, 1, -1] // From above
+]
