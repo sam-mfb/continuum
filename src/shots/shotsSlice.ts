@@ -4,7 +4,8 @@ import { SHOT, NUMSTRAFES, STRAFE_LIFE } from './constants'
 import type { Bunker } from '@/planet/types'
 import type { LineRec } from '@/shared/types/line'
 import { bunkShoot as bunkShootFn } from './bunkShoot'
-import { getLife } from './getLife'
+// setLife would be imported and used here when walls data is available
+// import { setLife } from './setLife'
 
 const initializeShot = (): ShotRec => ({
   x: 0,
@@ -64,9 +65,9 @@ export const shotsSlice = createSlice({
           btime: 0
         }
 
-        // TODO: Call set_life to calculate wall collision
-        // This would set lifecount, strafedir, and btime
-        // For now, skip this step
+        // TODO: Call setLife with walls data
+        // newShot = setLife(newShot, walls, SHOT.SHOTLEN)
+        // For now, skip this step since we don't have walls in this action
 
         if (newShot.lifecount > 0) {
           newShot = {
@@ -78,6 +79,7 @@ export const shotsSlice = createSlice({
         }
 
         // TODO: Handle immediate wall collision if lifecount == 0
+        // Would need to call bounceShot if collision detected
 
         // Create new array with updated shot
         state.shipshots = state.shipshots.map((shot, index) =>
@@ -218,47 +220,17 @@ export const shotsSlice = createSlice({
 
       // If it's a bounce wall (btime > 0), apply bounce
       if (shot.btime > 0) {
-        const bouncedShot = bounceShotFunc(shot, action.payload.wall)
+        let bouncedShot = bounceShotFunc(shot, action.payload.wall)
+
+        // After bouncing, recalculate trajectory
+        // TODO: This would need walls data
+        // bouncedShot = setLife(bouncedShot, walls, bouncedShot.lifecount)
+
         if (isShipShot) {
           state.shipshots[shotIndex] = bouncedShot
         } else {
           state.bunkshots[shotIndex] = bouncedShot
         }
-      }
-    },
-
-    // Based on Terrain.c:114-230 - set_life()
-    setLife: (
-      state,
-      action: PayloadAction<{
-        shotIndex: number
-        isShipShot: boolean
-        walls: LineRec[]
-        totallife: number
-      }>
-    ) => {
-      const { shotIndex, isShipShot, walls, totallife } = action.payload
-      const shots = isShipShot ? state.shipshots : state.bunkshots
-      const shot = shots[shotIndex]
-
-      if (!shot) return
-
-      // Calculate collision timing and parameters
-      const result = getLife(shot, walls, totallife)
-
-      // Update the shot with calculated values
-      const updatedShot = {
-        ...shot,
-        lifecount: result.framesToImpact,
-        strafedir: result.strafedir,
-        btime: result.btime,
-        hitlineId: result.hitlineId
-      }
-
-      if (isShipShot) {
-        state.shipshots[shotIndex] = updatedShot
-      } else {
-        state.bunkshots[shotIndex] = updatedShot
       }
     },
 
@@ -319,6 +291,9 @@ function moveShot(
 
 // Based on Play.c:926-948 - bounce_shot()
 function bounceShotFunc(shot: ShotRec, _wall: LineRec): ShotRec {
+  // In the original, bounce_shot() calls set_life() after bouncing
+  // That would be handled by the caller in our architecture
+
   // Calculate wall normal (simplified - actual would use wall geometry)
   // In the original: dot = sp->h * x1 + sp->v * y1
   // Then: sp->h -= x1 * dot / (24*48); sp->v -= y1 * dot / (24*48)
@@ -346,7 +321,6 @@ export const {
   bunkShoot,
   bounceShot,
   processWallCollision,
-  setLife,
   clearAllShots
 } = shotsSlice.actions
 
