@@ -296,6 +296,156 @@ Converts world to screen coordinates and:
 - Draws visible bullets as 3x3 pixel squares
 - Handles wrapped drawing for toroidal worlds
 
+## Wall Strafe Effects
+
+Strafes are visual effects that appear when shots hit walls. They provide visual feedback for wall collisions and add polish to the game.
+
+### Strafe System Overview
+
+The strafe system consists of:
+- Pre-calculated direction determination during collision prediction
+- 16 directional sprite patterns for different impact angles  
+- 4-frame lifetime for each strafe effect
+- Support for multiple simultaneous strafes
+
+### Strafe Direction Calculation
+
+#### Timing and Pre-calculation
+
+The strafe direction is calculated **before** the actual collision occurs:
+
+1. **During Shot Movement** (`set_life()` in Terrain.c:146-230):
+   - When calculating shot trajectory, the game predicts future wall collisions
+   - Sets `sp->strafedir` immediately upon predicting a collision (lines 170, 195, 218)
+   - Also sets `sp->lifecount` to frames until impact
+   - This happens each time trajectory is recalculated
+
+2. **At Collision Time** (Play.c:805-806):
+   ```c
+   if (sp->lifecount == 0 && sp->strafedir >= 0)
+       start_strafe(sp->x, sp->y, sp->strafedir);
+   ```
+   - When lifecount reaches 0 (predicted collision time), creates the visual effect
+   - Uses the pre-calculated direction stored in `strafedir`
+
+#### Direction Determination
+
+The `getstrafedir()` function (Terrain.c:242-262) calculates which of 16 rotation angles to use:
+
+**For Vertical Walls (LINE_N):**
+- Returns 4 if shot approaches from right
+- Returns 12 if from left (bounce walls only)
+- Returns -1 for non-bounce walls from left (no strafe)
+
+**For Diagonal Walls:**
+- Uses lookup tables based on:
+  - Wall slope (5 different angles)
+  - Up/down orientation
+  - Whether shot approaches from above or below
+  - Bounce vs standard wall type
+
+**Lookup Tables:**
+```c
+char bouncedirtable[2][11] = {
+    { 8,  7,  6,  5, -1, -1, -1, 11, 10, 9, 8},  // From below
+    { 0, 15, 14, 13, -1, -1, -1,  3,  2, 1, 0}   // From above
+};
+
+char stdirtable[2][11] = {
+    { 8,  7,  6,  5, -1, -1, -1, -1, -1, 9, 8},  // From below
+    {-1, -1, -1, -1, -1, -1, -1,  3,  2, 1,-1}   // From above
+};
+```
+
+### Strafe Data Structures
+
+#### straferec Structure
+- `x, y`: World position of the strafe
+- `lifecount`: Frames remaining (counts down from STRAFE_LIFE)
+- `rot`: Rotation index (0-15) for sprite selection
+
+#### Strafe Pool Management
+
+The `start_strafe()` function (Terrain.c:379-394):
+```c
+start_strafe(x, y, dir)
+{
+    // Find oldest strafe slot to reuse
+    str = strafes;
+    for(p = strafes; p < strafes+NUMSTRAFES && str->lifecount; p++)
+        if (p->lifecount < str->lifecount)
+            str = p;
+    
+    // Initialize new strafe
+    str->x = x;
+    str->y = y;
+    str->lifecount = STRAFE_LIFE;  // 4 frames
+    str->rot = dir;
+}
+```
+
+### Strafe Sprites
+
+16 pre-defined 8x8 pixel bitmap patterns in `strafe_defs[16][STRAFEHT]` (Figs.c:121-141):
+- Each pattern represents a different impact angle
+- Stored as 8 bytes per sprite (1 byte per row)
+- Hexadecimal values define the bit pattern for each row
+
+Example patterns:
+```c
+{0x24, 0x95, 0x5A, 0x3C, 0x3C, 0x00, 0x00, 0x00},  // Direction 0
+{0x48, 0x2B, 0x3C, 0x3F, 0x0C, 0x00, 0x00, 0x00},  // Direction 1
+// ... 14 more patterns
+```
+
+### Strafe Rendering
+
+#### Main Update Loop
+
+The `do_strafes()` function (Terrain.c:398-407) runs each frame:
+```c
+do_strafes()
+{
+    for(str=strafes; str < &strafes[NUMSTRAFES]; str++)
+        if(str->lifecount)
+        {
+            str->lifecount--;
+            draw_strafe(str->x, str->y, str->rot, screenx, screeny);
+        }
+}
+```
+
+#### Drawing Function
+
+The `draw_strafe()` function (Draw.c:483-499):
+1. Adjusts position by STCENTER (3 pixels) for sprite centering
+2. Converts world to screen coordinates
+3. Checks screen boundaries (0 to VIEWHT-STRAFEHT vertically)
+4. Handles world wrapping for strafes near screen edges
+5. Calls `black_small()` to render the 8x8 bitmap
+
+#### Bitmap Rendering
+
+The `black_small()` function (Draw.c:530-554) uses 68K assembly:
+- Applies bitwise OR operations to draw black pixels
+- Handles sub-byte positioning with bit rotation
+- Draws 8 rows of 8 pixels each
+
+### Constants
+
+- `STRAFEHT`: 8 (strafe sprite height in pixels)
+- `STCENTER`: 3 (center offset from top-left)
+- `STRAFE_LIFE`: 4 (frames each strafe is visible)
+- `NUMSTRAFES`: Maximum simultaneous strafes
+
+### Design Rationale
+
+1. **Pre-calculation**: Computing direction during trajectory calculation avoids redundant calculations at impact
+2. **16 Directions**: Provides smooth visual feedback for all approach angles
+3. **Short Lifetime**: 4 frames keeps effects subtle and prevents screen clutter
+4. **Pool Reuse**: Fixed pool with oldest-first replacement prevents memory issues
+5. **No Strafe Cases**: Some wall angles don't produce strafes (-1 return) for gameplay balance
+
 ## Drawing
 
 Bullets are drawn as simple 3x3 pixel squares when visible on screen.
