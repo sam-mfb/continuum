@@ -4,11 +4,11 @@ import { shipSlice } from '@/ship/shipSlice'
 import { shotsSlice } from '@/shots/shotsSlice'
 import { wallsSlice } from '@/walls/wallsSlice'
 import { spritesSlice } from '@/store/spritesSlice'
-import { configureStore } from '@reduxjs/toolkit'
+import { configureStore, type Reducer } from '@reduxjs/toolkit'
 import { containmentMiddleware } from './containmentMiddleware'
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export function buildGameStore() {
+export function buildGameStore(additionalReducers?: Record<string, Reducer>) {
   return configureStore({
     reducer: {
       ship: shipSlice.reducer,
@@ -16,7 +16,8 @@ export function buildGameStore() {
       screen: screenSlice.reducer,
       shots: shotsSlice.reducer,
       walls: wallsSlice.reducer,
-      sprites: spritesSlice.reducer
+      sprites: spritesSlice.reducer,
+      ...additionalReducers
     },
     middleware: getDefaultMiddleware =>
       getDefaultMiddleware().concat(containmentMiddleware)

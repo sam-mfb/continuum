@@ -12,7 +12,7 @@ import { drawShipShot } from '../../shots/render/drawShipShot'
 import { shipSlice } from '@/ship/shipSlice'
 import { planetSlice } from '@/planet/planetSlice'
 import { screenSlice } from '@/screen/screenSlice'
-import { shotsSlice } from '@/shots/shotsSlice'
+import { shotsSlice, clearAllShots } from '@/shots/shotsSlice'
 import { ShipControl } from '@/ship/types'
 import { shipControl } from './shipControlThunk'
 import { buildGameStore } from './store'
@@ -27,6 +27,7 @@ import { shiftFigure } from '@/ship/render/shiftFigure'
 import { whiteTerrain, blackTerrain } from '@/walls/render'
 import { wallsSlice } from '@/walls/wallsSlice'
 import { LINE_KIND } from '@/walls/types'
+import { checkFigure } from '@/collision/checkFigure'
 
 // Configure store with all slices and containment middleware
 const store = buildGameStore()
@@ -108,6 +109,32 @@ const initializeGame = async (): Promise<void> => {
 // Start initialization
 void initializeGame()
 
+const resetGame = (): void => {
+  const state = store.getState()
+
+  // Reset ship to center of screen
+  const shipScreenX = SCRWTH / 2 // 256
+  const shipScreenY = Math.floor((TOPMARG + BOTMARG) / 2) // 159
+
+  store.dispatch(
+    shipSlice.actions.resetShip({
+      x: shipScreenX,
+      y: shipScreenY
+    })
+  )
+
+  // Reset screen position to planet's starting position
+  store.dispatch(
+    screenSlice.actions.resetScreen({
+      x: state.planet.xstart - shipScreenX,
+      y: state.planet.ystart - shipScreenY
+    })
+  )
+
+  // Clear all shots
+  store.dispatch(clearAllShots())
+}
+
 const getPressedControls = (keysDown: Set<string>): ShipControl[] => {
   const controls: ShipControl[] = []
 
@@ -144,6 +171,12 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
     console.error('Sprites not loaded')
     bitmap.data.fill(0)
     return
+  }
+
+  // Check for ESC key to reset game
+  if (frame.keysDown.has('Escape')) {
+    resetGame()
+    // Continue with normal rendering after reset
   }
 
   // Get gravity from planet
@@ -281,6 +314,20 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
   })(renderedBitmap)
 
   // 8. do_bunkers would go here (not implemented yet)
+
+  // Check for collision after drawing all lethal objects
+  // Following Play.c:243-245 pattern
+  const collision = checkFigure(renderedBitmap, {
+    x: finalState.ship.shipx - SCENTER,
+    y: finalState.ship.shipy - SCENTER,
+    height: 32, // SHIPHT
+    def: shipMaskBitmap
+  })
+
+  if (collision) {
+    resetGame()
+    // Continue rendering to show the reset state
+  }
 
   // 9. shift_figure - ship shadow
   renderedBitmap = shiftFigure({

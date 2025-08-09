@@ -97,6 +97,27 @@ export const shipSlice = createSlice({
       state.yslow += state.dy
       state.shipy += state.yslow >> 8
       state.yslow &= 255
+    },
+
+    resetShip: (state, action: PayloadAction<{ x: number; y: number }>) => {
+      // Reset position
+      state.shipx = action.payload.x
+      state.shipy = action.payload.y
+      // Reset velocity
+      state.dx = 0
+      state.dy = 0
+      state.xslow = 0
+      state.yslow = 0
+      // Reset rotation
+      state.shiprot = 0
+      // Reset states
+      state.flaming = false
+      state.flameBlink = 0
+      state.thrusting = false
+      state.firing = false
+      state.bouncing = false
+      state.shielding = false
+      // Keep fuel as is
     }
   }
 })

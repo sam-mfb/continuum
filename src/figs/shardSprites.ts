@@ -40,28 +40,30 @@ export function createShardSpriteSet(
       }
     }
 
-    // Generate rotations 4-15 from rotations 0-3
+    // Generate rotations 4-15 by rotating previous sprites by 90 degrees
     // Based on the rotation algorithm in extract_shards()
+    // This creates: 0→4, 1→5, 2→6, 3→7, 4→8, 5→9, 6→10, 7→11, 8→12, 9→13, 10→14, 11→15
     for (let i = 4; i < 16; i++) {
-      const source = kinds[kind]?.[i - 4]
+      const source = kindRotations[i - 4]
       if (!source) continue
       const rotated = rotateShardBy90(source)
       kindRotations[i] = rotated
     }
 
-    // Pre-compute background images for all rotations
+    // Pre-compute background images for ALL rotations (including rotated ones)
     for (let rot = 0; rot < 16; rot++) {
       const sprite = kinds[kind]?.[rot]
       if (!sprite) continue
 
       // Shards use alternating background alignment
       for (let align = 0; align < 2; align++) {
-        const bg = align === 0 ? BACKGROUND1 : BACKGROUND2
         const target =
           align === 0 ? sprite.images.background1 : sprite.images.background2
 
         for (let y = 0; y < SHARDHT; y++) {
-          const rowBg = ((y + align) & 1) === 0 ? bg : ~bg
+          // Select background based on (y + align) & 1, matching original:
+          // back[(y + align) & 1] where back[0]=BACKGROUND1, back[1]=BACKGROUND2
+          const rowBg = ((y + align) & 1) === 0 ? BACKGROUND1 : BACKGROUND2
           const bgByte = (rowBg >> 16) & 0xffff // Use middle 16 bits
 
           // Process 2 bytes per row
@@ -119,18 +121,15 @@ function rotateShard16x16(src: Uint8Array, dest: Uint8Array): void {
     let value = 0
 
     for (let x = 0; x < SHARDHT; x++) {
-      // Get bit from source at position (SHARDHT-1-x, y)
-      const srcY = SHARDHT - 1 - x
-      const srcByteIdx = srcY * 2 + Math.floor(y / 8)
-      const srcBitIdx = 7 - (y % 8)
+      // Get the 16-bit value from source row (SHARDHT-1-x)
+      const srcRow = SHARDHT - 1 - x
+      const srcWord = (src[srcRow * 2]! << 8) | src[srcRow * 2 + 1]!
 
-      if (srcByteIdx < src.length) {
-        const srcBit = ((src[srcByteIdx] ?? 0) >> srcBitIdx) & 1
-
-        if (srcBit) {
-          // Set bit in destination at position (x, y)
-          value |= 0x8000 >> x
-        }
+      // Extract bit y from this row (the original does: (from[row] << y) & 0x8000)
+      // This tests if bit (15-y) is set in the source word
+      if ((srcWord << y) & 0x8000) {
+        // Set bit x in destination row y
+        value |= 0x8000 >> x
       }
     }
 

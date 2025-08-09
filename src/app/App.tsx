@@ -26,6 +26,8 @@ import { junctionDrawRenderer } from './games/junctionDraw'
 import { shipMoveBitmapRenderer } from './games/shipMoveBitmap'
 import { bunkerDrawBitmapRenderer } from './games/bunkerDrawBitmap'
 import { fuelDrawBitmapRenderer } from './games/fuelDrawBitmap'
+import { explosionBitmapRenderer } from './games/explosionBitmap'
+import { shardTestBitmapRenderer } from './games/shardTestBitmap'
 import './App.css'
 
 function App(): React.JSX.Element {
@@ -172,6 +174,16 @@ function App(): React.JSX.Element {
                   type: 'bitmap',
                   name: 'Fuel Draw',
                   bitmapRenderer: fuelDrawBitmapRenderer
+                } as BitmapGameDefinition,
+                {
+                  type: 'bitmap',
+                  name: 'Explosion Test',
+                  bitmapRenderer: explosionBitmapRenderer
+                } as BitmapGameDefinition,
+                {
+                  type: 'bitmap',
+                  name: 'Shard Test',
+                  bitmapRenderer: shardTestBitmapRenderer
                 } as BitmapGameDefinition
               ]}
               defaultGameIndex={0}

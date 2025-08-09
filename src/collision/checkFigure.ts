@@ -1,5 +1,5 @@
 import type { MonochromeBitmap } from '@/bitmap'
-import { BACKGROUND_PATTERNS } from '../screen/constants'
+import { BACKGROUND_PATTERNS, SBARHT } from '../screen/constants'
 
 // Constants for collision detection
 const SPRITE_WIDTH_PIXELS = 32
@@ -21,7 +21,10 @@ export function checkFigure(
     def: MonochromeBitmap
   }
 ): boolean {
-  const { x, y, height, def } = args
+  const { x, height, def } = args
+
+  // Adjust y to account for status bar at top of screen (following orig/Sources/Draw.c:227-273)
+  const y = args.y + SBARHT
 
   // Validate that def is 32 pixels wide
   if (def.width !== SPRITE_WIDTH_PIXELS) {
@@ -66,11 +69,19 @@ export function checkFigure(
 
     // Shift sprite data to align with screen position
     const mainData = spriteData >>> bitShift
-    const overflowData = (spriteData << (16 - bitShift)) >>> 16
+
+    // Calculate overflow data from ONLY the lower 16 bits.
+    // This is because the overflow region only affects the next 16-bit word in screen memory,
+    // matching the original hardware's 16-bit word boundary handling (see assembly: move.w D0, D1).
+    const lowerBits = spriteData & 0xffff
+    const overflowData = (lowerBits << (16 - bitShift)) & 0xffff
 
     // Apply background mask to ignore dithered background
     const maskedMain = mainData & backgroundMask
-    const maskedOverflow = overflowData & (backgroundMask >>> 0)
+
+    // Apply ONLY the lower 16 bits of background mask to overflow
+    // This matches the original assembly: and.w back, D1 (16-bit AND)
+    const maskedOverflow = overflowData & (backgroundMask & 0xffff)
 
     // Check main 32-bit region
     if (maskedMain !== 0) {
