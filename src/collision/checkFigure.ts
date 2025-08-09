@@ -70,8 +70,9 @@ export function checkFigure(
     // Shift sprite data to align with screen position
     const mainData = spriteData >>> bitShift
 
-    // Calculate overflow data from ONLY the lower 16 bits
-    // This matches the original assembly: move.w D0, D1 (copies lower 16 bits)
+    // Calculate overflow data from ONLY the lower 16 bits.
+    // This is because the overflow region only affects the next 16-bit word in screen memory,
+    // matching the original hardware's 16-bit word boundary handling (see assembly: move.w D0, D1).
     const lowerBits = spriteData & 0xffff
     const overflowData = (lowerBits << (16 - bitShift)) & 0xffff
 

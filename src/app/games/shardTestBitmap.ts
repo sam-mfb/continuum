@@ -52,7 +52,7 @@ export function shardTestBitmap(deps: {
   screenY: number
 }): MonochromeBitmap {
   const { bitmap, shardImages, screenX, screenY } = deps
-  
+
   // We'll accumulate changes to this bitmap
   let result = bitmap
 
@@ -90,14 +90,18 @@ export function shardTestBitmap(deps: {
       const rotation = row * 4 + col
       const worldX = worldStartX + col * spacing
       const worldY = worldStartY + row * spacing
-      
+
       // Calculate screen position
       const screenPosX = worldX - screenX
       const screenPosY = worldY - screenY
-      
+
       // Skip if not visible
-      if (screenPosX < -SHARDHT || screenPosX >= result.width || 
-          screenPosY < -SHARDHT || screenPosY >= result.height) {
+      if (
+        screenPosX < -SHARDHT ||
+        screenPosX >= result.width ||
+        screenPosY < -SHARDHT ||
+        screenPosY >= result.height
+      ) {
         continue
       }
 
@@ -123,7 +127,6 @@ export function shardTestBitmap(deps: {
         def: uint16Def,
         height: SHARDHT
       })(result)
-
     }
   }
 
@@ -134,22 +137,26 @@ export function shardTestBitmap(deps: {
   for (let i = 0; i < 8; i++) {
     const worldX = worldStartX + i * 30 // Vary x position near right edge
     const worldY = testWorldY
-    
+
     // Calculate screen position
     const screenPosX = worldX - screenX
     const screenPosY = worldY - screenY
-    
+
     // Skip if not visible
-    if (screenPosX < -SHARDHT || screenPosX >= result.width || 
-        screenPosY < -SHARDHT || screenPosY >= result.height) {
+    if (
+      screenPosX < -SHARDHT ||
+      screenPosX >= result.width ||
+      screenPosY < -SHARDHT ||
+      screenPosY >= result.height
+    ) {
       continue
     }
 
     const sprite = shardImages.getSprite(kind, testRotation)
-    
+
     // Calculate alignment - matches original: (sp->x + sp->y) & 1
     const align = (worldX + worldY) & 1
-    
+
     const imageData =
       align === 0 ? sprite.images.background1 : sprite.images.background2
 
@@ -253,7 +260,7 @@ export function shardTestBitmap(deps: {
     drawAt(worldX - WORLD_WIDTH)
     drawAt(worldX + WORLD_WIDTH)
   }
-  
+
   return result
 }
 
@@ -304,16 +311,16 @@ export const shardTestBitmapRenderer: BitmapRenderer = (bitmap, frame) => {
   bitmap.data.fill(0)
 
   // Render the test and get the updated bitmap
-  const rendered = shardTestBitmap({ 
+  const rendered = shardTestBitmap({
     bitmap,
     shardImages,
     screenX: viewportState.x,
     screenY: viewportState.y
   })
-  
+
   // Copy the rendered result back to the output bitmap
   bitmap.data.set(rendered.data)
-  
+
   // Draw viewport position indicator in top-left corner for debugging
   // Just draw a small indicator box in the corner to show we're scrolling
   for (let i = 0; i < 4; i++) {

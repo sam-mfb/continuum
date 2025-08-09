@@ -37,7 +37,7 @@ let initializationComplete = false
 let initializationError: Error | null = null
 
 // Bunker configuration
-interface BunkerConfig {
+type BunkerConfig = {
   kind: number
   rotation: number
   x: number
@@ -69,7 +69,16 @@ for (let i = 0; i < 8; i++) {
   })
 }
 // Row 2: rotations 8-15 (S, SSW, SW, WSW, W, WNW, NW, NNW)
-const wallKeys2 = ['KeyQ', 'KeyW', 'KeyE', 'KeyR', 'KeyT', 'KeyY', 'KeyU', 'KeyI']
+const wallKeys2 = [
+  'KeyQ',
+  'KeyW',
+  'KeyE',
+  'KeyR',
+  'KeyT',
+  'KeyY',
+  'KeyU',
+  'KeyI'
+]
 for (let i = 0; i < 8; i++) {
   bunkers.push({
     kind: 0,
@@ -84,7 +93,16 @@ for (let i = 0; i < 8; i++) {
 
 // DIFF (kind 1) - show all 16 rotations
 // Row 3: rotations 0-7
-const diffKeys1 = ['KeyA', 'KeyS', 'KeyD', 'KeyF', 'KeyG', 'KeyH', 'KeyJ', 'KeyK']
+const diffKeys1 = [
+  'KeyA',
+  'KeyS',
+  'KeyD',
+  'KeyF',
+  'KeyG',
+  'KeyH',
+  'KeyJ',
+  'KeyK'
+]
 for (let i = 0; i < 8; i++) {
   bunkers.push({
     kind: 1,
@@ -97,7 +115,16 @@ for (let i = 0; i < 8; i++) {
   })
 }
 // Row 4: rotations 8-15
-const diffKeys2 = ['KeyZ', 'KeyX', 'KeyC', 'KeyV', 'KeyB', 'KeyN', 'KeyM', 'Comma']
+const diffKeys2 = [
+  'KeyZ',
+  'KeyX',
+  'KeyC',
+  'KeyV',
+  'KeyB',
+  'KeyN',
+  'KeyM',
+  'Comma'
+]
 for (let i = 0; i < 8; i++) {
   bunkers.push({
     kind: 1,
@@ -220,8 +247,10 @@ const triggerBunkerExplosion = (bunker: BunkerConfig): void => {
   const dir = bunker.kind >= 2 ? 0 : bunker.rotation
 
   // Debug: log what we're triggering
-  console.log(`Exploding bunker: kind=${bunker.kind}, rotation=${bunker.rotation}, dir=${dir}`)
-  
+  console.log(
+    `Exploding bunker: kind=${bunker.kind}, rotation=${bunker.rotation}, dir=${dir}`
+  )
+
   // Trigger bunker explosion
   store.dispatch(
     startExplosion({
@@ -246,7 +275,7 @@ export const explosionBitmapRenderer: BitmapRenderer = (
 ) => {
   // Clear the bitmap each frame
   bitmap.data.fill(0)
-  
+
   // Check initialization status
   if (initializationError) {
     console.error('Initialization failed:', initializationError)
@@ -280,7 +309,7 @@ export const explosionBitmapRenderer: BitmapRenderer = (
     if (!bunker.alive) {
       bunker.explosionFrame++
       anyExplosionActive = true
-      
+
       // Reset bunker after explosion completes
       if (bunker.explosionFrame >= EXPLOSION_DURATION) {
         bunker.alive = true
@@ -336,11 +365,14 @@ export const explosionBitmapRenderer: BitmapRenderer = (
   // Draw all bunkers
   if (finalState.sprites.allSprites) {
     const bunkerSprites = finalState.sprites.allSprites.bunkers
-    
+
     for (const bunker of bunkers) {
       if (bunker.alive) {
-        const bunkerSprite = bunkerSprites.getSprite(bunker.kind, bunker.rotation)
-        
+        const bunkerSprite = bunkerSprites.getSprite(
+          bunker.kind,
+          bunker.rotation
+        )
+
         if (bunkerSprite) {
           // Use pre-rendered image based on alignment
           const align = (bunker.x + bunker.y) & 1

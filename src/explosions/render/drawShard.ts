@@ -25,15 +25,15 @@ export function drawShard(deps: {
   height: number
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
-  const { x, y: origY, def, height: origHeight } = deps
+    const { x, y: origY, def, height: origHeight } = deps
 
     const newScreen = cloneBitmap(screen)
 
     // Early out
     if (origHeight <= 0 || def.length === 0) return newScreen
 
-  // Horizontal clipping guard relative to actual bitmap width
-  if (x < -16 || x >= newScreen.width) return newScreen
+    // Horizontal clipping guard relative to actual bitmap width
+    if (x < -16 || x >= newScreen.width) return newScreen
 
     // Vertical clipping (match Draw.c style)
     let y = origY
