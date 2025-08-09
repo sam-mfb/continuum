@@ -4,6 +4,7 @@ import { SHOT, NUMSTRAFES, STRAFE_LIFE } from './constants'
 import type { Bunker } from '@/planet/types'
 import type { LineRec } from '@/shared/types/line'
 import { bunkShoot as bunkShootFn } from './bunkShoot'
+import { getLife } from './getLife'
 
 const initializeShot = (): ShotRec => ({
   x: 0,
@@ -85,7 +86,7 @@ export const shotsSlice = createSlice({
       }
     },
     // Based on Terrain.c:398-407 - do_strafes()
-    do_strafes: state => {
+    doStrafes: state => {
       state.strafes = state.strafes.map(strafe => {
         if (strafe.lifecount > 0) {
           return { ...strafe, lifecount: strafe.lifecount - 1 }
@@ -95,7 +96,7 @@ export const shotsSlice = createSlice({
     },
 
     // Based on Terrain.c:379-394 - start_strafe()
-    start_strafe: (
+    startStrafe: (
       state,
       action: PayloadAction<{
         x: number
@@ -153,7 +154,7 @@ export const shotsSlice = createSlice({
       state.bunkshots = bunkShootFn(action.payload)(state.bunkshots)
     },
     // Based on Play.c:926-948 - bounce_shot()
-    bounce_shot: (
+    bounceShot: (
       state,
       action: PayloadAction<{
         shotIndex: number
@@ -168,7 +169,7 @@ export const shotsSlice = createSlice({
       if (!shot || shot.lifecount > 0) return
 
       // Apply bounce physics
-      const bouncedShot = bounceShot(shot, wall)
+      const bouncedShot = bounceShotFunc(shot, wall)
 
       // Update the shot in the array
       if (isShipShot) {
@@ -217,7 +218,7 @@ export const shotsSlice = createSlice({
 
       // If it's a bounce wall (btime > 0), apply bounce
       if (shot.btime > 0) {
-        const bouncedShot = bounceShot(shot, action.payload.wall)
+        const bouncedShot = bounceShotFunc(shot, action.payload.wall)
         if (isShipShot) {
           state.shipshots[shotIndex] = bouncedShot
         } else {
@@ -227,7 +228,7 @@ export const shotsSlice = createSlice({
     },
 
     // Based on Terrain.c:114-230 - set_life()
-    set_life: (
+    setLife: (
       state,
       action: PayloadAction<{
         shotIndex: number
@@ -236,20 +237,28 @@ export const shotsSlice = createSlice({
         totallife: number
       }>
     ) => {
-      const { shotIndex, isShipShot, walls } = action.payload
+      const { shotIndex, isShipShot, walls, totallife } = action.payload
       const shots = isShipShot ? state.shipshots : state.bunkshots
       const shot = shots[shotIndex]
 
       if (!shot) return
 
-      // This would require complex trajectory calculation
-      // For now, just update the shot with provided wall data
-      const result = setLife(shot, walls)
+      // Calculate collision timing and parameters
+      const result = getLife(shot, walls, totallife)
+
+      // Update the shot with calculated values
+      const updatedShot = {
+        ...shot,
+        lifecount: result.framesToImpact,
+        strafedir: result.strafedir,
+        btime: result.btime,
+        hitlineId: result.hitlineId
+      }
 
       if (isShipShot) {
-        state.shipshots[shotIndex] = result.shot
+        state.shipshots[shotIndex] = updatedShot
       } else {
-        state.bunkshots[shotIndex] = result.shot
+        state.bunkshots[shotIndex] = updatedShot
       }
     },
 
@@ -268,23 +277,6 @@ export const shotsSlice = createSlice({
     }
   }
 })
-
-// Based on Terrain.c:114-230 - set_life()
-function setLife(
-  shot: ShotRec,
-  _walls: LineRec[]
-): { shot: ShotRec; shouldBounce: boolean } {
-  // This is a simplified version - full implementation would:
-  // 1. Check all walls to find which one the shot will hit first
-  // 2. Calculate frames until impact for each potential collision
-  // 3. Set lifecount to frames until the nearest wall hit
-  // 4. Set strafedir using getstrafedir()
-  // 5. For bounce walls, set btime to preserve remaining lifetime
-
-  // For now, return unchanged shot
-  // Full implementation would require complex trajectory calculation
-  return { shot, shouldBounce: false }
-}
 
 function moveShot(
   shot: ShotRec,
@@ -326,7 +318,7 @@ function moveShot(
 }
 
 // Based on Play.c:926-948 - bounce_shot()
-function bounceShot(shot: ShotRec, _wall: LineRec): ShotRec {
+function bounceShotFunc(shot: ShotRec, _wall: LineRec): ShotRec {
   // Calculate wall normal (simplified - actual would use wall geometry)
   // In the original: dot = sp->h * x1 + sp->v * y1
   // Then: sp->h -= x1 * dot / (24*48); sp->v -= y1 * dot / (24*48)
@@ -347,21 +339,15 @@ function bounceShot(shot: ShotRec, _wall: LineRec): ShotRec {
 
 export const {
   initShipshot,
-  do_strafes,
-  start_strafe,
+  doStrafes,
+  startStrafe,
   moveShipshots,
   moveBullets,
   bunkShoot,
-  bounce_shot,
+  bounceShot,
   processWallCollision,
-  set_life,
+  setLife,
   clearAllShots
 } = shotsSlice.actions
-
-// Selectors for rendering and game logic
-// These would be used with useSelector in components:
-// const visibleStrafes = useSelector((state: RootState) =>
-//   state.shots.strafes.filter(s => s.lifecount > 0)
-// )
 
 export default shotsSlice.reducer
