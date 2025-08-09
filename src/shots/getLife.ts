@@ -29,7 +29,7 @@ export type GetLifeResult = {
  * - Whether it's a bounce (and remaining lifetime)
  *
  * @param shot - The shot to calculate trajectory for
- * @param walls - All walls to check for collision
+ * @param walls - All walls to check for collision (already filtered to exclude ignored wall)
  * @param totallife - Total remaining lifetime of the shot
  * @returns Collision calculation results
  */
