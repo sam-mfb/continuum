@@ -28,6 +28,7 @@ import { bunkerDrawBitmapRenderer } from './games/bunkerDrawBitmap'
 import { fuelDrawBitmapRenderer } from './games/fuelDrawBitmap'
 import { explosionBitmapRenderer } from './games/explosionBitmap'
 import { shardTestBitmapRenderer } from './games/shardTestBitmap'
+import { strafeTestBitmapRenderer } from './games/strafeTestBitmap'
 import './App.css'
 
 function App(): React.JSX.Element {
@@ -184,6 +185,11 @@ function App(): React.JSX.Element {
                   type: 'bitmap',
                   name: 'Shard Test',
                   bitmapRenderer: shardTestBitmapRenderer
+                } as BitmapGameDefinition,
+                {
+                  type: 'bitmap',
+                  name: 'Strafe Test',
+                  bitmapRenderer: strafeTestBitmapRenderer
                 } as BitmapGameDefinition
               ]}
               defaultGameIndex={0}
