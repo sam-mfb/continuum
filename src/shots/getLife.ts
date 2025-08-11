@@ -25,21 +25,86 @@ export type GetLifeResult = {
 }
 
 /**
- * Calculate when and how a shot will hit a wall
+ * Calculate when and how a shot will hit a wall using ray-casting collision detection
  *
  * Based on get_life() from orig/Sources/Terrain.c:142-230
  *
- * This function calculates:
- * - How many frames until the shot hits a wall
- * - Which wall will be hit first
- * - The strafe effect direction
- * - Whether it's a bounce (and remaining lifetime)
+ * This function performs line-line intersection tests between a shot's trajectory and all walls
+ * to determine which wall (if any) the shot will hit first. It uses the shot's current position
+ * (x8, y8) and velocity (h, v) to project a straight-line path, then checks each wall segment
+ * for intersection with that path.
  *
- * @param shot - The shot to calculate trajectory for
- * @param walls - All walls to check for collision (already filtered to exclude ignored wall)
- * @param totallife - Total remaining lifetime of the shot (lifecount + btime)
- * @param timeScale - Ratio of actual frame time to original 50ms (default 1.0 for 20 FPS)
- * @returns Collision calculation results
+ * ## Algorithm Overview:
+ * 1. Projects shot endpoint based on current velocity and remaining lifetime
+ * 2. Iterates through walls in ascending x-order (can early-exit when walls are too far right)
+ * 3. For each wall, calculates if/when the shot's trajectory intersects it
+ * 4. Tracks the nearest collision (smallest time to impact)
+ * 5. Returns collision details including time, wall ID, and special effects
+ *
+ * ## Coordinate System:
+ * - Uses 8x fixed-point coordinates for sub-pixel precision (x8, y8)
+ * - Regular pixel coordinates are obtained by right-shifting by 3 (>> 3)
+ * - Velocities (h, v) represent distance per logical frame in 8x fixed-point
+ *
+ * ## Wall Types Handled:
+ * - **Vertical walls** (LINE_TYPE.N): Special case using simplified math
+ * - **Diagonal walls**: Use slope-based intersection with slopes2 array [0,0,4,2,1,0]
+ *   - Index 2 (NNE): slope = 4/2 = 2:1 ratio
+ *   - Index 3 (NE): slope = 2/2 = 1:1 ratio (45°)
+ *   - Index 4 (ENE): slope = 1/2 = 1:2 ratio
+ *
+ * ## Frame-Rate Independence:
+ * The timeScale parameter allows the function to work at different framerates:
+ * - Original game runs at 20 FPS (50ms per frame) with timeScale = 1.0
+ * - For 60 FPS: use timeScale = 0.333 (16.67ms / 50ms)
+ * - For 30 FPS: use timeScale = 0.667 (33.33ms / 50ms)
+ *
+ * The returned framesToImpact is in "logical frames" (20 FPS units), allowing the game
+ * to maintain consistent physics regardless of rendering framerate.
+ *
+ * @param shot - The shot to trace. Must contain:
+ *   - x8, y8: Current position in 8x fixed-point coordinates
+ *   - h, v: Horizontal/vertical velocity in 8x fixed-point units per logical frame
+ *   - lifecount: Current frames of life remaining
+ *
+ * @param walls - Array of wall segments to check for collision. Should be:
+ *   - Sorted by ascending startx for optimal early-exit
+ *   - Already filtered to exclude any walls to ignore (e.g., just bounced off)
+ *   - Each wall must have: startx, starty, endx, endy, type, kind, up_down, id
+ *
+ * @param totallife - Total lifetime for this trajectory calculation (usually lifecount + btime).
+ *   Used to calculate remaining bounce time if the hit wall is a bounce wall.
+ *
+ * @param timeScale - Ratio of actual frame time to original 50ms (default 1.0 for 20 FPS).
+ *   Used to scale velocities for frame-rate independent physics.
+ *
+ * @returns Object containing:
+ *   - framesToImpact: Logical frames (at 20 FPS) until collision (or totallife if no hit)
+ *   - strafedir: Rotation value for strafe effect animation (-1 if no collision)
+ *   - btime: Remaining lifetime after bounce (0 if not a bounce wall)
+ *   - hitlineId: ID of the wall that will be hit (empty string if no collision)
+ *
+ * @example
+ * ```typescript
+ * // Shot moving right at 45° angle
+ * const shot = {
+ *   x8: 1000 << 3,  // x=1000 in 8x fixed-point
+ *   y8: 500 << 3,   // y=500
+ *   h: 16,          // Moving right at 2 pixels per frame (16/8)
+ *   v: 16,          // Moving down at 2 pixels per frame
+ *   lifecount: 35   // 35 frames remaining
+ * }
+ *
+ * // Check collision with walls
+ * const result = getLife(shot, walls, shot.lifecount, 1.0)
+ *
+ * if (result.hitlineId) {
+ *   console.log(`Will hit wall ${result.hitlineId} in ${result.framesToImpact} frames`)
+ *   if (result.btime > 0) {
+ *     console.log(`It's a bounce wall, ${result.btime} frames remaining after bounce`)
+ *   }
+ * }
+ * ```
  */
 export function getLife(
   shot: ShotRec,
