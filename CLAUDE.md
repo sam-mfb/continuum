@@ -13,6 +13,15 @@ This is a recreation of the 68000 Mac game "Continuum" for the web, maintaining 
 - Original source files are in `orig/Sources/` - these are the reference 68K Mac C files
 - IMPORTANT: Never edit files in orig/
 - Information about how the game is architected is available in `arch/` though always double check against the actual code
+- 68k instructions and macros - When implementing rewrites of machine code, use the emulator library available in src/asm
+
+### Port Structure
+
+The port makes several adaptations to modern javascript/coding practices:
+
+1. We try to keep a cleaner separation between game state and rendering than the original game (though the original game does a pretty good job)
+2. All game state updates (including physics) are maintained in redux slices
+3. Rendering is handled by using the MonochromeBitmap type to represent a black and white screen or image and then copying that to a canvas for every frame
 
 ## Development Rules
 
