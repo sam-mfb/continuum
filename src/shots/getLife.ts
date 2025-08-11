@@ -38,12 +38,14 @@ export type GetLifeResult = {
  * @param shot - The shot to calculate trajectory for
  * @param walls - All walls to check for collision (already filtered to exclude ignored wall)
  * @param totallife - Total remaining lifetime of the shot (lifecount + btime)
+ * @param timeScale - Ratio of actual frame time to original 50ms (default 1.0 for 20 FPS)
  * @returns Collision calculation results
  */
 export function getLife(
   shot: ShotRec,
   walls: LineRec[],
-  totallife: number
+  totallife: number,
+  timeScale: number = 1.0
 ): GetLifeResult {
   // Initialize with defaults
   let shortest = shot.lifecount // Assume it won't hit any
@@ -52,10 +54,12 @@ export function getLife(
   let strafedir = -1
 
   // Calculate shot position and endpoint
+  // Note: h and v are velocity per logical frame (50ms)
+  // We scale them by timeScale to get distance for current framerate
   const x = shot.x8 >> 3
   const y = shot.y8 >> 3
-  let x2 = (shot.x8 + shot.h * shortest) >> 3
-  let y2 = (shot.y8 + shot.v * shortest) >> 3
+  let x2 = (shot.x8 + shot.h * shortest * timeScale) >> 3
+  let y2 = (shot.y8 + shot.v * shortest * timeScale) >> 3
 
   // Check each wall for collision
   for (const line of walls) {
@@ -74,13 +78,15 @@ export function getLife(
 
       const y0 = y + (shot.v * (line.startx - x)) / shot.h
       if (y0 >= line.starty && y0 <= line.starty + line.length) {
-        const life = ((line.startx - x) << 3) / shot.h
+        // Calculate frames to impact accounting for timeScale
+        const spatialDistance = (line.startx - x) << 3
+        const life = spatialDistance / (shot.h * timeScale)
         if (life > 0 && life < shortest) {
           shortest = life
           strafedir = getstrafedir(line, x, y)
           hitline = line
-          x2 = (shot.x8 + shot.h * shortest) >> 3
-          y2 = (shot.y8 + shot.v * shortest) >> 3
+          x2 = (shot.x8 + shot.h * shortest * timeScale) >> 3
+          y2 = (shot.y8 + shot.v * shortest * timeScale) >> 3
         }
       }
     } else {
@@ -99,13 +105,15 @@ export function getLife(
         // Vertical shot trajectory
         if (x >= line.startx && x <= line.endx) {
           const y0 = line.starty + ((x - line.startx) * m1) / 2
-          const life = ((y0 - y) << 3) / shot.v
+          // Calculate frames to impact accounting for timeScale
+          const spatialDistance = (y0 - y) << 3
+          const life = spatialDistance / (shot.v * timeScale)
           if (life > 0 && life < shortest) {
             shortest = life
             strafedir = getstrafedir(line, x, y)
             hitline = line
-            x2 = (shot.x8 + shot.h * shortest) >> 3
-            y2 = (shot.y8 + shot.v * shortest) >> 3
+            x2 = (shot.x8 + shot.h * shortest * timeScale) >> 3
+            y2 = (shot.y8 + shot.v * shortest * timeScale) >> 3
           }
         }
       } else {
@@ -126,13 +134,14 @@ export function getLife(
         // Check if intersection is within line segment
         const x0_pixels = x0 / 8
         if (x0_pixels >= line.startx && x0_pixels <= line.endx) {
-          const life = (x0 - shot.x8) / shot.h
+          // Calculate frames to impact accounting for timeScale
+          const life = (x0 - shot.x8) / (shot.h * timeScale)
           if (life > 0 && life < shortest) {
             shortest = life
             strafedir = getstrafedir(line, x, y)
             hitline = line
-            x2 = (shot.x8 + shot.h * shortest) >> 3
-            y2 = (shot.y8 + shot.v * shortest) >> 3
+            x2 = (shot.x8 + shot.h * shortest * timeScale) >> 3
+            y2 = (shot.y8 + shot.v * shortest * timeScale) >> 3
           }
         }
       }
