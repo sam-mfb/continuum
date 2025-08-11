@@ -32,7 +32,6 @@ import { getLife } from './getLife'
  * @param ignoreWallId - Optional ID of wall to ignore (e.g., the wall just bounced off)
  * @param worldwidth - Width of the world in pixels
  * @param worldwrap - Whether the world wraps around at boundaries
- * @param timeScale - Ratio of actual frame time to original 50ms (default 1.0 for 20 FPS)
  * @returns Updated shot with collision parameters set
  */
 export function setLife(
@@ -41,8 +40,7 @@ export function setLife(
   totallife: number,
   ignoreWallId: string | undefined,
   worldwidth: number,
-  worldwrap: boolean,
-  timeScale: number = 1.0
+  worldwrap: boolean
 ): ShotRec {
   // Filter out the wall to ignore if specified
   const wallsToCheck = ignoreWallId
@@ -52,22 +50,21 @@ export function setLife(
   const world8 = worldwidth << 3
 
   // Calculate collision timing and parameters
-  let result = getLife(shot, wallsToCheck, totallife, timeScale)
+  let result = getLife(shot, wallsToCheck, totallife)
 
   // Compute endpoint of shot (matches original line 126)
-  // Note: h is velocity per logical frame, scale by timeScale for actual distance
-  const x2 = (shot.x8 + result.framesToImpact * shot.h * timeScale) >> 3
+  const x2 = (shot.x8 + result.framesToImpact * shot.h) >> 3
 
   // World wrap logic (matches original lines 127-137)
   if (worldwrap) {
     if (x2 < 0) {
       // Temporarily adjust shot position, recalculate, then use original position
       const adjustedShot = { ...shot, x8: shot.x8 + world8 }
-      result = getLife(adjustedShot, wallsToCheck, totallife, timeScale)
+      result = getLife(adjustedShot, wallsToCheck, totallife)
     } else if (x2 > worldwidth) {
       // Temporarily adjust shot position, recalculate, then use original position
       const adjustedShot = { ...shot, x8: shot.x8 - world8 }
-      result = getLife(adjustedShot, wallsToCheck, totallife, timeScale)
+      result = getLife(adjustedShot, wallsToCheck, totallife)
     }
   }
 

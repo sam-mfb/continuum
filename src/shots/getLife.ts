@@ -75,8 +75,6 @@ export type GetLifeResult = {
  * @param totallife - Total lifetime for this trajectory calculation (usually lifecount + btime).
  *   Used to calculate remaining bounce time if the hit wall is a bounce wall.
  *
- * @param timeScale - Ratio of actual frame time to original 50ms (default 1.0 for 20 FPS).
- *   Used to scale velocities for frame-rate independent physics.
  *
  * @returns Object containing:
  *   - framesToImpact: Logical frames (at 20 FPS) until collision (or totallife if no hit)
@@ -109,8 +107,7 @@ export type GetLifeResult = {
 export function getLife(
   shot: ShotRec,
   walls: LineRec[],
-  totallife: number,
-  timeScale: number = 1.0
+  totallife: number
 ): GetLifeResult {
   // Initialize with defaults
   let shortest = shot.lifecount // Assume it won't hit any
@@ -120,11 +117,10 @@ export function getLife(
 
   // Calculate shot position and endpoint
   // Note: h and v are velocity per logical frame (50ms)
-  // We scale them by timeScale to get distance for current framerate
   const x = shot.x8 >> 3
   const y = shot.y8 >> 3
-  let x2 = (shot.x8 + shot.h * shortest * timeScale) >> 3
-  let y2 = (shot.y8 + shot.v * shortest * timeScale) >> 3
+  let x2 = (shot.x8 + shot.h * shortest) >> 3
+  let y2 = (shot.y8 + shot.v * shortest) >> 3
 
   // Check each wall for collision
   for (const line of walls) {
@@ -139,19 +135,15 @@ export function getLife(
 
     if (line.type === LINE_TYPE.N) {
       // Special case for vertical lines
-      if (shot.h === 0) continue // Shot moving vertically, won't hit vertical wall
-
       const y0 = y + (shot.v * (line.startx - x)) / shot.h
       if (y0 >= line.starty && y0 <= line.starty + line.length) {
-        // Calculate frames to impact accounting for timeScale
-        const spatialDistance = (line.startx - x) << 3
-        const life = spatialDistance / (shot.h * timeScale)
-        if (life > 0 && life < shortest) {
+        const life = ((line.startx - x) << 3) / shot.h
+        if (life < shortest) {
           shortest = life
           strafedir = getstrafedir(line, x, y)
           hitline = line
-          x2 = (shot.x8 + shot.h * shortest * timeScale) >> 3
-          y2 = (shot.y8 + shot.v * shortest * timeScale) >> 3
+          x2 = (shot.x8 + shot.h * shortest) >> 3
+          y2 = (shot.y8 + shot.v * shortest) >> 3
         }
       }
     } else {
@@ -170,15 +162,13 @@ export function getLife(
         // Vertical shot trajectory
         if (x >= line.startx && x <= line.endx) {
           const y0 = line.starty + ((x - line.startx) * m1) / 2
-          // Calculate frames to impact accounting for timeScale
-          const spatialDistance = (y0 - y) << 3
-          const life = spatialDistance / (shot.v * timeScale)
-          if (life > 0 && life < shortest) {
+          const life = ((y0 - y) << 3) / shot.v
+          if (life < shortest) {
             shortest = life
             strafedir = getstrafedir(line, x, y)
             hitline = line
-            x2 = (shot.x8 + shot.h * shortest * timeScale) >> 3
-            y2 = (shot.y8 + shot.v * shortest * timeScale) >> 3
+            x2 = (shot.x8 + shot.h * shortest) >> 3
+            y2 = (shot.y8 + shot.v * shortest) >> 3
           }
         }
       } else {
@@ -199,14 +189,13 @@ export function getLife(
         // Check if intersection is within line segment
         const x0_pixels = x0 / 8
         if (x0_pixels >= line.startx && x0_pixels <= line.endx) {
-          // Calculate frames to impact accounting for timeScale
-          const life = (x0 - shot.x8) / (shot.h * timeScale)
-          if (life > 0 && life < shortest) {
+          const life = (x0 - shot.x8) / shot.h
+          if (life < shortest) {
             shortest = life
             strafedir = getstrafedir(line, x, y)
             hitline = line
-            x2 = (shot.x8 + shot.h * shortest * timeScale) >> 3
-            y2 = (shot.y8 + shot.v * shortest * timeScale) >> 3
+            x2 = (shot.x8 + shot.h * shortest) >> 3
+            y2 = (shot.y8 + shot.v * shortest) >> 3
           }
         }
       }
