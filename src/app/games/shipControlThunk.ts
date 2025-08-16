@@ -22,11 +22,16 @@ export const shipControl =
 
     // Get updated state after movement
     const state = getState()
-    const { ship, screen } = state
+    const { ship, screen, walls, planet } = state
 
     // Calculate global position
     const globalx = screen.screenx + ship.shipx
     const globaly = screen.screeny + ship.shipy
+
+    // Get walls as array for collision detection
+    const wallsArray = Object.values(
+      walls.updatedWalls.length > 0 ? walls.updatedWalls : walls.organizedWalls
+    )
 
     //	if ( (pressed & KEY_SHIELD) && fuel)
     //	{	shielding = TRUE;
@@ -62,7 +67,10 @@ export const shipControl =
             dx: ship.dx,
             dy: ship.dy,
             globalx,
-            globaly
+            globaly,
+            walls: wallsArray,
+            worldwidth: planet.worldwidth,
+            worldwrap: planet.worldwrap
           })
         )
       }

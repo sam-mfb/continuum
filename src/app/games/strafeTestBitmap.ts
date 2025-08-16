@@ -20,7 +20,7 @@ const viewportState = {
 }
 
 // Define strafe positions - 4x4 grid showing all 16 rotations
-interface StrafeInfo {
+type StrafeInfo = {
   x: number
   y: number
   rot: number // 0-15 for the 16 directional sprites
@@ -32,8 +32,8 @@ for (let i = 0; i < 16; i++) {
   const row = Math.floor(i / 4)
   const col = i % 4
   strafes.push({
-    x: 100 + col * 80,  // 80 pixels apart horizontally
-    y: 50 + row * 80,   // 80 pixels apart vertically
+    x: 100 + col * 80, // 80 pixels apart horizontally
+    y: 50 + row * 80, // 80 pixels apart vertically
     rot: i
   })
 }
@@ -41,7 +41,11 @@ for (let i = 0; i < 16; i++) {
 /**
  * Renderer that displays all 16 strafe orientations on a white background
  */
-export const strafeTestBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
+export const strafeTestBitmapRenderer: BitmapRenderer = (
+  bitmap,
+  frame,
+  _env
+) => {
   // Handle keyboard input for viewport movement
   const moveSpeed = 5
   if (frame.keysDown.has('ArrowUp')) {

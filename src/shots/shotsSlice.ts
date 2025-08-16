@@ -4,8 +4,7 @@ import { SHOT, NUMSTRAFES, STRAFE_LIFE } from './constants'
 import type { Bunker } from '@/planet/types'
 import type { LineRec } from '@/shared/types/line'
 import { bunkShoot as bunkShootFn } from './bunkShoot'
-// setLife would be imported and used here when walls data is available
-// import { setLife } from './setLife'
+import { setLife } from './setLife'
 
 const initializeShot = (): ShotRec => ({
   x: 0,
@@ -45,9 +44,22 @@ export const shotsSlice = createSlice({
         dy: number
         globalx: number
         globaly: number
+        walls: LineRec[]
+        worldwidth: number
+        worldwrap: boolean
       }>
     ) => {
-      const { shielding, shiprot, dx, dy, globalx, globaly } = action.payload
+      const {
+        shielding,
+        shiprot,
+        dx,
+        dy,
+        globalx,
+        globaly,
+        walls,
+        worldwidth,
+        worldwrap
+      } = action.payload
       let i = 0
       for (i = 0; i < SHOT.NUMBULLETS && state.shipshots[i]!.lifecount; i++) {}
 
@@ -62,14 +74,24 @@ export const shotsSlice = createSlice({
           x8: globalx << 3,
           y8: globaly << 3,
           lifecount: SHOT.SHOTLEN,
-          btime: 0
+          btime: 0,
+          strafedir: -1,
+          hitlineId: ''
         }
 
-        // TODO: Call setLife with walls data
-        // newShot = setLife(newShot, walls, SHOT.SHOTLEN)
-        // For now, skip this step since we don't have walls in this action
+        // Calculate collision parameters using setLife
+        // Pass undefined for ignoreWallId since it's a new shot
+        newShot = setLife(
+          newShot,
+          walls,
+          SHOT.SHOTLEN,
+          undefined,
+          worldwidth,
+          worldwrap
+        )
 
         if (newShot.lifecount > 0) {
+          // Advance shot by one frame
           newShot = {
             ...newShot,
             x8: newShot.x8 + SHOT.shotvecs[shiprot]!,
@@ -78,8 +100,8 @@ export const shotsSlice = createSlice({
           }
         }
 
-        // TODO: Handle immediate wall collision if lifecount == 0
-        // Would need to call bounceShot if collision detected
+        // Handle immediate wall collision if lifecount == 0
+        // In the original, this would trigger bounce_shot if btime > 0
 
         // Create new array with updated shot
         state.shipshots = state.shipshots.map((shot, index) =>
@@ -162,16 +184,30 @@ export const shotsSlice = createSlice({
         shotIndex: number
         isShipShot: boolean
         wall: LineRec
+        walls: LineRec[]
+        worldwidth: number
+        worldwrap: boolean
       }>
     ) => {
-      const { shotIndex, isShipShot, wall } = action.payload
+      const { shotIndex, isShipShot, wall, walls, worldwidth, worldwrap } =
+        action.payload
       const shots = isShipShot ? state.shipshots : state.bunkshots
       const shot = shots[shotIndex]
 
       if (!shot || shot.lifecount > 0) return
 
       // Apply bounce physics
-      const bouncedShot = bounceShotFunc(shot, wall)
+      let bouncedShot = bounceShotFunc(shot, wall)
+
+      // Recalculate trajectory after bouncing, ignoring the wall we just bounced off
+      bouncedShot = setLife(
+        bouncedShot,
+        walls,
+        bouncedShot.lifecount,
+        wall.id,
+        worldwidth,
+        worldwrap
+      )
 
       // Update the shot in the array
       if (isShipShot) {
@@ -188,9 +224,13 @@ export const shotsSlice = createSlice({
         shotIndex: number
         isShipShot: boolean
         wall: LineRec
+        walls: LineRec[]
+        worldwidth: number
+        worldwrap: boolean
       }>
     ) => {
-      const { shotIndex, isShipShot } = action.payload
+      const { shotIndex, isShipShot, walls, worldwidth, worldwrap } =
+        action.payload
       const shots = isShipShot ? state.shipshots : state.bunkshots
       const shot = shots[shotIndex]
 
@@ -223,8 +263,14 @@ export const shotsSlice = createSlice({
         let bouncedShot = bounceShotFunc(shot, action.payload.wall)
 
         // After bouncing, recalculate trajectory
-        // TODO: This would need walls data
-        // bouncedShot = setLife(bouncedShot, walls, bouncedShot.lifecount)
+        bouncedShot = setLife(
+          bouncedShot,
+          walls,
+          bouncedShot.lifecount,
+          action.payload.wall.id,
+          worldwidth,
+          worldwrap
+        )
 
         if (isShipShot) {
           state.shipshots[shotIndex] = bouncedShot

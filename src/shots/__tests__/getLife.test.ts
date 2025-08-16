@@ -2,7 +2,12 @@ import { describe, it, expect } from 'vitest'
 import { getLife } from '../getLife'
 import type { ShotRec } from '../types'
 import type { LineRec, LineType, LineKind } from '../../shared/types/line'
-import { LINE_TYPE, LINE_DIR, LINE_KIND, NEW_TYPE } from '../../shared/types/line'
+import {
+  LINE_TYPE,
+  LINE_DIR,
+  LINE_KIND,
+  NEW_TYPE
+} from '../../shared/types/line'
 
 // Helper to create a basic shot
 function createShot(
@@ -82,9 +87,7 @@ describe('getLife - No Collision Cases', () => {
 
   it('returns max frames when shot has zero velocity', () => {
     const shot = createShot(100 << 3, 100 << 3, 0, 0)
-    const walls = [
-      createWall('wall-1', 50, 50, 150, 50, LINE_TYPE.N)
-    ]
+    const walls = [createWall('wall-1', 50, 50, 150, 50, LINE_TYPE.N)]
     const totallife = 50
 
     const result = getLife(shot, walls, totallife)
@@ -124,9 +127,7 @@ describe('getLife - Vertical Wall Collisions', () => {
 
   it('handles vertical wall collision with negative horizontal velocity', () => {
     const shot = createShot(200 << 3, 100 << 3, -16, 0) // Moving left
-    const walls = [
-      createWall('wall-1', 150, 50, 150, 150, LINE_TYPE.N)
-    ]
+    const walls = [createWall('wall-1', 150, 50, 150, 150, LINE_TYPE.N)]
     const totallife = 50
 
     const result = getLife(shot, walls, totallife)
@@ -299,7 +300,15 @@ describe('getLife - Bounce Walls and btime', () => {
   it('sets different btime values based on wall type for bounce walls', () => {
     const shot = createShot(100 << 3, 100 << 3, 16, 0)
     const verticalBounce = [
-      createWall('vertical-bounce', 150, 50, 150, 150, LINE_TYPE.N, LINE_KIND.BOUNCE)
+      createWall(
+        'vertical-bounce',
+        150,
+        50,
+        150,
+        150,
+        LINE_TYPE.N,
+        LINE_KIND.BOUNCE
+      )
     ]
     const totallife = 50
 
@@ -307,7 +316,9 @@ describe('getLife - Bounce Walls and btime', () => {
 
     // btime should be totallife - framesToImpact if bounce wall is hit
     if (verticalResult.hitlineId === 'vertical-bounce') {
-      expect(verticalResult.btime).toBe(totallife - verticalResult.framesToImpact)
+      expect(verticalResult.btime).toBe(
+        totallife - verticalResult.framesToImpact
+      )
     } else {
       expect(verticalResult.btime).toBe(0)
     }
@@ -367,9 +378,7 @@ describe('getLife - Nearest Wall Selection', () => {
 describe('getLife - Strafe Direction Calculation', () => {
   it('calculates correct strafedir for vertical wall collision', () => {
     const shot = createShot(100 << 3, 100 << 3, 16, 0) // Moving right
-    const walls = [
-      createWall('wall-1', 150, 50, 150, 150, LINE_TYPE.N)
-    ]
+    const walls = [createWall('wall-1', 150, 50, 150, 150, LINE_TYPE.N)]
     const totallife = 50
 
     const result = getLife(shot, walls, totallife)
@@ -403,9 +412,7 @@ describe('getLife - Strafe Direction Calculation', () => {
 
   it('handles strafedir calculation with negative velocities', () => {
     const shot = createShot(200 << 3, 200 << 3, -16, -16) // Moving up-left
-    const walls = [
-      createWall('wall-1', 150, 150, 150, 250, LINE_TYPE.N)
-    ]
+    const walls = [createWall('wall-1', 150, 150, 150, 250, LINE_TYPE.N)]
     const totallife = 50
 
     const result = getLife(shot, walls, totallife)
@@ -420,9 +427,7 @@ describe('getLife - TimeScale Effects', () => {
     // The original collision detection works in logical frames only
     // timeScale is reserved for future use but doesn't affect collision math
     const shot = createShot(100 << 3, 100 << 3, 16, 0)
-    const walls = [
-      createWall('wall-1', 150, 50, 150, 150, LINE_TYPE.N)
-    ]
+    const walls = [createWall('wall-1', 150, 50, 150, 150, LINE_TYPE.N)]
     const totallife = 50
 
     const normalResult = getLife(shot, walls, totallife)
@@ -438,9 +443,7 @@ describe('getLife - TimeScale Effects', () => {
 
   it('handles zero timeScale gracefully', () => {
     const shot = createShot(100 << 3, 100 << 3, 16, 0)
-    const walls = [
-      createWall('wall-1', 150, 50, 150, 150, LINE_TYPE.N)
-    ]
+    const walls = [createWall('wall-1', 150, 50, 150, 150, LINE_TYPE.N)]
     const totallife = 50
 
     const result = getLife(shot, walls, totallife)
@@ -454,9 +457,7 @@ describe('getLife - TimeScale Effects', () => {
 describe('getLife - Edge Cases', () => {
   it('handles shot starting exactly on a wall', () => {
     const shot = createShot(150 << 3, 100 << 3, 16, 0) // Shot starts on wall x-coordinate
-    const walls = [
-      createWall('wall-1', 150, 50, 150, 150, LINE_TYPE.N)
-    ]
+    const walls = [createWall('wall-1', 150, 50, 150, 150, LINE_TYPE.N)]
     const totallife = 50
 
     const result = getLife(shot, walls, totallife)
@@ -468,9 +469,7 @@ describe('getLife - Edge Cases', () => {
 
   it('handles very small velocities', () => {
     const shot = createShot(100 << 3, 100 << 3, 1, 0) // Very slow movement
-    const walls = [
-      createWall('wall-1', 150, 50, 150, 150, LINE_TYPE.N)
-    ]
+    const walls = [createWall('wall-1', 150, 50, 150, 150, LINE_TYPE.N)]
     const totallife = 1000 // Large totallife to allow collision
 
     const result = getLife(shot, walls, totallife)
