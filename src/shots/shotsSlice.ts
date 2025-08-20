@@ -96,14 +96,18 @@ export const shotsSlice = createSlice({
 
         if (newShot.lifecount > 0) {
           // Advance shot by one frame (Play.c:545-547)
+          // Advance shot by one frame (Play.c:545-547)
+          // The original C code only updates x8/y8 here, not x/y
+          const newX8 = newShot.x8 + SHOT.shotvecs[shiprot]!
+          const newY8 = newShot.y8 + SHOT.shotvecs[yrot]!
           newShot = {
             ...newShot,
-            x8: newShot.x8 + SHOT.shotvecs[shiprot]!,
-            y8: newShot.y8 + SHOT.shotvecs[yrot]!,
+            x8: newX8,
+            y8: newY8,
             lifecount: newShot.lifecount - 1,
-            // Update pixel coordinates from subpixel position
-            x: (newShot.x8 + SHOT.shotvecs[shiprot]!) >> 3,
-            y: (newShot.y8 + SHOT.shotvecs[yrot]!) >> 3
+            // Update pixel coordinates from the NEW subpixel position
+            x: newX8 >> 3,
+            y: newY8 >> 3
           }
         }
 

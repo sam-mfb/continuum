@@ -7,6 +7,7 @@ import type { ShotRec } from './types'
 import type { LineRec } from '@/shared/types/line'
 import { BOUNCE_VECS } from './constants'
 import { setLife } from './setLife'
+import { idiv } from './integerMath'
 
 /**
  * Backs up a shot position to prevent wall clipping after bounce
@@ -21,9 +22,10 @@ import { setLife } from './setLife'
 function backupShot(shot: ShotRec): ShotRec {
   const backedUp = { ...shot }
 
-  // Back up by 1/3 of velocity
-  backedUp.x8 -= Math.floor(backedUp.h / 3)
-  backedUp.y8 -= Math.floor(backedUp.v / 3)
+  // Back up by 1/3 of velocity using integer division (not floor)
+  // C integer division truncates toward zero, Math.floor rounds down
+  backedUp.x8 -= idiv(backedUp.h, 3)
+  backedUp.y8 -= idiv(backedUp.v, 3)
 
   // Update pixel position from subpixel position
   backedUp.x = backedUp.x8 >> 3
@@ -77,8 +79,9 @@ export function bounceShot(
 
     // Reflect velocity: v = v - 2(v·n)n
     // The division by (24*48) normalizes since BOUNCE_VECS aren't unit vectors
-    bouncedShot.h -= Math.floor((x1 * dot) / (24 * 48))
-    bouncedShot.v -= Math.floor((y1 * dot) / (24 * 48))
+    // Use integer division to match C behavior
+    bouncedShot.h -= idiv(x1 * dot, 24 * 48)
+    bouncedShot.v -= idiv(y1 * dot, 24 * 48)
 
     // Restore lifetime for continued flight
     bouncedShot.lifecount = bouncedShot.btime
