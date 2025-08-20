@@ -219,6 +219,8 @@ export const shotsSlice = createSlice({
     },
 
     // Composite action for wall collision processing
+    // Based on Play.c:796-806 in move_shipshots()
+    // Handles both bounce physics and strafe effects when a shot hits a wall
     processWallCollision: (
       state,
       action: PayloadAction<{
@@ -237,7 +239,7 @@ export const shotsSlice = createSlice({
 
       if (!shot || shot.lifecount !== 0) return
 
-      // If there's a strafe direction set, start the strafe effect
+      // Based on Play.c:805-806 - start strafe effect if direction is set
       if (shot.strafedir >= 0) {
         // Find strafe with lowest lifecount to reuse
         let oldestIndex = 0
@@ -259,7 +261,7 @@ export const shotsSlice = createSlice({
         }
       }
 
-      // If it's a bounce wall (btime > 0), apply bounce
+      // Based on Play.c:796-800 - handle bounce if btime > 0
       if (shot.btime > 0) {
         let bouncedShot = bounceShotFunc(shot, action.payload.wall)
 
