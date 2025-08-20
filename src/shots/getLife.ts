@@ -141,7 +141,7 @@ export function getLife(
         const life = Math.ceil(((line.startx - x) << 3) / shot.h)
         if (life < shortest) {
           shortest = life
-          strafedir = getstrafedir(line, x, y)
+          strafedir = getstrafedir(line, shot.x, shot.y)
           hitline = line
           x2 = (shot.x8 + shot.h * shortest) >> 3
           y2 = (shot.y8 + shot.v * shortest) >> 3
@@ -167,7 +167,7 @@ export function getLife(
           const life = Math.ceil(((y0 - y) << 3) / shot.v)
           if (life < shortest) {
             shortest = life
-            strafedir = getstrafedir(line, x, y)
+            strafedir = getstrafedir(line, shot.x, shot.y)
             hitline = line
             x2 = (shot.x8 + shot.h * shortest) >> 3
             y2 = (shot.y8 + shot.v * shortest) >> 3
@@ -195,7 +195,7 @@ export function getLife(
           const life = Math.ceil((x0 - shot.x8) / shot.h)
           if (life < shortest) {
             shortest = life
-            strafedir = getstrafedir(line, x, y)
+            strafedir = getstrafedir(line, shot.x, shot.y)
             hitline = line
             x2 = (shot.x8 + shot.h * shortest) >> 3
             y2 = (shot.y8 + shot.v * shortest) >> 3

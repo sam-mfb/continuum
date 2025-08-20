@@ -8,17 +8,15 @@ import { bouncedirtable, stdirtable } from './constants'
  * Based on getstrafedir() in orig/Sources/Terrain.c:242-262
  *
  * @param lp - The wall that was hit
- * @param h - Horizontal velocity of shot
- * @param v - Vertical velocity of shot
+ * @param x1 - X position of shot
+ * @param y1 - Y position of shot
  * @returns Rotation index (0-15) for strafe sprite, or -1 for no strafe
  */
-export function getstrafedir(lp: LineRec, h: number, v: number): number {
-  let from_above: number
-  let table_index: number
-
+export function getstrafedir(lp: LineRec, x1: number, y1: number): number {
   // For vertical walls (LINE_N), check horizontal approach direction
+  // (Terrain.c:248-254)
   if (lp.type === LINE_TYPE.N) {
-    if (h > 0) {
+    if (x1 > lp.startx) {
       return 4 // Approaching from right
     } else if (lp.kind === LINE_KIND.BOUNCE) {
       return 12 // Approaching from left (bounce walls only)
@@ -27,23 +25,31 @@ export function getstrafedir(lp: LineRec, h: number, v: number): number {
     }
   }
 
-  // For diagonal walls, determine if shot approaches from above or below
-  from_above = v > 0 ? 0 : 1
-
-  // Calculate table index based on wall type and orientation
-  // The original uses (5 - lp->type) * lp->up_down + 5
-  // This maps wall angles to table indices 0-10
-  table_index = (5 - lp.type) * lp.up_down + 5
-
+  // For non-vertical walls (diagonal and horizontal)
+  // Calculate the y position on the wall at the shot's x position
+  // (Terrain.c:256-259)
+  
+  // Slopes of lines * 2 (from Play.c:43)
+  const slopes2 = [0, 0, 4, 2, 1, 0]
+  const m2 = lp.up_down * slopes2[lp.type]!
+  const y0 = lp.starty + ((m2 * (x1 - lp.startx)) >> 1)
+  
+  // Determine if shot is above the wall (Terrain.c:259)
+  const above = y1 < y0 ? 1 : 0
+  
+  // Calculate table index (Terrain.c:261)
+  // Original: [above][5 + line->type * line->up_down]
+  const table_index = 5 + lp.type * lp.up_down
+  
   // Ensure table_index is within bounds (0-10)
   if (table_index < 0 || table_index > 10) {
     return -1
   }
 
-  // Select appropriate lookup table based on wall kind
+  // Select appropriate lookup table based on wall kind (Terrain.c:260-261)
   if (lp.kind === LINE_KIND.BOUNCE) {
-    return bouncedirtable[from_above]![table_index]!
+    return bouncedirtable[above]![table_index]!
   } else {
-    return stdirtable[from_above]![table_index]!
+    return stdirtable[above]![table_index]!
   }
 }
