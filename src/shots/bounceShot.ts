@@ -6,6 +6,7 @@
 import type { ShotRec } from './types'
 import type { LineRec } from '@/shared/types/line'
 import { BOUNCE_VECS } from './constants'
+import { setLife } from './setLife'
 
 /**
  * Backs up a shot position to prevent wall clipping after bounce
@@ -43,10 +44,19 @@ function backupShot(shot: ShotRec): ShotRec {
  * when the shot's trajectory was analyzed.
  *
  * @param shot - The shot to bounce
- * @param wall - The wall being bounced off (currently unused but kept for future wall normal calculations)
- * @returns A new shot with reflected velocity
+ * @param wall - The wall being bounced off
+ * @param walls - All walls for trajectory calculation
+ * @param worldwidth - World width for wrapping
+ * @param worldwrap - Whether world wraps
+ * @returns A new shot with reflected velocity and updated trajectory
  */
-export function bounceShot(shot: ShotRec, _wall: LineRec): ShotRec {
+export function bounceShot(
+  shot: ShotRec,
+  wall: LineRec,
+  walls: LineRec[],
+  worldwidth: number,
+  worldwrap: boolean
+): ShotRec {
   // First back up the shot to prevent wall sticking
   let bouncedShot = backupShot(shot)
 
@@ -77,8 +87,16 @@ export function bounceShot(shot: ShotRec, _wall: LineRec): ShotRec {
     // Clear the hit line reference since we've bounced off it
     bouncedShot.hitlineId = ''
 
-    // Note: The original calls set_life() here to find the next collision.
-    // In our architecture, that's handled by the caller after bouncing.
+    // Call set_life() to find the next collision (Play.c:944)
+    // Pass the wall we just bounced off to ignore it in collision detection
+    bouncedShot = setLife(
+      bouncedShot,
+      walls,
+      bouncedShot.lifecount,
+      wall.id,
+      worldwidth,
+      worldwrap
+    )
   }
 
   // If we couldn't bounce successfully (lifecount still 0), no strafe effect

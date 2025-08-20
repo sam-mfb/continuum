@@ -220,13 +220,12 @@ export const shotsSlice = createSlice({
           // Find the wall that was hit
           const wall = walls.find(w => w.id === updatedShot.hitlineId)
           if (wall) {
-            updatedShot = bounceShotFunc(updatedShot, wall)
-            // After bouncing, recalculate trajectory
-            updatedShot = setLife(
+            // bounce_shot() in the original (Play.c:799) backs up the shot,
+            // applies bounce physics, and calls set_life() (Play.c:944)
+            updatedShot = bounceShotFunc(
               updatedShot,
+              wall,
               walls,
-              updatedShot.lifecount,
-              wall.id,
               worldwidth,
               worldwrap
             )
