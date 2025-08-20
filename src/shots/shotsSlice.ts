@@ -95,17 +95,26 @@ export const shotsSlice = createSlice({
         )
 
         if (newShot.lifecount > 0) {
-          // Advance shot by one frame
+          // Advance shot by one frame (Play.c:545-547)
           newShot = {
             ...newShot,
             x8: newShot.x8 + SHOT.shotvecs[shiprot]!,
             y8: newShot.y8 + SHOT.shotvecs[yrot]!,
-            lifecount: newShot.lifecount - 1
+            lifecount: newShot.lifecount - 1,
+            // Update pixel coordinates from subpixel position
+            x: (newShot.x8 + SHOT.shotvecs[shiprot]!) >> 3,
+            y: (newShot.y8 + SHOT.shotvecs[yrot]!) >> 3
           }
         }
 
-        // Handle immediate wall collision if lifecount == 0
-        // In the original, this would trigger bounce_shot if btime > 0
+        // Handle immediate wall collision (Play.c:549-550)
+        if (newShot.lifecount === 0 && newShot.btime > 0) {
+          // Find the wall that was hit
+          const wall = walls.find(w => w.id === newShot.hitlineId)
+          if (wall) {
+            newShot = bounceShotFunc(newShot, wall, walls, worldwidth, worldwrap)
+          }
+        }
 
         // Create new array with updated shot
         state.shipshots = state.shipshots.map((shot, index) =>
@@ -183,36 +192,40 @@ export const shotsSlice = createSlice({
         // 1. Move the shot (Play.c:762)
         let updatedShot = moveShot(shot, { worldwidth, worldwrap })
 
-        // Only continue collision checks if shot is still alive after movement
-        if (updatedShot.lifecount <= 0) {
-          return updatedShot
-        }
+        // Note: After move_shot(), lifecount might be 0 if we hit a wall,
+        // but we still need to check for bounces. Don't return early here!
 
         // 2. Check bunker collisions (Play.c:763-784)
-        const bunkerResult = checkBunkerCollision(updatedShot, bunkers)
-        if (bunkerResult.hit) {
-          // Destroy the shot
-          updatedShot.lifecount = 0
-          updatedShot.btime = 0
-          updatedShot.strafedir = -1
-          // TODO: Handle bunker destruction in planet slice
-          // TODO: Handle hardy bunker special case
-          return updatedShot
+        // Only check if shot is still alive (lifecount > 0 means still traveling)
+        if (updatedShot.lifecount > 0) {
+          const bunkerResult = checkBunkerCollision(updatedShot, bunkers)
+          if (bunkerResult.hit) {
+            // Destroy the shot
+            updatedShot.lifecount = 0
+            updatedShot.btime = 0
+            updatedShot.strafedir = -1
+            // TODO: Handle bunker destruction in planet slice
+            // TODO: Handle hardy bunker special case
+            return updatedShot
+          }
         }
 
         // 3. Check ship collision - friendly fire (Play.c:785-795)
-        const shipResult = checkShipCollision(
-          updatedShot,
-          shipPosition,
-          shipAlive
-        )
-        if (shipResult.hit) {
-          // Destroy the shot and trigger shield
-          updatedShot.lifecount = 0
-          updatedShot.btime = 0
-          updatedShot.strafedir = -1
-          // TODO: Trigger shield activation in ship slice
-          return updatedShot
+        // Only check if shot is still alive
+        if (updatedShot.lifecount > 0) {
+          const shipResult = checkShipCollision(
+            updatedShot,
+            shipPosition,
+            shipAlive
+          )
+          if (shipResult.hit) {
+            // Destroy the shot and trigger shield
+            updatedShot.lifecount = 0
+            updatedShot.btime = 0
+            updatedShot.strafedir = -1
+            // TODO: Trigger shield activation in ship slice
+            return updatedShot
+          }
         }
 
         // 4. Check wall collision and bounce (Play.c:796-800)
