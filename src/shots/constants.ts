@@ -46,6 +46,24 @@ export const ybshotstart: number[][] = [
 ]
 
 /**
+ * Bounce vectors for wall normal calculations
+ * From orig/Sources/Play.c (line 289-290)
+ *
+ * These vectors represent the outward normal vectors for walls at 16 different angles.
+ * Used in bounce physics calculations to reflect shot velocity.
+ * The values are not unit vectors - they're scaled for integer math efficiency.
+ *
+ * To get the normal vector for a wall:
+ * - x component: BOUNCE_VECS[strafedir]
+ * - y component: BOUNCE_VECS[(strafedir + 12) & 15]
+ * The y component is shifted by 12 (which is 270 degrees in the 16-direction system)
+ * to get the perpendicular component.
+ */
+export const BOUNCE_VECS = [
+  0, 18, 34, 44, 48, 44, 34, 18, 0, -18, -34, -44, -48, -44, -34, -18
+] as const
+
+/**
  * Strafe direction lookup tables
  * From orig/Sources/Terrain.c (lines 233-240)
  *

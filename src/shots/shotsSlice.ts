@@ -5,6 +5,7 @@ import type { Bunker } from '@/planet/types'
 import type { LineRec } from '@/shared/types/line'
 import { bunkShoot as bunkShootFn } from './bunkShoot'
 import { setLife } from './setLife'
+import { bounceShot as bounceShotFunc } from './bounceShot'
 
 const initializeShot = (): ShotRec => ({
   x: 0,
@@ -333,29 +334,6 @@ function moveShot(
   sp.x = x
   sp.y = y
   return sp
-}
-
-// Based on Play.c:926-948 - bounce_shot()
-function bounceShotFunc(shot: ShotRec, _wall: LineRec): ShotRec {
-  // In the original, bounce_shot() calls set_life() after bouncing
-  // That would be handled by the caller in our architecture
-
-  // Calculate wall normal (simplified - actual would use wall geometry)
-  // In the original: dot = sp->h * x1 + sp->v * y1
-  // Then: sp->h -= x1 * dot / (24*48); sp->v -= y1 * dot / (24*48)
-
-  // For now, simple reflection (full implementation needs wall normal calculation)
-  const updatedShot = { ...shot }
-
-  // Restore lifetime for continued flight
-  updatedShot.lifecount = updatedShot.btime
-  updatedShot.btime = 0
-  updatedShot.hitlineId = ''
-
-  // TODO: Actual reflection physics based on wall normal
-  // This would require the wall's normal vector to properly reflect velocity
-
-  return updatedShot
 }
 
 export const {
