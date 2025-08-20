@@ -137,7 +137,8 @@ export function getLife(
       // Special case for vertical lines
       const y0 = y + (shot.v * (line.startx - x)) / shot.h
       if (y0 >= line.starty && y0 <= line.starty + line.length) {
-        const life = ((line.startx - x) << 3) / shot.h
+        // Use integer division like C
+        const life = Math.floor(((line.startx - x) << 3) / shot.h)
         if (life < shortest) {
           shortest = life
           strafedir = getstrafedir(line, x, y)
@@ -162,7 +163,8 @@ export function getLife(
         // Vertical shot trajectory
         if (x >= line.startx && x <= line.endx) {
           const y0 = line.starty + ((x - line.startx) * m1) / 2
-          const life = ((y0 - y) << 3) / shot.v
+          // Use integer division like C
+          const life = Math.floor(((y0 - y) << 3) / shot.v)
           if (life < shortest) {
             shortest = life
             strafedir = getstrafedir(line, x, y)
@@ -189,7 +191,8 @@ export function getLife(
         // Check if intersection is within line segment
         const x0_pixels = x0 / 8
         if (x0_pixels >= line.startx && x0_pixels <= line.endx) {
-          const life = (x0 - shot.x8) / shot.h
+          // Use integer division like C
+          const life = Math.floor((x0 - shot.x8) / shot.h)
           if (life < shortest) {
             shortest = life
             strafedir = getstrafedir(line, x, y)
