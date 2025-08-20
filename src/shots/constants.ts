@@ -11,6 +11,12 @@ export const SHOT = {
 } as const
 
 /**
+ * Collision radius constants
+ * From orig/Sources/GW.h (lines 89-90)
+ */
+export const BRADIUS = 19 /* approx. radius of bunker for collision detection */
+
+/**
  * Strafe constants
  * From orig/Sources/GW.h (lines 64, 124)
  */

@@ -196,9 +196,20 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
   // Move ship - containment middleware will automatically apply
   store.dispatch(shipSlice.actions.moveShip())
 
-  // Move all bullets
+  // Move all bullets with collision detection
+  // Calculate global ship position (screen + ship relative position)
+  const globalx = state.screen.screenx + state.ship.shipx
+  const globaly = state.screen.screeny + state.ship.shipy
+
   store.dispatch(
     shotsSlice.actions.moveShipshots({
+      bunkers: state.planet.bunkers,
+      shipPosition: {
+        x: globalx,
+        y: globaly
+      },
+      shipAlive: true, // TODO: Check if ship is dead when death system is implemented
+      walls: state.planet.lines,
       worldwidth: state.planet.worldwidth,
       worldwrap: state.planet.worldwrap
     })

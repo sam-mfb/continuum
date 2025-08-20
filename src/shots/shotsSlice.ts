@@ -6,6 +6,9 @@ import type { LineRec } from '@/shared/types/line'
 import { bunkShoot as bunkShootFn } from './bunkShoot'
 import { setLife } from './setLife'
 import { bounceShot as bounceShotFunc } from './bounceShot'
+import { moveShot } from './moveShot'
+import { checkBunkerCollision } from './checkBunkerCollision'
+import { checkShipCollision } from './checkShipCollision'
 
 const initializeShot = (): ShotRec => ({
   x: 0,
@@ -150,11 +153,110 @@ export const shotsSlice = createSlice({
         rot: dir
       }
     },
+    // Based on Play.c:750-814 - move_shipshots()
+    // Comprehensive shot update including movement, collisions, and wall effects
+    // NOTE: Does not implement:
+    //   - Sound effects (Play.c:791 - start_sound)
+    //   - Drawing operations (Play.c:807-811)
+    //   - kill_bunk() side effects for scoring/explosions (Play.c:782)
     moveShipshots: (
       state,
-      action: PayloadAction<{ worldwidth: number; worldwrap: boolean }>
+      action: PayloadAction<{
+        bunkers: readonly Bunker[]
+        shipPosition: { x: number; y: number }
+        shipAlive: boolean
+        walls: LineRec[]
+        worldwidth: number
+        worldwrap: boolean
+      }>
     ) => {
-      state.shipshots = state.shipshots.map(s => moveShot(s, action.payload))
+      const { bunkers, shipPosition, shipAlive, walls, worldwidth, worldwrap } =
+        action.payload
+
+      // Process each active shot
+      state.shipshots = state.shipshots.map(shot => {
+        // Skip inactive shots
+        if (shot.lifecount <= 0) {
+          return shot
+        }
+
+        // 1. Move the shot (Play.c:762)
+        let updatedShot = moveShot(shot, { worldwidth, worldwrap })
+
+        // Only continue collision checks if shot is still alive after movement
+        if (updatedShot.lifecount <= 0) {
+          return updatedShot
+        }
+
+        // 2. Check bunker collisions (Play.c:763-784)
+        const bunkerResult = checkBunkerCollision(updatedShot, bunkers)
+        if (bunkerResult.hit) {
+          // Destroy the shot
+          updatedShot.lifecount = 0
+          updatedShot.btime = 0
+          updatedShot.strafedir = -1
+          // TODO: Handle bunker destruction in planet slice
+          // TODO: Handle hardy bunker special case
+          return updatedShot
+        }
+
+        // 3. Check ship collision - friendly fire (Play.c:785-795)
+        const shipResult = checkShipCollision(
+          updatedShot,
+          shipPosition,
+          shipAlive
+        )
+        if (shipResult.hit) {
+          // Destroy the shot and trigger shield
+          updatedShot.lifecount = 0
+          updatedShot.btime = 0
+          updatedShot.strafedir = -1
+          // TODO: Trigger shield activation in ship slice
+          return updatedShot
+        }
+
+        // 4. Check wall collision and bounce (Play.c:796-800)
+        if (updatedShot.lifecount === 0 && updatedShot.btime > 0) {
+          // Find the wall that was hit
+          const wall = walls.find(w => w.id === updatedShot.hitlineId)
+          if (wall) {
+            updatedShot = bounceShotFunc(updatedShot, wall)
+            // After bouncing, recalculate trajectory
+            updatedShot = setLife(
+              updatedShot,
+              walls,
+              updatedShot.lifecount,
+              wall.id,
+              worldwidth,
+              worldwrap
+            )
+          }
+        }
+
+        // 5. Handle strafe effect creation (Play.c:805-806)
+        if (updatedShot.lifecount === 0 && updatedShot.strafedir >= 0) {
+          // Find strafe with lowest lifecount to reuse
+          let oldestIndex = 0
+          let lowestLife = state.strafes[0]!.lifecount
+
+          for (let i = 1; i < NUMSTRAFES; i++) {
+            if (state.strafes[i]!.lifecount < lowestLife) {
+              lowestLife = state.strafes[i]!.lifecount
+              oldestIndex = i
+            }
+          }
+
+          // Initialize the strafe
+          state.strafes[oldestIndex] = {
+            x: updatedShot.x,
+            y: updatedShot.y,
+            lifecount: STRAFE_LIFE,
+            rot: updatedShot.strafedir
+          }
+        }
+
+        return updatedShot
+      })
     },
     moveBullets: (
       state,
@@ -178,111 +280,6 @@ export const shotsSlice = createSlice({
     ) => {
       state.bunkshots = bunkShootFn(action.payload)(state.bunkshots)
     },
-    // Based on Play.c:926-948 - bounce_shot()
-    bounceShot: (
-      state,
-      action: PayloadAction<{
-        shotIndex: number
-        isShipShot: boolean
-        wall: LineRec
-        walls: LineRec[]
-        worldwidth: number
-        worldwrap: boolean
-      }>
-    ) => {
-      const { shotIndex, isShipShot, wall, walls, worldwidth, worldwrap } =
-        action.payload
-      const shots = isShipShot ? state.shipshots : state.bunkshots
-      const shot = shots[shotIndex]
-
-      if (!shot || shot.lifecount > 0) return
-
-      // Apply bounce physics
-      let bouncedShot = bounceShotFunc(shot, wall)
-
-      // Recalculate trajectory after bouncing, ignoring the wall we just bounced off
-      bouncedShot = setLife(
-        bouncedShot,
-        walls,
-        bouncedShot.lifecount,
-        wall.id,
-        worldwidth,
-        worldwrap
-      )
-
-      // Update the shot in the array
-      if (isShipShot) {
-        state.shipshots[shotIndex] = bouncedShot
-      } else {
-        state.bunkshots[shotIndex] = bouncedShot
-      }
-    },
-
-    // Composite action for wall collision processing
-    // Based on Play.c:796-806 in move_shipshots()
-    // Handles both bounce physics and strafe effects when a shot hits a wall
-    processWallCollision: (
-      state,
-      action: PayloadAction<{
-        shotIndex: number
-        isShipShot: boolean
-        wall: LineRec
-        walls: LineRec[]
-        worldwidth: number
-        worldwrap: boolean
-      }>
-    ) => {
-      const { shotIndex, isShipShot, walls, worldwidth, worldwrap } =
-        action.payload
-      const shots = isShipShot ? state.shipshots : state.bunkshots
-      const shot = shots[shotIndex]
-
-      if (!shot || shot.lifecount !== 0) return
-
-      // Based on Play.c:805-806 - start strafe effect if direction is set
-      if (shot.strafedir >= 0) {
-        // Find strafe with lowest lifecount to reuse
-        let oldestIndex = 0
-        let lowestLife = state.strafes[0]!.lifecount
-
-        for (let i = 1; i < NUMSTRAFES; i++) {
-          if (state.strafes[i]!.lifecount < lowestLife) {
-            lowestLife = state.strafes[i]!.lifecount
-            oldestIndex = i
-          }
-        }
-
-        // Initialize the strafe
-        state.strafes[oldestIndex] = {
-          x: shot.x,
-          y: shot.y,
-          lifecount: STRAFE_LIFE,
-          rot: shot.strafedir
-        }
-      }
-
-      // Based on Play.c:796-800 - handle bounce if btime > 0
-      if (shot.btime > 0) {
-        let bouncedShot = bounceShotFunc(shot, action.payload.wall)
-
-        // After bouncing, recalculate trajectory
-        bouncedShot = setLife(
-          bouncedShot,
-          walls,
-          bouncedShot.lifecount,
-          action.payload.wall.id,
-          worldwidth,
-          worldwrap
-        )
-
-        if (isShipShot) {
-          state.shipshots[shotIndex] = bouncedShot
-        } else {
-          state.bunkshots[shotIndex] = bouncedShot
-        }
-      }
-    },
-
     clearAllShots: state => {
       // Reset all ship shots
       state.shipshots = state.shipshots.map(() => initializeShot())
@@ -299,45 +296,6 @@ export const shotsSlice = createSlice({
   }
 })
 
-function moveShot(
-  shot: ShotRec,
-  env: {
-    worldwidth: number
-    worldwrap: boolean
-  }
-): ShotRec {
-  if (shot.lifecount <= 0) {
-    return shot
-  }
-  let worldwth8: number
-  let x: number
-  let y: number
-
-  const sp = { ...shot }
-
-  worldwth8 = env.worldwidth << 3
-
-  sp.lifecount--
-  x = sp.x8
-  y = sp.y8
-  x += sp.h
-  y += sp.v
-  if (y < 0) sp.lifecount = 0
-  if (x < 0)
-    if (env.worldwrap) x += worldwth8
-    else sp.lifecount = 0
-  else if (x >= worldwth8)
-    if (env.worldwrap) x -= worldwth8
-    else sp.lifecount = 0
-  sp.x8 = x
-  sp.y8 = y
-  x >>= 3
-  y >>= 3
-  sp.x = x
-  sp.y = y
-  return sp
-}
-
 export const {
   initShipshot,
   doStrafes,
@@ -345,8 +303,6 @@ export const {
   moveShipshots,
   moveBullets,
   bunkShoot,
-  bounceShot,
-  processWallCollision,
   clearAllShots
 } = shotsSlice.actions
 
