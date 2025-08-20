@@ -2,6 +2,7 @@ import type { ShotRec } from './types'
 import type { LineRec } from '@/shared/types/line'
 import { LINE_TYPE, LINE_KIND } from '@/shared/types/line'
 import { getstrafedir } from './getstrafedir'
+import { idiv, imul } from './integerMath'
 
 /**
  * Slopes of lines * 2
@@ -135,10 +136,11 @@ export function getLife(
 
     if (line.type === LINE_TYPE.N) {
       // Special case for vertical lines
-      const y0 = y + (shot.v * (line.startx - x)) / shot.h
+      // Use integer division throughout to match C behavior
+      const y0 = y + idiv(imul(shot.v, line.startx - x), shot.h)
       if (y0 >= line.starty && y0 <= line.starty + line.length) {
-        // Calculate frames until collision - use trunc to match C integer division
-        const life = Math.trunc(((line.startx - x) << 3) / shot.h)
+        // Calculate frames until collision using integer division
+        const life = idiv((line.startx - x) << 3, shot.h)
         if (life < shortest) {
           shortest = life
           strafedir = getstrafedir(line, shot.x, shot.y)
@@ -151,9 +153,9 @@ export function getLife(
       // Diagonal lines
       const m1 = line.up_down * slopes2[line.type]!
 
-      // Check if shot trajectory crosses the line
-      const startSide = (y - line.starty) * 2 - m1 * (x - line.startx)
-      const endSide = (y2 - line.starty) * 2 - m1 * (x2 - line.startx)
+      // Check if shot trajectory crosses the line (using integer math)
+      const startSide = imul(y - line.starty, 2) - imul(m1, x - line.startx)
+      const endSide = imul(y2 - line.starty, 2) - imul(m1, x2 - line.startx)
 
       // If both points are on same side of line, no intersection
       if (startSide < 0 && endSide < 0) continue
@@ -162,9 +164,9 @@ export function getLife(
       if (shot.h === 0) {
         // Vertical shot trajectory
         if (x >= line.startx && x <= line.endx) {
-          const y0 = line.starty + ((x - line.startx) * m1) / 2
-          // Calculate frames until collision - use trunc to match C integer division
-          const life = Math.trunc(((y0 - y) << 3) / shot.v)
+          const y0 = line.starty + idiv(imul(x - line.startx, m1), 2)
+          // Calculate frames until collision using integer division
+          const life = idiv((y0 - y) << 3, shot.v)
           if (life < shortest) {
             shortest = life
             strafedir = getstrafedir(line, shot.x, shot.y)
@@ -175,24 +177,26 @@ export function getLife(
         }
       } else {
         // General case - calculate intersection point
-        const m2 = (shot.v << 8) / shot.h
+        // Note: m2 uses long (32-bit) arithmetic in C
+        const m2 = idiv(shot.v << 8, shot.h)
 
         // Avoid division by zero
-        if (m1 << 7 === m2) continue
+        if ((m1 << 7) === m2) continue
 
         // Calculate intersection x coordinate (in 8x fixed point)
+        // Using integer arithmetic throughout
         const numerator =
           ((shot.y8 - (line.starty << 3)) << 8) +
-          ((m1 * line.startx) << 10) -
-          m2 * shot.x8
+          (imul(m1, line.startx) << 10) -
+          imul(m2, shot.x8)
         const denominator = (m1 << 7) - m2
-        const x0 = numerator / denominator
+        const x0 = idiv(numerator, denominator)
 
         // Check if intersection is within line segment
-        const x0_pixels = x0 / 8
+        const x0_pixels = idiv(x0, 8)
         if (x0_pixels >= line.startx && x0_pixels <= line.endx) {
-          // Calculate frames until collision - use trunc to match C integer division
-          const life = Math.trunc((x0 - shot.x8) / shot.h)
+          // Calculate frames until collision using integer division
+          const life = idiv(x0 - shot.x8, shot.h)
           if (life < shortest) {
             shortest = life
             strafedir = getstrafedir(line, shot.x, shot.y)
