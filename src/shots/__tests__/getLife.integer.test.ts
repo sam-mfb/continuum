@@ -28,6 +28,7 @@ function createShot(
     strafedir: -1,
     btime: 0,
     hitlineId: '',
+    justDied: false,
     ...overrides
   }
 }

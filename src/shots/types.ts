@@ -27,6 +27,22 @@ export type ShotRec = {
   btime: number
   /** id of line that it hits (ref in original */
   hitlineId: string /* not in original (which used pointer) */
+  /**
+   * Flag indicating the shot just died this frame and needs final render.
+   * 
+   * This is needed because the original C code rendered shots in the same
+   * loop iteration where lifecount dropped to 0. Our Redux architecture
+   * separates state updates from rendering, so we need to preserve the
+   * "just died" state for one frame to match the original's visual behavior.
+   * 
+   * Shots should be rendered when:
+   * - lifecount > 0 (normal active shot), OR
+   * - justDied === true && strafedir < 0 (final frame, no strafe replacement)
+   * 
+   * We don't render justDied shots with strafedir >= 0 because those are
+   * replaced by strafe visual effects.
+   */
+  justDied: boolean
 }
 
 /**

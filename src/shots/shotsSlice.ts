@@ -9,6 +9,23 @@ import { bounceShot as bounceShotFunc } from './bounceShot'
 import { moveShot } from './moveShot'
 import { checkBunkerCollision } from './checkBunkerCollision'
 import { checkShipCollision } from './checkShipCollision'
+import { startStrafe as startStrafeFunc } from './startStrafe'
+
+/**
+ * Shot Lifecycle Architecture Note:
+ * 
+ * The original C code rendered shots in the same loop iteration where they died
+ * (lifecount dropped to 0), giving them one final frame of visibility. Our Redux
+ * architecture separates state management from rendering, requiring explicit state
+ * to preserve this behavior.
+ * 
+ * We use a 'justDied' flag to indicate shots that died this frame and need one
+ * final render. Shots with strafedir >= 0 are excluded from final rendering since
+ * they're replaced by strafe visual effects.
+ * 
+ * This maintains visual parity with the original while working within our
+ * decoupled architecture.
+ */
 
 const initializeShot = (): ShotRec => ({
   x: 0,
@@ -20,7 +37,8 @@ const initializeShot = (): ShotRec => ({
   h: 0,
   strafedir: 0,
   btime: 0,
-  hitlineId: ''
+  hitlineId: '',
+  justDied: false
 })
 
 const initialState: ShotsState = {
@@ -80,7 +98,8 @@ export const shotsSlice = createSlice({
           lifecount: SHOT.SHOTLEN,
           btime: 0,
           strafedir: -1,
-          hitlineId: ''
+          hitlineId: '',
+          justDied: false
         }
 
         // Calculate collision parameters using setLife
@@ -188,13 +207,17 @@ export const shotsSlice = createSlice({
 
       // Process each active shot
       state.shipshots = state.shipshots.map(shot => {
-        // Skip inactive shots
+        // Clear justDied flag from previous frame
+        // This ensures shots are only rendered for one frame after death
+        let updatedShot = { ...shot, justDied: false }
+        
+        // Skip completely dead shots (lifecount <= 0 from previous frames)
         if (shot.lifecount <= 0) {
-          return shot
+          return updatedShot
         }
 
         // 1. Move the shot (Play.c:762)
-        let updatedShot = moveShot(shot, { worldwidth, worldwrap })
+        updatedShot = moveShot(updatedShot, { worldwidth, worldwrap })
 
         // Note: After move_shot(), lifecount might be 0 if we hit a wall,
         // but we still need to check for bounces. Don't return early here!
@@ -251,24 +274,20 @@ export const shotsSlice = createSlice({
 
         // 5. Handle strafe effect creation (Play.c:805-806)
         if (updatedShot.lifecount === 0 && updatedShot.strafedir >= 0) {
-          // Find strafe with lowest lifecount to reuse
-          let oldestIndex = 0
-          let lowestLife = state.strafes[0]!.lifecount
-
-          for (let i = 1; i < NUMSTRAFES; i++) {
-            if (state.strafes[i]!.lifecount < lowestLife) {
-              lowestLife = state.strafes[i]!.lifecount
-              oldestIndex = i
-            }
-          }
-
-          // Initialize the strafe
-          state.strafes[oldestIndex] = {
-            x: updatedShot.x,
-            y: updatedShot.y,
-            lifecount: STRAFE_LIFE,
-            rot: updatedShot.strafedir
-          }
+          // Use the startStrafe function instead of inline implementation
+          // Note: In the original C code, start_strafe() was called directly
+          state.strafes = startStrafeFunc(
+            updatedShot.x,
+            updatedShot.y,
+            updatedShot.strafedir
+          )(state.strafes)
+        }
+        
+        // When shot dies, mark it as justDied for final frame rendering
+        // Original C code (Play.c:750-814) rendered in same iteration as death,
+        // but our decoupled architecture requires explicit state for this
+        if (updatedShot.lifecount === 0 && shot.lifecount > 0) {
+          updatedShot.justDied = true
         }
 
         return updatedShot
@@ -278,7 +297,32 @@ export const shotsSlice = createSlice({
       state,
       action: PayloadAction<{ worldwidth: number; worldwrap: boolean }>
     ) => {
-      state.bunkshots = state.bunkshots.map(s => moveShot(s, action.payload))
+      // Process each bunker shot with same justDied logic as ship shots
+      state.bunkshots = state.bunkshots.map(shot => {
+        // Clear justDied flag from previous frame
+        let updatedShot = { ...shot, justDied: false }
+        
+        // Skip completely dead shots
+        if (shot.lifecount <= 0) {
+          return updatedShot
+        }
+        
+        // Move the shot
+        updatedShot = moveShot(updatedShot, action.payload)
+        
+        // Mark as justDied if it died this frame
+        // This preserves the original's behavior of rendering shots
+        // for one frame after lifecount reaches 0 (Play.c:844 DRAW_SHOT)
+        if (updatedShot.lifecount === 0 && shot.lifecount > 0) {
+          updatedShot.justDied = true
+        }
+        
+        // TODO: Implement collision detection with ship (Play.c:830-838)
+        // TODO: Implement wall bounce handling (Play.c:839-843)
+        // TODO: Implement strafe creation for dead shots
+        
+        return updatedShot
+      })
     },
     bunkShoot: (
       state,
