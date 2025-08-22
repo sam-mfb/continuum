@@ -89,8 +89,11 @@ export const shotsSlice = createSlice({
         const yrot = (shiprot + 24) & 31
 
         // Create new shot object
+        // IMPORTANT: We preserve the old x,y values from the existing shot
+        // The original C code doesn't update x,y when creating a shot,
+        // only x8,y8. The x,y fields get updated by move_shot() later.
         let newShot: ShotRec = {
-          ...state.shipshots[i]!,
+          ...state.shipshots[i]!,  // Keep old x,y values
           h: SHOT.shotvecs[shiprot]! + (dx >> 5),
           v: SHOT.shotvecs[yrot]! + (dy >> 5),
           x8: globalx << 3,
@@ -115,18 +118,19 @@ export const shotsSlice = createSlice({
 
         if (newShot.lifecount > 0) {
           // Advance shot by one frame (Play.c:545-547)
-          // Advance shot by one frame (Play.c:545-547)
-          // The original C code only updates x8/y8 here, not x/y
+          // CRITICAL: The original C code only updates x8/y8 here, NOT x/y!
+          // The x/y fields retain their old values (from previous shot in this slot)
+          // until move_shot() is called in the next frame. This affects getstrafedir
+          // calculations since it uses the old x/y values, not the new position.
           const newX8 = newShot.x8 + SHOT.shotvecs[shiprot]!
           const newY8 = newShot.y8 + SHOT.shotvecs[yrot]!
           newShot = {
             ...newShot,
             x8: newX8,
             y8: newY8,
-            lifecount: newShot.lifecount - 1,
-            // Update pixel coordinates from the NEW subpixel position
-            x: newX8 >> 3,
-            y: newY8 >> 3
+            lifecount: newShot.lifecount - 1
+            // DO NOT update x and y here - they should keep their old values
+            // to match the original's behavior for getstrafedir calculations
           }
         }
 
