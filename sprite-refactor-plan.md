@@ -90,8 +90,18 @@ Implement:
 
 ### 6. Update Game Components
 
-Identify and update all components using sprite data:
+**NOTE: This step is still pending. The following game components need to be updated to use the sprite service:**
 
+- `bunkerDrawBitmap.ts`
+- `explosionBitmap.ts`
+- `fuelDrawBitmap.ts`
+- `planetRendererFactory.ts`
+- `shardTestBitmap.ts`
+- `shipMoveBitmap.ts`
+
+Each component needs to:
+
+- Remove `loadSprites` import
 - Replace Redux selectors with `useSpriteService()`
 - Call appropriate service methods with needed parameters
 - Remove sprite-related Redux dependencies

@@ -52,12 +52,11 @@ const spriteTypes: { type: SpriteType; name: string; description: string }[] = [
 
 export const SpritesList: React.FC = () => {
   const dispatch = useAppDispatch()
-  const { selectedType, loadingState } = useAppSelector(state => state.sprites)
+  const { selectedType } = useAppSelector(state => state.sprites)
 
   return (
     <div className="sprites-list">
       <h3>Sprite Types</h3>
-      {loadingState === 'loading' && <div>Loading sprites...</div>}
       <ul className="sprite-type-list">
         {spriteTypes.map(({ type, name, description }) => (
           <li

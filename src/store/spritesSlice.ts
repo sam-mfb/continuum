@@ -1,7 +1,13 @@
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import type { AllSprites, BunkerKind } from '@/figs/types'
-import { extractAllSprites } from '@/figs'
+import type { BunkerKind } from '@/figs/types'
+
+// Temporary no-op thunk to avoid breaking game components
+// TODO: Remove this after updating all game components to use sprite service
+export const loadSprites = createAsyncThunk('sprites/loadSprites', async () => {
+  // No-op - sprites are now loaded before Redux initialization
+  return null
+})
 
 export type SpriteType =
   | 'ship'
@@ -14,12 +20,8 @@ export type SpriteType =
   | 'strafe'
   | 'digit'
 
+// UI state for the sprite viewer tool
 type SpritesState = {
-  // Sprite data
-  allSprites: AllSprites | null
-  loadingState: 'idle' | 'loading' | 'error'
-  error: string | null
-
   // View configuration
   selectedType: SpriteType
   showMask: boolean
@@ -33,13 +35,14 @@ type SpritesState = {
   flameFrame: number
   strafeFrame: number
   digitChar: string
+
+  // Temporary compatibility field
+  // TODO: Remove after updating all game components to use sprite service
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  allSprites: any
 }
 
 const initialState: SpritesState = {
-  allSprites: null,
-  loadingState: 'idle',
-  error: null,
-
   selectedType: 'ship',
   showMask: false,
   rotation: 0,
@@ -50,20 +53,11 @@ const initialState: SpritesState = {
   shardKind: 0,
   flameFrame: 0,
   strafeFrame: 0,
-  digitChar: '0'
+  digitChar: '0',
+
+  // Sprites are always loaded now
+  allSprites: true
 }
-
-// Async thunk to load sprites
-export const loadSprites = createAsyncThunk('sprites/loadSprites', async () => {
-  const response = await fetch('/src/assets/graphics/rsrc_260.bin')
-  if (!response.ok) {
-    throw new Error('Failed to load sprite resource')
-  }
-
-  const arrayBuffer = await response.arrayBuffer()
-  const sprites = extractAllSprites(arrayBuffer)
-  return sprites
-})
 
 const spritesSlice = createSlice({
   name: 'sprites',
@@ -112,22 +106,6 @@ const spritesSlice = createSlice({
     setDigitChar: (state, action: PayloadAction<string>) => {
       state.digitChar = action.payload
     }
-  },
-
-  extraReducers: builder => {
-    builder
-      .addCase(loadSprites.pending, state => {
-        state.loadingState = 'loading'
-        state.error = null
-      })
-      .addCase(loadSprites.fulfilled, (state, action) => {
-        state.loadingState = 'idle'
-        state.allSprites = action.payload
-      })
-      .addCase(loadSprites.rejected, (state, action) => {
-        state.loadingState = 'error'
-        state.error = action.error.message || 'Failed to load sprites'
-      })
   }
 })
 

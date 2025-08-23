@@ -413,7 +413,8 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
       x: finalState.ship.shipx,
       y: finalState.ship.shipy,
       rot: finalState.ship.shiprot,
-      flames: finalState.sprites.allSprites!.flames.frames.map(f => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      flames: finalState.sprites.allSprites!.flames.frames.map((f: any) => ({
         data: f.def,
         width: 8,
         height: 7,
