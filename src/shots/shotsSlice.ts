@@ -13,16 +13,16 @@ import { startStrafe as startStrafeFunc } from './startStrafe'
 
 /**
  * Shot Lifecycle Architecture Note:
- * 
+ *
  * The original C code rendered shots in the same loop iteration where they died
  * (lifecount dropped to 0), giving them one final frame of visibility. Our Redux
  * architecture separates state management from rendering, requiring explicit state
  * to preserve this behavior.
- * 
+ *
  * We use a 'justDied' flag to indicate shots that died this frame and need one
  * final render. Shots with strafedir >= 0 are excluded from final rendering since
  * they're replaced by strafe visual effects.
- * 
+ *
  * This maintains visual parity with the original while working within our
  * decoupled architecture.
  */
@@ -93,7 +93,7 @@ export const shotsSlice = createSlice({
         // The original C code doesn't update x,y when creating a shot,
         // only x8,y8. The x,y fields get updated by move_shot() later.
         let newShot: ShotRec = {
-          ...state.shipshots[i]!,  // Keep old x,y values
+          ...state.shipshots[i]!, // Keep old x,y values
           h: SHOT.shotvecs[shiprot]! + (dx >> 5),
           v: SHOT.shotvecs[yrot]! + (dy >> 5),
           x8: globalx << 3,
@@ -139,7 +139,13 @@ export const shotsSlice = createSlice({
           // Find the wall that was hit
           const wall = walls.find(w => w.id === newShot.hitlineId)
           if (wall) {
-            newShot = bounceShotFunc(newShot, wall, walls, worldwidth, worldwrap)
+            newShot = bounceShotFunc(
+              newShot,
+              wall,
+              walls,
+              worldwidth,
+              worldwrap
+            )
           }
         }
 
@@ -214,7 +220,7 @@ export const shotsSlice = createSlice({
         // Clear justDied flag from previous frame
         // This ensures shots are only rendered for one frame after death
         let updatedShot = { ...shot, justDied: false }
-        
+
         // Skip completely dead shots (lifecount <= 0 from previous frames)
         if (shot.lifecount <= 0) {
           return updatedShot
@@ -286,7 +292,7 @@ export const shotsSlice = createSlice({
             updatedShot.strafedir
           )(state.strafes)
         }
-        
+
         // When shot dies, mark it as justDied for final frame rendering
         // Original C code (Play.c:750-814) rendered in same iteration as death,
         // but our decoupled architecture requires explicit state for this
@@ -305,26 +311,26 @@ export const shotsSlice = createSlice({
       state.bunkshots = state.bunkshots.map(shot => {
         // Clear justDied flag from previous frame
         let updatedShot = { ...shot, justDied: false }
-        
+
         // Skip completely dead shots
         if (shot.lifecount <= 0) {
           return updatedShot
         }
-        
+
         // Move the shot
         updatedShot = moveShot(updatedShot, action.payload)
-        
+
         // Mark as justDied if it died this frame
         // This preserves the original's behavior of rendering shots
         // for one frame after lifecount reaches 0 (Play.c:844 DRAW_SHOT)
         if (updatedShot.lifecount === 0 && shot.lifecount > 0) {
           updatedShot.justDied = true
         }
-        
+
         // TODO: Implement collision detection with ship (Play.c:830-838)
         // TODO: Implement wall bounce handling (Play.c:839-843)
         // TODO: Implement strafe creation for dead shots
-        
+
         return updatedShot
       })
     },

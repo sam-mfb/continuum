@@ -135,4 +135,3 @@ src/
 - ✅ Service accessed via dependency injection
 - ✅ All sprite-dependent features working
 - ✅ Clean separation of concerns
-

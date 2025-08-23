@@ -369,9 +369,9 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
     // - Just died without strafe (justDied && no strafe visual replacement)
     // This matches the original's behavior of showing shots for one frame
     // after lifecount reaches 0 (Play.c:807-811)
-    const shouldRender = shot.lifecount > 0 || 
-      (shot.justDied === true && shot.strafedir < 0)
-    
+    const shouldRender =
+      shot.lifecount > 0 || (shot.justDied === true && shot.strafedir < 0)
+
     if (shouldRender) {
       // Convert world coordinates to screen coordinates
       // Original: shotx = sp->x - screenx - 1; shoty = sp->y - screeny - 1;
