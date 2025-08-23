@@ -245,9 +245,6 @@ export const createPlanetRenderer: PlanetRendererFactory = (
         scrnx: currentScreen.screenx,
         scrny: currentScreen.screeny,
         fuelSprites: {
-          frames: Array.from({ length: 8 }, (_, i) =>
-            spriteService.getFuelSprite(i)
-          ),
           emptyCell: spriteService.getFuelSprite(8),
           getFrame: (index: number) => spriteService.getFuelSprite(index)
         }
@@ -260,9 +257,6 @@ export const createPlanetRenderer: PlanetRendererFactory = (
           scrnx: currentScreen.screenx - planet.worldwidth,
           scrny: currentScreen.screeny,
           fuelSprites: {
-            frames: Array.from({ length: 8 }, (_, i) =>
-              spriteService.getFuelSprite(i)
-            ),
             emptyCell: spriteService.getFuelSprite(8),
             getFrame: (index: number) => spriteService.getFuelSprite(index)
           }

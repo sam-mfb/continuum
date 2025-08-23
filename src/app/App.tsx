@@ -25,9 +25,9 @@ import { planet3DrawingRenderer } from './games/planet3Drawing'
 import { junctionDrawRenderer } from './games/junctionDraw'
 import { createShipMoveBitmapRenderer } from './games/shipMoveBitmap'
 import { createBunkerDrawBitmapRenderer } from './games/bunkerDrawBitmap'
-import { fuelDrawBitmapRenderer } from './games/fuelDrawBitmap'
+import { createFuelDrawBitmapRenderer } from './games/fuelDrawBitmap'
 import { createExplosionBitmapRenderer } from './games/explosionBitmap'
-import { shardTestBitmapRenderer } from './games/shardTestBitmap'
+import { createShardTestBitmapRenderer } from './games/shardTestBitmap'
 import { strafeTestBitmapRenderer } from './games/strafeTestBitmap'
 import './App.css'
 
@@ -168,7 +168,7 @@ function App({ spriteService }: AppProps): React.JSX.Element {
                 {
                   type: 'bitmap',
                   name: 'Fuel Draw',
-                  bitmapRenderer: fuelDrawBitmapRenderer
+                  bitmapRenderer: createFuelDrawBitmapRenderer(spriteService)
                 } as BitmapGameDefinition,
                 {
                   type: 'bitmap',
@@ -178,7 +178,7 @@ function App({ spriteService }: AppProps): React.JSX.Element {
                 {
                   type: 'bitmap',
                   name: 'Shard Test',
-                  bitmapRenderer: shardTestBitmapRenderer
+                  bitmapRenderer: createShardTestBitmapRenderer(spriteService)
                 } as BitmapGameDefinition,
                 {
                   type: 'bitmap',

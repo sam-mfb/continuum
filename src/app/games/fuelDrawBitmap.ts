@@ -9,9 +9,7 @@
 
 import type { BitmapRenderer } from '../../bitmap'
 import { drawFuels } from '../../planet/render/drawFuels'
-import { loadSprites } from '@/store/spritesSlice'
 import { configureStore } from '@reduxjs/toolkit'
-import spritesReducer from '@/store/spritesSlice'
 import planetReducer, {
   loadPlanet,
   updateFuelAnimations
@@ -19,11 +17,11 @@ import planetReducer, {
 import type { Fuel, PlanetState } from '@/planet/types'
 import { isOnRightSide } from '@/shared/viewport'
 import { FUELFRAMES } from '@/figs/types'
+import type { SpriteService } from '@/sprites/types'
 
-// Create store with sprites and planet slices
+// Create store with planet slice
 const store = configureStore({
   reducer: {
-    sprites: spritesReducer,
     planet: planetReducer
   }
 })
@@ -98,18 +96,13 @@ const viewportState = {
 }
 
 // Initialize game on module load
-const initializeGame = async (): Promise<void> => {
+const initializeGame = (): void => {
   try {
     console.log(
       'Starting fuelDrawBitmap initialization...',
       'FUELFRAMES=',
       FUELFRAMES
     )
-
-    // Load sprites
-    console.log('Loading sprites...')
-    await store.dispatch(loadSprites()).unwrap()
-    console.log('Sprites loaded successfully')
 
     // Initialize planet state with fuels
     console.log('Initializing planet state...')
@@ -133,142 +126,140 @@ const initializeGame = async (): Promise<void> => {
 }
 
 // Start initialization
-void initializeGame()
+initializeGame()
 
 /**
- * Bitmap renderer for fuel drawing game
+ * Factory function to create bitmap renderer for fuel drawing game
  */
-export const fuelDrawBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
-  // Check initialization status
-  if (initializationError) {
-    console.error('Initialization failed:', initializationError)
-    bitmap.data.fill(0)
-    return
-  }
-
-  if (!initializationComplete) {
-    // Still loading
-    bitmap.data.fill(0)
-    return
-  }
-
-  const state = store.getState()
-
-  // Check if sprites are loaded
-  if (!state.sprites.allSprites) {
-    console.error('Sprites not loaded')
-    bitmap.data.fill(0)
-    return
-  }
-
-  // Get current planet state
-  const planetState = state.planet
-
-  // Handle keyboard input for viewport movement
-  const moveSpeed = 5
-
-  if (frame.keysDown.has('ArrowUp')) {
-    viewportState.y = Math.max(0, viewportState.y - moveSpeed)
-  }
-  if (frame.keysDown.has('ArrowDown')) {
-    viewportState.y = Math.min(
-      WORLD_HEIGHT - bitmap.height,
-      viewportState.y + moveSpeed
-    )
-  }
-  if (frame.keysDown.has('ArrowLeft')) {
-    viewportState.x -= moveSpeed
-    if (planetState.worldwrap) {
-      // Wrap around if we go negative
-      viewportState.x =
-        ((viewportState.x % WORLD_WIDTH) + WORLD_WIDTH) % WORLD_WIDTH
-    } else {
-      // Clamp to world bounds for non-wrapping worlds
-      viewportState.x = Math.max(0, viewportState.x)
+export const createFuelDrawBitmapRenderer =
+  (spriteService: SpriteService): BitmapRenderer =>
+  (bitmap, frame, _env) => {
+    // Check initialization status
+    if (initializationError) {
+      console.error('Initialization failed:', initializationError)
+      bitmap.data.fill(0)
+      return
     }
-  }
-  if (frame.keysDown.has('ArrowRight')) {
-    viewportState.x += moveSpeed
-    if (planetState.worldwrap) {
-      // Wrap around if we exceed world width
-      viewportState.x = viewportState.x % WORLD_WIDTH
-    } else {
-      // Clamp to world bounds for non-wrapping worlds
-      viewportState.x = Math.min(WORLD_WIDTH - bitmap.width, viewportState.x)
+
+    if (!initializationComplete) {
+      // Still loading
+      bitmap.data.fill(0)
+      return
     }
-  }
 
-  // First, create a crosshatch gray background
-  // IMPORTANT: Pattern must be based on world coordinates, not screen coordinates
-  for (let y = 0; y < bitmap.height; y++) {
-    for (let x = 0; x < bitmap.width; x++) {
-      // Calculate world position, handling wrapping
-      let worldX = x + viewportState.x
-      const worldY = y + viewportState.y
+    const state = store.getState()
 
-      // For wrapping worlds, normalize worldX to be within world bounds
+    // Get current planet state
+    const planetState = state.planet
+
+    // Handle keyboard input for viewport movement
+    const moveSpeed = 5
+
+    if (frame.keysDown.has('ArrowUp')) {
+      viewportState.y = Math.max(0, viewportState.y - moveSpeed)
+    }
+    if (frame.keysDown.has('ArrowDown')) {
+      viewportState.y = Math.min(
+        WORLD_HEIGHT - bitmap.height,
+        viewportState.y + moveSpeed
+      )
+    }
+    if (frame.keysDown.has('ArrowLeft')) {
+      viewportState.x -= moveSpeed
       if (planetState.worldwrap) {
-        worldX = ((worldX % WORLD_WIDTH) + WORLD_WIDTH) % WORLD_WIDTH
-      }
-
-      // Set pixel if worldX + worldY is even (creates fixed checkerboard)
-      if ((worldX + worldY) % 2 === 0) {
-        const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
-        const bitIndex = 7 - (x % 8)
-        bitmap.data[byteIndex]! |= 1 << bitIndex
+        // Wrap around if we go negative
+        viewportState.x =
+          ((viewportState.x % WORLD_WIDTH) + WORLD_WIDTH) % WORLD_WIDTH
+      } else {
+        // Clamp to world bounds for non-wrapping worlds
+        viewportState.x = Math.max(0, viewportState.x)
       }
     }
-  }
+    if (frame.keysDown.has('ArrowRight')) {
+      viewportState.x += moveSpeed
+      if (planetState.worldwrap) {
+        // Wrap around if we exceed world width
+        viewportState.x = viewportState.x % WORLD_WIDTH
+      } else {
+        // Clamp to world bounds for non-wrapping worlds
+        viewportState.x = Math.min(WORLD_WIDTH - bitmap.width, viewportState.x)
+      }
+    }
 
-  // Update fuel animation state using the reducer
-  store.dispatch(updateFuelAnimations())
+    // First, create a crosshatch gray background
+    // IMPORTANT: Pattern must be based on world coordinates, not screen coordinates
+    for (let y = 0; y < bitmap.height; y++) {
+      for (let x = 0; x < bitmap.width; x++) {
+        // Calculate world position, handling wrapping
+        let worldX = x + viewportState.x
+        const worldY = y + viewportState.y
 
-  // Draw all fuel cells using drawFuels
-  const fuelSprites = state.sprites.allSprites.fuels
+        // For wrapping worlds, normalize worldX to be within world bounds
+        if (planetState.worldwrap) {
+          worldX = ((worldX % WORLD_WIDTH) + WORLD_WIDTH) % WORLD_WIDTH
+        }
 
-  // Check if we're near the right edge for world wrapping
-  const onRightSide = isOnRightSide(
-    viewportState.x,
-    bitmap.width,
-    planetState.worldwidth,
-    planetState.worldwrap
-  )
+        // Set pixel if worldX + worldY is even (creates fixed checkerboard)
+        if ((worldX + worldY) % 2 === 0) {
+          const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
+          const bitIndex = 7 - (x % 8)
+          bitmap.data[byteIndex]! |= 1 << bitIndex
+        }
+      }
+    }
 
-  // Create the fuel drawing function with dependencies
-  const drawFuelsFunc = drawFuels({
-    fuels: planetState.fuels,
-    scrnx: viewportState.x,
-    scrny: viewportState.y,
-    fuelSprites: fuelSprites
-  })
+    // Update fuel animation state using the reducer
+    store.dispatch(updateFuelAnimations())
 
-  // Apply fuel drawing to the bitmap
-  let renderedBitmap = drawFuelsFunc(bitmap)
+    // Draw all fuel cells using drawFuels
+    const fuelSprites = {
+      emptyCell: spriteService.getFuelSprite(8),
+      getFrame: (index: number) => spriteService.getFuelSprite(index)
+    }
 
-  // Handle world wrapping - call drawFuels again with wrapped coordinates
-  if (onRightSide) {
-    const drawFuelsWrapped = drawFuels({
+    // Check if we're near the right edge for world wrapping
+    const onRightSide = isOnRightSide(
+      viewportState.x,
+      bitmap.width,
+      planetState.worldwidth,
+      planetState.worldwrap
+    )
+
+    // Create the fuel drawing function with dependencies
+    const drawFuelsFunc = drawFuels({
       fuels: planetState.fuels,
-      scrnx: viewportState.x - planetState.worldwidth,
+      scrnx: viewportState.x,
       scrny: viewportState.y,
       fuelSprites: fuelSprites
     })
-    renderedBitmap = drawFuelsWrapped(renderedBitmap)
-  }
 
-  // Copy rendered bitmap data back to original
-  bitmap.data.set(renderedBitmap.data)
+    // Apply fuel drawing to the bitmap
+    let renderedBitmap = drawFuelsFunc(bitmap)
 
-  // Draw a position marker in corner to show viewport is updating
-  for (let i = 0; i < 3; i++) {
-    for (let j = 0; j < 3; j++) {
-      const pixelX = 10 + i
-      const pixelY = 10 + j
-      if (pixelX < bitmap.width && pixelY < bitmap.height) {
-        const byteIndex = Math.floor(pixelY * bitmap.rowBytes + pixelX / 8)
-        const bitIndex = 7 - (pixelX % 8)
-        bitmap.data[byteIndex]! |= 1 << bitIndex
+    // Handle world wrapping - call drawFuels again with wrapped coordinates
+    if (onRightSide) {
+      const drawFuelsWrapped = drawFuels({
+        fuels: planetState.fuels,
+        scrnx: viewportState.x - planetState.worldwidth,
+        scrny: viewportState.y,
+        fuelSprites: fuelSprites
+      })
+      renderedBitmap = drawFuelsWrapped(renderedBitmap)
+    }
+
+    // Copy rendered bitmap data back to original
+    bitmap.data.set(renderedBitmap.data)
+
+    // Draw a position marker in corner to show viewport is updating
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        const pixelX = 10 + i
+        const pixelY = 10 + j
+        if (pixelX < bitmap.width && pixelY < bitmap.height) {
+          const byteIndex = Math.floor(pixelY * bitmap.rowBytes + pixelX / 8)
+          const bitIndex = 7 - (pixelX % 8)
+          bitmap.data[byteIndex]! |= 1 << bitIndex
+        }
       }
     }
   }
-}

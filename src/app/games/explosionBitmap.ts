@@ -263,155 +263,151 @@ const triggerBunkerExplosion = (bunker: BunkerConfig): void => {
 /**
  * Factory function to create bitmap renderer for explosion game
  */
-export const createExplosionBitmapRenderer = (
-  spriteService: SpriteService
-): BitmapRenderer => (
-  bitmap,
-  frame,
-  _env
-) => {
-  // Clear the bitmap each frame
-  bitmap.data.fill(0)
-
-  // Check initialization status
-  if (initializationError) {
-    console.error('Initialization failed:', initializationError)
+export const createExplosionBitmapRenderer =
+  (spriteService: SpriteService): BitmapRenderer =>
+  (bitmap, frame, _env) => {
+    // Clear the bitmap each frame
     bitmap.data.fill(0)
-    return
-  }
 
-  if (!initializationComplete) {
-    // Still loading
-    return
-  }
-
-  const state = store.getState()
-
-
-  // Handle key presses
-  for (const bunker of bunkers) {
-    if (frame.keysDown.has(bunker.key) && bunker.alive) {
-      triggerBunkerExplosion(bunker)
+    // Check initialization status
+    if (initializationError) {
+      console.error('Initialization failed:', initializationError)
+      bitmap.data.fill(0)
+      return
     }
-  }
 
-  // Update explosion physics
-  let anyExplosionActive = false
-  for (const bunker of bunkers) {
-    if (!bunker.alive) {
-      bunker.explosionFrame++
-      anyExplosionActive = true
+    if (!initializationComplete) {
+      // Still loading
+      return
+    }
 
-      // Reset bunker after explosion completes
-      if (bunker.explosionFrame >= EXPLOSION_DURATION) {
-        bunker.alive = true
-        bunker.explosionFrame = 0
+    const state = store.getState()
+
+    // Handle key presses
+    for (const bunker of bunkers) {
+      if (frame.keysDown.has(bunker.key) && bunker.alive) {
+        triggerBunkerExplosion(bunker)
       }
     }
-  }
 
-  if (anyExplosionActive) {
-    const gravityVectorFunc = (
-      x: number,
-      y: number
-    ): { xg: number; yg: number } =>
-      gravityVector({
-        x,
-        y,
-        gravx: state.planet.gravx,
-        gravy: state.planet.gravy,
-        gravityPoints: [],
-        worldwidth: state.planet.worldwidth,
-        worldwrap: state.planet.worldwrap
-      })
+    // Update explosion physics
+    let anyExplosionActive = false
+    for (const bunker of bunkers) {
+      if (!bunker.alive) {
+        bunker.explosionFrame++
+        anyExplosionActive = true
 
-    store.dispatch(
-      updateExplosions({
-        worldwidth: state.planet.worldwidth,
-        worldwrap: state.planet.worldwrap,
-        gravityVector: gravityVectorFunc
-      })
-    )
-  }
-
-  // Get final state for drawing
-  const finalState = store.getState()
-
-  // Create a crosshatch gray background
-  for (let y = 0; y < bitmap.height; y++) {
-    for (let x = 0; x < bitmap.width; x++) {
-      // Calculate world position
-      const worldX = x + finalState.screen.screenx
-      const worldY = y + finalState.screen.screeny
-      // Set pixel if worldX + worldY is even (creates fixed checkerboard)
-      if ((worldX + worldY) % 2 === 0) {
-        const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
-        const bitIndex = 7 - (x % 8)
-        bitmap.data[byteIndex]! |= 1 << bitIndex
+        // Reset bunker after explosion completes
+        if (bunker.explosionFrame >= EXPLOSION_DURATION) {
+          bunker.alive = true
+          bunker.explosionFrame = 0
+        }
       }
     }
-  }
 
-  let renderedBitmap = bitmap
+    if (anyExplosionActive) {
+      const gravityVectorFunc = (
+        x: number,
+        y: number
+      ): { xg: number; yg: number } =>
+        gravityVector({
+          x,
+          y,
+          gravx: state.planet.gravx,
+          gravy: state.planet.gravy,
+          gravityPoints: [],
+          worldwidth: state.planet.worldwidth,
+          worldwrap: state.planet.worldwrap
+        })
 
-  // Draw all bunkers
-  for (const bunker of bunkers) {
-    if (bunker.alive) {
-      const bunkerSprite = spriteService.getBunkerSprite(
-        bunker.kind,
-        bunker.rotation
+      store.dispatch(
+        updateExplosions({
+          worldwidth: state.planet.worldwidth,
+          worldwrap: state.planet.worldwrap,
+          gravityVector: gravityVectorFunc
+        })
       )
+    }
 
-      // Use pre-rendered image based on alignment
-      const align = (bunker.x + bunker.y) & 1
-      const bunkerBitmap: MonochromeBitmap = {
-        data:
-          align === 0
-            ? bunkerSprite.images.background1
-            : bunkerSprite.images.background2,
-        width: 48,
-        height: 32,
-        rowBytes: 6
+    // Get final state for drawing
+    const finalState = store.getState()
+
+    // Create a crosshatch gray background
+    for (let y = 0; y < bitmap.height; y++) {
+      for (let x = 0; x < bitmap.width; x++) {
+        // Calculate world position
+        const worldX = x + finalState.screen.screenx
+        const worldY = y + finalState.screen.screeny
+        // Set pixel if worldX + worldY is even (creates fixed checkerboard)
+        if ((worldX + worldY) % 2 === 0) {
+          const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
+          const bitIndex = 7 - (x % 8)
+          bitmap.data[byteIndex]! |= 1 << bitIndex
+        }
       }
+    }
 
-      renderedBitmap = drawBunker({
-        x: bunker.x,
-        y: bunker.y,
-        def: bunkerBitmap
+    let renderedBitmap = bitmap
+
+    // Draw all bunkers
+    for (const bunker of bunkers) {
+      if (bunker.alive) {
+        const bunkerSprite = spriteService.getBunkerSprite(
+          bunker.kind,
+          bunker.rotation
+        )
+
+        // Use pre-rendered image based on alignment
+        const align = (bunker.x + bunker.y) & 1
+        const bunkerBitmap: MonochromeBitmap = {
+          data:
+            align === 0
+              ? bunkerSprite.images.background1
+              : bunkerSprite.images.background2,
+          width: 48,
+          height: 32,
+          rowBytes: 6
+        }
+
+        renderedBitmap = drawBunker({
+          x: bunker.x,
+          y: bunker.y,
+          def: bunkerBitmap
+        })(renderedBitmap)
+      }
+    }
+
+    // Draw explosions if any are active
+    if (anyExplosionActive) {
+      const extendedState = finalState as ExtendedGameState
+
+      // Get shard images from sprites - only getSprite is used by drawExplosions
+      const shardImages = {
+        kinds: {} as Record<number, Record<number, import('@/figs/types').ShardSprite>>,
+        getSprite: (kind: number, rotation: number) =>
+          spriteService.getShardSprite(kind, rotation)
+      } as import('@/figs/types').ShardSpriteSet
+
+      renderedBitmap = drawExplosions({
+        explosions: extendedState.explosions,
+        screenx: extendedState.screen.screenx,
+        screeny: extendedState.screen.screeny,
+        worldwidth: extendedState.planet.worldwidth,
+        worldwrap: extendedState.planet.worldwrap,
+        shardImages
       })(renderedBitmap)
     }
+
+    // Instructions text would go here, but we need to implement drawSmall first
+    // Keys:
+    // 1-8: WALL rotations 0-7 (N to SSE)
+    // Q-I: WALL rotations 8-15 (S to NNW)
+    // A-K: DIFF rotations 0-7
+    // Z-M,comma: DIFF rotations 8-15
+    // O: GROUND (omnidirectional)
+    // P: FOLLOW (omnidirectional)
+    // L: GENERATOR (omnidirectional)
+
+    // Copy rendered bitmap data back to original
+    bitmap.data.set(renderedBitmap.data)
   }
-
-  // Draw explosions if any are active
-  if (anyExplosionActive) {
-    const extendedState = finalState as ExtendedGameState
-
-    // Get shard images from sprites
-    const shardImages = {
-      kinds: {} as Record<number, Record<number, unknown>>,
-      getSprite: (kind: number, rotation: number) => spriteService.getShardSprite(kind, rotation)
-    }
-
-    renderedBitmap = drawExplosions({
-      explosions: extendedState.explosions,
-      screenx: extendedState.screen.screenx,
-      screeny: extendedState.screen.screeny,
-      worldwidth: extendedState.planet.worldwidth,
-      worldwrap: extendedState.planet.worldwrap,
-      shardImages
-    })(renderedBitmap)
-  }
-
-  // Instructions text would go here, but we need to implement drawSmall first
-  // Keys:
-  // 1-8: WALL rotations 0-7 (N to SSE)
-  // Q-I: WALL rotations 8-15 (S to NNW)
-  // A-K: DIFF rotations 0-7
-  // Z-M,comma: DIFF rotations 8-15
-  // O: GROUND (omnidirectional)
-  // P: FOLLOW (omnidirectional)
-  // L: GENERATOR (omnidirectional)
-
-  // Copy rendered bitmap data back to original
-  bitmap.data.set(renderedBitmap.data)
-}
