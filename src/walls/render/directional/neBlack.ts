@@ -7,7 +7,8 @@ import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
 import { drawNeline } from '../lines/drawNeline'
 import { findWAddress, jsrWAddress } from '../../../asm/assemblyMacros'
 import { LINE_DIR } from '../../../shared/types/line'
-import { getBackground } from '../getBackground'
+import { getAlignment } from '@/shared/alignment'
+import { getBackgroundPattern } from '@/shared/backgroundPattern'
 import { build68kArch } from '../../../asm/emulator'
 
 // Masks from orig/Sources/Walls.c:203-204
@@ -128,8 +129,14 @@ export const neBlack =
     y -= h15
 
     // Calculate EOR pattern (line 274)
-    const background = getBackground(scrx, scry)
-    let eor = (background[(x + y) & 1]! & NE_MASK) ^ NE_VAL
+    const align = getAlignment({
+      screenX: scrx,
+      screenY: scry,
+      objectX: x,
+      objectY: y
+    })
+    const pattern = getBackgroundPattern(align)
+    let eor = (pattern & NE_MASK) ^ NE_VAL
 
     // Main drawing section - exact assembly (lines 276-313)
     if (len > 0 || end > 0) {

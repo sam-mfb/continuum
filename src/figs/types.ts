@@ -37,10 +37,6 @@ export const FUEL_TOTAL_FRAMES = 9
 // Kinds 5-6 are special types used for DIFF bunker explosions
 export const SHARDKINDS = 7
 
-// Background patterns for alternating scanlines
-export const BACKGROUND1 = 0xaaaaaaaa
-export const BACKGROUND2 = 0x55555555
-
 // Core sprite types
 export type ShipSprite = {
   def: Uint8Array // 128 bytes (4 bytes/row × 32 rows)

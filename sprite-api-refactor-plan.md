@@ -12,6 +12,7 @@ The current sprite service API has several issues:
 ## Proposed Solution
 
 Create a simpler API that:
+
 - Allows consumers to specify which variant they want (def, mask, background1, background2)
 - Pre-computes all format conversions at load time for performance
 - Returns all formats in a single object, letting consumers pick what they need
@@ -44,13 +45,21 @@ type FullOptions = { variant: FullVariant }
 type SpriteService = {
   // Ship only has def and mask
   getShipSprite(rotation: number, options: ShipOptions): SpriteData
-  
+
   // Full variant support (def, mask, background1, background2)
-  getBunkerSprite(kind: BunkerKind, rotation: number, options: FullOptions): SpriteData
+  getBunkerSprite(
+    kind: BunkerKind,
+    rotation: number,
+    options: FullOptions
+  ): SpriteData
   getFuelSprite(frame: number, options: FullOptions): SpriteData
-  getShardSprite(kind: number, rotation: number, options: FullOptions): SpriteData
+  getShardSprite(
+    kind: number,
+    rotation: number,
+    options: FullOptions
+  ): SpriteData
   getCraterSprite(options: FullOptions): SpriteData
-  
+
   // No options - only def variant exists
   getShieldSprite(): SpriteData
   getFlameSprite(frame: number): SpriteData
@@ -64,8 +73,8 @@ type SpriteService = {
 ```typescript
 // Get ship mask - all formats available
 const shipMask = spriteService.getShipSprite(15, { variant: 'mask' })
-const maskBitmap = shipMask.bitmap    // Use bitmap format
-const maskUint16 = shipMask.uint16    // Or uint16 format
+const maskBitmap = shipMask.bitmap // Use bitmap format
+const maskUint16 = shipMask.uint16 // Or uint16 format
 
 // Get bunker with explicit background selection
 const align = (x + y) & 1
@@ -85,18 +94,31 @@ const shieldData = shield.uint8
 ### Implementation Strategy
 
 1. **Pre-compute all formats at load time** using helper functions:
+
    ```typescript
    // Module-level helper functions
-   function precomputeFormats(data: Uint8Array, width: number, height: number): SpriteData {
+   function precomputeFormats(
+     data: Uint8Array,
+     width: number,
+     height: number
+   ): SpriteData {
      return {
        uint8: data,
        uint16: toUint16Array(data),
        bitmap: toMonochromeBitmap(data, width, height)
      }
    }
-   
-   function toUint16Array(data: Uint8Array): Uint16Array { /* ... */ }
-   function toMonochromeBitmap(data: Uint8Array, width: number, height: number): MonochromeBitmap { /* ... */ }
+
+   function toUint16Array(data: Uint8Array): Uint16Array {
+     /* ... */
+   }
+   function toMonochromeBitmap(
+     data: Uint8Array,
+     width: number,
+     height: number
+   ): MonochromeBitmap {
+     /* ... */
+   }
    ```
 
 2. **Store pre-computed data** in the service's internal storage during initialization
@@ -128,6 +150,7 @@ const shieldData = shield.uint8
 ## Summary
 
 The new API simplifies sprite access by:
+
 - Pre-computing all format conversions at load time
 - Returning all formats in a single object
 - Using explicit variant names (background1/background2 instead of alignment parameters)

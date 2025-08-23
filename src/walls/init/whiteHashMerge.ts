@@ -1,10 +1,8 @@
 import type { WhiteRec, JunctionRec } from '../types'
 import { hashFigure } from './whitePatterns'
 import { patternToByteArray } from './utils'
-import { BACKGROUND_PATTERNS } from '../../screen/constants'
-
-// Background patterns from Play.c:61-62
-const [backgr1, backgr2] = BACKGROUND_PATTERNS
+import { getAlignment } from '@/shared/alignment'
+import { getBackgroundPattern } from '@/shared/backgroundPattern'
 
 /**
  * Checks if a white piece has any close neighbors.
@@ -84,7 +82,8 @@ export function whiteHashMerge(
 
     if (junctionIndex !== -1) {
       // Choose background pattern based on position
-      const back = (wh.x + wh.y) & 1 ? backgr2! : backgr1!
+      const align = getAlignment({ x: wh.x, y: wh.y })
+      const back = getBackgroundPattern(align)
 
       // First, reconstruct 16-bit values from byte pairs
       // NOTE: Data is stored as big-endian bytes, so high byte comes first

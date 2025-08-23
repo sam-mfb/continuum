@@ -8,7 +8,8 @@ import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
 import { build68kArch } from '../../../asm/emulator'
 import { jsrWAddress } from '../../../asm/assemblyMacros'
 import { drawEseline } from '../lines/drawEseline'
-import { getBackground } from '../getBackground'
+import { getAlignment } from '@/shared/alignment'
+import { getBackgroundPattern } from '@/shared/backgroundPattern'
 
 // Masks from orig/Sources/Walls.c:728-729
 const ESE_MASK = 0xfc000000
@@ -102,9 +103,23 @@ export const eseBlack =
     y += h2 >> 1
 
     // Calculate EOR patterns (lines 783-784)
-    const background = getBackground(scrx, scry)
-    eor1 = (background[(x + y) & 1]! & ESE_MASK) ^ ESE_VAL
-    eor2 = (background[(x + y + 1) & 1]! & ESE_MASK) ^ ESE_VAL
+    const align1 = getAlignment({
+      screenX: scrx,
+      screenY: scry,
+      objectX: x,
+      objectY: y
+    })
+    const pattern1 = getBackgroundPattern(align1)
+    eor1 = (pattern1 & ESE_MASK) ^ ESE_VAL
+
+    const align2 = getAlignment({
+      screenX: scrx,
+      screenY: scry,
+      objectX: x,
+      objectY: y + 1
+    })
+    const pattern2 = getBackgroundPattern(align2)
+    eor2 = (pattern2 & ESE_MASK) ^ ESE_VAL
 
     // Main assembly section (lines 786-829)
     if (h2 < h3) {

@@ -1,5 +1,7 @@
 import type { CraterSprite } from './types'
-import { CRATERHT, BACKGROUND1, BACKGROUND2 } from './types'
+import { CRATERHT } from './types'
+import { getAlignment } from '@/shared/alignment'
+import { getBackgroundPattern } from '@/shared/backgroundPattern'
 
 // Process crater sprite with background patterns
 export function processCraterSprite(
@@ -10,8 +12,8 @@ export function processCraterSprite(
     def: new Uint8Array(def),
     mask: new Uint8Array(mask),
     images: {
-      background1: applyCraterBackground(def, mask, BACKGROUND1),
-      background2: applyCraterBackground(def, mask, BACKGROUND2)
+      background1: applyCraterBackground(def, mask, 0),
+      background2: applyCraterBackground(def, mask, 1)
     }
   }
 }
@@ -20,7 +22,7 @@ export function processCraterSprite(
 function applyCraterBackground(
   def: Uint8Array,
   mask: Uint8Array,
-  background: number
+  alignment: 0 | 1
 ): Uint8Array {
   const result = new Uint8Array(def.length)
 
@@ -29,8 +31,9 @@ function applyCraterBackground(
   for (let row = 0; row < CRATERHT; row++) {
     const rowOffset = row * 4
 
-    // Alternate background pattern by row
-    const bgPattern = row % 2 === 0 ? background : ~background
+    // Get background pattern for this row
+    const rowAlign = getAlignment({ x: alignment, y: row })
+    const bgPattern = getBackgroundPattern(rowAlign)
 
     // Process 4 bytes per row
     for (let byte = 0; byte < 4; byte++) {

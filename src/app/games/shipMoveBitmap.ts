@@ -22,8 +22,9 @@ import type { SpriteService } from '@/sprites/types'
 import { SCENTER } from '@/figs/types'
 import { flameOn } from '@/ship/render/flameOn'
 import { grayFigure } from '@/ship/render/grayFigure'
-import { getBackground } from '@/walls/render/getBackground'
 import { eraseFigure } from '@/ship/render/eraseFigure'
+import { getAlignment } from '@/shared/alignment'
+import { getBackgroundPattern } from '@/shared/backgroundPattern'
 import { shiftFigure } from '@/ship/render/shiftFigure'
 import { whiteTerrain, blackTerrain } from '@/walls/render'
 import { wallsSlice } from '@/walls/wallsSlice'
@@ -261,14 +262,29 @@ export const createShipMoveBitmapRenderer =
 
     // Following Play.c order:
     // 1. gray_figure - ship shadow background
+    // Compute background patterns for y and y+1 positions
+    const align0 = getAlignment({
+      screenX: finalState.screen.screenx,
+      screenY: finalState.screen.screeny,
+      objectX: 0,
+      objectY: 0
+    })
+    const align1 = getAlignment({
+      screenX: finalState.screen.screenx,
+      screenY: finalState.screen.screeny,
+      objectX: 0,
+      objectY: 1
+    })
+    const background: readonly [number, number] = [
+      getBackgroundPattern(align0),
+      getBackgroundPattern(align1)
+    ]
+
     let renderedBitmap = grayFigure({
       x: finalState.ship.shipx - (SCENTER - SHADOW_OFFSET_X),
       y: finalState.ship.shipy - (SCENTER - SHADOW_OFFSET_Y),
       def: shipMaskBitmap,
-      background: getBackground(
-        finalState.screen.screenx,
-        finalState.screen.screeny
-      )
+      background
     })(bitmap)
 
     // 2. white_terrain - wall undersides/junctions

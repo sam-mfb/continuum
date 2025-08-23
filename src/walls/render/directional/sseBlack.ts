@@ -9,7 +9,8 @@ import { drawNneline } from '../lines/drawNneline'
 import { build68kArch } from '../../../asm/emulator'
 import { findWAddress, jsrWAddress } from '../../../asm/assemblyMacros'
 import { LINE_DIR } from '../../../shared/types/line'
-import { getBackground } from '../getBackground'
+import { getAlignment } from '@/shared/alignment'
+import { getBackgroundPattern } from '@/shared/backgroundPattern'
 
 // Masks from orig/Sources/Walls.c:962-963
 const SSE_MASK = 0xff000000
@@ -146,9 +147,23 @@ export const sseBlack =
     y += h2
 
     // Calculate EOR patterns (lines 1043-1044)
-    const background = getBackground(scrx, scry)
-    eor1 = (background[(x + y) & 1]! & SSE_MASK) ^ SSE_VAL
-    eor2 = (background[(1 - (x + y)) & 1]! & SSE_MASK) ^ SSE_VAL
+    const align1 = getAlignment({
+      screenX: scrx,
+      screenY: scry,
+      objectX: x,
+      objectY: y
+    })
+    const pattern1 = getBackgroundPattern(align1)
+    eor1 = (pattern1 & SSE_MASK) ^ SSE_VAL
+
+    const align2 = getAlignment({
+      screenX: scrx,
+      screenY: scry,
+      objectX: x,
+      objectY: y + 1
+    })
+    const pattern2 = getBackgroundPattern(align2)
+    eor2 = (pattern2 & SSE_MASK) ^ SSE_VAL
 
     // Main assembly section (lines 1046-1117)
     // Create 68K emulator instance

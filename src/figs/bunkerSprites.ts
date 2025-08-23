@@ -1,13 +1,8 @@
 import type { BunkerSprite, BunkerSpriteSet } from './types'
-import {
-  BunkerKind,
-  BUNKROTKINDS,
-  BUNKER_ROTATIONS,
-  BUNKHT,
-  BACKGROUND1,
-  BACKGROUND2
-} from './types'
+import { BunkerKind, BUNKROTKINDS, BUNKER_ROTATIONS, BUNKHT } from './types'
 import { rotateBunker90CW } from './rotate'
+import { getAlignment } from '@/shared/alignment'
+import { getBackgroundPattern } from '@/shared/backgroundPattern'
 
 // Create a bunker sprite set from extracted arrays
 export function createBunkerSpriteSet(
@@ -68,12 +63,12 @@ export function createBunkerSpriteSet(
       sprite.images.background1 = applyBunkerBackground(
         sprite.def,
         sprite.mask,
-        BACKGROUND1
+        0 // alignment 0
       )
       sprite.images.background2 = applyBunkerBackground(
         sprite.def,
         sprite.mask,
-        BACKGROUND2
+        1 // alignment 1
       )
     }
   }
@@ -95,12 +90,12 @@ export function createBunkerSpriteSet(
           background1: applyBunkerBackground(
             sprite.def,
             sprite.mask,
-            BACKGROUND1
+            0 // alignment 0
           ),
           background2: applyBunkerBackground(
             sprite.def,
             sprite.mask,
-            BACKGROUND2
+            1 // alignment 1
           )
         }
       }
@@ -145,7 +140,7 @@ export function createBunkerSpriteSet(
 function applyBunkerBackground(
   def: Uint8Array,
   mask: Uint8Array,
-  background: number
+  alignment: 0 | 1
 ): Uint8Array {
   const result = new Uint8Array(def.length)
 
@@ -154,19 +149,17 @@ function applyBunkerBackground(
 
   // Process ALL rows (48 rows for bunkers)
   // True checkerboard pattern - each entire row alternates
-  // For BACKGROUND1 (align=0): even rows = 0xAA, odd rows = 0x55
-  // For BACKGROUND2 (align=1): even rows = 0x55, odd rows = 0xAA
+  // For alignment 0: even rows = 0xAA, odd rows = 0x55
+  // For alignment 1: even rows = 0x55, odd rows = 0xAA
 
   for (let row = 0; row < BUNKHT; row++) {
     const rowOffset = row * 6
 
     // Determine pattern for this entire row based on row parity
-    let rowPattern: number
-    if (background === BACKGROUND1) {
-      rowPattern = row % 2 === 0 ? 0xaa : 0x55
-    } else {
-      rowPattern = row % 2 === 0 ? 0x55 : 0xaa
-    }
+    // Use getAlignment to determine which pattern to use for this row
+    const rowAlign = getAlignment({ x: alignment, y: row })
+    const rowBg = getBackgroundPattern(rowAlign)
+    const rowPattern = (rowBg >> 24) & 0xff // Use most significant byte
 
     // Apply the same pattern to all 6 bytes in the row
     for (let b = 0; b < 6; b++) {

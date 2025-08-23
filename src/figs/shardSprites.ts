@@ -1,5 +1,7 @@
 import type { ShardSprite, ShardSpriteSet } from './types'
-import { SHARDKINDS, SHARDHT, BACKGROUND1, BACKGROUND2 } from './types'
+import { SHARDKINDS, SHARDHT } from './types'
+import { getAlignment } from '@/shared/alignment'
+import { getBackgroundPattern } from '@/shared/backgroundPattern'
 
 // Create a shard sprite set from extracted arrays
 export function createShardSpriteSet(
@@ -61,9 +63,9 @@ export function createShardSpriteSet(
           align === 0 ? sprite.images.background1 : sprite.images.background2
 
         for (let y = 0; y < SHARDHT; y++) {
-          // Select background based on (y + align) & 1, matching original:
-          // back[(y + align) & 1] where back[0]=BACKGROUND1, back[1]=BACKGROUND2
-          const rowBg = ((y + align) & 1) === 0 ? BACKGROUND1 : BACKGROUND2
+          // Select background based on (y + align) & 1, matching original
+          const rowAlign = getAlignment({ x: 0, y: y + align })
+          const rowBg = getBackgroundPattern(rowAlign)
           const bgByte = (rowBg >> 16) & 0xffff // Use middle 16 bits
 
           // Process 2 bytes per row

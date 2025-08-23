@@ -10,6 +10,7 @@ import { build68kArch } from '@/asm/emulator'
 import { jsrWAddress } from '@/asm/assemblyMacros'
 import type { Bunker } from '../types'
 import { xbcenter, ybcenter } from '../constants'
+import { getAlignment } from '@/shared/alignment'
 
 /**
  * From do_bunks() in orig/Sources/Bunkers.c at 213-245
@@ -54,7 +55,7 @@ export function doBunks(deps: {
           // Determine which drawing function to use
           if (bp.kind >= BUNKROTKINDS || bp.rot <= 1 || bp.rot >= 9) {
             // Use XOR drawing for rotating bunkers or up/down facing bunkers
-            const align = (bp.x + bp.y + xcenter + ycenter) & 1
+            const align = getAlignment({ x: bp.x + xcenter, y: bp.y + ycenter })
 
             // Convert Uint8Array to MonochromeBitmap with pre-computed background
             const image: MonochromeBitmap = {
