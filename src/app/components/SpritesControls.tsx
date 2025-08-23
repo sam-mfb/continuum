@@ -25,13 +25,8 @@ export const SpritesControls: React.FC = () => {
     shardKind,
     flameFrame,
     strafeFrame,
-    digitChar,
-    allSprites
+    digitChar
   } = useAppSelector(state => state.sprites)
-
-  if (!allSprites) {
-    return null
-  }
 
   // Get rotation limits based on sprite type
   const getRotationMax = (): number => {

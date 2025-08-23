@@ -1,11 +1,11 @@
 import React, { useRef, useEffect } from 'react'
 import { useAppSelector } from '../../store/store'
-import type { FuelSprite } from '@/figs/types'
+import { useSpriteService } from '../../sprites/hooks'
 
 export const SpritesViewer: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const spriteService = useSpriteService()
   const {
-    allSprites,
     selectedType,
     showMask,
     rotation,
@@ -15,12 +15,11 @@ export const SpritesViewer: React.FC = () => {
     shardKind,
     flameFrame,
     strafeFrame,
-    digitChar,
-    error
+    digitChar
   } = useAppSelector(state => state.sprites)
 
   useEffect(() => {
-    if (!canvasRef.current || !allSprites) return
+    if (!canvasRef.current) return
 
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
@@ -38,7 +37,7 @@ export const SpritesViewer: React.FC = () => {
     try {
       switch (selectedType) {
         case 'ship': {
-          const sprite = allSprites.ships.getRotationIndex(rotation)
+          const sprite = spriteService.getShipSprite(rotation)
           spriteData = showMask ? sprite.mask : sprite.def
           width = 32
           height = 32
@@ -47,7 +46,7 @@ export const SpritesViewer: React.FC = () => {
         }
 
         case 'bunker': {
-          const sprite = allSprites.bunkers.getSprite(bunkerKind, rotation)
+          const sprite = spriteService.getBunkerSprite(bunkerKind, rotation)
           spriteData = showMask ? sprite.mask : sprite.def
           width = 48
           height = 48
@@ -56,14 +55,7 @@ export const SpritesViewer: React.FC = () => {
         }
 
         case 'fuel': {
-          let sprite: FuelSprite
-          if (fuelFrame < 8) {
-            // Animation frames (0-7)
-            sprite = allSprites.fuels.getFrame(fuelFrame)
-          } else {
-            // Empty cell (frame 8)
-            sprite = allSprites.fuels.emptyCell
-          }
+          const sprite = spriteService.getFuelSprite(fuelFrame)
           spriteData = showMask ? sprite.mask : sprite.def
           width = 32
           height = 32
@@ -72,7 +64,7 @@ export const SpritesViewer: React.FC = () => {
         }
 
         case 'shard': {
-          const sprite = allSprites.shards.getSprite(shardKind, rotation)
+          const sprite = spriteService.getShardSprite(shardKind, rotation)
           spriteData = showMask ? sprite.mask : sprite.def
           width = 16
           height = 16
@@ -81,7 +73,8 @@ export const SpritesViewer: React.FC = () => {
         }
 
         case 'crater': {
-          spriteData = showMask ? allSprites.crater.mask : allSprites.crater.def
+          const sprite = spriteService.getCraterSprite()
+          spriteData = showMask ? sprite.mask : sprite.def
           width = 32
           height = 32
           storageRowBytes = 4 // 32 bits wide storage
@@ -89,7 +82,8 @@ export const SpritesViewer: React.FC = () => {
         }
 
         case 'shield': {
-          spriteData = allSprites.shield.def
+          const sprite = spriteService.getShieldSprite()
+          spriteData = sprite.def
           width = 32
           height = 32
           storageRowBytes = 4 // 32 bits wide storage
@@ -97,8 +91,7 @@ export const SpritesViewer: React.FC = () => {
         }
 
         case 'flame': {
-          if (!allSprites.flames) break
-          const flame = allSprites.flames.getFrame(flameFrame)
+          const flame = spriteService.getFlameSprite(flameFrame)
           spriteData = flame.def
           width = 8
           height = 7
@@ -107,8 +100,7 @@ export const SpritesViewer: React.FC = () => {
         }
 
         case 'strafe': {
-          if (!allSprites.strafe) break
-          spriteData = allSprites.strafe.getFrame(strafeFrame)
+          spriteData = spriteService.getStrafeSprite(strafeFrame)
           width = 8
           height = 8
           storageRowBytes = 1 // 8 bits wide storage
@@ -116,8 +108,7 @@ export const SpritesViewer: React.FC = () => {
         }
 
         case 'digit': {
-          if (!allSprites.digits) break
-          const charData = allSprites.digits.getCharacter(digitChar)
+          const charData = spriteService.getDigitSprite(digitChar)
           if (!charData) break
           spriteData = charData
           width = 8
@@ -157,7 +148,7 @@ export const SpritesViewer: React.FC = () => {
       }
     }
   }, [
-    allSprites,
+    spriteService,
     selectedType,
     showMask,
     rotation,
@@ -169,22 +160,6 @@ export const SpritesViewer: React.FC = () => {
     strafeFrame,
     digitChar
   ])
-
-  if (error) {
-    return (
-      <div className="sprites-viewer error">
-        <p>Error loading sprites: {error}</p>
-      </div>
-    )
-  }
-
-  if (!allSprites) {
-    return (
-      <div className="sprites-viewer empty">
-        <p>Loading sprites...</p>
-      </div>
-    )
-  }
 
   return (
     <div className="sprites-viewer">
