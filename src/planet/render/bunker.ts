@@ -55,7 +55,12 @@ export function doBunks(deps: {
           // Determine which drawing function to use
           if (bp.kind >= BUNKROTKINDS || bp.rot <= 1 || bp.rot >= 9) {
             // Use XOR drawing for rotating bunkers or up/down facing bunkers
-            const align = getAlignment({ x: bp.x + xcenter, y: bp.y + ycenter })
+            const align = getAlignment({ 
+              x: bp.x + xcenter, 
+              y: bp.y + ycenter,
+              screenX: scrnx,
+              screenY: scrny
+            })
 
             // Convert Uint8Array to MonochromeBitmap with pre-computed background
             const image: MonochromeBitmap = {

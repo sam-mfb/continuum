@@ -56,7 +56,12 @@ export function drawFuels(deps: {
         // Check if fuel is within vertical bounds (Terrain.c:306)
         if (fuely > -FUELHT && fuely < VIEWHT) {
           // Determine which background pattern to use (Terrain.c:308)
-          const align = getAlignment({ x: fp.x, y: fp.y })
+          const align = getAlignment({ 
+            x: fp.x, 
+            y: fp.y,
+            screenX: scrnx,
+            screenY: scrny
+          })
 
           // Get the appropriate fuel sprite based on currentfig
           // Just like the original: fuel_images[rot][fp->currentfig]

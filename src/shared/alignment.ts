@@ -50,10 +50,12 @@
 
 export type Alignment = 0 | 1
 
-// For simple world position alignment
+// For simple world position alignment - now requires screen coordinates for future mode switching
 type GlobalPosition = {
-  x: number
-  y: number
+  x: number       // world x coordinate
+  y: number       // world y coordinate
+  screenX: number // viewport x offset (required for future screen-fixed mode)
+  screenY: number // viewport y offset (required for future screen-fixed mode)
 }
 
 // For combined screen + object position alignment (used in wall rendering)
@@ -79,13 +81,14 @@ export function getAlignment(pos: ScreenRelativePosition): Alignment
 export function getAlignment(
   pos: GlobalPosition | ScreenRelativePosition
 ): Alignment {
-  if ('screenX' in pos) {
-    // Combined alignment for screen-relative rendering
+  if ('objectX' in pos) {
+    // Screen-relative position (for walls) - unchanged
     // This combines screen alignment with object alignment in one calculation
     return ((pos.screenX + pos.screenY + pos.objectX + pos.objectY) &
       1) as Alignment
   } else {
-    // Simple global position alignment
+    // Global position - now has screen info available for future use
+    // For now, still use world-fixed calculation
     return ((pos.x + pos.y) & 1) as Alignment
   }
 }

@@ -54,7 +54,12 @@ export function drawExplosions(deps: {
           if (shard.x > screenx && shard.x < rightShard) {
             // Select pre-computed sprite based on world position parity
             // Matches original: shard_images[sp->kind][(sp->x+sp->y) & 1][sp->rot16 >> 4]
-            const align = getAlignment({ x: shard.x, y: shard.y })
+            const align = getAlignment({ 
+              x: shard.x, 
+              y: shard.y,
+              screenX: screenx,
+              screenY: screeny
+            })
             const rotation = shard.rot16 >> 4
 
             // Get the sprite for this shard type and rotation
@@ -90,7 +95,12 @@ export function drawExplosions(deps: {
           ) {
             // Use same alignment as original - based on original world position
             // Matches original: shard_images[sp->kind][(sp->x+sp->y) & 1][sp->rot16 >> 4]
-            const align = getAlignment({ x: shard.x, y: shard.y })
+            const align = getAlignment({ 
+              x: shard.x, 
+              y: shard.y,
+              screenX: screenx,
+              screenY: screeny
+            })
             const rotation = shard.rot16 >> 4
 
             // Get the sprite for this shard type and rotation
