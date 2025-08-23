@@ -1,6 +1,31 @@
 /**
  * @fileoverview Unified alignment calculation for Continuum's checkerboard background pattern
  * 
+ * RECENT CHANGES (Phase B of Alignment Signature Update):
+ * 
+ * The GlobalPosition type now requires screenX and screenY coordinates in addition to world
+ * coordinates. This change prepares the infrastructure for future alignment mode switching
+ * between world-fixed and screen-fixed background patterns.
+ * 
+ * WHY THIS CHANGE:
+ * - Currently, the background pattern is fixed to world coordinates: (x + y) & 1
+ * - This creates a stable checkerboard that doesn't move as the viewport scrolls
+ * - A future feature will allow switching to screen-fixed mode where the pattern stays
+ *   fixed relative to the screen, creating a different visual effect
+ * - By requiring screen coordinates now, all call sites are prepared for this switch
+ * 
+ * WHAT CHANGED:
+ * - GlobalPosition now requires screenX/screenY (viewport offset in world coordinates)
+ * - The getAlignment function still returns (x + y) & 1 for GlobalPosition
+ * - But it now has the screen data available for when mode switching is implemented
+ * - All sprite rendering call sites (bunkers, fuels, craters, explosions) now pass screen coords
+ * 
+ * JUNCTION DECORATIONS:
+ * - Junction decorations (crosshatch patterns at wall intersections) are pre-computed
+ * - Since they depend on alignment, we now store both versions (dataAlign0 and dataAlign1)
+ * - At render time, fastWhites.ts calculates the current alignment and selects the right version
+ * - This ensures junction decorations always match the current alignment mode
+ * 
  * DEVIATION FROM ORIGINAL GAME:
  * 
  * In the original 68K Mac code, alignment calculations were scattered throughout the codebase

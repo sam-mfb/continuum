@@ -40,6 +40,12 @@ function noCloseWh(whites: WhiteRec[], index: number): boolean {
  * Converts solid white pieces to textured ones using XOR patterns
  * to make junction seams less visually obvious.
  *
+ * DEVIATION FROM ORIGINAL:
+ * The original code calculated alignment once per junction using (wh->x + wh->y) & 1.
+ * We now pre-compute BOTH alignment versions (dataAlign0 and dataAlign1) and store them.
+ * This allows runtime selection based on alignment mode (world-fixed vs screen-fixed).
+ * See src/shared/alignment.ts for full explanation of the alignment system changes.
+ *
  * @see Junctions.c:569-614 - white_hash_merge()
  * @param whites Array of white pieces to potentially add hash patterns to
  * @param junctions Array of junction points where walls meet
