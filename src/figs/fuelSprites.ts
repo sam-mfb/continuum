@@ -1,7 +1,7 @@
 import type { FuelSprite, FuelSpriteSet } from './types'
 import { FUELFRAMES, FUEL_TOTAL_FRAMES, FUELHT } from './types'
-import { getAlignment } from '@/shared/alignment'
 import { getBackgroundPattern } from '@/shared/backgroundPattern'
+import type { Alignment } from '@/shared/alignment'
 
 // Create a fuel sprite set from extracted arrays
 export function createFuelSpriteSet(fuelArrays: FuelSprite[]): FuelSpriteSet {
@@ -52,7 +52,7 @@ export function createFuelSpriteSet(fuelArrays: FuelSprite[]): FuelSpriteSet {
 function applyFuelBackground(
   def: Uint8Array,
   mask: Uint8Array,
-  alignment: 0 | 1
+  initialAlignment: 0 | 1
 ): Uint8Array {
   const result = new Uint8Array(def.length)
 
@@ -60,9 +60,10 @@ function applyFuelBackground(
   for (let row = 0; row < FUELHT; row++) {
     const rowOffset = row * 4
 
-    // Get background pattern for this row
-    const rowAlign = getAlignment({ x: alignment, y: row })
-    const bgPattern = getBackgroundPattern(rowAlign)
+    // Simply alternate patterns based on row parity and initial alignment
+    // This is NOT a position calculation, just picking alternating patterns
+    const rowAlign = (initialAlignment + row) % 2 === 0 ? 0 : 1
+    const bgPattern = getBackgroundPattern(rowAlign as Alignment)
 
     // Process 4 bytes per row
     for (let byte = 0; byte < 4; byte++) {

@@ -1,8 +1,8 @@
 import type { BunkerSprite, BunkerSpriteSet } from './types'
 import { BunkerKind, BUNKROTKINDS, BUNKER_ROTATIONS, BUNKHT } from './types'
 import { rotateBunker90CW } from './rotate'
-import { getAlignment } from '@/shared/alignment'
 import { getBackgroundPattern } from '@/shared/backgroundPattern'
+import type { Alignment } from '@/shared/alignment'
 
 // Create a bunker sprite set from extracted arrays
 export function createBunkerSpriteSet(
@@ -140,7 +140,7 @@ export function createBunkerSpriteSet(
 function applyBunkerBackground(
   def: Uint8Array,
   mask: Uint8Array,
-  alignment: 0 | 1
+  initialAlignment: 0 | 1
 ): Uint8Array {
   const result = new Uint8Array(def.length)
 
@@ -149,16 +149,16 @@ function applyBunkerBackground(
 
   // Process ALL rows (48 rows for bunkers)
   // True checkerboard pattern - each entire row alternates
-  // For alignment 0: even rows = 0xAA, odd rows = 0x55
-  // For alignment 1: even rows = 0x55, odd rows = 0xAA
+  // For initialAlignment 0: even rows = pattern0, odd rows = pattern1
+  // For initialAlignment 1: even rows = pattern1, odd rows = pattern0
 
   for (let row = 0; row < BUNKHT; row++) {
     const rowOffset = row * 6
 
-    // Determine pattern for this entire row based on row parity
-    // Use getAlignment to determine which pattern to use for this row
-    const rowAlign = getAlignment({ x: alignment, y: row })
-    const rowBg = getBackgroundPattern(rowAlign)
+    // Simply alternate patterns based on row parity and initial alignment
+    // This is NOT a position calculation, just picking alternating patterns
+    const rowAlign = (initialAlignment + row) % 2 === 0 ? 0 : 1
+    const rowBg = getBackgroundPattern(rowAlign as Alignment)
     const rowPattern = (rowBg >> 24) & 0xff // Use most significant byte
 
     // Apply the same pattern to all 6 bytes in the row

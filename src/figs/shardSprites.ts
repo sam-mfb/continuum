@@ -1,7 +1,7 @@
 import type { ShardSprite, ShardSpriteSet } from './types'
 import { SHARDKINDS, SHARDHT } from './types'
-import { getAlignment } from '@/shared/alignment'
 import { getBackgroundPattern } from '@/shared/backgroundPattern'
+import type { Alignment } from '@/shared/alignment'
 
 // Create a shard sprite set from extracted arrays
 export function createShardSpriteSet(
@@ -58,14 +58,15 @@ export function createShardSpriteSet(
       if (!sprite) continue
 
       // Shards use alternating background alignment
-      for (let align = 0; align < 2; align++) {
+      for (let initialAlign = 0; initialAlign < 2; initialAlign++) {
         const target =
-          align === 0 ? sprite.images.background1 : sprite.images.background2
+          initialAlign === 0 ? sprite.images.background1 : sprite.images.background2
 
         for (let y = 0; y < SHARDHT; y++) {
-          // Select background based on (y + align) & 1, matching original
-          const rowAlign = getAlignment({ x: 0, y: y + align })
-          const rowBg = getBackgroundPattern(rowAlign)
+          // Simply alternate patterns based on row parity and initial alignment
+          // This is NOT a position calculation, just picking alternating patterns
+          const rowAlign = (initialAlign + y) % 2 === 0 ? 0 : 1
+          const rowBg = getBackgroundPattern(rowAlign as Alignment)
           const bgByte = (rowBg >> 16) & 0xffff // Use middle 16 bits
 
           // Process 2 bytes per row
