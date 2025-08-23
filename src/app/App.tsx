@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useSelector } from 'react-redux'
 import type { RootState } from '../store/store'
 import { useAppDispatch } from '../store/store'
 import { setCurrentView, toggleDebugInfo } from '../store/uiSlice'
-import { loadSprites } from '../store/spritesSlice'
 import { GalaxySelector } from './components/GalaxySelector'
 import { PlanetList } from './components/PlanetList'
 import { PlanetViewer } from './components/PlanetViewer'
@@ -37,16 +36,6 @@ function App(): React.JSX.Element {
   )
   const dispatch = useAppDispatch()
   const [showGameStats, setShowGameStats] = useState(false)
-
-  // Load sprites when sprites view is first accessed
-  const spritesLoaded = useSelector(
-    (state: RootState) => state.sprites.allSprites !== null
-  )
-  useEffect(() => {
-    if (currentView === 'sprites' && !spritesLoaded) {
-      void dispatch(loadSprites())
-    }
-  }, [currentView, spritesLoaded, dispatch])
 
   return (
     <div className="app">
