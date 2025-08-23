@@ -214,6 +214,7 @@ export const createFuelDrawBitmapRenderer =
     // Draw all fuel cells using drawFuels
     const fuelSprites = {
       emptyCell: spriteService.getFuelSprite(8),
+      // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
       getFrame: (index: number) => spriteService.getFuelSprite(index)
     }
 

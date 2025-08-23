@@ -1,13 +1,6 @@
 import type { PayloadAction } from '@reduxjs/toolkit'
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import { createSlice } from '@reduxjs/toolkit'
 import type { BunkerKind } from '@/figs/types'
-
-// Temporary no-op thunk to avoid breaking game components
-// TODO: Remove this after updating all game components to use sprite service
-export const loadSprites = createAsyncThunk('sprites/loadSprites', async () => {
-  // No-op - sprites are now loaded before Redux initialization
-  return null
-})
 
 export type SpriteType =
   | 'ship'
@@ -35,11 +28,6 @@ type SpritesState = {
   flameFrame: number
   strafeFrame: number
   digitChar: string
-
-  // Temporary compatibility field
-  // TODO: Remove after updating all game components to use sprite service
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  allSprites: any
 }
 
 const initialState: SpritesState = {
@@ -53,10 +41,7 @@ const initialState: SpritesState = {
   shardKind: 0,
   flameFrame: 0,
   strafeFrame: 0,
-  digitChar: '0',
-
-  // Sprites are always loaded now
-  allSprites: true
+  digitChar: '0'
 }
 
 const spritesSlice = createSlice({

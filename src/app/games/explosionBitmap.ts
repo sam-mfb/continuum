@@ -11,6 +11,7 @@ import { planetSlice } from '@/planet/planetSlice'
 import { screenSlice } from '@/screen/screenSlice'
 import { buildGameStore } from './store'
 import type { SpriteService } from '@/sprites/types'
+import type { ShardSprite, ShardSpriteSet } from '@/figs/types'
 import { xbcenter, ybcenter } from '@/planet/constants'
 import {
   explosionsSlice,
@@ -383,10 +384,10 @@ export const createExplosionBitmapRenderer =
 
       // Get shard images from sprites - only getSprite is used by drawExplosions
       const shardImages = {
-        kinds: {} as Record<number, Record<number, import('@/figs/types').ShardSprite>>,
+        kinds: {} as Record<number, Record<number, ShardSprite>>,
         getSprite: (kind: number, rotation: number) =>
           spriteService.getShardSprite(kind, rotation)
-      } as import('@/figs/types').ShardSpriteSet
+      } as ShardSpriteSet
 
       renderedBitmap = drawExplosions({
         explosions: extendedState.explosions,

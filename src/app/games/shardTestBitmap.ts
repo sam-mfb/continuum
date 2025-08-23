@@ -1,5 +1,5 @@
 import type { MonochromeBitmap, BitmapRenderer } from '@/bitmap'
-import type { ShardSpriteSet } from '@/figs/types'
+import type { ShardSpriteSet, ShardSprite } from '@/figs/types'
 import { drawShard } from '@/explosions/render/drawShard'
 import { SHARDHT } from '@/figs/types'
 import type { SpriteService } from '@/sprites/types'
@@ -267,7 +267,7 @@ export const createShardTestBitmapRenderer =
 
     // Create shard images adapter
     const shardImages: ShardSpriteSet = {
-      kinds: {} as Record<number, Record<number, import('@/figs/types').ShardSprite>>,
+      kinds: {} as Record<number, Record<number, ShardSprite>>,
       getSprite: (kind: number, rotation: number) =>
         spriteService.getShardSprite(kind, rotation)
     }
