@@ -1,10 +1,15 @@
 import React, { useRef, useEffect } from 'react'
 import { useAppSelector } from '../../store/store'
-import { useSpriteService } from '../../sprites/hooks'
+import type { SpriteService } from '../../sprites/types'
 
-export const SpritesViewer: React.FC = () => {
+type SpritesViewerProps = {
+  spriteService: SpriteService
+}
+
+export const SpritesViewer: React.FC<SpritesViewerProps> = ({
+  spriteService
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const spriteService = useSpriteService()
   const {
     selectedType,
     showMask,

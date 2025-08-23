@@ -8,8 +8,15 @@ import { screenSlice } from '@/screen/screenSlice'
 import type { PlanetState } from '@/planet/types'
 import type { BitmapRenderer, MonochromeBitmap } from '@/bitmap'
 import type { GameRendererStore } from '../games/types'
+import type { SpriteService } from '@/sprites/types'
 
-export const PlanetGameViewer = (): JSX.Element => {
+type PlanetGameViewerProps = {
+  spriteService: SpriteService
+}
+
+export const PlanetGameViewer = ({
+  spriteService
+}: PlanetGameViewerProps): JSX.Element => {
   const dispatch = useAppDispatch()
   const selectedPlanetIndex = useAppSelector(
     state => state.galaxy.selectedPlanetIndex
@@ -53,9 +60,13 @@ export const PlanetGameViewer = (): JSX.Element => {
       dispatch: dispatch
     }
 
-    const planetRenderer = createPlanetRenderer(selectedPlanet, gameStore)
+    const planetRenderer = createPlanetRenderer(
+      selectedPlanet,
+      gameStore,
+      spriteService
+    )
     setRenderer(() => planetRenderer)
-  }, [selectedPlanet, dispatch])
+  }, [selectedPlanet, dispatch, spriteService])
 
   // Set up game loop
   useEffect(() => {

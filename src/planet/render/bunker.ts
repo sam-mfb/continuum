@@ -1,6 +1,11 @@
 import { cloneBitmap, type MonochromeBitmap } from '@/bitmap'
 import { SBARHT, SCRWTH, VIEWHT } from '@/screen/constants'
-import { BUNKHT, BUNKROTKINDS, type BunkerSpriteSet } from '@/figs/types'
+import {
+  BUNKHT,
+  BUNKROTKINDS,
+  type BunkerSprite,
+  type BunkerKind
+} from '@/figs/types'
 import { build68kArch } from '@/asm/emulator'
 import { jsrWAddress } from '@/asm/assemblyMacros'
 import type { Bunker } from '../types'
@@ -16,10 +21,10 @@ export function doBunks(deps: {
   readonly bunkrec: readonly Bunker[]
   scrnx: number
   scrny: number
-  bunkerSprites: BunkerSpriteSet
+  getSprite: (kind: BunkerKind, rotation: number) => BunkerSprite
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
-    const { bunkrec, scrnx, scrny, bunkerSprites } = deps
+    const { bunkrec, scrnx, scrny, getSprite } = deps
 
     let newScreen = cloneBitmap(screen)
 
@@ -44,7 +49,7 @@ export function doBunks(deps: {
           const bunkx = bp.x - scrnx - xcenter
 
           // Get the bunker sprite
-          const bunkerSprite = bunkerSprites.getSprite(bp.kind, bp.rot)
+          const bunkerSprite = getSprite(bp.kind, bp.rot)
 
           // Determine which drawing function to use
           if (bp.kind >= BUNKROTKINDS || bp.rot <= 1 || bp.rot >= 9) {

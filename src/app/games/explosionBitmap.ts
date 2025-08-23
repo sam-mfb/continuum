@@ -10,7 +10,7 @@ import type { BitmapRenderer, MonochromeBitmap } from '../../bitmap'
 import { planetSlice } from '@/planet/planetSlice'
 import { screenSlice } from '@/screen/screenSlice'
 import { buildGameStore } from './store'
-import { loadSprites } from '@/store/spritesSlice'
+import type { SpriteService } from '@/sprites/types'
 import { xbcenter, ybcenter } from '@/planet/constants'
 import {
   explosionsSlice,
@@ -177,11 +177,6 @@ const initializeGame = async (): Promise<void> => {
   try {
     console.log('Starting explosionBitmap initialization...')
 
-    // Load sprites first
-    console.log('Loading sprites...')
-    await store.dispatch(loadSprites()).unwrap()
-    console.log('Sprites loaded successfully')
-
     // Load the release galaxy file to get planet data
     console.log('Loading galaxy file...')
     const response = await fetch('/src/assets/release_galaxy.bin')
@@ -266,9 +261,11 @@ const triggerBunkerExplosion = (bunker: BunkerConfig): void => {
 }
 
 /**
- * Bitmap renderer for explosion game
+ * Factory function to create bitmap renderer for explosion game
  */
-export const explosionBitmapRenderer: BitmapRenderer = (
+export const createExplosionBitmapRenderer = (
+  spriteService: SpriteService
+): BitmapRenderer => (
   bitmap,
   frame,
   _env
@@ -290,11 +287,6 @@ export const explosionBitmapRenderer: BitmapRenderer = (
 
   const state = store.getState()
 
-  // Check if sprites are loaded
-  if (!state.sprites.allSprites) {
-    console.error('Sprites not loaded')
-    return
-  }
 
   // Handle key presses
   for (const bunker of bunkers) {
@@ -363,36 +355,30 @@ export const explosionBitmapRenderer: BitmapRenderer = (
   let renderedBitmap = bitmap
 
   // Draw all bunkers
-  if (finalState.sprites.allSprites) {
-    const bunkerSprites = finalState.sprites.allSprites.bunkers
+  for (const bunker of bunkers) {
+    if (bunker.alive) {
+      const bunkerSprite = spriteService.getBunkerSprite(
+        bunker.kind,
+        bunker.rotation
+      )
 
-    for (const bunker of bunkers) {
-      if (bunker.alive) {
-        const bunkerSprite = bunkerSprites.getSprite(
-          bunker.kind,
-          bunker.rotation
-        )
-
-        if (bunkerSprite) {
-          // Use pre-rendered image based on alignment
-          const align = (bunker.x + bunker.y) & 1
-          const bunkerBitmap: MonochromeBitmap = {
-            data:
-              align === 0
-                ? bunkerSprite.images.background1
-                : bunkerSprite.images.background2,
-            width: 48,
-            height: 32,
-            rowBytes: 6
-          }
-
-          renderedBitmap = drawBunker({
-            x: bunker.x,
-            y: bunker.y,
-            def: bunkerBitmap
-          })(renderedBitmap)
-        }
+      // Use pre-rendered image based on alignment
+      const align = (bunker.x + bunker.y) & 1
+      const bunkerBitmap: MonochromeBitmap = {
+        data:
+          align === 0
+            ? bunkerSprite.images.background1
+            : bunkerSprite.images.background2,
+        width: 48,
+        height: 32,
+        rowBytes: 6
       }
+
+      renderedBitmap = drawBunker({
+        x: bunker.x,
+        y: bunker.y,
+        def: bunkerBitmap
+      })(renderedBitmap)
     }
   }
 
@@ -401,7 +387,10 @@ export const explosionBitmapRenderer: BitmapRenderer = (
     const extendedState = finalState as ExtendedGameState
 
     // Get shard images from sprites
-    const shardImages = finalState.sprites.allSprites?.shards || null
+    const shardImages = {
+      kinds: {} as Record<number, Record<number, unknown>>,
+      getSprite: (kind: number, rotation: number) => spriteService.getShardSprite(kind, rotation)
+    }
 
     renderedBitmap = drawExplosions({
       explosions: extendedState.explosions,

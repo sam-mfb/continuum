@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux'
 import type { RootState } from '../store/store'
 import { useAppDispatch } from '../store/store'
 import { setCurrentView, toggleDebugInfo } from '../store/uiSlice'
+import type { SpriteService } from '../sprites/types'
 import { GalaxySelector } from './components/GalaxySelector'
 import { PlanetList } from './components/PlanetList'
 import { PlanetViewer } from './components/PlanetViewer'
@@ -22,15 +23,19 @@ import { bitmapTestRenderer } from './games/bitmapTest'
 import { wallDrawingRenderer } from './games/wallDrawing'
 import { planet3DrawingRenderer } from './games/planet3Drawing'
 import { junctionDrawRenderer } from './games/junctionDraw'
-import { shipMoveBitmapRenderer } from './games/shipMoveBitmap'
-import { bunkerDrawBitmapRenderer } from './games/bunkerDrawBitmap'
+import { createShipMoveBitmapRenderer } from './games/shipMoveBitmap'
+import { createBunkerDrawBitmapRenderer } from './games/bunkerDrawBitmap'
 import { fuelDrawBitmapRenderer } from './games/fuelDrawBitmap'
-import { explosionBitmapRenderer } from './games/explosionBitmap'
+import { createExplosionBitmapRenderer } from './games/explosionBitmap'
 import { shardTestBitmapRenderer } from './games/shardTestBitmap'
 import { strafeTestBitmapRenderer } from './games/strafeTestBitmap'
 import './App.css'
 
-function App(): React.JSX.Element {
+type AppProps = {
+  spriteService: SpriteService
+}
+
+function App({ spriteService }: AppProps): React.JSX.Element {
   const { currentView, showDebugInfo } = useSelector(
     (state: RootState) => state.ui
   )
@@ -112,7 +117,7 @@ function App(): React.JSX.Element {
               <GalaxySelector />
               <div className="galaxy-content">
                 <PlanetList />
-                <PlanetViewer />
+                <PlanetViewer spriteService={spriteService} />
               </div>
             </div>
           )}
@@ -153,12 +158,12 @@ function App(): React.JSX.Element {
                 {
                   type: 'bitmap',
                   name: 'Ship Move (Bitmap)',
-                  bitmapRenderer: shipMoveBitmapRenderer
+                  bitmapRenderer: createShipMoveBitmapRenderer(spriteService)
                 } as BitmapGameDefinition,
                 {
                   type: 'bitmap',
                   name: 'Bunker Draw',
-                  bitmapRenderer: bunkerDrawBitmapRenderer
+                  bitmapRenderer: createBunkerDrawBitmapRenderer(spriteService)
                 } as BitmapGameDefinition,
                 {
                   type: 'bitmap',
@@ -168,7 +173,7 @@ function App(): React.JSX.Element {
                 {
                   type: 'bitmap',
                   name: 'Explosion Test',
-                  bitmapRenderer: explosionBitmapRenderer
+                  bitmapRenderer: createExplosionBitmapRenderer(spriteService)
                 } as BitmapGameDefinition,
                 {
                   type: 'bitmap',
@@ -221,7 +226,7 @@ function App(): React.JSX.Element {
             <div className="sprites-view">
               <div className="sprites-content">
                 <SpritesList />
-                <SpritesViewer />
+                <SpritesViewer spriteService={spriteService} />
                 <SpritesControls />
               </div>
             </div>
