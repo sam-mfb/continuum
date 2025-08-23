@@ -9,10 +9,11 @@
 import type { BitmapRenderer, MonochromeBitmap } from '../../bitmap'
 import { fullFigure } from '../../ship/render/fullFigure'
 import { drawShipShot } from '../../shots/render/drawShipShot'
+import { drawStrafe } from '../../shots/render/drawStrafe'
 import { shipSlice } from '@/ship/shipSlice'
 import { planetSlice } from '@/planet/planetSlice'
 import { screenSlice } from '@/screen/screenSlice'
-import { shotsSlice, clearAllShots } from '@/shots/shotsSlice'
+import { shotsSlice, clearAllShots, doStrafes } from '@/shots/shotsSlice'
 import { ShipControl } from '@/ship/types'
 import { shipControl } from './shipControlThunk'
 import { buildGameStore } from './store'
@@ -196,13 +197,28 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
   // Move ship - containment middleware will automatically apply
   store.dispatch(shipSlice.actions.moveShip())
 
-  // Move all bullets
+  // Move all bullets with collision detection
+  // Calculate global ship position (screen + ship relative position)
+  const globalx = state.screen.screenx + state.ship.shipx
+  const globaly = state.screen.screeny + state.ship.shipy
+
   store.dispatch(
     shotsSlice.actions.moveShipshots({
+      bunkers: state.planet.bunkers,
+      shipPosition: {
+        x: globalx,
+        y: globaly
+      },
+      shipAlive: true, // TODO: Check if ship is dead when death system is implemented
+      walls: state.planet.lines,
       worldwidth: state.planet.worldwidth,
       worldwrap: state.planet.worldwrap
     })
   )
+
+  // Update strafe lifecounts (Play.c:259 - do_strafes)
+  // This decrements lifecount for active strafes
+  store.dispatch(doStrafes())
 
   // Get final state for drawing
   const finalState = store.getState()
@@ -348,7 +364,15 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
 
   // Draw all active ship shots
   for (const shot of finalState.shots.shipshots) {
-    if (shot.lifecount > 0) {
+    // Render shot if:
+    // - Still alive (lifecount > 0), OR
+    // - Just died without strafe (justDied && no strafe visual replacement)
+    // This matches the original's behavior of showing shots for one frame
+    // after lifecount reaches 0 (Play.c:807-811)
+    const shouldRender = shot.lifecount > 0 || 
+      (shot.justDied === true && shot.strafedir < 0)
+    
+    if (shouldRender) {
       // Convert world coordinates to screen coordinates
       // Original: shotx = sp->x - screenx - 1; shoty = sp->y - screeny - 1;
       const shotx = shot.x - finalState.screen.screenx - 1
@@ -396,6 +420,22 @@ export const shipMoveBitmapRenderer: BitmapRenderer = (bitmap, frame, _env) => {
         rowBytes: 1
       }))
     })(renderedBitmap)
+  }
+
+  // Draw strafes (Play.c:259 - do_strafes rendering loop)
+  // Original: for(str=strafes; str < &strafes[NUMSTRAFES]; str++)
+  //   if(str->lifecount) draw_strafe(str->x, str->y, str->rot, screenx, screeny);
+  for (const strafe of finalState.shots.strafes) {
+    if (strafe.lifecount > 0) {
+      renderedBitmap = drawStrafe({
+        x: strafe.x,
+        y: strafe.y,
+        rot: strafe.rot,
+        scrnx: finalState.screen.screenx,
+        scrny: finalState.screen.screeny,
+        worldwidth: finalState.planet.worldwidth
+      })(renderedBitmap)
+    }
   }
 
   // Copy rendered bitmap data back to original

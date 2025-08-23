@@ -300,6 +300,8 @@ Converts world to screen coordinates and:
 
 Strafes are visual effects that appear when shots hit walls. They provide visual feedback for wall collisions and add polish to the game.
 
+NB: In both our implementation and the original game the positioning of strafes isn't perfect. It is fairly easy to have stafes end up "in front" of the wall and on rare occasions it is possible to see a strafe appear "beyond" a wall. I'm not sure where the bug is either code, but in any event it is in both.
+
 ### Strafe System Overview
 
 The strafe system consists of:
