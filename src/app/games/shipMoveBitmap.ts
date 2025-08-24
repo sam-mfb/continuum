@@ -28,6 +28,7 @@ import { getBackgroundPattern } from '@/shared/backgroundPattern'
 import { shiftFigure } from '@/ship/render/shiftFigure'
 import { whiteTerrain, blackTerrain } from '@/walls/render'
 import { wallsSlice } from '@/walls/wallsSlice'
+import { viewClear } from '@/screen/render'
 import { LINE_KIND } from '@/walls/types'
 import { checkFigure } from '@/collision/checkFigure'
 
@@ -214,21 +215,14 @@ export const createShipMoveBitmapRenderer =
     // Get final state for drawing
     const finalState = store.getState()
 
-    // First, create a crosshatch gray background
-    // IMPORTANT: Pattern must be based on world coordinates, not screen coordinates
-    for (let y = 0; y < bitmap.height; y++) {
-      for (let x = 0; x < bitmap.width; x++) {
-        // Calculate world position
-        const worldX = x + finalState.screen.screenx
-        const worldY = y + finalState.screen.screeny
-        // Set pixel if worldX + worldY is even (creates fixed checkerboard)
-        if ((worldX + worldY) % 2 === 0) {
-          const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
-          const bitIndex = 7 - (x % 8)
-          bitmap.data[byteIndex]! |= 1 << bitIndex
-        }
-      }
-    }
+    // First, create a crosshatch gray background using viewClear
+    const clearedBitmap = viewClear({
+      screenX: finalState.screen.screenx,
+      screenY: finalState.screen.screeny
+    })(bitmap)
+
+    // Copy cleared bitmap data back to original
+    bitmap.data.set(clearedBitmap.data)
 
     // Setup viewport for wall rendering
     // Calculate screen bounds (right and bottom edges)

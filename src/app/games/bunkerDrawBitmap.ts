@@ -22,6 +22,7 @@ import { drawDotSafe } from '@/shots/render/drawDotSafe'
 import { rint } from '@/shared/rint'
 import { SBARHT } from '@/screen/constants'
 import { isOnRightSide } from '@/shared/viewport'
+import { viewClear } from '@/screen/render'
 
 // Create store with planet and shots slices
 const store = configureStore({
@@ -305,26 +306,11 @@ export const createBunkerDrawBitmapRenderer =
     }
 
     // First, create a crosshatch gray background
-    // IMPORTANT: Pattern must be based on world coordinates, not screen coordinates
-    for (let y = 0; y < bitmap.height; y++) {
-      for (let x = 0; x < bitmap.width; x++) {
-        // Calculate world position, handling wrapping
-        let worldX = x + viewportState.x
-        const worldY = y + viewportState.y
-
-        // For wrapping worlds, normalize worldX to be within world bounds
-        if (planetState.worldwrap) {
-          worldX = ((worldX % WORLD_WIDTH) + WORLD_WIDTH) % WORLD_WIDTH
-        }
-
-        // Set pixel if worldX + worldY is even (creates fixed checkerboard)
-        if ((worldX + worldY) % 2 === 0) {
-          const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
-          const bitIndex = 7 - (x % 8)
-          bitmap.data[byteIndex]! |= 1 << bitIndex
-        }
-      }
-    }
+    const clearedBitmap = viewClear({
+      screenX: viewportState.x,
+      screenY: viewportState.y
+    })(bitmap)
+    bitmap.data.set(clearedBitmap.data)
 
     // Update animation state using the reducer
     // The follow bunker needs ship position - use viewport center as mock ship position

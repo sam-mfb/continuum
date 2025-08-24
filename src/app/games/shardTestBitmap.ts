@@ -3,6 +3,7 @@ import type { ShardSpriteSet, ShardSprite } from '@/figs/types'
 import { drawShard } from '@/explosions/render/drawShard'
 import { SHARDHT } from '@/figs/types'
 import type { SpriteServiceV2 } from '@/sprites/service'
+import { viewClear } from '@/screen/render'
 
 // Viewport state - for scrolling around
 const viewportState = {
@@ -29,21 +30,11 @@ export function shardTestBitmap(deps: {
   // We'll accumulate changes to this bitmap
   let result = bitmap
 
-  // Fill with dithered gray pattern based on WORLD coordinates
-  // This matches what the explosion game does
-  for (let y = 0; y < result.height; y++) {
-    for (let x = 0; x < result.width; x++) {
-      // Calculate world position
-      const worldX = x + screenX
-      const worldY = y + screenY
-      // Set pixel if worldX + worldY is even (creates fixed checkerboard)
-      if ((worldX + worldY) % 2 === 0) {
-        const byteIndex = Math.floor(y * result.rowBytes + x / 8)
-        const bitIndex = 7 - (x % 8)
-        result.data[byteIndex]! |= 1 << bitIndex
-      }
-    }
-  }
+  // Fill with dithered gray pattern using viewClear
+  result = viewClear({
+    screenX: screenX,
+    screenY: screenY
+  })(result)
 
   if (!shardImages) {
     return result

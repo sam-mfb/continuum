@@ -24,6 +24,7 @@ import planetReducer, {
 } from '@/planet/planetSlice'
 import { drawFuels } from '@/planet/render/drawFuels'
 import { drawCraters } from '@/planet/render/drawCraters'
+import { viewClear } from '@/screen/render'
 
 // Create store with planet slice
 const bunkerStore = configureStore({
@@ -128,29 +129,11 @@ export const createPlanetRenderer: PlanetRendererFactory = (
     // Get updated viewport after potential movement
     const currentScreen = store.getState().screen
 
-    // Create crosshatch gray background
-    // Pattern must be based on world coordinates, not screen coordinates
-    for (let y = 0; y < bitmap.height; y++) {
-      for (let x = 0; x < bitmap.width; x++) {
-        // Calculate world position
-        let worldX = x + currentScreen.screenx
-        const worldY = y + currentScreen.screeny
-
-        // Normalize worldX for wrapping worlds to ensure consistent pattern
-        if (planet.worldwrap) {
-          worldX =
-            ((worldX % planet.worldwidth) + planet.worldwidth) %
-            planet.worldwidth
-        }
-
-        // Set pixel if worldX + worldY is even (creates fixed checkerboard)
-        if ((worldX + worldY) % 2 === 0) {
-          const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
-          const bitIndex = 7 - (x % 8)
-          bitmap.data[byteIndex]! |= 1 << bitIndex
-        }
-      }
-    }
+    // Create crosshatch gray background using viewClear
+    let renderedBitmap = viewClear({
+      screenX: currentScreen.screenx,
+      screenY: currentScreen.screeny
+    })(bitmap)
 
     // Set up viewport for rendering
     const viewport = {
@@ -161,14 +144,14 @@ export const createPlanetRenderer: PlanetRendererFactory = (
     }
 
     // First render white terrain (undersides, patches, junctions)
-    let renderedBitmap = whiteTerrain({
+    renderedBitmap = whiteTerrain({
       whites: walls.whites,
       junctions: walls.junctions,
       firstWhite: walls.firstWhite,
       organizedWalls: walls.organizedWalls,
       viewport: viewport,
       worldwidth: planet.worldwidth
-    })(bitmap)
+    })(renderedBitmap)
 
     // Then render black terrain (top surfaces) for each wall type
     // Render in order: NORMAL, BOUNCE, GHOST, XPLODE

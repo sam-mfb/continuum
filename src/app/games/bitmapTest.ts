@@ -4,20 +4,18 @@
 
 import type { BitmapRenderer } from '../../bitmap'
 import { setPixel, clearPixel } from '../../bitmap'
+import { viewClear } from '@/screen/render'
 
 /**
  * Creates a checkerboard pattern that appears gray at normal viewing distance
  */
 export const bitmapTestRenderer: BitmapRenderer = (bitmap, _frame, _env) => {
-  // Create alternating pixel pattern
-  for (let y = 0; y < bitmap.height; y++) {
-    for (let x = 0; x < bitmap.width; x++) {
-      // Set pixel if x + y is even (creates checkerboard)
-      if ((x + y) % 2 === 0) {
-        setPixel(bitmap, x, y)
-      }
-    }
-  }
+  // Create alternating pixel pattern using viewClear with local coordinates
+  const clearedBitmap = viewClear({
+    screenX: 0,
+    screenY: 0
+  })(bitmap)
+  bitmap.data.set(clearedBitmap.data)
 
   // Add a simple message in the center
   const centerX = Math.floor(bitmap.width / 2)

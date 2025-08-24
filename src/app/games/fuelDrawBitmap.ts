@@ -18,6 +18,7 @@ import type { Fuel, PlanetState } from '@/planet/types'
 import { isOnRightSide } from '@/shared/viewport'
 import { FUELFRAMES } from '@/figs/types'
 import type { SpriteServiceV2 } from '@/sprites/service'
+import { viewClear } from '@/screen/render'
 
 // Create store with planet slice
 const store = configureStore({
@@ -187,26 +188,11 @@ export const createFuelDrawBitmapRenderer =
     }
 
     // First, create a crosshatch gray background
-    // IMPORTANT: Pattern must be based on world coordinates, not screen coordinates
-    for (let y = 0; y < bitmap.height; y++) {
-      for (let x = 0; x < bitmap.width; x++) {
-        // Calculate world position, handling wrapping
-        let worldX = x + viewportState.x
-        const worldY = y + viewportState.y
-
-        // For wrapping worlds, normalize worldX to be within world bounds
-        if (planetState.worldwrap) {
-          worldX = ((worldX % WORLD_WIDTH) + WORLD_WIDTH) % WORLD_WIDTH
-        }
-
-        // Set pixel if worldX + worldY is even (creates fixed checkerboard)
-        if ((worldX + worldY) % 2 === 0) {
-          const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
-          const bitIndex = 7 - (x % 8)
-          bitmap.data[byteIndex]! |= 1 << bitIndex
-        }
-      }
-    }
+    const clearedBitmap = viewClear({
+      screenX: viewportState.x,
+      screenY: viewportState.y
+    })(bitmap)
+    bitmap.data.set(clearedBitmap.data)
 
     // Update fuel animation state using the reducer
     store.dispatch(updateFuelAnimations())
