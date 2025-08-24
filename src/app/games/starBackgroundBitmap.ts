@@ -91,7 +91,7 @@ export const createStarBackgroundBitmapRenderer =
         durationFrames: FIZZ_DURATION
       })
       state.mode = 'fizzing'
-      return
+      // Don't return - fall through to render the first frame
     }
 
     // Handle different modes
