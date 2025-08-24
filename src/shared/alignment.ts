@@ -94,6 +94,85 @@ type ScreenRelativePosition = {
   objectY: number  // Local Y coordinate within the object being drawn (e.g., pixel position in wall line)
 }
 
+export type AlignmentMode = 'world-fixed' | 'screen-fixed'
+
+/**
+ * Creates an alignment system with configurable background pattern mode.
+ * Uses a closure to encapsulate the mode state while keeping the API clean.
+ */
+export function createAlignmentSystem(): {
+  setMode: (newMode: AlignmentMode) => void
+  getMode: () => AlignmentMode
+  getAlignment: (pos: GlobalPosition | ScreenRelativePosition) => Alignment
+} {
+  let mode: AlignmentMode = 'world-fixed'
+  
+  return {
+    /**
+     * Set the alignment mode for sprite/object rendering.
+     * - 'world-fixed': Background pattern is fixed to world coordinates (default)
+     *   Objects maintain consistent alignment as viewport moves
+     * - 'screen-fixed': Background pattern is fixed to screen
+     *   Pattern appears stationary to the viewer as viewport moves
+     * 
+     * @param newMode The alignment mode to use
+     */
+    setMode(newMode: AlignmentMode): void {
+      mode = newMode
+    },
+    
+    /**
+     * Get the current alignment mode.
+     * @returns The current alignment mode
+     */
+    getMode(): AlignmentMode {
+      return mode
+    },
+    
+    /**
+     * Calculate alignment based on position and current mode.
+     * Creates a diagonal checkerboard pattern across the game world.
+     *
+     * @param pos Either a global position or screen-relative position
+     * @returns 0 or 1 for selecting between two background patterns
+     */
+    getAlignment(pos: GlobalPosition | ScreenRelativePosition): Alignment {
+      if ('objectX' in pos) {
+        // Screen-relative position (for walls) - unchanged
+        // This combines screen alignment with object alignment in one calculation
+        return ((pos.screenX + pos.screenY + pos.objectX + pos.objectY) &
+          1) as Alignment
+      } else {
+        // Global position - mode-dependent calculation
+        if (mode === 'screen-fixed') {
+          // Screen-fixed: pattern stays fixed relative to screen
+          // Only use screen coordinates, ignore world position
+          return ((pos.screenX + pos.screenY) & 1) as Alignment
+        } else {
+          // World-fixed: pattern stays fixed relative to world (default)
+          // Use world coordinates, creating stable alignment for objects
+          return ((pos.x + pos.y) & 1) as Alignment
+        }
+      }
+    }
+  }
+}
+
+// Create and export the alignment system
+const alignmentSystem = createAlignmentSystem()
+
+/**
+ * Set the alignment mode for sprite/object rendering.
+ * @param mode The alignment mode to use ('world-fixed' or 'screen-fixed')
+ */
+export const setAlignmentMode = alignmentSystem.setMode
+
+/**
+ * Get the current alignment mode.
+ * @returns The current alignment mode
+ */
+export const getAlignmentMode = alignmentSystem.getMode
+
 /**
  * Calculate alignment based on position.
  * Creates a diagonal checkerboard pattern across the game world.
@@ -106,14 +185,5 @@ export function getAlignment(pos: ScreenRelativePosition): Alignment
 export function getAlignment(
   pos: GlobalPosition | ScreenRelativePosition
 ): Alignment {
-  if ('objectX' in pos) {
-    // Screen-relative position (for walls) - unchanged
-    // This combines screen alignment with object alignment in one calculation
-    return ((pos.screenX + pos.screenY + pos.objectX + pos.objectY) &
-      1) as Alignment
-  } else {
-    // Global position - now has screen info available for future use
-    // For now, still use world-fixed calculation
-    return ((pos.x + pos.y) & 1) as Alignment
-  }
+  return alignmentSystem.getAlignment(pos)
 }
