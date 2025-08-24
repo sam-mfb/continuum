@@ -269,10 +269,18 @@ export const createShardTestBitmapRenderer =
     const shardImages: ShardSpriteSet = {
       kinds: {} as Record<number, Record<number, ShardSprite>>,
       getSprite: (kind: number, rotation: number) => {
-        const def = spriteService.getShardSprite(kind, rotation, { variant: 'def' })
-        const mask = spriteService.getShardSprite(kind, rotation, { variant: 'mask' })
-        const bg1 = spriteService.getShardSprite(kind, rotation, { variant: 'background1' })
-        const bg2 = spriteService.getShardSprite(kind, rotation, { variant: 'background2' })
+        const def = spriteService.getShardSprite(kind, rotation, {
+          variant: 'def'
+        })
+        const mask = spriteService.getShardSprite(kind, rotation, {
+          variant: 'mask'
+        })
+        const bg1 = spriteService.getShardSprite(kind, rotation, {
+          variant: 'background1'
+        })
+        const bg2 = spriteService.getShardSprite(kind, rotation, {
+          variant: 'background2'
+        })
         return {
           def: def.uint8,
           mask: mask.uint8,

@@ -371,11 +371,19 @@ export const createBunkerDrawBitmapRenderer =
       scrny: viewportState.y,
       getSprite: (kind: BunkerKind, rotation: number) => {
         // Get sprites with proper variants
-        const defSprite = spriteService.getBunkerSprite(kind, rotation, { variant: 'def' })
-        const maskSprite = spriteService.getBunkerSprite(kind, rotation, { variant: 'mask' })
-        const bg1Sprite = spriteService.getBunkerSprite(kind, rotation, { variant: 'background1' })
-        const bg2Sprite = spriteService.getBunkerSprite(kind, rotation, { variant: 'background2' })
-        
+        const defSprite = spriteService.getBunkerSprite(kind, rotation, {
+          variant: 'def'
+        })
+        const maskSprite = spriteService.getBunkerSprite(kind, rotation, {
+          variant: 'mask'
+        })
+        const bg1Sprite = spriteService.getBunkerSprite(kind, rotation, {
+          variant: 'background1'
+        })
+        const bg2Sprite = spriteService.getBunkerSprite(kind, rotation, {
+          variant: 'background2'
+        })
+
         return {
           def: defSprite.uint8,
           mask: maskSprite.uint8,
@@ -402,11 +410,19 @@ export const createBunkerDrawBitmapRenderer =
         scrny: viewportState.y,
         getSprite: (kind: BunkerKind, rotation: number) => {
           // Get sprites with proper variants
-          const defSprite = spriteService.getBunkerSprite(kind, rotation, { variant: 'def' })
-          const maskSprite = spriteService.getBunkerSprite(kind, rotation, { variant: 'mask' })
-          const bg1Sprite = spriteService.getBunkerSprite(kind, rotation, { variant: 'background1' })
-          const bg2Sprite = spriteService.getBunkerSprite(kind, rotation, { variant: 'background2' })
-          
+          const defSprite = spriteService.getBunkerSprite(kind, rotation, {
+            variant: 'def'
+          })
+          const maskSprite = spriteService.getBunkerSprite(kind, rotation, {
+            variant: 'mask'
+          })
+          const bg1Sprite = spriteService.getBunkerSprite(kind, rotation, {
+            variant: 'background1'
+          })
+          const bg2Sprite = spriteService.getBunkerSprite(kind, rotation, {
+            variant: 'background2'
+          })
+
           return {
             def: defSprite.uint8,
             mask: maskSprite.uint8,

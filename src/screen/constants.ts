@@ -14,5 +14,10 @@ export const BOTMARG = 211 // Bottom margin for ship movement
 // Ship dimensions for edge constraints
 export const SHIPHT = 16 // Ship height for boundary calculations
 
+// Screen buffer sizes from orig/Sources/GW.h:30-32
+export const SBARSIZE = SBARHT * 64 // 1536 - Status bar size in bytes
+export const VIEWSIZE = VIEWHT * 64 // 20352 - View area size in bytes
+export const SCRSIZE = 21888 // Total screen buffer size in bytes
+
 // Background patterns from orig/Sources/Play.c:61-62
 export const BACKGROUND_PATTERNS = [0xaaaaaaaa, 0x55555555] as const

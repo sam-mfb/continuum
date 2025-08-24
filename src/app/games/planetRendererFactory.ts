@@ -209,10 +209,18 @@ export const createPlanetRenderer: PlanetRendererFactory = (
         scrnx: currentScreen.screenx,
         scrny: currentScreen.screeny,
         getSprite: (kind, rotation) => {
-          const def = spriteService.getBunkerSprite(kind, rotation, { variant: 'def' })
-          const mask = spriteService.getBunkerSprite(kind, rotation, { variant: 'mask' })
-          const bg1 = spriteService.getBunkerSprite(kind, rotation, { variant: 'background1' })
-          const bg2 = spriteService.getBunkerSprite(kind, rotation, { variant: 'background2' })
+          const def = spriteService.getBunkerSprite(kind, rotation, {
+            variant: 'def'
+          })
+          const mask = spriteService.getBunkerSprite(kind, rotation, {
+            variant: 'mask'
+          })
+          const bg1 = spriteService.getBunkerSprite(kind, rotation, {
+            variant: 'background1'
+          })
+          const bg2 = spriteService.getBunkerSprite(kind, rotation, {
+            variant: 'background2'
+          })
           return {
             def: def.uint8,
             mask: mask.uint8,
@@ -238,10 +246,18 @@ export const createPlanetRenderer: PlanetRendererFactory = (
           scrnx: currentScreen.screenx - planet.worldwidth,
           scrny: currentScreen.screeny,
           getSprite: (kind, rotation) => {
-            const def = spriteService.getBunkerSprite(kind, rotation, { variant: 'def' })
-            const mask = spriteService.getBunkerSprite(kind, rotation, { variant: 'mask' })
-            const bg1 = spriteService.getBunkerSprite(kind, rotation, { variant: 'background1' })
-            const bg2 = spriteService.getBunkerSprite(kind, rotation, { variant: 'background2' })
+            const def = spriteService.getBunkerSprite(kind, rotation, {
+              variant: 'def'
+            })
+            const mask = spriteService.getBunkerSprite(kind, rotation, {
+              variant: 'mask'
+            })
+            const bg1 = spriteService.getBunkerSprite(kind, rotation, {
+              variant: 'background1'
+            })
+            const bg2 = spriteService.getBunkerSprite(kind, rotation, {
+              variant: 'background2'
+            })
             return {
               def: def.uint8,
               mask: mask.uint8,
@@ -272,9 +288,15 @@ export const createPlanetRenderer: PlanetRendererFactory = (
           // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
           emptyCell: (() => {
             const empty = spriteService.getFuelSprite(8, { variant: 'def' })
-            const emptyMask = spriteService.getFuelSprite(8, { variant: 'mask' })
-            const emptyBg1 = spriteService.getFuelSprite(8, { variant: 'background1' })
-            const emptyBg2 = spriteService.getFuelSprite(8, { variant: 'background2' })
+            const emptyMask = spriteService.getFuelSprite(8, {
+              variant: 'mask'
+            })
+            const emptyBg1 = spriteService.getFuelSprite(8, {
+              variant: 'background1'
+            })
+            const emptyBg2 = spriteService.getFuelSprite(8, {
+              variant: 'background2'
+            })
             return {
               def: empty.uint8,
               mask: emptyMask.uint8,
@@ -287,8 +309,12 @@ export const createPlanetRenderer: PlanetRendererFactory = (
           getFrame: (index: number) => {
             const def = spriteService.getFuelSprite(index, { variant: 'def' })
             const mask = spriteService.getFuelSprite(index, { variant: 'mask' })
-            const bg1 = spriteService.getFuelSprite(index, { variant: 'background1' })
-            const bg2 = spriteService.getFuelSprite(index, { variant: 'background2' })
+            const bg1 = spriteService.getFuelSprite(index, {
+              variant: 'background1'
+            })
+            const bg2 = spriteService.getFuelSprite(index, {
+              variant: 'background2'
+            })
             return {
               def: def.uint8,
               mask: mask.uint8,
@@ -309,11 +335,17 @@ export const createPlanetRenderer: PlanetRendererFactory = (
           scrny: currentScreen.screeny,
           fuelSprites: {
             // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-          emptyCell: (() => {
+            emptyCell: (() => {
               const empty = spriteService.getFuelSprite(8, { variant: 'def' })
-              const emptyMask = spriteService.getFuelSprite(8, { variant: 'mask' })
-              const emptyBg1 = spriteService.getFuelSprite(8, { variant: 'background1' })
-              const emptyBg2 = spriteService.getFuelSprite(8, { variant: 'background2' })
+              const emptyMask = spriteService.getFuelSprite(8, {
+                variant: 'mask'
+              })
+              const emptyBg1 = spriteService.getFuelSprite(8, {
+                variant: 'background1'
+              })
+              const emptyBg2 = spriteService.getFuelSprite(8, {
+                variant: 'background2'
+              })
               return {
                 def: empty.uint8,
                 mask: emptyMask.uint8,
@@ -325,9 +357,15 @@ export const createPlanetRenderer: PlanetRendererFactory = (
             })(),
             getFrame: (index: number) => {
               const def = spriteService.getFuelSprite(index, { variant: 'def' })
-              const mask = spriteService.getFuelSprite(index, { variant: 'mask' })
-              const bg1 = spriteService.getFuelSprite(index, { variant: 'background1' })
-              const bg2 = spriteService.getFuelSprite(index, { variant: 'background2' })
+              const mask = spriteService.getFuelSprite(index, {
+                variant: 'mask'
+              })
+              const bg1 = spriteService.getFuelSprite(index, {
+                variant: 'background1'
+              })
+              const bg2 = spriteService.getFuelSprite(index, {
+                variant: 'background2'
+              })
               return {
                 def: def.uint8,
                 mask: mask.uint8,
@@ -353,8 +391,10 @@ export const createPlanetRenderer: PlanetRendererFactory = (
         worldwidth: planet.worldwidth,
         on_right_side: onRightSide,
         craterImages: {
-          background1: spriteService.getCraterSprite({ variant: 'background1' }).uint8,
-          background2: spriteService.getCraterSprite({ variant: 'background2' }).uint8
+          background1: spriteService.getCraterSprite({ variant: 'background1' })
+            .uint8,
+          background2: spriteService.getCraterSprite({ variant: 'background2' })
+            .uint8
         }
       })(bitmap)
 

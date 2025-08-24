@@ -1,6 +1,6 @@
 /**
  * @fileoverview Improved sprite service API with pre-computed format conversions
- * 
+ *
  * This new API provides:
  * - Explicit variant selection (def, mask, background1, background2)
  * - Pre-computed format conversions (Uint8Array, Uint16Array, MonochromeBitmap)
@@ -125,7 +125,9 @@ export async function createSpriteServiceV2(): Promise<SpriteServiceV2> {
       const key = `${rotation}-${options.variant}`
       const data = storage.ship.get(key)
       if (!data) {
-        throw new Error(`Ship sprite not found: rotation=${rotation}, variant=${options.variant}`)
+        throw new Error(
+          `Ship sprite not found: rotation=${rotation}, variant=${options.variant}`
+        )
       }
       return data
     },
@@ -138,7 +140,9 @@ export async function createSpriteServiceV2(): Promise<SpriteServiceV2> {
       const key = `${kind}-${rotationOrFrame}-${options.variant}`
       const data = storage.bunker.get(key)
       if (!data) {
-        throw new Error(`Bunker sprite not found: kind=${kind}, rotation=${rotationOrFrame}, variant=${options.variant}`)
+        throw new Error(
+          `Bunker sprite not found: kind=${kind}, rotation=${rotationOrFrame}, variant=${options.variant}`
+        )
       }
       return data
     },
@@ -147,7 +151,9 @@ export async function createSpriteServiceV2(): Promise<SpriteServiceV2> {
       const key = `${frame}-${options.variant}`
       const data = storage.fuel.get(key)
       if (!data) {
-        throw new Error(`Fuel sprite not found: frame=${frame}, variant=${options.variant}`)
+        throw new Error(
+          `Fuel sprite not found: frame=${frame}, variant=${options.variant}`
+        )
       }
       return data
     },
@@ -160,7 +166,9 @@ export async function createSpriteServiceV2(): Promise<SpriteServiceV2> {
       const key = `${kind}-${rotation}-${options.variant}`
       const data = storage.shard.get(key)
       if (!data) {
-        throw new Error(`Shard sprite not found: kind=${kind}, rotation=${rotation}, variant=${options.variant}`)
+        throw new Error(
+          `Shard sprite not found: kind=${kind}, rotation=${rotation}, variant=${options.variant}`
+        )
       }
       return data
     },
@@ -231,53 +239,107 @@ function precomputeAllSprites(allSprites: AllSprites): PrecomputedStorage {
       // Rotating bunkers: 16 rotations
       for (let rotation = 0; rotation < 16; rotation++) {
         const sprite = allSprites.bunkers.getSprite(kind, rotation)
-        storage.bunker.set(`${kind}-${rotation}-def`, precomputeFormats(sprite.def, 48, 48))
-        storage.bunker.set(`${kind}-${rotation}-mask`, precomputeFormats(sprite.mask, 48, 48))
-        storage.bunker.set(`${kind}-${rotation}-background1`, precomputeFormats(sprite.images.background1, 48, 48))
-        storage.bunker.set(`${kind}-${rotation}-background2`, precomputeFormats(sprite.images.background2, 48, 48))
+        storage.bunker.set(
+          `${kind}-${rotation}-def`,
+          precomputeFormats(sprite.def, 48, 48)
+        )
+        storage.bunker.set(
+          `${kind}-${rotation}-mask`,
+          precomputeFormats(sprite.mask, 48, 48)
+        )
+        storage.bunker.set(
+          `${kind}-${rotation}-background1`,
+          precomputeFormats(sprite.images.background1, 48, 48)
+        )
+        storage.bunker.set(
+          `${kind}-${rotation}-background2`,
+          precomputeFormats(sprite.images.background2, 48, 48)
+        )
       }
     } else {
       // Animated bunkers: 8 frames
       for (let frame = 0; frame < 8; frame++) {
         const sprite = allSprites.bunkers.getSprite(kind, 0, frame)
-        storage.bunker.set(`${kind}-${frame}-def`, precomputeFormats(sprite.def, 48, 48))
-        storage.bunker.set(`${kind}-${frame}-mask`, precomputeFormats(sprite.mask, 48, 48))
-        storage.bunker.set(`${kind}-${frame}-background1`, precomputeFormats(sprite.images.background1, 48, 48))
-        storage.bunker.set(`${kind}-${frame}-background2`, precomputeFormats(sprite.images.background2, 48, 48))
+        storage.bunker.set(
+          `${kind}-${frame}-def`,
+          precomputeFormats(sprite.def, 48, 48)
+        )
+        storage.bunker.set(
+          `${kind}-${frame}-mask`,
+          precomputeFormats(sprite.mask, 48, 48)
+        )
+        storage.bunker.set(
+          `${kind}-${frame}-background1`,
+          precomputeFormats(sprite.images.background1, 48, 48)
+        )
+        storage.bunker.set(
+          `${kind}-${frame}-background2`,
+          precomputeFormats(sprite.images.background2, 48, 48)
+        )
       }
     }
   }
 
   // Pre-compute fuel sprites (9 frames including empty)
   for (let frame = 0; frame < 9; frame++) {
-    const sprite = frame === 8 ? allSprites.fuels.emptyCell : allSprites.fuels.getFrame(frame)
+    const sprite =
+      frame === 8
+        ? allSprites.fuels.emptyCell
+        : allSprites.fuels.getFrame(frame)
     storage.fuel.set(`${frame}-def`, precomputeFormats(sprite.def, 32, 32))
     storage.fuel.set(`${frame}-mask`, precomputeFormats(sprite.mask, 32, 32))
-    storage.fuel.set(`${frame}-background1`, precomputeFormats(sprite.images.background1, 32, 32))
-    storage.fuel.set(`${frame}-background2`, precomputeFormats(sprite.images.background2, 32, 32))
+    storage.fuel.set(
+      `${frame}-background1`,
+      precomputeFormats(sprite.images.background1, 32, 32)
+    )
+    storage.fuel.set(
+      `${frame}-background2`,
+      precomputeFormats(sprite.images.background2, 32, 32)
+    )
   }
 
   // Pre-compute shard sprites (7 kinds, 16 rotations each)
   for (let kind = 0; kind < 7; kind++) {
     for (let rotation = 0; rotation < 16; rotation++) {
       const sprite = allSprites.shards.getSprite(kind, rotation)
-      storage.shard.set(`${kind}-${rotation}-def`, precomputeFormats(sprite.def, 16, 16))
-      storage.shard.set(`${kind}-${rotation}-mask`, precomputeFormats(sprite.mask, 16, 16))
-      storage.shard.set(`${kind}-${rotation}-background1`, precomputeFormats(sprite.images.background1, 16, 16))
-      storage.shard.set(`${kind}-${rotation}-background2`, precomputeFormats(sprite.images.background2, 16, 16))
+      storage.shard.set(
+        `${kind}-${rotation}-def`,
+        precomputeFormats(sprite.def, 16, 16)
+      )
+      storage.shard.set(
+        `${kind}-${rotation}-mask`,
+        precomputeFormats(sprite.mask, 16, 16)
+      )
+      storage.shard.set(
+        `${kind}-${rotation}-background1`,
+        precomputeFormats(sprite.images.background1, 16, 16)
+      )
+      storage.shard.set(
+        `${kind}-${rotation}-background2`,
+        precomputeFormats(sprite.images.background2, 16, 16)
+      )
     }
   }
 
   // Pre-compute crater sprite
   storage.crater.set('def', precomputeFormats(allSprites.crater.def, 32, 32))
   storage.crater.set('mask', precomputeFormats(allSprites.crater.mask, 32, 32))
-  storage.crater.set('background1', precomputeFormats(allSprites.crater.images.background1, 32, 32))
-  storage.crater.set('background2', precomputeFormats(allSprites.crater.images.background2, 32, 32))
+  storage.crater.set(
+    'background1',
+    precomputeFormats(allSprites.crater.images.background1, 32, 32)
+  )
+  storage.crater.set(
+    'background2',
+    precomputeFormats(allSprites.crater.images.background2, 32, 32)
+  )
 
   // Pre-compute flame sprites
   for (let frame = 0; frame < allSprites.flames.frames.length; frame++) {
     const flameData = allSprites.flames.getFrame(frame)
-    storage.flame.set(frame, precomputeFormats(flameData.def, flameData.width, flameData.height))
+    storage.flame.set(
+      frame,
+      precomputeFormats(flameData.def, flameData.width, flameData.height)
+    )
   }
 
   // Pre-compute strafe sprites (16 rotations)

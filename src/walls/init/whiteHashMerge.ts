@@ -88,7 +88,7 @@ export function whiteHashMerge(
 
     if (junctionIndex !== -1) {
       // Pre-compute both alignment versions for this junction
-      
+
       // Helper function to apply hash pattern with given background
       const applyHashPattern = (
         data: number[],
@@ -125,7 +125,7 @@ export function whiteHashMerge(
       // Generate version for alignment 0
       const back0 = getBackgroundPattern(0 as Alignment)
       const dataAlign0 = applyHashPattern(wh.data, back0, hashFigure)
-      
+
       // Generate version for alignment 1
       const back1 = getBackgroundPattern(1 as Alignment)
       const dataAlign1 = applyHashPattern(wh.data, back1, hashFigure)
@@ -136,7 +136,7 @@ export function whiteHashMerge(
         hasj: true,
         dataAlign0: dataAlign0,
         dataAlign1: dataAlign1,
-        data: wh.data  // Keep original data (won't be used, but preserved for clarity)
+        data: wh.data // Keep original data (won't be used, but preserved for clarity)
       }
 
       // Remove processed junction

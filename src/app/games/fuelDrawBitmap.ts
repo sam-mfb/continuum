@@ -217,8 +217,12 @@ export const createFuelDrawBitmapRenderer =
       emptyCell: (() => {
         const empty = spriteService.getFuelSprite(8, { variant: 'def' })
         const emptyMask = spriteService.getFuelSprite(8, { variant: 'mask' })
-        const emptyBg1 = spriteService.getFuelSprite(8, { variant: 'background1' })
-        const emptyBg2 = spriteService.getFuelSprite(8, { variant: 'background2' })
+        const emptyBg1 = spriteService.getFuelSprite(8, {
+          variant: 'background1'
+        })
+        const emptyBg2 = spriteService.getFuelSprite(8, {
+          variant: 'background2'
+        })
         return {
           def: empty.uint8,
           mask: emptyMask.uint8,
@@ -232,8 +236,12 @@ export const createFuelDrawBitmapRenderer =
       getFrame: (index: number) => {
         const def = spriteService.getFuelSprite(index, { variant: 'def' })
         const mask = spriteService.getFuelSprite(index, { variant: 'mask' })
-        const bg1 = spriteService.getFuelSprite(index, { variant: 'background1' })
-        const bg2 = spriteService.getFuelSprite(index, { variant: 'background2' })
+        const bg1 = spriteService.getFuelSprite(index, {
+          variant: 'background1'
+        })
+        const bg2 = spriteService.getFuelSprite(index, {
+          variant: 'background2'
+        })
         return {
           def: def.uint8,
           mask: mask.uint8,

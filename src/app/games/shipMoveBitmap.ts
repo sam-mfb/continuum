@@ -240,8 +240,13 @@ export const createShipMoveBitmapRenderer =
     }
 
     // Draw ship using the proper fullFigure function
-    const shipSprite = spriteService.getShipSprite(finalState.ship.shiprot, { variant: 'def' })
-    const shipMaskSprite = spriteService.getShipSprite(finalState.ship.shiprot, { variant: 'mask' })
+    const shipSprite = spriteService.getShipSprite(finalState.ship.shiprot, {
+      variant: 'def'
+    })
+    const shipMaskSprite = spriteService.getShipSprite(
+      finalState.ship.shiprot,
+      { variant: 'mask' }
+    )
 
     // Use pre-computed bitmap format
     const shipDefBitmap = shipSprite.bitmap

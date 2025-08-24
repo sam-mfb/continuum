@@ -53,7 +53,9 @@ export const SpritesViewer: React.FC<SpritesViewerProps> = ({
 
         case 'bunker': {
           const variant = showMask ? 'mask' : 'def'
-          const sprite = spriteService.getBunkerSprite(bunkerKind, rotation, { variant })
+          const sprite = spriteService.getBunkerSprite(bunkerKind, rotation, {
+            variant
+          })
           spriteData = sprite.uint8
           width = 48
           height = 48
@@ -73,7 +75,9 @@ export const SpritesViewer: React.FC<SpritesViewerProps> = ({
 
         case 'shard': {
           const variant = showMask ? 'mask' : 'def'
-          const sprite = spriteService.getShardSprite(shardKind, rotation, { variant })
+          const sprite = spriteService.getShardSprite(shardKind, rotation, {
+            variant
+          })
           spriteData = sprite.uint8
           width = 16
           height = 16
