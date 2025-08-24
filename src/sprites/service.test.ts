@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { toUint16Array, toMonochromeBitmap, precomputeFormats } from './serviceV2'
-import type { SpriteServiceV2, SpriteData } from './serviceV2'
+import { toUint16Array, toMonochromeBitmap, precomputeFormats } from './service'
+import type { SpriteServiceV2, SpriteData } from './service'
 import { BunkerKind } from '@/figs/types'
 
 // Type tests to ensure API is correct

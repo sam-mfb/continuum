@@ -6,7 +6,7 @@
  * Combines shipMove.ts logic with bitmap rendering like wallDrawing.ts.
  */
 
-import type { BitmapRenderer, MonochromeBitmap } from '../../bitmap'
+import type { BitmapRenderer } from '../../bitmap'
 import { fullFigure } from '../../ship/render/fullFigure'
 import { drawShipShot } from '../../shots/render/drawShipShot'
 import { drawStrafe } from '../../shots/render/drawStrafe'
@@ -18,7 +18,7 @@ import { ShipControl } from '@/ship/types'
 import { shipControl } from './shipControlThunk'
 import { buildGameStore } from './store'
 import { SCRWTH, VIEWHT, TOPMARG, BOTMARG } from '@/screen/constants'
-import type { SpriteService } from '@/sprites/types'
+import type { SpriteServiceV2 } from '@/sprites/service'
 import { SCENTER } from '@/figs/types'
 import { flameOn } from '@/ship/render/flameOn'
 import { grayFigure } from '@/ship/render/grayFigure'
@@ -148,7 +148,7 @@ const getPressedControls = (keysDown: Set<string>): ShipControl[] => {
  * Bitmap renderer for ship movement game
  */
 export const createShipMoveBitmapRenderer =
-  (spriteService: SpriteService): BitmapRenderer =>
+  (spriteService: SpriteServiceV2): BitmapRenderer =>
   (bitmap, frame, _env) => {
     // Check initialization status
     if (initializationError) {
@@ -240,22 +240,12 @@ export const createShipMoveBitmapRenderer =
     }
 
     // Draw ship using the proper fullFigure function
-    const shipSprite = spriteService.getShipSprite(finalState.ship.shiprot)
+    const shipSprite = spriteService.getShipSprite(finalState.ship.shiprot, { variant: 'def' })
+    const shipMaskSprite = spriteService.getShipSprite(finalState.ship.shiprot, { variant: 'mask' })
 
-    // Convert sprite data to MonochromeBitmap format
-    const shipDefBitmap: MonochromeBitmap = {
-      data: shipSprite.def,
-      width: 32,
-      height: 32,
-      rowBytes: 4
-    }
-
-    const shipMaskBitmap: MonochromeBitmap = {
-      data: shipSprite.mask,
-      width: 32,
-      height: 32,
-      rowBytes: 4
-    }
+    // Use pre-computed bitmap format
+    const shipDefBitmap = shipSprite.bitmap
+    const shipMaskBitmap = shipMaskSprite.bitmap
 
     const SHADOW_OFFSET_X = 8
     const SHADOW_OFFSET_Y = 5
@@ -420,12 +410,7 @@ export const createShipMoveBitmapRenderer =
       const flameSprites = []
       for (let i = 0; i < 32; i++) {
         const flame = spriteService.getFlameSprite(i)
-        flameSprites.push({
-          data: flame.def,
-          width: flame.width,
-          height: flame.height,
-          rowBytes: 1
-        })
+        flameSprites.push(flame.bitmap)
       }
 
       renderedBitmap = flameOn({

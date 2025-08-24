@@ -17,7 +17,7 @@ import planetReducer, {
 import type { Fuel, PlanetState } from '@/planet/types'
 import { isOnRightSide } from '@/shared/viewport'
 import { FUELFRAMES } from '@/figs/types'
-import type { SpriteService } from '@/sprites/types'
+import type { SpriteServiceV2 } from '@/sprites/service'
 
 // Create store with planet slice
 const store = configureStore({
@@ -132,7 +132,7 @@ initializeGame()
  * Factory function to create bitmap renderer for fuel drawing game
  */
 export const createFuelDrawBitmapRenderer =
-  (spriteService: SpriteService): BitmapRenderer =>
+  (spriteService: SpriteServiceV2): BitmapRenderer =>
   (bitmap, frame, _env) => {
     // Check initialization status
     if (initializationError) {
@@ -213,9 +213,36 @@ export const createFuelDrawBitmapRenderer =
 
     // Draw all fuel cells using drawFuels
     const fuelSprites = {
-      emptyCell: spriteService.getFuelSprite(8),
       // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-      getFrame: (index: number) => spriteService.getFuelSprite(index)
+      emptyCell: (() => {
+        const empty = spriteService.getFuelSprite(8, { variant: 'def' })
+        const emptyMask = spriteService.getFuelSprite(8, { variant: 'mask' })
+        const emptyBg1 = spriteService.getFuelSprite(8, { variant: 'background1' })
+        const emptyBg2 = spriteService.getFuelSprite(8, { variant: 'background2' })
+        return {
+          def: empty.uint8,
+          mask: emptyMask.uint8,
+          images: {
+            background1: emptyBg1.uint8,
+            background2: emptyBg2.uint8
+          }
+        }
+      })(),
+      // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+      getFrame: (index: number) => {
+        const def = spriteService.getFuelSprite(index, { variant: 'def' })
+        const mask = spriteService.getFuelSprite(index, { variant: 'mask' })
+        const bg1 = spriteService.getFuelSprite(index, { variant: 'background1' })
+        const bg2 = spriteService.getFuelSprite(index, { variant: 'background2' })
+        return {
+          def: def.uint8,
+          mask: mask.uint8,
+          images: {
+            background1: bg1.uint8,
+            background2: bg2.uint8
+          }
+        }
+      }
     }
 
     // Check if we're near the right edge for world wrapping

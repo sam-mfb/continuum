@@ -7,10 +7,10 @@ import { drawFuels } from '../drawFuels'
 import { drawCraters } from '../drawCraters'
 import { drawShip } from '../drawShip'
 import { PlanetGameViewer } from './PlanetGameViewer'
-import type { SpriteService } from '@/sprites/types'
+import type { SpriteServiceV2 } from '@/sprites/service'
 
 type PlanetViewerProps = {
-  spriteService: SpriteService
+  spriteService: SpriteServiceV2
 }
 
 export const PlanetViewer: React.FC<PlanetViewerProps> = ({

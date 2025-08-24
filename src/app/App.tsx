@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux'
 import type { RootState } from '../store/store'
 import { useAppDispatch } from '../store/store'
 import { setCurrentView, toggleDebugInfo } from '../store/uiSlice'
-import type { SpriteService } from '../sprites/types'
+import type { SpriteServiceV2 } from '@/sprites/service'
 import { GalaxySelector } from './components/GalaxySelector'
 import { PlanetList } from './components/PlanetList'
 import { PlanetViewer } from './components/PlanetViewer'
@@ -32,7 +32,7 @@ import { strafeTestBitmapRenderer } from './games/strafeTestBitmap'
 import './App.css'
 
 type AppProps = {
-  spriteService: SpriteService
+  spriteService: SpriteServiceV2
 }
 
 function App({ spriteService }: AppProps): React.JSX.Element {

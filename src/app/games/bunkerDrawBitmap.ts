@@ -9,7 +9,7 @@
 import type { BitmapRenderer } from '../../bitmap'
 import { doBunks } from '../../planet/render/bunker'
 import { configureStore } from '@reduxjs/toolkit'
-import type { SpriteService } from '@/sprites/types'
+import type { SpriteServiceV2 } from '@/sprites/service'
 import planetReducer, {
   loadPlanet,
   updateBunkerRotations,
@@ -250,7 +250,7 @@ initializeGame()
  * Factory function to create bitmap renderer for bunker drawing game
  */
 export const createBunkerDrawBitmapRenderer =
-  (spriteService: SpriteService): BitmapRenderer =>
+  (spriteService: SpriteServiceV2): BitmapRenderer =>
   (bitmap, frame, _env) => {
     // Check initialization status
     if (initializationError) {
@@ -369,8 +369,22 @@ export const createBunkerDrawBitmapRenderer =
       bunkrec: planetState.bunkers,
       scrnx: viewportState.x,
       scrny: viewportState.y,
-      getSprite: (kind: BunkerKind, rotation: number) =>
-        spriteService.getBunkerSprite(kind, rotation)
+      getSprite: (kind: BunkerKind, rotation: number) => {
+        // Get sprites with proper variants
+        const defSprite = spriteService.getBunkerSprite(kind, rotation, { variant: 'def' })
+        const maskSprite = spriteService.getBunkerSprite(kind, rotation, { variant: 'mask' })
+        const bg1Sprite = spriteService.getBunkerSprite(kind, rotation, { variant: 'background1' })
+        const bg2Sprite = spriteService.getBunkerSprite(kind, rotation, { variant: 'background2' })
+        
+        return {
+          def: defSprite.uint8,
+          mask: maskSprite.uint8,
+          images: {
+            background1: bg1Sprite.uint8,
+            background2: bg2Sprite.uint8
+          }
+        }
+      }
     })(bitmap)
 
     // If wrapping world and near right edge, draw wrapped bunkers
@@ -386,8 +400,22 @@ export const createBunkerDrawBitmapRenderer =
         bunkrec: planetState.bunkers,
         scrnx: viewportState.x - planetState.worldwidth,
         scrny: viewportState.y,
-        getSprite: (kind: BunkerKind, rotation: number) =>
-          spriteService.getBunkerSprite(kind, rotation)
+        getSprite: (kind: BunkerKind, rotation: number) => {
+          // Get sprites with proper variants
+          const defSprite = spriteService.getBunkerSprite(kind, rotation, { variant: 'def' })
+          const maskSprite = spriteService.getBunkerSprite(kind, rotation, { variant: 'mask' })
+          const bg1Sprite = spriteService.getBunkerSprite(kind, rotation, { variant: 'background1' })
+          const bg2Sprite = spriteService.getBunkerSprite(kind, rotation, { variant: 'background2' })
+          
+          return {
+            def: defSprite.uint8,
+            mask: maskSprite.uint8,
+            images: {
+              background1: bg1Sprite.uint8,
+              background2: bg2Sprite.uint8
+            }
+          }
+        }
       })(renderedBitmap) // Pass already-rendered bitmap
     }
 

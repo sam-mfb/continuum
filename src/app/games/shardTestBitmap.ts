@@ -2,7 +2,7 @@ import type { MonochromeBitmap, BitmapRenderer } from '@/bitmap'
 import type { ShardSpriteSet, ShardSprite } from '@/figs/types'
 import { drawShard } from '@/explosions/render/drawShard'
 import { SHARDHT } from '@/figs/types'
-import type { SpriteService } from '@/sprites/types'
+import type { SpriteServiceV2 } from '@/sprites/service'
 
 // Viewport state - for scrolling around
 const viewportState = {
@@ -241,7 +241,7 @@ export function shardTestBitmap(deps: {
  * Factory function to create bitmap renderer for shard test
  */
 export const createShardTestBitmapRenderer =
-  (spriteService: SpriteService): BitmapRenderer =>
+  (spriteService: SpriteServiceV2): BitmapRenderer =>
   (bitmap, frame) => {
     // Handle keyboard input for viewport movement
     const moveSpeed = 1
@@ -268,8 +268,20 @@ export const createShardTestBitmapRenderer =
     // Create shard images adapter
     const shardImages: ShardSpriteSet = {
       kinds: {} as Record<number, Record<number, ShardSprite>>,
-      getSprite: (kind: number, rotation: number) =>
-        spriteService.getShardSprite(kind, rotation)
+      getSprite: (kind: number, rotation: number) => {
+        const def = spriteService.getShardSprite(kind, rotation, { variant: 'def' })
+        const mask = spriteService.getShardSprite(kind, rotation, { variant: 'mask' })
+        const bg1 = spriteService.getShardSprite(kind, rotation, { variant: 'background1' })
+        const bg2 = spriteService.getShardSprite(kind, rotation, { variant: 'background2' })
+        return {
+          def: def.uint8,
+          mask: mask.uint8,
+          images: {
+            background1: bg1.uint8,
+            background2: bg2.uint8
+          }
+        }
+      }
     }
 
     // Clear bitmap first

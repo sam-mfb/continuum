@@ -1,9 +1,9 @@
 import React, { useRef, useEffect } from 'react'
 import { useAppSelector } from '../../store/store'
-import type { SpriteService } from '../../sprites/types'
+import type { SpriteServiceV2 } from '@/sprites/service'
 
 type SpritesViewerProps = {
-  spriteService: SpriteService
+  spriteService: SpriteServiceV2
 }
 
 export const SpritesViewer: React.FC<SpritesViewerProps> = ({
@@ -42,8 +42,9 @@ export const SpritesViewer: React.FC<SpritesViewerProps> = ({
     try {
       switch (selectedType) {
         case 'ship': {
-          const sprite = spriteService.getShipSprite(rotation)
-          spriteData = showMask ? sprite.mask : sprite.def
+          const variant = showMask ? 'mask' : 'def'
+          const sprite = spriteService.getShipSprite(rotation, { variant })
+          spriteData = sprite.uint8
           width = 32
           height = 32
           storageRowBytes = 4 // 32 bits wide storage
@@ -51,8 +52,9 @@ export const SpritesViewer: React.FC<SpritesViewerProps> = ({
         }
 
         case 'bunker': {
-          const sprite = spriteService.getBunkerSprite(bunkerKind, rotation)
-          spriteData = showMask ? sprite.mask : sprite.def
+          const variant = showMask ? 'mask' : 'def'
+          const sprite = spriteService.getBunkerSprite(bunkerKind, rotation, { variant })
+          spriteData = sprite.uint8
           width = 48
           height = 48
           storageRowBytes = 6 // 48 bits wide storage
@@ -60,8 +62,9 @@ export const SpritesViewer: React.FC<SpritesViewerProps> = ({
         }
 
         case 'fuel': {
-          const sprite = spriteService.getFuelSprite(fuelFrame)
-          spriteData = showMask ? sprite.mask : sprite.def
+          const variant = showMask ? 'mask' : 'def'
+          const sprite = spriteService.getFuelSprite(fuelFrame, { variant })
+          spriteData = sprite.uint8
           width = 32
           height = 32
           storageRowBytes = 4 // 32 bits wide storage
@@ -69,8 +72,9 @@ export const SpritesViewer: React.FC<SpritesViewerProps> = ({
         }
 
         case 'shard': {
-          const sprite = spriteService.getShardSprite(shardKind, rotation)
-          spriteData = showMask ? sprite.mask : sprite.def
+          const variant = showMask ? 'mask' : 'def'
+          const sprite = spriteService.getShardSprite(shardKind, rotation, { variant })
+          spriteData = sprite.uint8
           width = 16
           height = 16
           storageRowBytes = 2 // 16 bits wide storage
@@ -78,8 +82,9 @@ export const SpritesViewer: React.FC<SpritesViewerProps> = ({
         }
 
         case 'crater': {
-          const sprite = spriteService.getCraterSprite()
-          spriteData = showMask ? sprite.mask : sprite.def
+          const variant = showMask ? 'mask' : 'def'
+          const sprite = spriteService.getCraterSprite({ variant })
+          spriteData = sprite.uint8
           width = 32
           height = 32
           storageRowBytes = 4 // 32 bits wide storage
@@ -88,7 +93,7 @@ export const SpritesViewer: React.FC<SpritesViewerProps> = ({
 
         case 'shield': {
           const sprite = spriteService.getShieldSprite()
-          spriteData = sprite.def
+          spriteData = sprite.uint8
           width = 32
           height = 32
           storageRowBytes = 4 // 32 bits wide storage
@@ -97,7 +102,7 @@ export const SpritesViewer: React.FC<SpritesViewerProps> = ({
 
         case 'flame': {
           const flame = spriteService.getFlameSprite(flameFrame)
-          spriteData = flame.def
+          spriteData = flame.uint8
           width = 8
           height = 7
           storageRowBytes = 1 // 8 bits wide storage
@@ -105,7 +110,8 @@ export const SpritesViewer: React.FC<SpritesViewerProps> = ({
         }
 
         case 'strafe': {
-          spriteData = spriteService.getStrafeSprite(strafeFrame)
+          const strafe = spriteService.getStrafeSprite(strafeFrame)
+          spriteData = strafe.uint8
           width = 8
           height = 8
           storageRowBytes = 1 // 8 bits wide storage
@@ -115,7 +121,7 @@ export const SpritesViewer: React.FC<SpritesViewerProps> = ({
         case 'digit': {
           const charData = spriteService.getDigitSprite(digitChar)
           if (!charData) break
-          spriteData = charData
+          spriteData = charData.uint8
           width = 8
           height = 9
           storageRowBytes = 1

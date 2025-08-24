@@ -10,7 +10,7 @@ import type { BitmapRenderer, MonochromeBitmap } from '../../bitmap'
 import { planetSlice } from '@/planet/planetSlice'
 import { screenSlice } from '@/screen/screenSlice'
 import { buildGameStore } from './store'
-import type { SpriteService } from '@/sprites/types'
+import type { SpriteServiceV2 } from '@/sprites/service'
 import type { ShardSprite, ShardSpriteSet } from '@/figs/types'
 import { xbcenter, ybcenter } from '@/planet/constants'
 import {
@@ -265,7 +265,7 @@ const triggerBunkerExplosion = (bunker: BunkerConfig): void => {
  * Factory function to create bitmap renderer for explosion game
  */
 export const createExplosionBitmapRenderer =
-  (spriteService: SpriteService): BitmapRenderer =>
+  (spriteService: SpriteServiceV2): BitmapRenderer =>
   (bitmap, frame, _env) => {
     // Clear the bitmap each frame
     bitmap.data.fill(0)
@@ -353,22 +353,16 @@ export const createExplosionBitmapRenderer =
     // Draw all bunkers
     for (const bunker of bunkers) {
       if (bunker.alive) {
-        const bunkerSprite = spriteService.getBunkerSprite(
-          bunker.kind,
-          bunker.rotation
-        )
-
         // Use pre-rendered image based on alignment
         const align = (bunker.x + bunker.y) & 1
-        const bunkerBitmap: MonochromeBitmap = {
-          data:
-            align === 0
-              ? bunkerSprite.images.background1
-              : bunkerSprite.images.background2,
-          width: 48,
-          height: 32,
-          rowBytes: 6
-        }
+        const variant = align === 0 ? 'background1' : 'background2'
+        const bunkerSprite = spriteService.getBunkerSprite(
+          bunker.kind,
+          bunker.rotation,
+          { variant: variant as 'background1' | 'background2' }
+        )
+
+        const bunkerBitmap: MonochromeBitmap = bunkerSprite.bitmap
 
         renderedBitmap = drawBunker({
           x: bunker.x,
@@ -385,8 +379,20 @@ export const createExplosionBitmapRenderer =
       // Get shard images from sprites - only getSprite is used by drawExplosions
       const shardImages = {
         kinds: {} as Record<number, Record<number, ShardSprite>>,
-        getSprite: (kind: number, rotation: number) =>
-          spriteService.getShardSprite(kind, rotation)
+        getSprite: (kind: number, rotation: number) => {
+          const def = spriteService.getShardSprite(kind, rotation, { variant: 'def' })
+          const mask = spriteService.getShardSprite(kind, rotation, { variant: 'mask' })
+          const bg1 = spriteService.getShardSprite(kind, rotation, { variant: 'background1' })
+          const bg2 = spriteService.getShardSprite(kind, rotation, { variant: 'background2' })
+          return {
+            def: def.uint8,
+            mask: mask.uint8,
+            images: {
+              background1: bg1.uint8,
+              background2: bg2.uint8
+            }
+          }
+        }
       } as ShardSpriteSet
 
       renderedBitmap = drawExplosions({

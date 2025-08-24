@@ -8,10 +8,10 @@ import { screenSlice } from '@/screen/screenSlice'
 import type { PlanetState } from '@/planet/types'
 import type { BitmapRenderer, MonochromeBitmap } from '@/bitmap'
 import type { GameRendererStore } from '../games/types'
-import type { SpriteService } from '@/sprites/types'
+import type { SpriteServiceV2 } from '@/sprites/service'
 
 type PlanetGameViewerProps = {
-  spriteService: SpriteService
+  spriteService: SpriteServiceV2
 }
 
 export const PlanetGameViewer = ({
