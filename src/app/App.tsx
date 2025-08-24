@@ -189,7 +189,8 @@ function App({ spriteService }: AppProps): React.JSX.Element {
                 {
                   type: 'bitmap',
                   name: 'Star Background (Press SPACE)',
-                  bitmapRenderer: createStarBackgroundBitmapRenderer(spriteService)
+                  bitmapRenderer:
+                    createStarBackgroundBitmapRenderer(spriteService)
                 } as BitmapGameDefinition
               ]}
               defaultGameIndex={0}
