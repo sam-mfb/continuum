@@ -7,8 +7,15 @@ import { drawFuels } from '../drawFuels'
 import { drawCraters } from '../drawCraters'
 import { drawShip } from '../drawShip'
 import { PlanetGameViewer } from './PlanetGameViewer'
+import type { SpriteServiceV2 } from '@/sprites/service'
 
-export const PlanetViewer: React.FC = () => {
+type PlanetViewerProps = {
+  spriteService: SpriteServiceV2
+}
+
+export const PlanetViewer: React.FC<PlanetViewerProps> = ({
+  spriteService
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const dispatch = useAppDispatch()
   const { planets, selectedPlanetIndex, displayMode } = useAppSelector(
@@ -64,7 +71,7 @@ export const PlanetViewer: React.FC = () => {
           className="planet-canvas"
         />
       ) : (
-        <PlanetGameViewer />
+        <PlanetGameViewer spriteService={spriteService} />
       )}
     </div>
   )

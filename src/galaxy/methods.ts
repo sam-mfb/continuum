@@ -37,10 +37,14 @@ function parseGalaxyHeader(
   const numPlanets = galaxyBigEnd.getWord(2)
   const cartoonPlanet = galaxyBigEnd.getWord(4)
   const indexByteEnd = GALAXY.PLANET_INDEX_OFFSET + numPlanets // 1 byte per planet entry
-  const planetsIndex = new Uint8Array(
+  
+  // Convert Uint8Array to regular number array for better JavaScript serialization
+  const indexBytes = new Uint8Array(
     // 1 byte per entry so endianness doesn't matter (matches original char indexes[150])
     galaxyHeaderBuffer.slice(GALAXY.PLANET_INDEX_OFFSET, indexByteEnd)
   )
+  const planetsIndex = Array.from(indexBytes)
+  
   return {
     planets: numPlanets,
     cartplanet: cartoonPlanet,

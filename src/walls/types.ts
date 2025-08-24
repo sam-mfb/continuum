@@ -36,6 +36,10 @@ export type WhiteRec = {
   ht: number
   /** white piece bit pattern data */
   data: number[]
+  /** Junction data when alignment = 0 */
+  dataAlign0?: number[]
+  /** Junction data when alignment = 1 */
+  dataAlign1?: number[]
 }
 
 /**

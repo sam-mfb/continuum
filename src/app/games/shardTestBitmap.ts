@@ -1,14 +1,8 @@
 import type { MonochromeBitmap, BitmapRenderer } from '@/bitmap'
-import type { ShardSpriteSet } from '@/figs/types'
+import type { ShardSpriteSet, ShardSprite } from '@/figs/types'
 import { drawShard } from '@/explosions/render/drawShard'
 import { SHARDHT } from '@/figs/types'
-import { store } from '@/store/store'
-import { loadSprites } from '@/store/spritesSlice'
-import type { RootState } from '@/store/store'
-
-// State
-let initializationComplete = false
-let initializationError: Error | null = null
+import type { SpriteServiceV2 } from '@/sprites/service'
 
 // Viewport state - for scrolling around
 const viewportState = {
@@ -19,27 +13,6 @@ const viewportState = {
 // Define a larger world to scroll through
 const WORLD_WIDTH = 1024
 const WORLD_HEIGHT = 768
-
-// Initialize sprites on module load
-const initializeGame = async (): Promise<void> => {
-  try {
-    console.log('Starting shardTestBitmap initialization...')
-
-    // Load sprites
-    console.log('Loading sprites...')
-    await store.dispatch(loadSprites()).unwrap()
-    console.log('Sprites loaded successfully')
-
-    initializationComplete = true
-    console.log('shardTestBitmap initialization complete')
-  } catch (error) {
-    console.error('Error initializing shardTestBitmap:', error)
-    initializationError = error as Error
-  }
-}
-
-// Start initialization
-void initializeGame()
 
 /**
  * Test game for debugging shard rendering
@@ -265,71 +238,75 @@ export function shardTestBitmap(deps: {
 }
 
 /**
- * Bitmap renderer for shard test
+ * Factory function to create bitmap renderer for shard test
  */
-export const shardTestBitmapRenderer: BitmapRenderer = (bitmap, frame) => {
-  // Check initialization status
-  if (initializationError) {
-    console.error('Initialization failed:', initializationError)
+export const createShardTestBitmapRenderer =
+  (spriteService: SpriteServiceV2): BitmapRenderer =>
+  (bitmap, frame) => {
+    // Handle keyboard input for viewport movement
+    const moveSpeed = 1
+
+    if (frame.keysDown.has('ArrowUp')) {
+      viewportState.y = Math.max(0, viewportState.y - moveSpeed)
+    }
+    if (frame.keysDown.has('ArrowDown')) {
+      viewportState.y = Math.min(
+        WORLD_HEIGHT - bitmap.height,
+        viewportState.y + moveSpeed
+      )
+    }
+    if (frame.keysDown.has('ArrowLeft')) {
+      viewportState.x = Math.max(0, viewportState.x - moveSpeed)
+    }
+    if (frame.keysDown.has('ArrowRight')) {
+      viewportState.x = Math.min(
+        WORLD_WIDTH - bitmap.width,
+        viewportState.x + moveSpeed
+      )
+    }
+
+    // Create shard images adapter
+    const shardImages: ShardSpriteSet = {
+      kinds: {} as Record<number, Record<number, ShardSprite>>,
+      getSprite: (kind: number, rotation: number) => {
+        const def = spriteService.getShardSprite(kind, rotation, { variant: 'def' })
+        const mask = spriteService.getShardSprite(kind, rotation, { variant: 'mask' })
+        const bg1 = spriteService.getShardSprite(kind, rotation, { variant: 'background1' })
+        const bg2 = spriteService.getShardSprite(kind, rotation, { variant: 'background2' })
+        return {
+          def: def.uint8,
+          mask: mask.uint8,
+          images: {
+            background1: bg1.uint8,
+            background2: bg2.uint8
+          }
+        }
+      }
+    }
+
+    // Clear bitmap first
     bitmap.data.fill(0)
-    return
-  }
 
-  if (!initializationComplete) {
-    // Show loading screen
-    bitmap.data.fill(0)
-    return
-  }
+    // Render the test and get the updated bitmap
+    const rendered = shardTestBitmap({
+      bitmap,
+      shardImages,
+      screenX: viewportState.x,
+      screenY: viewportState.y
+    })
 
-  // Handle keyboard input for viewport movement
-  const moveSpeed = 1
+    // Copy the rendered result back to the output bitmap
+    bitmap.data.set(rendered.data)
 
-  if (frame.keysDown.has('ArrowUp')) {
-    viewportState.y = Math.max(0, viewportState.y - moveSpeed)
-  }
-  if (frame.keysDown.has('ArrowDown')) {
-    viewportState.y = Math.min(
-      WORLD_HEIGHT - bitmap.height,
-      viewportState.y + moveSpeed
-    )
-  }
-  if (frame.keysDown.has('ArrowLeft')) {
-    viewportState.x = Math.max(0, viewportState.x - moveSpeed)
-  }
-  if (frame.keysDown.has('ArrowRight')) {
-    viewportState.x = Math.min(
-      WORLD_WIDTH - bitmap.width,
-      viewportState.x + moveSpeed
-    )
-  }
-
-  // Get shard images from store
-  const state = store.getState() as RootState
-  const shardImages = state.sprites.allSprites?.shards || null
-
-  // Clear bitmap first
-  bitmap.data.fill(0)
-
-  // Render the test and get the updated bitmap
-  const rendered = shardTestBitmap({
-    bitmap,
-    shardImages,
-    screenX: viewportState.x,
-    screenY: viewportState.y
-  })
-
-  // Copy the rendered result back to the output bitmap
-  bitmap.data.set(rendered.data)
-
-  // Draw viewport position indicator in top-left corner for debugging
-  // Just draw a small indicator box in the corner to show we're scrolling
-  for (let i = 0; i < 4; i++) {
-    for (let j = 0; j < 4; j++) {
-      const x = 4 + i
-      const y = 4 + j
-      const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
-      const bitIndex = 7 - (x % 8)
-      bitmap.data[byteIndex]! |= 1 << bitIndex
+    // Draw viewport position indicator in top-left corner for debugging
+    // Just draw a small indicator box in the corner to show we're scrolling
+    for (let i = 0; i < 4; i++) {
+      for (let j = 0; j < 4; j++) {
+        const x = 4 + i
+        const y = 4 + j
+        const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
+        const bitIndex = 7 - (x % 8)
+        bitmap.data[byteIndex]! |= 1 << bitIndex
+      }
     }
   }
-}

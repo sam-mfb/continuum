@@ -1,10 +1,8 @@
 import type { WhiteRec, JunctionRec } from '../types'
 import { hashFigure } from './whitePatterns'
 import { patternToByteArray } from './utils'
-import { BACKGROUND_PATTERNS } from '../../screen/constants'
-
-// Background patterns from Play.c:61-62
-const [backgr1, backgr2] = BACKGROUND_PATTERNS
+import { getBackgroundPattern } from '@/shared/backgroundPattern'
+import type { Alignment } from '@/shared/alignment'
 
 /**
  * Checks if a white piece has any close neighbors.
@@ -41,6 +39,12 @@ function noCloseWh(whites: WhiteRec[], index: number): boolean {
  * Adds decorative 6x6 crosshatch patterns at junctions.
  * Converts solid white pieces to textured ones using XOR patterns
  * to make junction seams less visually obvious.
+ *
+ * DEVIATION FROM ORIGINAL:
+ * The original code calculated alignment once per junction using (wh->x + wh->y) & 1.
+ * We now pre-compute BOTH alignment versions (dataAlign0 and dataAlign1) and store them.
+ * This allows runtime selection based on alignment mode (world-fixed vs screen-fixed).
+ * See src/shared/alignment.ts for full explanation of the alignment system changes.
  *
  * @see Junctions.c:569-614 - white_hash_merge()
  * @param whites Array of white pieces to potentially add hash patterns to
@@ -83,40 +87,56 @@ export function whiteHashMerge(
     }
 
     if (junctionIndex !== -1) {
-      // Choose background pattern based on position
-      const back = (wh.x + wh.y) & 1 ? backgr2! : backgr1!
+      // Pre-compute both alignment versions for this junction
+      
+      // Helper function to apply hash pattern with given background
+      const applyHashPattern = (
+        data: number[],
+        background: number,
+        hashFigure: number[]
+      ): number[] => {
+        // First, reconstruct 16-bit values from byte pairs
+        // NOTE: Data is stored as big-endian bytes, so high byte comes first
+        const data16bit: number[] = []
+        for (let i = 0; i < 6; i++) {
+          const highByte = data[i * 2] ?? 0
+          const lowByte = data[i * 2 + 1] ?? 0
+          data16bit[i] = (highByte << 8) | lowByte
+        }
 
-      // First, reconstruct 16-bit values from byte pairs
-      // NOTE: Data is stored as big-endian bytes, so high byte comes first
-      const data16bit: number[] = []
-      for (let i = 0; i < 6; i++) {
-        const highByte = wh.data[i * 2] ?? 0
-        const lowByte = wh.data[i * 2 + 1] ?? 0
-        data16bit[i] = (highByte << 8) | lowByte
+        // Apply hash pattern using 16-bit operations
+        const newData16bit: number[] = []
+        let rotatedBack = background & 0xffff
+
+        for (let i = 0; i < 6; i++) {
+          // Apply hash pattern: (back & (~data | hashFigure)) ^ hashFigure
+          const dataValue = data16bit[i] ?? 0
+          const hashValue = hashFigure[i] ?? 0
+          newData16bit[i] = (rotatedBack & (~dataValue | hashValue)) ^ hashValue
+
+          // Rotate left by 1 bit (simulate asm rol.w)
+          rotatedBack = ((rotatedBack << 1) | (rotatedBack >>> 15)) & 0xffff
+        }
+
+        // Convert back to byte array
+        return patternToByteArray(newData16bit)
       }
 
-      // Apply hash pattern using 16-bit operations
-      const newData16bit: number[] = []
-      let rotatedBack = back & 0xffff
+      // Generate version for alignment 0
+      const back0 = getBackgroundPattern(0 as Alignment)
+      const dataAlign0 = applyHashPattern(wh.data, back0, hashFigure)
+      
+      // Generate version for alignment 1
+      const back1 = getBackgroundPattern(1 as Alignment)
+      const dataAlign1 = applyHashPattern(wh.data, back1, hashFigure)
 
-      for (let i = 0; i < 6; i++) {
-        // Apply hash pattern: (back & (~data | hashFigure)) ^ hashFigure
-        const dataValue = data16bit[i] ?? 0
-        const hashValue = hashFigure[i] ?? 0
-        newData16bit[i] = (rotatedBack & (~dataValue | hashValue)) ^ hashValue
-
-        // Rotate left by 1 bit (simulate asm rol.w)
-        rotatedBack = ((rotatedBack << 1) | (rotatedBack >>> 15)) & 0xffff
-      }
-
-      // Convert back to byte array
-      const newData = patternToByteArray(newData16bit)
-
-      // Update white piece
+      // Store both versions
       result[whIndex] = {
         ...wh,
-        data: newData,
-        hasj: true
+        hasj: true,
+        dataAlign0: dataAlign0,
+        dataAlign1: dataAlign1,
+        data: wh.data  // Keep original data (won't be used, but preserved for clarity)
       }
 
       // Remove processed junction

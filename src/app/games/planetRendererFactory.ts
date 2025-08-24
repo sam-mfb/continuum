@@ -15,9 +15,7 @@ import { LINE_KIND } from '../../walls/types'
 import { VIEWHT } from '../../screen/constants'
 import { isOnRightSide } from '@/shared/viewport'
 import { doBunks } from '@/planet/render/bunker'
-import { loadSprites } from '@/store/spritesSlice'
 import { configureStore } from '@reduxjs/toolkit'
-import spritesReducer from '@/store/spritesSlice'
 import planetReducer, {
   loadPlanet,
   updateBunkerRotations,
@@ -27,37 +25,20 @@ import planetReducer, {
 import { drawFuels } from '@/planet/render/drawFuels'
 import { drawCraters } from '@/planet/render/drawCraters'
 
-// Create a store for sprites and planet data
-let spritesLoaded = false
-let spritesLoading = false
-
-// Create store with sprites and planet slices
+// Create store with planet slice
 const bunkerStore = configureStore({
   reducer: {
-    sprites: spritesReducer,
     planet: planetReducer
   }
 })
-
-// Load sprites once
-const ensureSpritesLoaded = async (): Promise<void> => {
-  if (spritesLoaded || spritesLoading) return
-  spritesLoading = true
-  try {
-    await bunkerStore.dispatch(loadSprites()).unwrap()
-    spritesLoaded = true
-  } catch (error) {
-    console.error('Failed to load sprites:', error)
-    spritesLoading = false
-  }
-}
 
 /**
  * Creates a bitmap renderer for a specific planet
  */
 export const createPlanetRenderer: PlanetRendererFactory = (
   planet: PlanetState,
-  store: GameRendererStore
+  store: GameRendererStore,
+  spriteService
 ): BitmapRenderer => {
   // Initialize walls for this planet
   store.dispatch(wallsActions.initWalls({ walls: planet.lines }))
@@ -67,9 +48,6 @@ export const createPlanetRenderer: PlanetRendererFactory = (
 
   // Initialize fuels with random animation states
   bunkerStore.dispatch(initializeFuels())
-
-  // Ensure sprites are loaded
-  void ensureSpritesLoaded()
 
   // Initialize viewport to planet's starting position
   // Note: bitmap dimensions are 512x342, but viewable area is 512x318 (VIEWHT)
@@ -214,9 +192,8 @@ export const createPlanetRenderer: PlanetRendererFactory = (
     // Copy rendered bitmap data back to original
     bitmap.data.set(renderedBitmap.data)
 
-    // Check if sprites are loaded before drawing bunkers
-    const bunkerState = bunkerStore.getState()
-    if (bunkerState.sprites.allSprites) {
+    // Draw bunkers and other sprites
+    {
       // Update bunker rotations for animated bunkers
       // Use planet center as a mock ship position for FOLLOW bunkers
       const globalx = currentScreen.screenx + bitmap.width / 2
@@ -226,15 +203,25 @@ export const createPlanetRenderer: PlanetRendererFactory = (
       // Get updated planet state with rotated bunkers
       const planetState = bunkerStore.getState().planet
 
-      // Draw bunkers
-      const bunkerSprites = bunkerState.sprites.allSprites.bunkers
-
       // Draw bunkers at normal position
       let bunkerBitmap = doBunks({
         bunkrec: planetState.bunkers,
         scrnx: currentScreen.screenx,
         scrny: currentScreen.screeny,
-        bunkerSprites: bunkerSprites
+        getSprite: (kind, rotation) => {
+          const def = spriteService.getBunkerSprite(kind, rotation, { variant: 'def' })
+          const mask = spriteService.getBunkerSprite(kind, rotation, { variant: 'mask' })
+          const bg1 = spriteService.getBunkerSprite(kind, rotation, { variant: 'background1' })
+          const bg2 = spriteService.getBunkerSprite(kind, rotation, { variant: 'background2' })
+          return {
+            def: def.uint8,
+            mask: mask.uint8,
+            images: {
+              background1: bg1.uint8,
+              background2: bg2.uint8
+            }
+          }
+        }
       })(bitmap)
 
       // If wrapping world and near right edge, draw wrapped bunkers
@@ -250,7 +237,20 @@ export const createPlanetRenderer: PlanetRendererFactory = (
           bunkrec: planetState.bunkers,
           scrnx: currentScreen.screenx - planet.worldwidth,
           scrny: currentScreen.screeny,
-          bunkerSprites: bunkerSprites
+          getSprite: (kind, rotation) => {
+            const def = spriteService.getBunkerSprite(kind, rotation, { variant: 'def' })
+            const mask = spriteService.getBunkerSprite(kind, rotation, { variant: 'mask' })
+            const bg1 = spriteService.getBunkerSprite(kind, rotation, { variant: 'background1' })
+            const bg2 = spriteService.getBunkerSprite(kind, rotation, { variant: 'background2' })
+            return {
+              def: def.uint8,
+              mask: mask.uint8,
+              images: {
+                background1: bg1.uint8,
+                background2: bg2.uint8
+              }
+            }
+          }
         })(bunkerBitmap) // Pass already-rendered bitmap
       }
 
@@ -263,15 +263,42 @@ export const createPlanetRenderer: PlanetRendererFactory = (
       // Get updated planet state with animated fuels
       const updatedPlanetState = bunkerStore.getState().planet
 
-      // Draw fuel cells
-      const fuelSprites = bunkerState.sprites.allSprites.fuels
-
       // Draw fuels at normal position
       let fuelBitmap = drawFuels({
         fuels: updatedPlanetState.fuels,
         scrnx: currentScreen.screenx,
         scrny: currentScreen.screeny,
-        fuelSprites: fuelSprites
+        fuelSprites: {
+          // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+          emptyCell: (() => {
+            const empty = spriteService.getFuelSprite(8, { variant: 'def' })
+            const emptyMask = spriteService.getFuelSprite(8, { variant: 'mask' })
+            const emptyBg1 = spriteService.getFuelSprite(8, { variant: 'background1' })
+            const emptyBg2 = spriteService.getFuelSprite(8, { variant: 'background2' })
+            return {
+              def: empty.uint8,
+              mask: emptyMask.uint8,
+              images: {
+                background1: emptyBg1.uint8,
+                background2: emptyBg2.uint8
+              }
+            }
+          })(),
+          getFrame: (index: number) => {
+            const def = spriteService.getFuelSprite(index, { variant: 'def' })
+            const mask = spriteService.getFuelSprite(index, { variant: 'mask' })
+            const bg1 = spriteService.getFuelSprite(index, { variant: 'background1' })
+            const bg2 = spriteService.getFuelSprite(index, { variant: 'background2' })
+            return {
+              def: def.uint8,
+              mask: mask.uint8,
+              images: {
+                background1: bg1.uint8,
+                background2: bg2.uint8
+              }
+            }
+          }
+        }
       })(bitmap)
 
       // If wrapping world and near right edge, draw wrapped fuels
@@ -280,7 +307,37 @@ export const createPlanetRenderer: PlanetRendererFactory = (
           fuels: updatedPlanetState.fuels,
           scrnx: currentScreen.screenx - planet.worldwidth,
           scrny: currentScreen.screeny,
-          fuelSprites: fuelSprites
+          fuelSprites: {
+            // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+          emptyCell: (() => {
+              const empty = spriteService.getFuelSprite(8, { variant: 'def' })
+              const emptyMask = spriteService.getFuelSprite(8, { variant: 'mask' })
+              const emptyBg1 = spriteService.getFuelSprite(8, { variant: 'background1' })
+              const emptyBg2 = spriteService.getFuelSprite(8, { variant: 'background2' })
+              return {
+                def: empty.uint8,
+                mask: emptyMask.uint8,
+                images: {
+                  background1: emptyBg1.uint8,
+                  background2: emptyBg2.uint8
+                }
+              }
+            })(),
+            getFrame: (index: number) => {
+              const def = spriteService.getFuelSprite(index, { variant: 'def' })
+              const mask = spriteService.getFuelSprite(index, { variant: 'mask' })
+              const bg1 = spriteService.getFuelSprite(index, { variant: 'background1' })
+              const bg2 = spriteService.getFuelSprite(index, { variant: 'background2' })
+              return {
+                def: def.uint8,
+                mask: mask.uint8,
+                images: {
+                  background1: bg1.uint8,
+                  background2: bg2.uint8
+                }
+              }
+            }
+          }
         })(fuelBitmap)
       }
 
@@ -288,8 +345,6 @@ export const createPlanetRenderer: PlanetRendererFactory = (
       bitmap.data.set(fuelBitmap.data)
 
       // Draw craters (world wrapping is handled internally by drawCraters)
-      const craterSprite = bunkerState.sprites.allSprites.crater
-
       const craterBitmap = drawCraters({
         craters: updatedPlanetState.craters,
         numcraters: updatedPlanetState.numcraters,
@@ -297,7 +352,10 @@ export const createPlanetRenderer: PlanetRendererFactory = (
         scrny: currentScreen.screeny,
         worldwidth: planet.worldwidth,
         on_right_side: onRightSide,
-        craterImages: craterSprite.images
+        craterImages: {
+          background1: spriteService.getCraterSprite({ variant: 'background1' }).uint8,
+          background2: spriteService.getCraterSprite({ variant: 'background2' }).uint8
+        }
       })(bitmap)
 
       // Copy crater bitmap data back to original

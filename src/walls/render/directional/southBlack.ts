@@ -7,7 +7,8 @@ import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
 import { drawNline } from '../lines/drawNline'
 import { findWAddress } from '../../../asm/assemblyMacros'
 import { LINE_DIR } from '../../../shared/types/line'
-import { getBackground } from '../getBackground'
+import { getAlignment } from '@/shared/alignment'
+import { getBackgroundPattern } from '@/shared/backgroundPattern'
 
 // Masks from orig/Sources/Walls.c:1141-1142
 const SOUTH_BLACK = 0xc0000000
@@ -91,9 +92,23 @@ export const southBlack =
     }
 
     // Calculate EOR patterns (lines 1188-1189)
-    const background = getBackground(scrx, scry)
-    const eor1 = (background[(x + y) & 1]! & SOUTH_MASK) ^ SOUTH_BLACK
-    const eor2 = (background[(x + y + 1) & 1]! & SOUTH_MASK) ^ SOUTH_BLACK
+    const align1 = getAlignment({
+      screenX: scrx,
+      screenY: scry,
+      objectX: x,
+      objectY: y
+    })
+    const pattern1 = getBackgroundPattern(align1)
+    const eor1 = (pattern1 & SOUTH_MASK) ^ SOUTH_BLACK
+
+    const align2 = getAlignment({
+      screenX: scrx,
+      screenY: scry,
+      objectX: x,
+      objectY: y + 1
+    })
+    const pattern2 = getBackgroundPattern(align2)
+    const eor2 = (pattern2 & SOUTH_MASK) ^ SOUTH_BLACK
 
     // Assembly drawing logic (lines 1191-1260)
     // Calculate screen address using FIND_WADDRESS macro

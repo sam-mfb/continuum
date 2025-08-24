@@ -1,11 +1,7 @@
 import type { FuelSprite, FuelSpriteSet } from './types'
-import {
-  FUELFRAMES,
-  FUEL_TOTAL_FRAMES,
-  FUELHT,
-  BACKGROUND1,
-  BACKGROUND2
-} from './types'
+import { FUELFRAMES, FUEL_TOTAL_FRAMES, FUELHT } from './types'
+import { getBackgroundPattern } from '@/shared/backgroundPattern'
+import type { Alignment } from '@/shared/alignment'
 
 // Create a fuel sprite set from extracted arrays
 export function createFuelSpriteSet(fuelArrays: FuelSprite[]): FuelSpriteSet {
@@ -19,8 +15,8 @@ export function createFuelSpriteSet(fuelArrays: FuelSprite[]): FuelSpriteSet {
       def: new Uint8Array(sprite.def),
       mask: new Uint8Array(sprite.mask),
       images: {
-        background1: applyFuelBackground(sprite.def, sprite.mask, BACKGROUND1),
-        background2: applyFuelBackground(sprite.def, sprite.mask, BACKGROUND2)
+        background1: applyFuelBackground(sprite.def, sprite.mask, 0),
+        background2: applyFuelBackground(sprite.def, sprite.mask, 1)
       }
     }
   }
@@ -34,16 +30,8 @@ export function createFuelSpriteSet(fuelArrays: FuelSprite[]): FuelSpriteSet {
     def: new Uint8Array(emptyCell.def),
     mask: new Uint8Array(emptyCell.mask),
     images: {
-      background1: applyFuelBackground(
-        emptyCell.def,
-        emptyCell.mask,
-        BACKGROUND1
-      ),
-      background2: applyFuelBackground(
-        emptyCell.def,
-        emptyCell.mask,
-        BACKGROUND2
-      )
+      background1: applyFuelBackground(emptyCell.def, emptyCell.mask, 0),
+      background2: applyFuelBackground(emptyCell.def, emptyCell.mask, 1)
     }
   }
 
@@ -64,7 +52,7 @@ export function createFuelSpriteSet(fuelArrays: FuelSprite[]): FuelSpriteSet {
 function applyFuelBackground(
   def: Uint8Array,
   mask: Uint8Array,
-  background: number
+  initialAlignment: 0 | 1
 ): Uint8Array {
   const result = new Uint8Array(def.length)
 
@@ -72,8 +60,10 @@ function applyFuelBackground(
   for (let row = 0; row < FUELHT; row++) {
     const rowOffset = row * 4
 
-    // Alternate background pattern by row
-    const bgPattern = row % 2 === 0 ? background : ~background
+    // Simply alternate patterns based on row parity and initial alignment
+    // This is NOT a position calculation, just picking alternating patterns
+    const rowAlign = (initialAlignment + row) % 2 === 0 ? 0 : 1
+    const bgPattern = getBackgroundPattern(rowAlign as Alignment)
 
     // Process 4 bytes per row
     for (let byte = 0; byte < 4; byte++) {

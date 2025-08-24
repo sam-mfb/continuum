@@ -4,6 +4,7 @@ import { FUELHT, FUELFRAMES } from '@/figs/types'
 import type { Fuel } from '../types'
 import { FUELCENTER } from '../constants'
 import { drawMedium } from './drawMedium'
+import { getAlignment } from '@/shared/alignment'
 
 /**
  * From draw_fuels() in orig/Sources/Terrain.c at 293-313
@@ -55,7 +56,12 @@ export function drawFuels(deps: {
         // Check if fuel is within vertical bounds (Terrain.c:306)
         if (fuely > -FUELHT && fuely < VIEWHT) {
           // Determine which background pattern to use (Terrain.c:308)
-          const rot = (fp.x + fp.y) & 1
+          const align = getAlignment({ 
+            x: fp.x, 
+            y: fp.y,
+            screenX: scrnx,
+            screenY: scrny
+          })
 
           // Get the appropriate fuel sprite based on currentfig
           // Just like the original: fuel_images[rot][fp->currentfig]
@@ -73,7 +79,7 @@ export function drawFuels(deps: {
             width: 32,
             height: FUELHT,
             data:
-              rot === 0
+              align === 0
                 ? fuelSprite.images.background1
                 : fuelSprite.images.background2,
             rowBytes: 4 // 32 pixels / 8 bits per byte

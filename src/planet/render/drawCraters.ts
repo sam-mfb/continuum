@@ -4,6 +4,7 @@ import { CRATERHT } from '@/figs/types'
 import type { Crater } from '../types'
 import { CRATERCENTER } from '../constants'
 import { drawMedium } from './drawMedium'
+import { getAlignment } from '@/shared/alignment'
 
 /**
  * From draw_craters() in orig/Sources/Terrain.c at 507-527
@@ -57,14 +58,19 @@ export function drawCraters(deps: {
         // Check if crater is within horizontal bounds (Terrain.c:519)
         if (crat.x >= left && crat.x < right) {
           // Determine which background pattern to use (Terrain.c:522)
-          const rot = (crat.x + crat.y) & 1
+          const align = getAlignment({ 
+            x: crat.x, 
+            y: crat.y,
+            screenX: scrnx,
+            screenY: scrny
+          })
 
           // Convert to MonochromeBitmap with appropriate background
           const craterImage: MonochromeBitmap = {
             width: 32,
             height: CRATERHT,
             data:
-              rot === 0 ? craterImages.background1 : craterImages.background2,
+              align === 0 ? craterImages.background1 : craterImages.background2,
             rowBytes: 4 // 32 pixels / 8 bits per byte
           }
 
@@ -79,14 +85,19 @@ export function drawCraters(deps: {
         // Handle world wrapping (Terrain.c:523-526)
         else if (on_right_side && crat.x < right - worldwidth) {
           // Determine which background pattern to use
-          const rot = (crat.x + crat.y) & 1
+          const align = getAlignment({ 
+            x: crat.x, 
+            y: crat.y,
+            screenX: scrnx,
+            screenY: scrny
+          })
 
           // Convert to MonochromeBitmap with appropriate background
           const craterImage: MonochromeBitmap = {
             width: 32,
             height: CRATERHT,
             data:
-              rot === 0 ? craterImages.background1 : craterImages.background2,
+              align === 0 ? craterImages.background1 : craterImages.background2,
             rowBytes: 4 // 32 pixels / 8 bits per byte
           }
 

@@ -181,7 +181,7 @@ export function getLife(
         const m2 = idiv(shot.v << 8, shot.h)
 
         // Avoid division by zero
-        if ((m1 << 7) === m2) continue
+        if (m1 << 7 === m2) continue
 
         // Calculate intersection x coordinate (in 8x fixed point)
         // Using integer arithmetic throughout

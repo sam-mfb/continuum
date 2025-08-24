@@ -1,10 +1,16 @@
 import { cloneBitmap, type MonochromeBitmap } from '@/bitmap'
 import { SBARHT, SCRWTH, VIEWHT } from '@/screen/constants'
-import { BUNKHT, BUNKROTKINDS, type BunkerSpriteSet } from '@/figs/types'
+import {
+  BUNKHT,
+  BUNKROTKINDS,
+  type BunkerSprite,
+  type BunkerKind
+} from '@/figs/types'
 import { build68kArch } from '@/asm/emulator'
 import { jsrWAddress } from '@/asm/assemblyMacros'
 import type { Bunker } from '../types'
 import { xbcenter, ybcenter } from '../constants'
+import { getAlignment } from '@/shared/alignment'
 
 /**
  * From do_bunks() in orig/Sources/Bunkers.c at 213-245
@@ -16,10 +22,10 @@ export function doBunks(deps: {
   readonly bunkrec: readonly Bunker[]
   scrnx: number
   scrny: number
-  bunkerSprites: BunkerSpriteSet
+  getSprite: (kind: BunkerKind, rotation: number) => BunkerSprite
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
-    const { bunkrec, scrnx, scrny, bunkerSprites } = deps
+    const { bunkrec, scrnx, scrny, getSprite } = deps
 
     let newScreen = cloneBitmap(screen)
 
@@ -44,12 +50,17 @@ export function doBunks(deps: {
           const bunkx = bp.x - scrnx - xcenter
 
           // Get the bunker sprite
-          const bunkerSprite = bunkerSprites.getSprite(bp.kind, bp.rot)
+          const bunkerSprite = getSprite(bp.kind, bp.rot)
 
           // Determine which drawing function to use
           if (bp.kind >= BUNKROTKINDS || bp.rot <= 1 || bp.rot >= 9) {
             // Use XOR drawing for rotating bunkers or up/down facing bunkers
-            const align = (bp.x + bp.y + xcenter + ycenter) & 1
+            const align = getAlignment({ 
+              x: bp.x + xcenter, 
+              y: bp.y + ycenter,
+              screenX: scrnx,
+              screenY: scrny
+            })
 
             // Convert Uint8Array to MonochromeBitmap with pre-computed background
             const image: MonochromeBitmap = {

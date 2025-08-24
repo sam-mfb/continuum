@@ -30,5 +30,5 @@ export type GalaxyHeader = {
   /** Planet number for demo/intro sequence (original: int cartplanet) */
   cartplanet: number
   /** Planet index array for file positioning (original: char indexes[150]) */
-  indexes: Uint8Array
+  indexes: number[]
 }
