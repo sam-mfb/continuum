@@ -42,7 +42,7 @@ const state: TransitionState = {
 const SHIP_X = SCRWTH / 2
 const SHIP_Y = VIEWHT / 2
 
-const DELAY_FRAMES = 20 // 2 seconds at 20 FPS
+const DELAY_FRAMES = 40 // 2 seconds at 20 FPS
 const FIZZ_DURATION = 60
 
 /**

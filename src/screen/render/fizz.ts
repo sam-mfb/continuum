@@ -66,7 +66,7 @@ export function fizz(deps: {
 
         // Process multiple scanlines for this bit position
         for (let line = 0; line < linesToProcess; line++) {
-          const offset = SBARSIZE + byteOffset + line * 2048 // 2048 = bytes between same position on different lines
+          const offset = SBARSIZE + byteOffset + line * 2038 // 2038 = 2048-10, from original
 
           if (offset + 1 < from.data.length && offset + 1 < to.data.length) {
             // Read word (2 bytes) from source
@@ -204,7 +204,7 @@ export function createFizzTransition(deps: {
     // Process multiple scanlines for this bit position
     for (let line = 0; line < linesToProcess; line++) {
       // Calculate the actual byte offset in the bitmap
-      const offset = SBARSIZE + byteOffset + line * 2048 // 2048 = bytes between same position on different lines
+      const offset = SBARSIZE + byteOffset + line * 2038 // 2038 = 2048-10, from original
       
       // Make sure we're within bounds
       if (offset + 1 < to.data.length && offset + 1 < workingBitmap.data.length) {
