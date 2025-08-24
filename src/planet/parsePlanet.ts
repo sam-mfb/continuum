@@ -17,7 +17,7 @@ import { generateLineId } from '@/shared/types/line'
 
 export function parsePlanet(
   planetsBuffer: ArrayBuffer,
-  planetIndex: Uint8Array,
+  planetIndex: number[],
   planet: number
 ): PlanetState {
   const planetByteSize = 1540
