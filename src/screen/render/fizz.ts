@@ -109,3 +109,187 @@ export function fizz(deps: {
     return to
   }
 }
+
+/**
+ * Progressive fizz transition object that maintains state across frames
+ */
+export type FizzTransition = {
+  /** Generate the next frame of the transition */
+  nextFrame(): MonochromeBitmap
+  
+  /** Current progress (0.0 = just started, 1.0 = complete) */
+  readonly progress: number
+  
+  /** Whether all frames have been generated */
+  readonly isComplete: boolean
+  
+  /** Reset to beginning (for reusability) */
+  reset(): void
+}
+
+/**
+ * Creates a progressive fizz transition that can be rendered over multiple frames.
+ * 
+ * This implementation maintains LFSR state between calls, allowing the fizz
+ * effect to be spread over a specified number of frames for smooth animation.
+ * 
+ * @param deps Dependencies object containing:
+ *   @param from - Source bitmap to transition from
+ *   @param to - Target bitmap to transition to
+ *   @param durationFrames - Number of intermediate frames (0 = instant, 1 = very fast)
+ *   @param seed - Optional LFSR seed (default: 4357 from original)
+ * @returns FizzTransition object with nextFrame() method
+ * 
+ * @example
+ * ```typescript
+ * const transition = createFizzTransition({
+ *   from: grayScreen,
+ *   to: starBackground,
+ *   durationFrames: 40  // 2 seconds at 20 FPS
+ * })
+ * 
+ * // In render loop:
+ * const frame = transition.nextFrame()
+ * bitmap.data.set(frame.data)
+ * if (transition.isComplete) {
+ *   // Transition finished
+ * }
+ * ```
+ */
+export function createFizzTransition(deps: {
+  from: MonochromeBitmap
+  to: MonochromeBitmap
+  durationFrames: number
+  seed?: number
+}): FizzTransition {
+  const { from, to, durationFrames, seed = 4357 } = deps
+  
+  // Handle instant transition
+  if (durationFrames === 0) {
+    return {
+      nextFrame: (): MonochromeBitmap => cloneBitmap(to),
+      progress: 1.0,
+      isComplete: true,
+      reset: (): void => {} // No-op for instant transition
+    }
+  }
+  
+  // Calculate how many LFSR iterations per frame
+  // The LFSR has 8192 possible values, we want to spread them across durationFrames
+  const seedsPerFrame = Math.floor(8192 / durationFrames)
+  
+  // Internal state
+  let currentSeed = seed
+  let workingBitmap = cloneBitmap(from) // Start with "from" and reveal "to"
+  let framesGenerated = 0
+  
+  // Process multiple scanlines for a given LFSR seed position
+  // This exactly mimics the original's byte-offset based approach
+  const processSeedPosition = (s: number): number => {
+    // Seeds >= 8152 (8192-40) are skipped in original
+    if (s >= 8152) return 0
+    
+    // Process 10 scanlines for most positions, 9 for edge cases
+    const linesToProcess = s < 8040 ? 10 : 9
+    
+    // Convert seed to byte offset and bit position - EXACTLY like original
+    const byteOffset = (s >> 3) << 1 // Divide by 8, multiply by 2 for word alignment
+    const bitPosition = s & 7
+    
+    // Create bit mask for the specific bit
+    const bitMask = 0x8080 >> bitPosition
+    
+    let pixelsProcessed = 0
+    
+    // Process multiple scanlines for this bit position
+    for (let line = 0; line < linesToProcess; line++) {
+      // Calculate the actual byte offset in the bitmap
+      const offset = SBARSIZE + byteOffset + line * 2048 // 2048 = bytes between same position on different lines
+      
+      // Make sure we're within bounds
+      if (offset + 1 < to.data.length && offset + 1 < workingBitmap.data.length) {
+        // Read word (2 bytes) from "to" bitmap
+        const toWord = (to.data[offset]! << 8) | to.data[offset + 1]!
+        
+        // Extract the specific bit from source
+        const bitValue = toWord & bitMask
+        
+        // Read current word from working bitmap
+        const workingWord = (workingBitmap.data[offset]! << 8) | workingBitmap.data[offset + 1]!
+        
+        // Clear the bit in working bitmap and set it from "to"
+        const notMask = ~bitMask & 0xffff
+        const newWord = (workingWord & notMask) | bitValue
+        
+        // Write back to working bitmap
+        workingBitmap.data[offset] = (newWord >> 8) & 0xff
+        workingBitmap.data[offset + 1] = newWord & 0xff
+        
+        pixelsProcessed++
+      }
+    }
+    
+    return pixelsProcessed
+  }
+  
+  // Advance LFSR to next value
+  const advanceLFSR = (): void => {
+    currentSeed = currentSeed << 1
+    
+    // Check bit 13 for feedback
+    if (currentSeed & (1 << 13)) {
+      // Apply XOR mask
+      currentSeed ^= 4287
+    }
+    
+    // Keep within 13-bit range
+    currentSeed &= 0x1fff
+  }
+  
+  const nextFrame = (): MonochromeBitmap => {
+    if (framesGenerated >= durationFrames) {
+      // Already complete, return final state
+      return cloneBitmap(to)
+    }
+    
+    // Process seeds for this frame
+    let seedsThisFrame = 0
+    
+    while (seedsThisFrame < seedsPerFrame) {
+      // Process the position(s) for current seed
+      processSeedPosition(currentSeed)
+      seedsThisFrame++
+      
+      // Always advance LFSR
+      advanceLFSR()
+      
+      // If we've cycled back to start, we're done
+      if (currentSeed === seed) {
+        framesGenerated = durationFrames // Force completion
+        return cloneBitmap(to)
+      }
+    }
+    
+    framesGenerated++
+    
+    // Return a clone to maintain immutability
+    return cloneBitmap(workingBitmap)
+  }
+  
+  const reset = (): void => {
+    currentSeed = seed
+    workingBitmap = cloneBitmap(from)
+    framesGenerated = 0
+  }
+  
+  return {
+    nextFrame,
+    get progress(): number {
+      return Math.min(1.0, framesGenerated / durationFrames)
+    },
+    get isComplete(): boolean {
+      return framesGenerated >= durationFrames
+    },
+    reset
+  }
+}
