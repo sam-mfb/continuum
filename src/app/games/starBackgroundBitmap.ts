@@ -43,7 +43,7 @@ const SHIP_X = SCRWTH / 2
 const SHIP_Y = VIEWHT / 2
 
 const DELAY_FRAMES = 40 // 2 seconds at 20 FPS
-const FIZZ_DURATION = 60
+const FIZZ_DURATION = 26 // based on measurements of fizz time on a Mac Plus
 
 /**
  * Factory function to create bitmap renderer for star background demo
