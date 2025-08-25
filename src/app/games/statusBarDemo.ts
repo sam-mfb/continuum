@@ -122,19 +122,25 @@ export const createStatusBarDemo =
     let screen = viewClear({ screenX: 0, screenY: 0 })(cloneBitmap(bitmap))
 
     // Use newSbar to draw the complete status bar
+    // For the demo, show typed text as a message, or show fuel status
+    let message: string | null = null
+    if (state.typedText) {
+      message = state.typedText
+    } else if (state.fuel < 20) {
+      message = 'FUEL CRITICAL'
+    } else if (state.fuel === 0) {
+      message = 'OUT OF FUEL'
+    }
+    
     screen = newSbar({
       lives: state.ships,
-      message: state.typedText || null,
+      message,
       level: state.level,
       score: state.score,
       fuel: state.fuel,
       bonus: state.bonus,
       spriteService
     })(screen)
-    
-    // If there's typed text, we need to update the message area
-    // The newSbar already handles this, but we could also use writeMessage
-    // separately if we wanted incremental updates
 
     // Copy result back to bitmap
     bitmap.data.set(screen.data)

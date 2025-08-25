@@ -46,8 +46,8 @@ export function writeStr(deps: {
     for (const char of text) {
       const upperChar = char.toUpperCase()
 
-      // Only process A-Z characters (like the original)
-      // if (c >= 'A' && c <= 'Z')
+      // Process A-Z characters and spaces
+      // The original only handles A-Z, but we'll add space for better usability
       if (upperChar >= 'A' && upperChar <= 'Z') {
         const digitSprite = spriteService.getDigitSprite(upperChar)
 
@@ -61,9 +61,23 @@ export function writeStr(deps: {
         }
 
         currentX += 8 // Move to next character position
+      } else if (char === ' ') {
+        // Handle space character
+        const spaceSprite = spriteService.getDigitSprite(' ')
+        
+        if (spaceSprite) {
+          result = drawDigit({
+            x: currentX,
+            y,
+            digitSprite: spaceSprite.bitmap,
+            statusBarTemplate
+          })(result)
+        }
+        
+        currentX += 8 // Move to next character position
       }
-      // Non-alphabetic characters are skipped (no x increment)
-      // This matches the original behavior
+      // Other non-alphabetic characters are skipped (no x increment)
+      // This mostly matches the original behavior but adds space support
     }
 
     return result
