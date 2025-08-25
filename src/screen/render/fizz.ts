@@ -182,6 +182,7 @@ export function createFizzTransition(deps: {
   let currentSeed = seed
   let workingBitmap = cloneBitmap(from) // Start with "from" and reveal "to"
   let framesGenerated = 0
+  let firstIteration = true // Track if this is the first LFSR iteration
 
   // Process multiple scanlines for a given LFSR seed position
   // This exactly mimics the original's byte-offset based approach
@@ -260,18 +261,19 @@ export function createFizzTransition(deps: {
     let seedsThisFrame = 0
 
     while (seedsThisFrame < seedsPerFrame) {
+      // If we've cycled back to start (but not on first iteration), we're done
+      if (!firstIteration && currentSeed === seed) {
+        framesGenerated = durationFrames // Force completion
+        return cloneBitmap(to)
+      }
+      
       // Process the position(s) for current seed
       processSeedPosition(currentSeed)
       seedsThisFrame++
 
       // Always advance LFSR
       advanceLFSR()
-
-      // If we've cycled back to start, we're done
-      if (currentSeed === seed) {
-        framesGenerated = durationFrames // Force completion
-        return cloneBitmap(to)
-      }
+      firstIteration = false
     }
 
     framesGenerated++
@@ -284,6 +286,7 @@ export function createFizzTransition(deps: {
     currentSeed = seed
     workingBitmap = cloneBitmap(from)
     framesGenerated = 0
+    firstIteration = true
   }
 
   return {
