@@ -11,6 +11,7 @@
 import { extractAllSprites } from '@/figs'
 import { BunkerKind } from '@/figs/types'
 import type { AllSprites } from '@/figs/types'
+import { createMonochromeBitmap } from '@/bitmap'
 import type { MonochromeBitmap } from '@/bitmap/types'
 
 // Sprite variants - explicit background selection
@@ -52,6 +53,9 @@ export type SpriteServiceV2 = {
   getFlameSprite(frame: number): SpriteData
   getStrafeSprite(rotation: number): SpriteData
   getDigitSprite(char: string): SpriteData | null
+  
+  // Status bar template
+  getStatusBarTemplate(): MonochromeBitmap
 }
 
 // Helper function to convert Uint8Array to Uint16Array (big-endian)
@@ -101,6 +105,7 @@ type PrecomputedStorage = {
   flame: Map<number, SpriteData> // key: frame
   strafe: Map<number, SpriteData> // key: rotation
   digit: Map<string, SpriteData> // key: character
+  statusBarTemplate: MonochromeBitmap // The clean status bar template
 }
 
 /**
@@ -115,9 +120,27 @@ export async function createSpriteServiceV2(): Promise<SpriteServiceV2> {
 
   const arrayBuffer = await response.arrayBuffer()
   const allSprites = extractAllSprites(arrayBuffer)
+  
+  // Load status bar template
+  const statusBarResponse = await fetch('/src/assets/graphics/rsrc_259.bin')
+  if (!statusBarResponse.ok) {
+    throw new Error('Failed to load status bar resource')
+  }
+  
+  const statusBarBuffer = await statusBarResponse.arrayBuffer()
+  
+  // Import expandTitlePage for decompression
+  const { expandTitlePage } = await import('@/art/utils')
+  
+  // Decompress status bar (24 rows as per SBARHT)
+  const statusBarData = expandTitlePage(statusBarBuffer, 24)
+  
+  // Convert to MonochromeBitmap (512 pixels wide, 24 pixels tall)
+  const statusBarTemplate = createMonochromeBitmap(512, 24)
+  statusBarTemplate.data.set(statusBarData)
 
   // Pre-compute all sprite data at initialization
-  const storage = precomputeAllSprites(allSprites)
+  const storage = precomputeAllSprites(allSprites, statusBarTemplate)
 
   // Return the service implementation
   return {
@@ -203,6 +226,10 @@ export async function createSpriteServiceV2(): Promise<SpriteServiceV2> {
 
     getDigitSprite(char: string): SpriteData | null {
       return storage.digit.get(char) || null
+    },
+    
+    getStatusBarTemplate(): MonochromeBitmap {
+      return storage.statusBarTemplate
     }
   }
 }
@@ -210,7 +237,7 @@ export async function createSpriteServiceV2(): Promise<SpriteServiceV2> {
 /**
  * Pre-compute all sprite data for performance
  */
-function precomputeAllSprites(allSprites: AllSprites): PrecomputedStorage {
+function precomputeAllSprites(allSprites: AllSprites, statusBarTemplate: MonochromeBitmap): PrecomputedStorage {
   const storage: PrecomputedStorage = {
     ship: new Map(),
     bunker: new Map(),
@@ -220,7 +247,8 @@ function precomputeAllSprites(allSprites: AllSprites): PrecomputedStorage {
     shield: precomputeFormats(allSprites.shield.def, 32, 22), // Shield is 32x22
     flame: new Map(),
     strafe: new Map(),
-    digit: new Map()
+    digit: new Map(),
+    statusBarTemplate
   }
 
   // Pre-compute ship sprites (32 rotations, def and mask variants)
