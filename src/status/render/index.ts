@@ -18,3 +18,7 @@ export { writeBonus } from './writeBonus'
 export { writeLives } from './writeLives'
 export { writeLevel } from './writeLevel'
 export { writeMessage } from './writeMessage'
+
+// Complete functions
+export { newSbar } from './newSbar'
+export { updateSbar } from './updateSbar'
