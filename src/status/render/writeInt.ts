@@ -12,7 +12,7 @@ import type { SpriteServiceV2 } from '@/sprites/service'
 
 /**
  * Writes an integer right-aligned at the specified position.
- * 
+ *
  * The original assembly code processes digits from right to left,
  * writing each digit and then clearing the leftmost position with
  * a space to handle shrinking numbers (e.g., 100 -> 99).
@@ -35,17 +35,17 @@ export function writeInt(deps: {
   return screen => {
     const { x, y, value, spriteService } = deps
     const statusBarTemplate = spriteService.getStatusBarTemplate()
-    
+
     let result = screen
     let n = Math.abs(value) // Handle negative numbers
     let currentX = x
-    
+
     // The original processes digits right to left using divs/swap instructions
     // We'll do the same - extract digits and draw from right to left
     do {
       const digit = n % 10
       const digitSprite = spriteService.getDigitSprite(digit.toString())
-      
+
       if (digitSprite) {
         result = drawDigit({
           x: currentX,
@@ -54,11 +54,11 @@ export function writeInt(deps: {
           statusBarTemplate
         })(result)
       }
-      
+
       n = Math.floor(n / 10)
       currentX -= 8
     } while (n > 0 && currentX >= 0)
-    
+
     // Clear the leftmost position with SPACECHAR (like the original)
     // This handles cases where the number shrinks (e.g., 100 -> 99)
     const spaceSprite = spriteService.getDigitSprite(' ')
@@ -70,7 +70,7 @@ export function writeInt(deps: {
         statusBarTemplate
       })(result)
     }
-    
+
     return result
   }
 }

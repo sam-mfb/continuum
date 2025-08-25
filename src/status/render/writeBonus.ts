@@ -12,7 +12,7 @@ import type { SpriteServiceV2 } from '@/sprites/service'
 
 /**
  * Writes the planet bonus value at its fixed position on the status bar.
- * 
+ *
  * The original game writes bonus at x=384, y=12.
  *
  * @param deps Dependencies object containing:
@@ -28,7 +28,7 @@ export function writeBonus(deps: {
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
     const { bonus, spriteService } = deps
-    
+
     // Use writeInt at the fixed bonus position
     return writeInt({
       x: BONUS_X,

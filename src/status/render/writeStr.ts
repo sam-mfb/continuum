@@ -11,7 +11,7 @@ import type { SpriteServiceV2 } from '@/sprites/service'
 
 /**
  * Writes a text string on the status bar.
- * 
+ *
  * The original only handles uppercase A-Z characters, converting
  * them to digit indices (A = ACHAR = 10, B = 11, etc.).
  * Non-alphabetic characters are skipped.
@@ -34,23 +34,23 @@ export function writeStr(deps: {
   return screen => {
     const { x, y, text, spriteService } = deps
     const statusBarTemplate = spriteService.getStatusBarTemplate()
-    
+
     if (!text) {
       return screen // Original returns early for null message
     }
-    
+
     let result = screen
     let currentX = x
-    
+
     // Process each character in the string
     for (const char of text) {
       const upperChar = char.toUpperCase()
-      
+
       // Only process A-Z characters (like the original)
       // if (c >= 'A' && c <= 'Z')
       if (upperChar >= 'A' && upperChar <= 'Z') {
         const digitSprite = spriteService.getDigitSprite(upperChar)
-        
+
         if (digitSprite) {
           result = drawDigit({
             x: currentX,
@@ -59,13 +59,13 @@ export function writeStr(deps: {
             statusBarTemplate
           })(result)
         }
-        
+
         currentX += 8 // Move to next character position
       }
       // Non-alphabetic characters are skipped (no x increment)
       // This matches the original behavior
     }
-    
+
     return result
   }
 }

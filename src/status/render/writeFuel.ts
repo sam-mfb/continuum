@@ -12,7 +12,7 @@ import type { SpriteServiceV2 } from '@/sprites/service'
 
 /**
  * Writes the fuel value at its fixed position on the status bar.
- * 
+ *
  * The original game writes fuel at x=296, y=12 during update_sbar().
  *
  * @param deps Dependencies object containing:
@@ -28,7 +28,7 @@ export function writeFuel(deps: {
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
     const { fuel, spriteService } = deps
-    
+
     // Use writeInt at the fixed fuel position
     return writeInt({
       x: FUEL_X,

@@ -53,7 +53,7 @@ export type SpriteServiceV2 = {
   getFlameSprite(frame: number): SpriteData
   getStrafeSprite(rotation: number): SpriteData
   getDigitSprite(char: string): SpriteData | null
-  
+
   // Status bar template
   getStatusBarTemplate(): MonochromeBitmap
 }
@@ -120,21 +120,21 @@ export async function createSpriteServiceV2(): Promise<SpriteServiceV2> {
 
   const arrayBuffer = await response.arrayBuffer()
   const allSprites = extractAllSprites(arrayBuffer)
-  
+
   // Load status bar template
   const statusBarResponse = await fetch('/src/assets/graphics/rsrc_259.bin')
   if (!statusBarResponse.ok) {
     throw new Error('Failed to load status bar resource')
   }
-  
+
   const statusBarBuffer = await statusBarResponse.arrayBuffer()
-  
+
   // Import expandTitlePage for decompression
   const { expandTitlePage } = await import('@/art/utils')
-  
+
   // Decompress status bar (24 rows as per SBARHT)
   const statusBarData = expandTitlePage(statusBarBuffer, 24)
-  
+
   // Convert to MonochromeBitmap (512 pixels wide, 24 pixels tall)
   const statusBarTemplate = createMonochromeBitmap(512, 24)
   statusBarTemplate.data.set(statusBarData)
@@ -227,7 +227,7 @@ export async function createSpriteServiceV2(): Promise<SpriteServiceV2> {
     getDigitSprite(char: string): SpriteData | null {
       return storage.digit.get(char) || null
     },
-    
+
     getStatusBarTemplate(): MonochromeBitmap {
       return storage.statusBarTemplate
     }
@@ -237,7 +237,10 @@ export async function createSpriteServiceV2(): Promise<SpriteServiceV2> {
 /**
  * Pre-compute all sprite data for performance
  */
-function precomputeAllSprites(allSprites: AllSprites, statusBarTemplate: MonochromeBitmap): PrecomputedStorage {
+function precomputeAllSprites(
+  allSprites: AllSprites,
+  statusBarTemplate: MonochromeBitmap
+): PrecomputedStorage {
   const storage: PrecomputedStorage = {
     ship: new Map(),
     bunker: new Map(),
@@ -386,7 +389,7 @@ function precomputeAllSprites(allSprites: AllSprites, statusBarTemplate: Monochr
       storage.digit.set(char, precomputeFormats(digitData, 8, 9))
     }
   }
-  
+
   // Letters A-Z
   for (let i = 0; i < 26; i++) {
     const char = String.fromCharCode('A'.charCodeAt(0) + i)
@@ -395,13 +398,13 @@ function precomputeAllSprites(allSprites: AllSprites, statusBarTemplate: Monochr
       storage.digit.set(char, precomputeFormats(digitData, 8, 9))
     }
   }
-  
+
   // Special characters
   const shipData = allSprites.digits.getCharacter('SHIP')
   if (shipData) {
     storage.digit.set('SHIP', precomputeFormats(shipData, 8, 9))
   }
-  
+
   const spaceData = allSprites.digits.getCharacter(' ')
   if (spaceData) {
     storage.digit.set(' ', precomputeFormats(spaceData, 8, 9))

@@ -17,7 +17,7 @@ import type { SpriteServiceV2 } from '@/sprites/service'
 
 /**
  * Performs a complete redraw of the status bar.
- * 
+ *
  * The original clears the status bar then writes all fields:
  * - Ship lives icons
  * - Current message (if any)
@@ -25,7 +25,7 @@ import type { SpriteServiceV2 } from '@/sprites/service'
  * - Score
  * - Fuel
  * - Bonus
- * 
+ *
  * This is called when major changes occur like new ship, level change,
  * or status message changes.
  *
@@ -53,31 +53,31 @@ export function newSbar(deps: {
   return screen => {
     const { lives, message, level, score, fuel, bonus, spriteService } = deps
     const statusBarTemplate = spriteService.getStatusBarTemplate()
-    
+
     // Start with a clean status bar
     let result = sbarClear({ statusBarTemplate })(screen)
-    
+
     // Draw ship lives (top row, left side)
     result = writeLives({ lives, spriteService })(result)
-    
+
     // Draw current message (bottom row, left side)
     result = writeMessage({ message, spriteService })(result)
-    
+
     // Draw level (bottom row, right side)
     result = writeLevel({ level, spriteService })(result)
-    
+
     // The original calls score_plus(0), fuel_minus(0), and write_bonus()
     // to write these values after the main loop
-    
+
     // Draw score (bottom row, variable position)
     result = writeScore({ score, spriteService })(result)
-    
+
     // Draw fuel (bottom row, middle)
     result = writeFuel({ fuel, spriteService })(result)
-    
+
     // Draw bonus (bottom row, middle-right)
     result = writeBonus({ bonus, spriteService })(result)
-    
+
     return result
   }
 }

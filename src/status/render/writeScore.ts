@@ -12,7 +12,7 @@ import type { SpriteServiceV2 } from '@/sprites/service'
 
 /**
  * Writes the score value at a position that varies based on magnitude.
- * 
+ *
  * The original adjusts the x position based on whether the score
  * is less than 1,000,000 (x=216) or greater (x=224).
  *
@@ -29,10 +29,10 @@ export function writeScore(deps: {
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
     const { score, spriteService } = deps
-    
+
     // Determine x position based on score magnitude
     const x = score < 1000000 ? SCORE_X_NORMAL : SCORE_X_LARGE
-    
+
     // Use writeLong at the calculated position
     return writeLong({
       x,

@@ -31,5 +31,5 @@ export const LEVEL_Y = 12
 
 // Score position varies based on value (from score_plus in Play.c:997)
 export const SCORE_Y = 12
-export const SCORE_X_NORMAL = 216  // For scores < 1,000,000
-export const SCORE_X_LARGE = 224   // For scores >= 1,000,000
+export const SCORE_X_NORMAL = 216 // For scores < 1,000,000
+export const SCORE_X_LARGE = 224 // For scores >= 1,000,000

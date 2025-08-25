@@ -11,7 +11,7 @@ import { SBARSIZE } from '@/screen/constants'
 
 /**
  * Restores the status bar from a clean template.
- * 
+ *
  * This function is called before updating status bar content to reset it
  * to a clean state. The template contains the background pattern/graphics
  * for the status bar area.
@@ -45,11 +45,11 @@ export function sbarClear(deps: {
 
     // Copy the status bar area from template to screen
     const bytesToCopy = Math.min(SBARSIZE, statusBarTemplate.data.length)
-    
+
     for (let i = 0; i < bytesToCopy && i < newScreen.data.length; i++) {
       newScreen.data[i] = statusBarTemplate.data[i]!
     }
-    
+
     return newScreen
   }
 }
@@ -58,23 +58,24 @@ export function sbarClear(deps: {
  * Optimized version using typed array set() for better performance
  */
 export function sbarClearOptimized(deps: {
-  statusBarTemplate: MonochromeBitmap  
+  statusBarTemplate: MonochromeBitmap
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
     const { statusBarTemplate } = deps
     const newScreen = cloneBitmap(screen)
 
     // Use set() for more efficient bulk copy
-    const bytesToCopy = Math.min(SBARSIZE, statusBarTemplate.data.length, newScreen.data.length)
-    
+    const bytesToCopy = Math.min(
+      SBARSIZE,
+      statusBarTemplate.data.length,
+      newScreen.data.length
+    )
+
     if (bytesToCopy > 0) {
       // Copy the entire status bar area at once
-      newScreen.data.set(
-        statusBarTemplate.data.subarray(0, bytesToCopy),
-        0
-      )
+      newScreen.data.set(statusBarTemplate.data.subarray(0, bytesToCopy), 0)
     }
-    
+
     return newScreen
   }
 }

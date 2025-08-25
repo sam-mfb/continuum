@@ -11,7 +11,7 @@ import type { SpriteServiceV2 } from '@/sprites/service'
 
 /**
  * Writes a long integer right-aligned at the specified position.
- * 
+ *
  * Similar to writeInt but handles larger numbers. The original
  * uses a do-while loop to process digits from right to left.
  *
@@ -33,17 +33,17 @@ export function writeLong(deps: {
   return screen => {
     const { x, y, value, spriteService } = deps
     const statusBarTemplate = spriteService.getStatusBarTemplate()
-    
+
     let result = screen
     let n = Math.abs(value) // Handle negative numbers
     let currentX = x
-    
+
     // Process digits from right to left (same as writeInt)
     // The original uses a do-while loop
     do {
       const digit = n % 10
       const digitSprite = spriteService.getDigitSprite(digit.toString())
-      
+
       if (digitSprite) {
         result = drawDigit({
           x: currentX,
@@ -52,11 +52,11 @@ export function writeLong(deps: {
           statusBarTemplate
         })(result)
       }
-      
+
       n = Math.floor(n / 10)
       currentX -= 8
     } while (n > 0 && currentX >= 0)
-    
+
     // Clear extra digit position with SPACECHAR
     const spaceSprite = spriteService.getDigitSprite(' ')
     if (spaceSprite && currentX >= 0) {
@@ -67,7 +67,7 @@ export function writeLong(deps: {
         statusBarTemplate
       })(result)
     }
-    
+
     return result
   }
 }

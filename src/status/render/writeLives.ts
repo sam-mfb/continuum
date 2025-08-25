@@ -12,7 +12,7 @@ import type { SpriteServiceV2 } from '@/sprites/service'
 
 /**
  * Draws ship icons to represent the number of remaining lives.
- * 
+ *
  * The original draws SHIPCHAR sprites starting at x=8, y=0,
  * spaced 8 pixels apart.
  *
@@ -30,14 +30,14 @@ export function writeLives(deps: {
   return screen => {
     const { lives, spriteService } = deps
     const statusBarTemplate = spriteService.getStatusBarTemplate()
-    
+
     let result = screen
     let pos = LIVES_START_X
-    
+
     // Draw ship icons for each life
     // Original: for(i=0, pos=8; i < numships && pos < 150; i++, pos+=8)
     const shipSprite = spriteService.getDigitSprite('SHIP')
-    
+
     if (shipSprite) {
       for (let i = 0; i < lives && pos < 150; i++, pos += LIVES_SPACING) {
         result = drawDigit({
@@ -48,7 +48,7 @@ export function writeLives(deps: {
         })(result)
       }
     }
-    
+
     return result
   }
 }

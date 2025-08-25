@@ -12,7 +12,7 @@ import type { SpriteServiceV2 } from '@/sprites/service'
 
 /**
  * Writes a text message at the message area of the status bar.
- * 
+ *
  * The original displays messages like "FUEL CRITICAL", "OUT OF FUEL",
  * "MISSION COMPLETE", and "AUTOPILOT" at x=8, y=12.
  *
@@ -29,12 +29,12 @@ export function writeMessage(deps: {
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
     const { message, spriteService } = deps
-    
+
     // If no message, return screen unchanged
     if (!message) {
       return screen
     }
-    
+
     // Use writeStr at the fixed message position
     return writeStr({
       x: MESSAGE_X,

@@ -12,7 +12,7 @@ import type { SpriteServiceV2 } from '@/sprites/service'
 
 /**
  * Writes the level number at its fixed position on the status bar.
- * 
+ *
  * The original game writes level at x=456, y=12.
  *
  * @param deps Dependencies object containing:
@@ -28,7 +28,7 @@ export function writeLevel(deps: {
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
     const { level, spriteService } = deps
-    
+
     // Use writeInt at the fixed level position
     return writeInt({
       x: LEVEL_X,
