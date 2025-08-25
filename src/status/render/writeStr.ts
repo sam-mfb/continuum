@@ -64,7 +64,7 @@ export function writeStr(deps: {
       } else if (char === ' ') {
         // Handle space character
         const spaceSprite = spriteService.getDigitSprite(' ')
-        
+
         if (spaceSprite) {
           result = drawDigit({
             x: currentX,
@@ -73,7 +73,7 @@ export function writeStr(deps: {
             statusBarTemplate
           })(result)
         }
-        
+
         currentX += 8 // Move to next character position
       }
       // Other non-alphabetic characters are skipped (no x increment)

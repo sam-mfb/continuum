@@ -41,7 +41,6 @@ const state: StatusBarState = {
   lastKeys: new Set()
 }
 
-
 // Process keyboard input
 function processInput(keysDown: Set<string>): void {
   // Check for newly pressed keys
@@ -115,7 +114,7 @@ export const createStatusBarDemo =
       if (state.fuel === 0) {
         state.fuel = 100
       }
-      
+
       // Reset bonus at 0
       if (state.bonus === 0) {
         state.bonus = 1000
@@ -137,7 +136,7 @@ export const createStatusBarDemo =
     } else if (state.fuel === 0) {
       message = 'OUT OF FUEL'
     }
-    
+
     screen = newSbar({
       lives: state.ships,
       message,
