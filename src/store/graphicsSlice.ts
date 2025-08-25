@@ -26,6 +26,7 @@ const initialState: GraphicsState = {
     'newbitmaps.mac',
     'old_gw_figures_in_grid.mac',
     'planet_globals_docs.mac',
+    'rsrc_259.bin',
     'rsrc_260.bin',
     'rsrc_261.bin',
     'rsrc_261.raw',
@@ -63,6 +64,11 @@ export const loadGraphicsFile = createAsyncThunk(
     if (fileName === 'continuum_title_page.pict') {
       // Continuum PICT variant decoder
       imageData = continuumTitlePictToImageData(arrayBuffer).image
+    } else if (fileName === 'rsrc_259.bin') {
+      // Special decoder for compressed status bar (M_SBAR resource)
+      // Height is SBARHT = 24 pixels
+      const imageDataArray = expandTitlePageToImageData(arrayBuffer, 24)
+      imageData = new ImageData(imageDataArray, 512, 24)
     } else if (fileName === 'rsrc_260.bin') {
       // Special decoder for compressed game sprites (M_FIGS resource)
       // Height is SCRHT * 2 = 342 * 2 = 684 pixels

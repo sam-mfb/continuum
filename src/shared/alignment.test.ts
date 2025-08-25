@@ -24,11 +24,11 @@ describe('Alignment Mode Switching', () => {
     it('uses world coordinates in world-fixed mode', () => {
       const alignmentSystem = createAlignmentSystem()
       alignmentSystem.setMode('world-fixed')
-      
+
       const pos = { x: 100, y: 101, screenX: 50, screenY: 51 }
       // (100 + 101) & 1 = 201 & 1 = 1
       expect(alignmentSystem.getAlignment(pos)).toBe(1)
-      
+
       const pos2 = { x: 100, y: 100, screenX: 50, screenY: 51 }
       // (100 + 100) & 1 = 200 & 1 = 0
       expect(alignmentSystem.getAlignment(pos2)).toBe(0)
@@ -37,11 +37,11 @@ describe('Alignment Mode Switching', () => {
     it('uses screen coordinates in screen-fixed mode', () => {
       const alignmentSystem = createAlignmentSystem()
       alignmentSystem.setMode('screen-fixed')
-      
+
       const pos = { x: 100, y: 101, screenX: 50, screenY: 51 }
       // (50 + 51) & 1 = 101 & 1 = 1
       expect(alignmentSystem.getAlignment(pos)).toBe(1)
-      
+
       const pos2 = { x: 100, y: 101, screenX: 50, screenY: 50 }
       // (50 + 50) & 1 = 100 & 1 = 0
       expect(alignmentSystem.getAlignment(pos2)).toBe(0)
@@ -50,26 +50,30 @@ describe('Alignment Mode Switching', () => {
     it('ignores world coordinates in screen-fixed mode', () => {
       const alignmentSystem = createAlignmentSystem()
       alignmentSystem.setMode('screen-fixed')
-      
+
       // Different world coordinates, same screen coordinates
       const pos1 = { x: 0, y: 0, screenX: 10, screenY: 11 }
       const pos2 = { x: 999, y: 999, screenX: 10, screenY: 11 }
-      
+
       // Both should have same alignment since screen coords are same
-      expect(alignmentSystem.getAlignment(pos1)).toBe(alignmentSystem.getAlignment(pos2))
+      expect(alignmentSystem.getAlignment(pos1)).toBe(
+        alignmentSystem.getAlignment(pos2)
+      )
       expect(alignmentSystem.getAlignment(pos1)).toBe(1) // (10 + 11) & 1 = 1
     })
 
     it('ignores screen coordinates in world-fixed mode', () => {
       const alignmentSystem = createAlignmentSystem()
       alignmentSystem.setMode('world-fixed')
-      
+
       // Same world coordinates, different screen coordinates
       const pos1 = { x: 100, y: 101, screenX: 0, screenY: 0 }
       const pos2 = { x: 100, y: 101, screenX: 999, screenY: 999 }
-      
+
       // Both should have same alignment since world coords are same
-      expect(alignmentSystem.getAlignment(pos1)).toBe(alignmentSystem.getAlignment(pos2))
+      expect(alignmentSystem.getAlignment(pos1)).toBe(
+        alignmentSystem.getAlignment(pos2)
+      )
       expect(alignmentSystem.getAlignment(pos1)).toBe(1) // (100 + 101) & 1 = 1
     })
   })
@@ -77,16 +81,16 @@ describe('Alignment Mode Switching', () => {
   describe('ScreenRelativePosition alignment (walls)', () => {
     it('always uses combined screen+object calculation regardless of mode', () => {
       const alignmentSystem = createAlignmentSystem()
-      
+
       // Wall rendering should be the same in both modes
       const wallPos = { screenX: 10, screenY: 20, objectX: 5, objectY: 7 }
-      
+
       alignmentSystem.setMode('world-fixed')
       const worldFixedAlign = alignmentSystem.getAlignment(wallPos)
-      
+
       alignmentSystem.setMode('screen-fixed')
       const screenFixedAlign = alignmentSystem.getAlignment(wallPos)
-      
+
       // Should be the same in both modes
       expect(worldFixedAlign).toBe(screenFixedAlign)
       // (10 + 20 + 5 + 7) & 1 = 42 & 1 = 0
@@ -98,13 +102,13 @@ describe('Alignment Mode Switching', () => {
     it('each instance maintains its own state', () => {
       const system1 = createAlignmentSystem()
       const system2 = createAlignmentSystem()
-      
+
       system1.setMode('screen-fixed')
       system2.setMode('world-fixed')
-      
+
       expect(system1.getMode()).toBe('screen-fixed')
       expect(system2.getMode()).toBe('world-fixed')
-      
+
       // Test that they calculate differently
       const pos = { x: 100, y: 101, screenX: 50, screenY: 50 }
       expect(system1.getAlignment(pos)).toBe(0) // screen-fixed: (50 + 50) & 1 = 0

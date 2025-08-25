@@ -13,6 +13,7 @@ import { wallsActions } from '../../walls/wallsSlice'
 import { buildGameStore } from './store'
 import { LINE_KIND, NEW_TYPE } from '../../walls/types'
 import { createWall } from '../../walls/unpack'
+import { viewClear } from '@/screen/render'
 
 // Create store instance
 const store = buildGameStore()
@@ -79,20 +80,11 @@ export const wallDrawingRenderer: BitmapRenderer = (bitmap, frame, _env) => {
   }
 
   // First, create a crosshatch gray background
-  // IMPORTANT: Pattern must be based on world coordinates, not screen coordinates
-  for (let y = 0; y < bitmap.height; y++) {
-    for (let x = 0; x < bitmap.width; x++) {
-      // Calculate world position
-      const worldX = x + viewportState.x
-      const worldY = y + viewportState.y
-      // Set pixel if worldX + worldY is even (creates fixed checkerboard)
-      if ((worldX + worldY) % 2 === 0) {
-        const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
-        const bitIndex = 7 - (x % 8)
-        bitmap.data[byteIndex]! |= 1 << bitIndex
-      }
-    }
-  }
+  const clearedBitmap = viewClear({
+    screenX: viewportState.x,
+    screenY: viewportState.y
+  })(bitmap)
+  bitmap.data.set(clearedBitmap.data)
 
   // Get wall data from Redux state
   const wallState = store.getState().walls

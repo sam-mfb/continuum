@@ -29,6 +29,8 @@ import { createFuelDrawBitmapRenderer } from './games/fuelDrawBitmap'
 import { createExplosionBitmapRenderer } from './games/explosionBitmap'
 import { createShardTestBitmapRenderer } from './games/shardTestBitmap'
 import { strafeTestBitmapRenderer } from './games/strafeTestBitmap'
+import { createStarBackgroundBitmapRenderer } from './games/starBackgroundBitmap'
+import { createStatusBarDemo } from './games/statusBarDemo'
 import './App.css'
 
 type AppProps = {
@@ -184,6 +186,17 @@ function App({ spriteService }: AppProps): React.JSX.Element {
                   type: 'bitmap',
                   name: 'Strafe Test',
                   bitmapRenderer: strafeTestBitmapRenderer
+                } as BitmapGameDefinition,
+                {
+                  type: 'bitmap',
+                  name: 'Star Background (Press SPACE)',
+                  bitmapRenderer:
+                    createStarBackgroundBitmapRenderer(spriteService)
+                } as BitmapGameDefinition,
+                {
+                  type: 'bitmap',
+                  name: 'Status Bar Demo (Type text, ↑↓ level, Enter resets)',
+                  bitmapRenderer: createStatusBarDemo(spriteService)
                 } as BitmapGameDefinition
               ]}
               defaultGameIndex={0}

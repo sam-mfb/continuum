@@ -13,7 +13,11 @@ export const GraphicsList: React.FC = () => {
   }
 
   const getFileInfo = (fileName: string): string => {
-    if (fileName === 'rsrc_261.bin') {
+    if (fileName === 'rsrc_259.bin') {
+      return 'Compressed Resource (512x24)'
+    } else if (fileName === 'rsrc_260.bin') {
+      return 'Compressed Resource (512x684)'
+    } else if (fileName === 'rsrc_261.bin') {
       return 'Compressed Resource (512x342)'
     } else if (fileName === 'rsrc_261.raw') {
       return 'Raw Bitmap (512x342)'
@@ -24,7 +28,11 @@ export const GraphicsList: React.FC = () => {
   }
 
   const getDisplayName = (fileName: string): string => {
-    if (fileName === 'rsrc_261.bin') {
+    if (fileName === 'rsrc_259.bin') {
+      return 'RSRC 259 (STATUS BAR)'
+    } else if (fileName === 'rsrc_260.bin') {
+      return 'RSRC 260 (FIGURES)'
+    } else if (fileName === 'rsrc_261.bin') {
       return 'RSRC 261 (TITLE PAGE)'
     } else if (fileName === 'rsrc_261.raw') {
       return 'RSRC 261 (RAW)'

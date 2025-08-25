@@ -58,8 +58,8 @@ export function drawCraters(deps: {
         // Check if crater is within horizontal bounds (Terrain.c:519)
         if (crat.x >= left && crat.x < right) {
           // Determine which background pattern to use (Terrain.c:522)
-          const align = getAlignment({ 
-            x: crat.x, 
+          const align = getAlignment({
+            x: crat.x,
             y: crat.y,
             screenX: scrnx,
             screenY: scrny
@@ -85,8 +85,8 @@ export function drawCraters(deps: {
         // Handle world wrapping (Terrain.c:523-526)
         else if (on_right_side && crat.x < right - worldwidth) {
           // Determine which background pattern to use
-          const align = getAlignment({ 
-            x: crat.x, 
+          const align = getAlignment({
+            x: crat.x,
             y: crat.y,
             screenX: scrnx,
             screenY: scrny

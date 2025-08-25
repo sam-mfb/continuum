@@ -60,7 +60,9 @@ export function createShardSpriteSet(
       // Shards use alternating background alignment
       for (let initialAlign = 0; initialAlign < 2; initialAlign++) {
         const target =
-          initialAlign === 0 ? sprite.images.background1 : sprite.images.background2
+          initialAlign === 0
+            ? sprite.images.background1
+            : sprite.images.background2
 
         for (let y = 0; y < SHARDHT; y++) {
           // Simply alternate patterns based on row parity and initial alignment

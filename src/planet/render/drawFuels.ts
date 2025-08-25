@@ -56,8 +56,8 @@ export function drawFuels(deps: {
         // Check if fuel is within vertical bounds (Terrain.c:306)
         if (fuely > -FUELHT && fuely < VIEWHT) {
           // Determine which background pattern to use (Terrain.c:308)
-          const align = getAlignment({ 
-            x: fp.x, 
+          const align = getAlignment({
+            x: fp.x,
             y: fp.y,
             screenX: scrnx,
             screenY: scrny

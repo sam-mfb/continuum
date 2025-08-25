@@ -22,6 +22,7 @@ import { drawExplosions } from '@/explosions/render/drawExplosions'
 import { gravityVector } from '@/shared/gravityVector'
 import type { ExplosionsState } from '@/explosions/types'
 import { drawBunker } from '@/planet/render/bunker'
+import { viewClear } from '@/screen/render'
 
 // Configure store with explosions slice
 const store = buildGameStore({
@@ -334,19 +335,11 @@ export const createExplosionBitmapRenderer =
     const finalState = store.getState()
 
     // Create a crosshatch gray background
-    for (let y = 0; y < bitmap.height; y++) {
-      for (let x = 0; x < bitmap.width; x++) {
-        // Calculate world position
-        const worldX = x + finalState.screen.screenx
-        const worldY = y + finalState.screen.screeny
-        // Set pixel if worldX + worldY is even (creates fixed checkerboard)
-        if ((worldX + worldY) % 2 === 0) {
-          const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
-          const bitIndex = 7 - (x % 8)
-          bitmap.data[byteIndex]! |= 1 << bitIndex
-        }
-      }
-    }
+    const clearedBitmap = viewClear({
+      screenX: finalState.screen.screenx,
+      screenY: finalState.screen.screeny
+    })(bitmap)
+    bitmap.data.set(clearedBitmap.data)
 
     let renderedBitmap = bitmap
 
@@ -380,10 +373,18 @@ export const createExplosionBitmapRenderer =
       const shardImages = {
         kinds: {} as Record<number, Record<number, ShardSprite>>,
         getSprite: (kind: number, rotation: number) => {
-          const def = spriteService.getShardSprite(kind, rotation, { variant: 'def' })
-          const mask = spriteService.getShardSprite(kind, rotation, { variant: 'mask' })
-          const bg1 = spriteService.getShardSprite(kind, rotation, { variant: 'background1' })
-          const bg2 = spriteService.getShardSprite(kind, rotation, { variant: 'background2' })
+          const def = spriteService.getShardSprite(kind, rotation, {
+            variant: 'def'
+          })
+          const mask = spriteService.getShardSprite(kind, rotation, {
+            variant: 'mask'
+          })
+          const bg1 = spriteService.getShardSprite(kind, rotation, {
+            variant: 'background1'
+          })
+          const bg2 = spriteService.getShardSprite(kind, rotation, {
+            variant: 'background2'
+          })
           return {
             def: def.uint8,
             mask: mask.uint8,
