@@ -266,7 +266,7 @@ export function createFizzTransition(deps: {
         framesGenerated = durationFrames // Force completion
         return cloneBitmap(to)
       }
-      
+
       // Process the position(s) for current seed
       processSeedPosition(currentSeed)
       seedsThisFrame++
