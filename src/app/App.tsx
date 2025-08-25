@@ -195,7 +195,7 @@ function App({ spriteService }: AppProps): React.JSX.Element {
                 } as BitmapGameDefinition,
                 {
                   type: 'bitmap',
-                  name: 'Status Bar Demo (Type text, Enter clears)',
+                  name: 'Status Bar Demo (Type text, ↑↓ level, Enter resets)',
                   bitmapRenderer: createStatusBarDemo(spriteService)
                 } as BitmapGameDefinition
               ]}
