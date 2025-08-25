@@ -349,14 +349,34 @@ function precomputeAllSprites(allSprites: AllSprites): PrecomputedStorage {
     storage.strafe.set(rotation, precomputeFormats(strafeData, 8, 8))
   }
 
-  // Pre-compute digit sprites
-  const chars = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ' ']
-  for (const char of chars) {
+  // Pre-compute digit sprites (0-9, A-Z, SHIP, SPACE)
+  // Numbers 0-9
+  for (let i = 0; i <= 9; i++) {
+    const char = i.toString()
     const digitData = allSprites.digits.getCharacter(char)
     if (digitData) {
-      // Digit sprites are 8x9
       storage.digit.set(char, precomputeFormats(digitData, 8, 9))
     }
+  }
+  
+  // Letters A-Z
+  for (let i = 0; i < 26; i++) {
+    const char = String.fromCharCode('A'.charCodeAt(0) + i)
+    const digitData = allSprites.digits.getCharacter(char)
+    if (digitData) {
+      storage.digit.set(char, precomputeFormats(digitData, 8, 9))
+    }
+  }
+  
+  // Special characters
+  const shipData = allSprites.digits.getCharacter('SHIP')
+  if (shipData) {
+    storage.digit.set('SHIP', precomputeFormats(shipData, 8, 9))
+  }
+  
+  const spaceData = allSprites.digits.getCharacter(' ')
+  if (spaceData) {
+    storage.digit.set(' ', precomputeFormats(spaceData, 8, 9))
   }
 
   return storage

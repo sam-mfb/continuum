@@ -12,11 +12,8 @@ import type { BitmapRenderer } from '../../bitmap'
 import { cloneBitmap, createMonochromeBitmap } from '@/bitmap'
 import { viewClear } from '@/screen/render'
 import { sbarClear, drawDigit } from '@/status/render'
-import { SPACECHAR, ACHAR, SHIPCHAR } from '@/status/constants'
 import { SBARSIZE } from '@/screen/constants'
-
-// Import the digit sprites from hardcodedSprites
-import { digits } from '@/figs/hardcodedSprites'
+import type { SpriteServiceV2 } from '@/sprites/service'
 
 // State for the demo - persists across render calls
 type StatusBarState = {
@@ -73,23 +70,12 @@ async function loadStatusBar(): Promise<Uint8Array> {
   }
 }
 
-// Convert character to digit index
-function charToDigitIndex(char: string): number {
-  const c = char.toUpperCase()
-  if (c >= '0' && c <= '9') {
-    return parseInt(c)
-  } else if (c >= 'A' && c <= 'Z') {
-    return c.charCodeAt(0) - 'A'.charCodeAt(0) + ACHAR
-  } else if (c === ' ') {
-    return SPACECHAR
-  }
-  return SPACECHAR // Default to space for unknown characters
-}
 
 // Draw a number at a position (right-aligned)
 function drawNumber(
   screen: ReturnType<typeof createMonochromeBitmap>,
   statusBarTemplate: ReturnType<typeof createMonochromeBitmap>,
+  spriteService: SpriteServiceV2,
   x: number,
   y: number,
   num: number
@@ -101,12 +87,15 @@ function drawNumber(
   // Draw digits from right to left
   do {
     const digit = n % 10
-    result = drawDigit({
-      x: currentX,
-      y,
-      digitSprite: digits[digit]!,
-      statusBarTemplate
-    })(result)
+    const digitSprite = spriteService.getDigitSprite(digit.toString())
+    if (digitSprite) {
+      result = drawDigit({
+        x: currentX,
+        y,
+        digitSprite: digitSprite.bitmap,
+        statusBarTemplate
+      })(result)
+    }
     n = Math.floor(n / 10)
     currentX -= 8
   } while (n > 0 && currentX >= 0)
@@ -118,6 +107,7 @@ function drawNumber(
 function drawText(
   screen: ReturnType<typeof createMonochromeBitmap>,
   statusBarTemplate: ReturnType<typeof createMonochromeBitmap>,
+  spriteService: SpriteServiceV2,
   x: number,
   y: number,
   text: string
@@ -126,12 +116,12 @@ function drawText(
   let currentX = x
   
   for (const char of text) {
-    const index = charToDigitIndex(char)
-    if (index < digits.length) {
+    const digitSprite = spriteService.getDigitSprite(char.toUpperCase())
+    if (digitSprite) {
       result = drawDigit({
         x: currentX,
         y,
-        digitSprite: digits[index]!,
+        digitSprite: digitSprite.bitmap,
         statusBarTemplate
       })(result)
     }
@@ -170,9 +160,10 @@ function processInput(keysDown: Set<string>): void {
 }
 
 /**
- * The main bitmap renderer for the status bar demo
+ * Factory function to create the status bar demo renderer
  */
-export const statusBarDemo: BitmapRenderer = (bitmap, frame, _env) => {
+export const createStatusBarDemo = (spriteService: SpriteServiceV2): BitmapRenderer => 
+  (bitmap, frame, _env) => {
   // Initialize on first frame
   if (!state.initialized) {
     state.initialized = true
@@ -246,27 +237,30 @@ export const statusBarDemo: BitmapRenderer = (bitmap, frame, _env) => {
   screen = sbarClear({ statusBarTemplate: statusBarBitmap })(screen)
   
   // Draw ship lives (left side, top row)
-  for (let i = 0; i < state.ships; i++) {
-    screen = drawDigit({
-      x: 8 + i * 16,  // Space them out a bit more
-      y: 0,
-      digitSprite: digits[SHIPCHAR]!,
-      statusBarTemplate: statusBarBitmap
-    })(screen)
+  const shipSprite = spriteService.getDigitSprite('SHIP')
+  if (shipSprite) {
+    for (let i = 0; i < state.ships; i++) {
+      screen = drawDigit({
+        x: 8 + i * 16,  // Space them out a bit more
+        y: 0,
+        digitSprite: shipSprite.bitmap,
+        statusBarTemplate: statusBarBitmap
+      })(screen)
+    }
   }
   
   // Draw typed text (center area, bottom row)
   if (state.typedText) {
-    screen = drawText(screen, statusBarBitmap, 100, 12, state.typedText)
+    screen = drawText(screen, statusBarBitmap, spriteService, 100, 12, state.typedText)
   }
   
   // Draw score label and number (right side, top row)
-  screen = drawText(screen, statusBarBitmap, 400, 0, 'SCORE')
-  screen = drawNumber(screen, statusBarBitmap, 480, 0, state.score)
+  screen = drawText(screen, statusBarBitmap, spriteService, 400, 0, 'SCORE')
+  screen = drawNumber(screen, statusBarBitmap, spriteService, 480, 0, state.score)
   
   // Draw fuel label and number (right side, bottom row)
-  screen = drawText(screen, statusBarBitmap, 410, 12, 'FUEL')
-  screen = drawNumber(screen, statusBarBitmap, 480, 12, state.fuel)
+  screen = drawText(screen, statusBarBitmap, spriteService, 410, 12, 'FUEL')
+  screen = drawNumber(screen, statusBarBitmap, spriteService, 480, 12, state.fuel)
   
   // Copy result back to bitmap
   bitmap.data.set(screen.data)

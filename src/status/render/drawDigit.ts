@@ -23,7 +23,7 @@ import { DIGHEIGHT } from '@/status/constants'
  * @param deps Dependencies object containing:
  *   @param x - X position in pixels (will be aligned to byte boundary)
  *   @param y - Y position in pixels within status bar
- *   @param digitSprite - Uint8Array containing the digit bitmap (9 bytes for 8x9 pixels)
+ *   @param digitSprite - MonochromeBitmap containing the digit bitmap (8x9 pixels)
  *   @param statusBarTemplate - The clean status bar bitmap to XOR against
  * @returns Pure function that transforms a screen bitmap
  *
@@ -32,7 +32,7 @@ import { DIGHEIGHT } from '@/status/constants'
 export function drawDigit(deps: {
   x: number
   y: number
-  digitSprite: Uint8Array
+  digitSprite: MonochromeBitmap
   statusBarTemplate: MonochromeBitmap
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
@@ -69,7 +69,7 @@ export function drawDigit(deps: {
         
         if (currentScreenOffset < newScreen.data.length &&
             currentTemplateOffset < statusBarTemplate.data.length &&
-            spriteIndex < digitSprite.length) {
+            spriteIndex < digitSprite.data.length) {
           
           // Get the template byte
           // move.b (A0), D0
@@ -77,7 +77,7 @@ export function drawDigit(deps: {
           
           // Get the sprite byte
           // move.b (def)+, D1
-          const spriteByte = digitSprite[spriteIndex] || 0
+          const spriteByte = digitSprite.data[spriteIndex] || 0
           
           // XOR template with sprite
           // eor.b D1, D0
