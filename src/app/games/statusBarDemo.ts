@@ -48,6 +48,7 @@ function processInput(keysDown: Set<string>): void {
   for (const key of keysDown) {
     if (!state.lastKeys.has(key)) {
       // This is a newly pressed key
+      // GameView uses e.code, not e.key, so we get "KeyA", "KeyB", etc.
       if (key === 'Enter') {
         // Clear typed text and reset counters
         state.typedText = ''
@@ -58,11 +59,16 @@ function processInput(keysDown: Set<string>): void {
       } else if (key === 'Backspace') {
         // Remove last character
         state.typedText = state.typedText.slice(0, -1)
-      } else if (key.length === 1) {
-        // Add character if it's printable
+      } else if (key.startsWith('Key')) {
+        // Handle letter keys (KeyA, KeyB, etc.)
+        const letter = key.substring(3) // Extract letter from "KeyA"
         if (state.typedText.length < 20) {
-          // Limit text length
-          state.typedText += key.toUpperCase()
+          state.typedText += letter
+        }
+      } else if (key === 'Space') {
+        // Handle space bar
+        if (state.typedText.length < 20) {
+          state.typedText += ' '
         }
       } else if (key === 'ArrowUp') {
         // Increase level
