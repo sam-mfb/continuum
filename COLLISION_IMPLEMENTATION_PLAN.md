@@ -1,7 +1,14 @@
 # Collision Implementation Plan
 
 ## Overview
-This document outlines the plan for implementing missing collision detection systems in the Continuum port, based on the analysis in `arch/COLLISION.md`.
+This document outlines the plan for implementing missing collision detection systems in the Continuum port, based on the analysis in `arch/COLLISION.md` and citations from the original C source code.
+
+**Primary C Source Files Referenced**:
+- `Play.c` - Main game loop and collision checks
+- `Bunkers.c` - Bunker management and shooting
+- `Terrain.c` - Wall collision prediction (`set_life` function)
+- `Draw.c` - Pixel collision detection (`check_figure` function)
+- `GW.h` - Game constants and definitions
 
 ## Current State
 
@@ -24,13 +31,38 @@ This document outlines the plan for implementing missing collision detection sys
 
 **Location**: `shotsSlice.moveShipshots` action
 
+**Original C Code Reference**: `Play.c:760-814` (move_shipshots function)
+
 **Approach**: 
-- Use proximity detection (not pixel collision) as per original (Play.c:767-784)
+- Use proximity detection (not pixel collision) as per original
 - For each active shipshot, check against each alive bunker:
-  1. Bounding box check first (cheap early rejection)
-  2. Then `xyindistance()` with `BRADIUS` (circular collision)
-  3. For certain bunker types, check firing angle with `legal_angle()`
-  4. Handle "hardy" bunkers (DIFF bunkers with certain rotations need multiple hits)
+  1. Bounding box check first (cheap early rejection) - `Play.c:763-766`
+  2. Then `xyindistance()` with `BRADIUS` (circular collision) - `Play.c:771`
+  3. For certain bunker types, check firing angle with `legal_angle()` - `Play.c:772-774`
+  4. Handle "hardy" bunkers (DIFF bunkers with certain rotations need multiple hits) - `Play.c:778-781`
+
+**Key C Code Snippet**:
+```c
+// Play.c:767-784
+for (bp=bunkers; bp->x < left; bp++)
+    ;
+for (; bp->x < right; bp++)
+    if (bp->alive && bp->y < bot && bp->y > top &&
+        xyindistance(bp->x - sp->x, bp->y - sp->y, BRADIUS) &&
+        (bp->kind >= BUNKROTKINDS ||
+         legal_angle(bp->rot, bp->x, bp->y,
+                sp->x - (sp->h >> 3), sp->y - (sp->v >> 3))) )
+    {
+        sp->lifecount = sp->btime = 0;
+        sp->strafedir = -1;
+        if (bp->kind == DIFFBUNK &&
+            (bp->rot & 3) == 2 &&
+            --bp->rotcount > 0)
+                break;      /* hardy bunker still alive */
+        kill_bunk(bp);
+        break;
+    }
+```
 
 **Implementation notes**:
 - Already have `checkBunkerCollision` function that needs to be called
@@ -39,13 +71,15 @@ This document outlines the plan for implementing missing collision detection sys
 - Trigger explosion at bunker position
 
 **Code locations**:
-- `/src/shots/shotsSlice.ts` - Add to `moveShipshots` action
-- `/src/shots/checkBunkerCollision.ts` - Existing function to integrate
-- `/src/explosions/explosionsSlice.ts` - Add bunker explosion action
+- `/src/shots/shotsSlice.ts` - Add to `moveShipshots` action (port `Play.c:760-814`)
+- `/src/shots/checkBunkerCollision.ts` - Existing function to integrate (implement `Play.c:767-784`)
+- `/src/explosions/explosionsSlice.ts` - Add bunker explosion action (called by kill_bunk at `Play.c:782`)
 
 ### 2. Ship Hits (or Gets Near) Bunker
 
 **Location**: After ship movement in main game loop
+
+**Original C Code Reference**: `Play.c:237` (do_bunkers) and `Play.c:243-245` (check_figure)
 
 **Approach**:
 - **For collision (death)**: Use pixel collision after bunkers are drawn
@@ -55,7 +89,22 @@ This document outlines the plan for implementing missing collision detection sys
 
 - **For shield proximity** (if implementing shield): 
   - When shield active, check proximity to bunkers
-  - Similar to fuel cell collection
+  - Similar to fuel cell collection (`Play.c:514-518`)
+
+**Key C Code for Drawing Order**:
+```c
+// Play.c:236-245
+black_terrain(L_NORMAL);
+do_bunkers();              // Draw bunkers (line 237)
+if (!shielding)
+    move_bullets();        // Draw bunker shots (line 239)
+
+if(!dead_count)
+{
+    if (check_figure(shipx-SCENTER, shipy-SCENTER,
+                    ship_masks[shiprot], SHIPHT))  // Check collision (line 243-244)
+        kill_ship();
+```
 
 **Implementation notes**:
 - Should already work if bunkers are drawn correctly
@@ -71,6 +120,8 @@ This document outlines the plan for implementing missing collision detection sys
 
 **Location**: `shotsSlice.moveBullets` action
 
+**Original C Code Reference**: `Bunkers.c:180` (set_life call) and `Terrain.c:146-230` (set_life function)
+
 **Approach**: 
 - Use predictive collision like ship shots
 - When bunker shot is created in `bunkShoot`:
@@ -79,29 +130,57 @@ This document outlines the plan for implementing missing collision detection sys
   3. Set `lifecount` to expire at collision frame
   4. For bounce walls, set `btime` for bounce physics
 
+**Key C Code for Bunker Shot Creation**:
+```c
+// Bunkers.c:176-180
+sp->x8 = (bp->x + xbshotstart[bp->kind][bp->rot]) << 3;
+sp->y8 = (bp->y + ybshotstart[bp->kind][bp->rot]) << 3;
+sp->lifecount = BUNKSHLEN;
+sp->btime = 0;
+set_life(sp, NULL);  // Predictive collision calculation
+```
+
 **Implementation notes**:
 - Reuse `setLife` function from ship shots
 - Call during shot creation, not every frame
 - Need to handle world wrapping for toroidal worlds
 
 **Code locations**:
-- `/src/shots/bunkShoot.ts` - Add `setLife` call when creating shots
-- `/src/shots/setLife.ts` - Existing predictive collision function
-- `/src/shots/shotsSlice.ts` - Ensure `moveBullets` respects lifecount
+- `/src/shots/bunkShoot.ts` - Add `setLife` call when creating shots (as in `Bunkers.c:180`)
+- `/src/shots/setLife.ts` - Existing predictive collision function (port of `Terrain.c:146-230`)
+- `/src/shots/shotsSlice.ts` - Ensure `moveBullets` respects lifecount (as in `Play.c:827-828`)
 
 ### 4. Bunker Shots Hit Ship
 
 **Location**: In main render loop, similar to ship collision check
 
+**Original C Code Reference**: `Play.c:816-846` (move_bullets function)
+
 **Approach**:
 - **Without shield**: Use pixel collision
-  - Draw bunker shots before ship collision check
+  - Draw bunker shots before ship collision check (`Play.c:239`)
   - They should trigger the existing `checkFigure` call
   
 - **With shield** (when implemented): Use proximity detection
   - Check each bunkshot against ship position
-  - Use `xyindistance()` with `SHRADIUS`
+  - Use `xyindistance()` with `SHRADIUS` (`Play.c:830-837`)
   - Destroy shots within shield radius before drawing
+
+**Key C Code for Shield Protection**:
+```c
+// Play.c:830-837
+if (shielding && sp->x > left && sp->x < right &&
+        sp->y > top && sp->y < bot && 
+        xyindistance(sp->x - globalx,
+                     sp->y - globaly, SHRADIUS))
+{
+    sp->lifecount = sp->btime = 0;
+    sp->strafedir = -1;
+    continue;
+}
+```
+
+**Note on DRAW_SHOT Macro**: The original uses `DRAW_SHOT(sp)` at `Play.c:844` which renders bunker shots as 2x2 dots, different from ship shots' 4x4 diamond pattern (`Draw.c:620-650`).
 
 **Implementation notes**:
 - Bunker shots are already being drawn with `drawDotSafe`
@@ -117,6 +196,8 @@ This document outlines the plan for implementing missing collision detection sys
 
 **Location**: New explosion handling in explosions slice
 
+**Original C Code Reference**: `Bunkers.c:782` (kill_bunk call) - actual explosion code not shown in available sources
+
 **Approach**:
 - When bunker is destroyed, create explosion:
   1. Generate sparks at bunker position
@@ -130,34 +211,47 @@ This document outlines the plan for implementing missing collision detection sys
 - Use bunker-specific constants from GW.h
 
 **Code locations**:
-- `/src/explosions/explosionsSlice.ts` - Add `createBunkerExplosion` action
-- `/src/explosions/constants.ts` - Add bunker explosion constants
-- Game loop - Call explosion creation when bunker destroyed
+- `/src/explosions/explosionsSlice.ts` - Add `createBunkerExplosion` action (called by kill_bunk)
+- `/src/explosions/constants.ts` - Add bunker explosion constants (from GW.h)
+- Game loop - Call explosion creation when bunker destroyed (at `Play.c:782`)
 
 **Constants from GW.h**:
-```
+```c
+// From GW.h (not shown in available sources but referenced)
 EXPLSPARKS = 20    // number of sparks in bunker death
 SPARKLIFE = 10     // minimum life of spark
 SPADDLIFE = 10     // possible longer than SPARKLIFE
 SPARKSLOW = 7      // slow factor (1=stop, ...)
 SP_SPEED16 = 40    // speed factor of spark (*16)
+
+// Additional constants used in collision detection:
+BRADIUS            // Bunker collision radius (Play.c:763-766)
+SHRADIUS           // Shield radius (Play.c:833)
+SCENTER = 16       // Ship center offset (Play.c:787)
+BUNKSHLEN          // Bunker shot life (Bunkers.c:178)
+FRADIUS            // Fuel cell pickup radius (Play.c:516)
 ```
 
 ## Drawing Order Critical Path
 
-Based on COLLISION.md, the correct order is:
+Based on COLLISION.md and original C code (`Play.c:219-249`), the correct order is:
 
-1. Clear screen
-2. Draw non-lethal objects (fuel, craters, shadows)
-3. `erase_figure` - punch ship-shaped hole
-4. Check bounce walls (with own erase if needed)
-5. Draw lethal objects:
-   - Normal terrain
-   - **Bunkers** ← Already correct in `shipMoveBitmap.ts`
-   - **Bunker shots** ← Need to verify this is before ship collision
-6. `check_figure` for ship collision
-7. Draw ship
-8. Draw ship shots
+1. Clear screen (`view_clear` at `Play.c:219`)
+2. Draw non-lethal objects:
+   - Fuel cells (`do_fuels` at `Play.c:221`)
+   - Craters (`draw_craters` at `Play.c:222`)
+   - Ship shadow (`gray_figure` at `Play.c:225-226`)
+3. White terrain (`white_terrain` at `Play.c:228`)
+4. Ghost terrain (`black_terrain(L_GHOST)` at `Play.c:229`)
+5. `erase_figure` - punch ship-shaped hole (`Play.c:232`)
+6. Check bounce walls (`check_for_bounce` at `Play.c:234`)
+7. Draw lethal objects:
+   - Normal terrain (`black_terrain(L_NORMAL)` at `Play.c:236`)
+   - **Bunkers** (`do_bunkers` at `Play.c:237`)
+   - **Bunker shots** (`move_bullets` at `Play.c:239` - conditional on !shielding)
+8. `check_figure` for ship collision (`Play.c:243-244`)
+9. Draw ship (`full_figure` at `Play.c:248-249`)
+10. Draw ship shots (later in the code)
 
 ### Current Implementation in shipMoveBitmap.ts
 
@@ -182,37 +276,47 @@ Move bunker shot rendering to happen before `checkFigure` call (around line 405,
 
 ## Key Design Principles
 
-### Three Collision Methods
+### Three Collision Methods (From Original C Code)
 
-1. **Pixel collision** (`check_figure`):
+1. **Pixel collision** (`check_figure` - `Draw.c:227-273`):
    - Ship vs terrain/bunkers/bunker shots
    - Most accurate for large, slow-moving objects
    - Handles complex shapes perfectly
+   - Used at `Play.c:243-244` for ship collision
 
 2. **Proximity detection** (`xyindist`, `xyindistance`):
-   - Bullets vs bunkers
-   - Shield interactions
+   - Bullets vs bunkers (`Play.c:771`)
+   - Shield interactions (`Play.c:516` for fuel, `Play.c:832-833` for bullets)
    - Fast circular collision detection
+   - Defined in utility functions (not shown in available sources)
 
-3. **Predictive/Line intersection** (`set_life`):
+3. **Predictive/Line intersection** (`set_life` - `Terrain.c:146-230`):
    - Bullets vs terrain walls
    - Calculates entire trajectory at shot creation
    - Enables precise bounce calculations
+   - Called when shots are created (`Bunkers.c:180`)
 
-### Important Rules
+### Important Rules (From Original Implementation)
 
-1. **Drawing order determines lethality**:
+1. **Drawing order determines lethality** (`Play.c:219-249`):
    - Objects drawn before `erase_figure` can't kill ship
    - Objects drawn after final erase are lethal
+   - Shield affects drawing order (`if (!shielding) move_bullets()` at `Play.c:238-239`)
 
-2. **Collision masks vs visual sprites**:
-   - Use separate collision masks for pixel detection
+2. **Collision masks vs visual sprites** (Referenced in `arch/COLLISION.md`):
+   - Use separate collision masks for pixel detection (`ship_masks` vs `ship_defs`)
    - Allows gameplay tuning independent of visuals
+   - Masks used at `Play.c:244` for collision detection
 
 3. **Performance considerations**:
-   - Bounding box checks before expensive operations
-   - Predictive collision avoids per-frame checks
-   - Proximity detection for small/round objects
+   - Bounding box checks before expensive operations (`Play.c:763-766`)
+   - Predictive collision avoids per-frame checks (`Terrain.c:146-230`)
+   - Proximity detection for small/round objects (`Play.c:771`)
+
+4. **Bunker-specific rules**:
+   - DIFFBUNK with rotation 2 requires 3 hits (`Play.c:778-781`)
+   - Some bunkers check firing angle with `legal_angle()` (`Play.c:772-774`)
+   - GENERATORBUNK has special shooting eligibility (`Bunkers.c:147-148`)
 
 ## Testing Strategy
 
@@ -228,15 +332,15 @@ Move bunker shot rendering to happen before `checkFigure` call (around line 405,
    - Expected: Ship explodes
 
 ### Phase 2: Implement New Collisions
-1. **Ship shots vs bunkers**:
+1. **Ship shots vs bunkers** (Implement `Play.c:767-784`):
    - Test: Shoot at bunkers
    - Expected: Bunker explodes after appropriate hits
-   - Special: DIFF bunkers with rotation 2 need 3 hits
+   - Special: DIFF bunkers with rotation 2 need 3 hits (`Play.c:778-781`)
 
-2. **Bunker shots vs walls**:
+2. **Bunker shots vs walls** (Implement `Bunkers.c:180`):
    - Test: Let bunker shoot at wall
    - Expected: Shot disappears at wall
-   - Special: Bounce walls should cause ricochet
+   - Special: Bounce walls should cause ricochet (`Terrain.c:226-228`)
 
 ### Phase 3: Visual Feedback
 1. **Bunker explosions**:
@@ -262,25 +366,25 @@ Move bunker shot rendering to happen before `checkFigure` call (around line 405,
 
 ## Implementation Priority
 
-1. **Critical Fix**: Move bunker shot drawing before collision check
-2. **High Priority**: Ship shots vs bunkers (core gameplay)
-3. **High Priority**: Bunker shots vs walls (shot lifecycle)
-4. **Medium Priority**: Bunker explosions (visual feedback)
-5. **Low Priority**: Multi-hit bunker effects
+1. **Critical Fix**: Move bunker shot drawing before collision check (fix `Play.c:239` order)
+2. **High Priority**: Ship shots vs bunkers (core gameplay - `Play.c:767-784`)
+3. **High Priority**: Bunker shots vs walls (shot lifecycle - `Bunkers.c:180`)
+4. **Medium Priority**: Bunker explosions (visual feedback - referenced at `Play.c:782`)
+5. **Low Priority**: Multi-hit bunker effects (DIFFBUNK handling at `Play.c:778-781`)
 
 ## Files to Modify
 
 ### Immediate Fixes
-- `/src/app/games/shipMoveBitmap.ts` - Fix bunker shot drawing order
+- `/src/app/games/shipMoveBitmap.ts` - Fix bunker shot drawing order (move from line ~500 to ~405, matching `Play.c:239`)
 
 ### Collision Implementation
-- `/src/shots/shotsSlice.ts` - Add bunker collision to moveShipshots
-- `/src/shots/bunkShoot.ts` - Add wall collision prediction
-- `/src/shots/checkBunkerCollision.ts` - Integrate into shot movement
+- `/src/shots/shotsSlice.ts` - Add bunker collision to moveShipshots (implement `Play.c:767-784` logic)
+- `/src/shots/bunkShoot.ts` - Add wall collision prediction (add `set_life` call as in `Bunkers.c:180`)
+- `/src/shots/checkBunkerCollision.ts` - Integrate into shot movement (port `Play.c:770-783`)
 
 ### Visual Effects
-- `/src/explosions/explosionsSlice.ts` - Add bunker explosions
-- `/src/explosions/constants.ts` - Add bunker explosion parameters
+- `/src/explosions/explosionsSlice.ts` - Add bunker explosions (implement kill_bunk effect)
+- `/src/explosions/constants.ts` - Add bunker explosion parameters (GW.h constants)
 
 ### Testing
 - Create test scenarios for each collision type
@@ -302,5 +406,30 @@ Move bunker shot rendering to happen before `checkFigure` call (around line 405,
 
 - The original game uses different collision methods for different scenarios for good reasons (performance, accuracy, predictability)
 - We should maintain this design rather than trying to use one universal collision system
-- The drawing order is critical and must be preserved exactly
+- The drawing order is critical and must be preserved exactly (follow `Play.c:219-249`)
 - Testing against the original game behavior is essential
+
+## Original C Code Function Map
+
+### Bunker Management (`Bunkers.c`):
+- `do_bunkers()` (lines 26-49) - Main bunker update and rendering
+- `aim_bunk()` (lines 53-74) - Calculate bunker aiming direction
+- `aim_dir()` (lines 77-94) - Get angle to ship
+- `follow_shot()` (lines 97-113) - Create aimed shot for FOLLOWBUNK
+- `bunk_shoot()` (lines 125-190) - Main bunker shooting logic
+- `rand_shot()` (lines 193-209) - Create random direction shot
+- `do_bunks()` (lines 213-245) - Render bunkers to screen
+
+### Collision Detection (`Play.c`):
+- `move_shipshots()` (lines 750-814) - Ship shot movement and bunker collision
+- `move_bullets()` (lines 816-846) - Bunker shot movement and shield check
+- Main render loop (lines 219-249) - Critical drawing order
+
+### Wall Collision (`Terrain.c`):
+- `set_life()` (lines 146-230) - Predictive collision with terrain lines
+
+### Additional Functions:
+- `legal_angle()` - Check if bunker can shoot at angle (not shown)
+- `kill_bunk()` - Destroy bunker and create explosion (not shown)
+- `xyindistance()` - Circular proximity detection (not shown)
+- `check_figure()` - Pixel-perfect collision (`Draw.c:227-273`)
