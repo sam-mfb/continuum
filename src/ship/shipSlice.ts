@@ -33,11 +33,22 @@ export const shipSlice = createSlice({
   name: 'ship',
   initialState,
   reducers: {
-    initShip: (state, action: PayloadAction<{ x: number; y: number; globalx?: number; globaly?: number }>) => {
+    initShip: (
+      state,
+      action: PayloadAction<{
+        x: number
+        y: number
+        globalx?: number
+        globaly?: number
+      }>
+    ) => {
       state.shipx = action.payload.x
       state.shipy = action.payload.y
       // If global coordinates provided, initialize unbounce position
-      if (action.payload.globalx !== undefined && action.payload.globaly !== undefined) {
+      if (
+        action.payload.globalx !== undefined &&
+        action.payload.globaly !== undefined
+      ) {
         state.unbouncex = action.payload.globalx
         state.unbouncey = action.payload.globaly
       }
@@ -106,7 +117,15 @@ export const shipSlice = createSlice({
       state.yslow &= 255
     },
 
-    resetShip: (state, action: PayloadAction<{ x: number; y: number; globalx?: number; globaly?: number }>) => {
+    resetShip: (
+      state,
+      action: PayloadAction<{
+        x: number
+        y: number
+        globalx?: number
+        globaly?: number
+      }>
+    ) => {
       // Reset position
       state.shipx = action.payload.x
       state.shipy = action.payload.y
@@ -125,7 +144,10 @@ export const shipSlice = createSlice({
       state.bouncing = false
       state.shielding = false
       // Reset unbounce position if global coords provided
-      if (action.payload.globalx !== undefined && action.payload.globaly !== undefined) {
+      if (
+        action.payload.globalx !== undefined &&
+        action.payload.globaly !== undefined
+      ) {
         state.unbouncex = action.payload.globalx
         state.unbouncey = action.payload.globaly
       }
@@ -135,44 +157,48 @@ export const shipSlice = createSlice({
     bounceShip: (
       state,
       action: PayloadAction<{
-        norm: number  // Direction index (0-15) pointing away from wall
+        norm: number // Direction index (0-15) pointing away from wall
       }>
     ) => {
       const { norm } = action.payload
-      
+
       // Exact implementation of bounce_ship() from orig/Sources/Play.c:291-328
       // Get bounce vector components from the norm direction
       const x1 = SHIP.bounce_vecs[norm]!
-      const y1 = SHIP.bounce_vecs[(norm + 12) & 15]!  // 12 positions = 270 degrees in 16-direction system
-      
+      const y1 = SHIP.bounce_vecs[(norm + 12) & 15]! // 12 positions = 270 degrees in 16-direction system
+
       // Calculate dot product of velocity with bounce direction
       // Using Long integers like original (dot is 'register long')
       const dot = state.dx * x1 + state.dy * y1
-      
+
       // Check if velocity toward wall is below threshold (Play.c:317)
-      if (dot < 256 * 64) {  // 256*64 = 16384
+      if (dot < 256 * 64) {
+        // 256*64 = 16384
         // Calculate bounce force
-        let absDot = dot < 0 ? -dot : dot  // Play.c:319-320
-        
+        let absDot = dot < 0 ? -dot : dot // Play.c:319-320
+
         // Minimum bounce force (Play.c:321-322)
         if (absDot < 10 * 256) {
-          absDot = 10 * 256  // 2560
+          absDot = 10 * 256 // 2560
         }
-        
+
         // Apply bounce kick (Play.c:323-326)
         // Original uses division by (24*48) = 1152
         const xkick = Math.floor((x1 * absDot) / (24 * 48))
         const ykick = Math.floor((y1 * absDot) / (24 * 48))
-        
+
         state.dx += xkick
         state.dy += ykick
       }
-      
+
       // Set bouncing flag (Play.c:277)
       state.bouncing = true
     },
 
-    noBounce: (state, action: PayloadAction<{ globalx: number; globaly: number }>) => {
+    noBounce: (
+      state,
+      action: PayloadAction<{ globalx: number; globaly: number }>
+    ) => {
       state.bouncing = false
       // Store global coordinates like original (Play.c:284-285)
       state.unbouncex = action.payload.globalx

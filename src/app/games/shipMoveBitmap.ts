@@ -10,16 +10,27 @@ import type { BitmapRenderer } from '../../bitmap'
 import { fullFigure } from '../../ship/render/fullFigure'
 import { drawShipShot } from '../../shots/render/drawShipShot'
 import { drawStrafe } from '../../shots/render/drawStrafe'
+import { drawDotSafe } from '../../shots/render/drawDotSafe'
 import { shipSlice } from '@/ship/shipSlice'
-import { planetSlice } from '@/planet/planetSlice'
+import {
+  planetSlice,
+  updateBunkerRotations,
+  initializeBunkers
+} from '@/planet/planetSlice'
 import { screenSlice } from '@/screen/screenSlice'
-import { shotsSlice, clearAllShots, doStrafes } from '@/shots/shotsSlice'
+import {
+  shotsSlice,
+  clearAllShots,
+  doStrafes,
+  bunkShoot,
+  moveBullets
+} from '@/shots/shotsSlice'
 import { ShipControl } from '@/ship/types'
 import { shipControl } from './shipControlThunk'
 import { buildGameStore } from './store'
 import { SCRWTH, VIEWHT, TOPMARG, BOTMARG } from '@/screen/constants'
 import type { SpriteServiceV2 } from '@/sprites/service'
-import { SCENTER } from '@/figs/types'
+import { SCENTER, type BunkerKind } from '@/figs/types'
 import { flameOn } from '@/ship/render/flameOn'
 import { grayFigure } from '@/ship/render/grayFigure'
 import { eraseFigure } from '@/ship/render/eraseFigure'
@@ -32,6 +43,8 @@ import { viewClear } from '@/screen/render'
 import { LINE_KIND } from '@/walls/types'
 import { checkFigure } from '@/collision/checkFigure'
 import { checkForBounce } from '@/ship/physics/checkForBounce'
+import { doBunks } from '@/planet/render/bunker'
+import { rint } from '@/shared/rint'
 
 // Configure store with all slices and containment middleware
 const store = buildGameStore()
@@ -77,6 +90,9 @@ const initializeGame = async (): Promise<void> => {
     // Initialize walls with planet 1's walls
     store.dispatch(wallsSlice.actions.initWalls({ walls: planet1.lines }))
 
+    // Initialize bunkers for animated bunker support
+    store.dispatch(initializeBunkers())
+
     // Initialize ship at center of screen (following Play.c:175-179)
     const shipScreenX = SCRWTH / 2 // 256
     const shipScreenY = Math.floor((TOPMARG + BOTMARG) / 2) // 159
@@ -85,7 +101,7 @@ const initializeGame = async (): Promise<void> => {
       shipSlice.actions.initShip({
         x: shipScreenX,
         y: shipScreenY,
-        globalx: planet1.xstart,  // Ship starts at planet's starting position
+        globalx: planet1.xstart, // Ship starts at planet's starting position
         globaly: planet1.ystart
       })
     )
@@ -121,7 +137,7 @@ const resetGame = (): void => {
     shipSlice.actions.resetShip({
       x: shipScreenX,
       y: shipScreenY,
-      globalx: state.planet.xstart,  // Reset to starting global position
+      globalx: state.planet.xstart, // Reset to starting global position
       globaly: state.planet.ystart
     })
   )
@@ -199,6 +215,31 @@ export const createShipMoveBitmapRenderer =
     const globalx = state.screen.screenx + state.ship.shipx
     const globaly = state.screen.screeny + state.ship.shipy
 
+    // Update bunker rotations for animated bunkers (GROUND, FOLLOW, GENERATOR)
+    store.dispatch(updateBunkerRotations({ globalx, globaly }))
+
+    // Check if bunkers should shoot this frame (probabilistic based on shootslow)
+    // From Bunkers.c:30-31: if (rint(100) < shootslow) bunk_shoot();
+    if (rint(100) < state.planet.shootslow) {
+      // Calculate screen boundaries for shot eligibility
+      const screenr = state.screen.screenx + SCRWTH
+      const screenb = state.screen.screeny + VIEWHT
+
+      store.dispatch(
+        bunkShoot({
+          screenx: state.screen.screenx,
+          screenr: screenr,
+          screeny: state.screen.screeny,
+          screenb: screenb,
+          bunkrecs: state.planet.bunkers,
+          worldwidth: state.planet.worldwidth,
+          worldwrap: state.planet.worldwrap,
+          globalx: globalx,
+          globaly: globaly
+        })
+      )
+    }
+
     store.dispatch(
       shotsSlice.actions.moveShipshots({
         bunkers: state.planet.bunkers,
@@ -208,6 +249,14 @@ export const createShipMoveBitmapRenderer =
         },
         shipAlive: true, // TODO: Check if ship is dead when death system is implemented
         walls: state.planet.lines,
+        worldwidth: state.planet.worldwidth,
+        worldwrap: state.planet.worldwrap
+      })
+    )
+
+    // Move bunker shots
+    store.dispatch(
+      moveBullets({
         worldwidth: state.planet.worldwidth,
         worldwrap: state.planet.worldwrap
       })
@@ -331,7 +380,36 @@ export const createShipMoveBitmapRenderer =
       worldwidth: finalState.planet.worldwidth
     })(renderedBitmap)
 
-    // 7. do_bunkers would go here (not implemented yet)
+    // 7. do_bunkers - render all bunkers
+    renderedBitmap = doBunks({
+      bunkrec: finalState.planet.bunkers,
+      scrnx: finalState.screen.screenx,
+      scrny: finalState.screen.screeny,
+      getSprite: (kind: BunkerKind, rotation: number) => {
+        // Get sprites with proper variants
+        const defSprite = spriteService.getBunkerSprite(kind, rotation, {
+          variant: 'def'
+        })
+        const maskSprite = spriteService.getBunkerSprite(kind, rotation, {
+          variant: 'mask'
+        })
+        const bg1Sprite = spriteService.getBunkerSprite(kind, rotation, {
+          variant: 'background1'
+        })
+        const bg2Sprite = spriteService.getBunkerSprite(kind, rotation, {
+          variant: 'background2'
+        })
+
+        return {
+          def: defSprite.uint8,
+          mask: maskSprite.uint8,
+          images: {
+            background1: bg1Sprite.uint8,
+            background2: bg2Sprite.uint8
+          }
+        }
+      }
+    })(renderedBitmap)
 
     // Check for collision after drawing all lethal objects
     // Following Play.c:243-245 pattern
@@ -427,6 +505,38 @@ export const createShipMoveBitmapRenderer =
         rot: finalState.ship.shiprot,
         flames: flameSprites
       })(renderedBitmap)
+    }
+
+    // Draw bunker shots (2x2 dots)
+    for (const shot of finalState.shots.bunkshots) {
+      if (shot.lifecount > 0) {
+        // Convert world coordinates to screen coordinates
+        const shotx = shot.x - finalState.screen.screenx
+        const shoty = shot.y - finalState.screen.screeny
+
+        // Check if shot is visible on screen
+        if (
+          shotx >= 0 &&
+          shotx < SCRWTH - 1 &&
+          shoty >= 0 &&
+          shoty < VIEWHT - 1
+        ) {
+          renderedBitmap = drawDotSafe(shotx, shoty, renderedBitmap)
+        }
+
+        // Handle world wrapping for toroidal worlds
+        if (
+          finalState.planet.worldwrap &&
+          finalState.screen.screenx > finalState.planet.worldwidth - SCRWTH
+        ) {
+          const wrappedShotx =
+            shot.x + finalState.planet.worldwidth - finalState.screen.screenx
+
+          if (wrappedShotx >= 0 && wrappedShotx < SCRWTH - 1) {
+            renderedBitmap = drawDotSafe(wrappedShotx, shoty, renderedBitmap)
+          }
+        }
+      }
     }
 
     // Draw strafes (Play.c:259 - do_strafes rendering loop)
