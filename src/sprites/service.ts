@@ -290,7 +290,7 @@ function precomputeAllSprites(
     } else {
       // Animated bunkers: 8 frames
       for (let frame = 0; frame < 8; frame++) {
-        const sprite = allSprites.bunkers.getSprite(kind, 0, frame)
+        const sprite = allSprites.bunkers.getSprite(kind, frame)
         storage.bunker.set(
           `${kind}-${frame}-def`,
           precomputeFormats(sprite.def, 48, 48)

@@ -92,6 +92,7 @@ const initializeGame = async (): Promise<void> => {
 
     // Initialize bunkers for animated bunker support
     store.dispatch(initializeBunkers())
+    
 
     // Initialize ship at center of screen (following Play.c:175-179)
     const shipScreenX = SCRWTH / 2 // 256
@@ -217,14 +218,16 @@ export const createShipMoveBitmapRenderer =
 
     // Update bunker rotations for animated bunkers (GROUND, FOLLOW, GENERATOR)
     store.dispatch(updateBunkerRotations({ globalx, globaly }))
+    
 
     // Check if bunkers should shoot this frame (probabilistic based on shootslow)
     // From Bunkers.c:30-31: if (rint(100) < shootslow) bunk_shoot();
-    if (rint(100) < state.planet.shootslow) {
+    const shootRoll = rint(100)
+    if (shootRoll < state.planet.shootslow) {
       // Calculate screen boundaries for shot eligibility
       const screenr = state.screen.screenx + SCRWTH
       const screenb = state.screen.screeny + VIEWHT
-
+      
       store.dispatch(
         bunkShoot({
           screenx: state.screen.screenx,
@@ -268,6 +271,7 @@ export const createShipMoveBitmapRenderer =
 
     // Get final state for drawing
     const finalState = store.getState()
+    
 
     // First, create a crosshatch gray background using viewClear
     const clearedBitmap = viewClear({
