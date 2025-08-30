@@ -1,7 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { ShipState } from './types'
 import { ShipControl } from './types'
-import { SHIP } from './constants'
+import { SHIP, DEAD_TIME, STARTING_FUEL } from './constants'
 
 const initialState: ShipState = {
   shiprot: 0,
@@ -21,7 +21,10 @@ const initialState: ShipState = {
   xslow: 0,
   yslow: 0,
   unbouncex: 0,
-  unbouncey: 0
+  unbouncey: 0,
+  deadCount: 0,
+  startx: 0,
+  starty: 0
 }
 
 type ControlAction = {
@@ -203,6 +206,60 @@ export const shipSlice = createSlice({
       // Store global coordinates like original (Play.c:284-285)
       state.unbouncex = action.payload.globalx
       state.unbouncey = action.payload.globaly
+    },
+
+    /**
+     * Kill the ship - based on kill_ship() in Play.c:685-700
+     */
+    killShip: state => {
+      state.deadCount = DEAD_TIME // Start death countdown
+      state.flaming = false // Stop all ship activities
+      state.thrusting = false
+      state.refueling = false
+      state.shielding = false
+      // Note: vx (dx), vy (dy) preserved - ship continues drifting while dead
+    },
+
+    /**
+     * Decrement the death counter
+     */
+    decrementDeadCount: state => {
+      if (state.deadCount > 0) {
+        state.deadCount--
+      }
+    },
+
+    /**
+     * Respawn the ship at start position
+     */
+    respawnShip: state => {
+      state.shipx = state.startx // Reset position
+      state.shipy = state.starty
+      state.dx = 0 // Stop movement
+      state.dy = 0
+      state.xslow = 0
+      state.yslow = 0
+      state.fuel = STARTING_FUEL
+      state.shiprot = 0 // Reset rotation
+      // Reset other spawn state as needed
+      state.flaming = false
+      state.flameBlink = 0
+      state.thrusting = false
+      state.firing = false
+      state.bouncing = false
+      state.refueling = false
+      state.shielding = false
+    },
+
+    /**
+     * Set the ship's start/respawn position
+     */
+    setStartPosition: (
+      state,
+      action: PayloadAction<{ x: number; y: number }>
+    ) => {
+      state.startx = action.payload.x
+      state.starty = action.payload.y
     }
   }
 })

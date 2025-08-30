@@ -184,6 +184,18 @@ export const planetSlice = createSlice({
         fp.currentfig = rint(FUELFRAMES)
         fp.figcount = rint(FUELFCYCLES)
       }
+    },
+
+    /**
+     * Kill a bunker - part of ship death blast
+     * Based on kill_bunk() reference in Play.c:782
+     */
+    killBunker: (state, action: PayloadAction<{ index: number }>) => {
+      const bunker = state.bunkers[action.payload.index]
+      if (bunker) {
+        bunker.alive = false
+        // Note: Explosion triggered separately from game loop
+      }
     }
   }
 })
@@ -193,6 +205,7 @@ export const {
   updateBunkerRotations,
   initializeBunkers,
   updateFuelAnimations,
-  initializeFuels
+  initializeFuels,
+  killBunker
 } = planetSlice.actions
 export default planetSlice.reducer

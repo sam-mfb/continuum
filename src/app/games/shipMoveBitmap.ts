@@ -15,7 +15,8 @@ import { shipSlice } from '@/ship/shipSlice'
 import {
   planetSlice,
   updateBunkerRotations,
-  initializeBunkers
+  initializeBunkers,
+  killBunker
 } from '@/planet/planetSlice'
 import { screenSlice } from '@/screen/screenSlice'
 import {
@@ -45,6 +46,9 @@ import { checkFigure } from '@/collision/checkFigure'
 import { checkForBounce } from '@/ship/physics/checkForBounce'
 import { doBunks } from '@/planet/render/bunker'
 import { rint } from '@/shared/rint'
+import { startShipDeath, startExplosion } from '@/explosions/explosionsSlice'
+import { SKILLBRADIUS } from '@/ship/constants'
+import { xyindistance } from '@/shots/xyindistance'
 
 // Configure store with all slices and containment middleware
 const store = buildGameStore()
@@ -104,6 +108,14 @@ const initializeGame = async (): Promise<void> => {
         y: shipScreenY,
         globalx: planet1.xstart, // Ship starts at planet's starting position
         globaly: planet1.ystart
+      })
+    )
+    
+    // Set the respawn position
+    store.dispatch(
+      shipSlice.actions.setStartPosition({
+        x: shipScreenX,
+        y: shipScreenY
       })
     )
 
@@ -200,16 +212,27 @@ export const createShipMoveBitmapRenderer =
       y: state.planet.gravy
     }
 
-    // Handle controls
-    store.dispatch(
-      shipControl({
-        controlsPressed: getPressedControls(frame.keysDown),
-        gravity
-      })
-    )
-
-    // Move ship - containment middleware will automatically apply
-    store.dispatch(shipSlice.actions.moveShip())
+    // Check if ship is dead and handle countdown
+    const deadCount = state.ship.deadCount
+    if (deadCount > 0) {
+      // Ship is dead - decrement counter and check for respawn
+      store.dispatch(shipSlice.actions.decrementDeadCount())
+      const newDeadCount = store.getState().ship.deadCount
+      if (newDeadCount === 0) {
+        store.dispatch(shipSlice.actions.respawnShip())
+      }
+    } else {
+      // Only handle controls and move ship if alive
+      store.dispatch(
+        shipControl({
+          controlsPressed: getPressedControls(frame.keysDown),
+          gravity
+        })
+      )
+      
+      // Move ship - containment middleware will automatically apply
+      store.dispatch(shipSlice.actions.moveShip())
+    }
 
     // Move all bullets with collision detection
     // Calculate global ship position (screen + ship relative position)
@@ -250,7 +273,7 @@ export const createShipMoveBitmapRenderer =
           x: globalx,
           y: globaly
         },
-        shipAlive: true, // TODO: Check if ship is dead when death system is implemented
+        shipAlive: state.ship.deadCount === 0,
         walls: state.planet.lines,
         worldwidth: state.planet.worldwidth,
         worldwrap: state.planet.worldwrap
@@ -308,31 +331,35 @@ export const createShipMoveBitmapRenderer =
     const SHADOW_OFFSET_Y = 5
 
     // Following Play.c order:
-    // 1. gray_figure - ship shadow background
-    // Compute background patterns for y and y+1 positions
-    const align0 = getAlignment({
-      screenX: finalState.screen.screenx,
-      screenY: finalState.screen.screeny,
-      objectX: 0,
-      objectY: 0
-    })
-    const align1 = getAlignment({
-      screenX: finalState.screen.screenx,
-      screenY: finalState.screen.screeny,
-      objectX: 0,
-      objectY: 1
-    })
-    const background: readonly [number, number] = [
-      getBackgroundPattern(align0),
-      getBackgroundPattern(align1)
-    ]
+    // 1. gray_figure - ship shadow background (only if ship is alive)
+    let renderedBitmap = bitmap
+    
+    if (finalState.ship.deadCount === 0) {
+      // Compute background patterns for y and y+1 positions
+      const align0 = getAlignment({
+        screenX: finalState.screen.screenx,
+        screenY: finalState.screen.screeny,
+        objectX: 0,
+        objectY: 0
+      })
+      const align1 = getAlignment({
+        screenX: finalState.screen.screenx,
+        screenY: finalState.screen.screeny,
+        objectX: 0,
+        objectY: 1
+      })
+      const background: readonly [number, number] = [
+        getBackgroundPattern(align0),
+        getBackgroundPattern(align1)
+      ]
 
-    let renderedBitmap = grayFigure({
-      x: finalState.ship.shipx - (SCENTER - SHADOW_OFFSET_X),
-      y: finalState.ship.shipy - (SCENTER - SHADOW_OFFSET_Y),
-      def: shipMaskBitmap,
-      background
-    })(bitmap)
+      renderedBitmap = grayFigure({
+        x: finalState.ship.shipx - (SCENTER - SHADOW_OFFSET_X),
+        y: finalState.ship.shipy - (SCENTER - SHADOW_OFFSET_Y),
+        def: shipMaskBitmap,
+        background
+      })(renderedBitmap)
+    }
 
     // 2. white_terrain - wall undersides/junctions
     renderedBitmap = whiteTerrain({
@@ -353,27 +380,29 @@ export const createShipMoveBitmapRenderer =
       worldwidth: finalState.planet.worldwidth
     })(renderedBitmap)
 
-    // 4. erase_figure - erase ship area
-    renderedBitmap = eraseFigure({
-      x: finalState.ship.shipx - SCENTER,
-      y: finalState.ship.shipy - SCENTER,
-      def: shipMaskBitmap
-    })(renderedBitmap)
+    // 4. erase_figure - erase ship area (only if ship is alive)
+    if (finalState.ship.deadCount === 0) {
+      renderedBitmap = eraseFigure({
+        x: finalState.ship.shipx - SCENTER,
+        y: finalState.ship.shipy - SCENTER,
+        def: shipMaskBitmap
+      })(renderedBitmap)
 
-    // 5. check_for_bounce - check collision with bounce walls and update physics
-    // This replaces the separate black_terrain(L_BOUNCE) call since checkForBounce
-    // handles both rendering bounce walls and collision detection
-    renderedBitmap = checkForBounce({
-      screen: renderedBitmap,
-      store,
-      shipDef: shipMaskBitmap,
-      wallData: {
-        kindPointers: finalState.walls.kindPointers,
-        organizedWalls: finalState.walls.organizedWalls
-      },
-      viewport: viewport,
-      worldwidth: finalState.planet.worldwidth
-    })
+      // 5. check_for_bounce - check collision with bounce walls and update physics
+      // This replaces the separate black_terrain(L_BOUNCE) call since checkForBounce
+      // handles both rendering bounce walls and collision detection
+      renderedBitmap = checkForBounce({
+        screen: renderedBitmap,
+        store,
+        shipDef: shipMaskBitmap,
+        wallData: {
+          kindPointers: finalState.walls.kindPointers,
+          organizedWalls: finalState.walls.organizedWalls
+        },
+        viewport: viewport,
+        worldwidth: finalState.planet.worldwidth
+      })
+    }
 
     // 6. black_terrain(L_NORMAL) - normal walls
     renderedBitmap = blackTerrain({
@@ -417,34 +446,70 @@ export const createShipMoveBitmapRenderer =
 
     // Check for collision after drawing all lethal objects
     // Following Play.c:243-245 pattern
-    const collision = checkFigure(renderedBitmap, {
-      x: finalState.ship.shipx - SCENTER,
-      y: finalState.ship.shipy - SCENTER,
-      height: 32, // SHIPHT
-      def: shipMaskBitmap
-    })
+    // Only check collision if ship is alive
+    if (finalState.ship.deadCount === 0) {
+      const collision = checkFigure(renderedBitmap, {
+        x: finalState.ship.shipx - SCENTER,
+        y: finalState.ship.shipy - SCENTER,
+        height: 32, // SHIPHT
+        def: shipMaskBitmap
+      })
 
-    if (collision) {
-      resetGame()
-      // Continue rendering to show the reset state
+      if (collision) {
+        // Ship collision detected - trigger death sequence
+        
+        // (a) Update ship state
+        store.dispatch(shipSlice.actions.killShip())
+        
+        // (b) Death blast - destroy nearby bunkers
+        const bunkers = store.getState().planet.bunkers
+        bunkers.forEach((bunker, index) => {
+          if (
+            bunker.alive &&
+            xyindistance(bunker.x - globalx, bunker.y - globaly, SKILLBRADIUS)
+          ) {
+            store.dispatch(killBunker({ index }))
+            // TODO: Add score when score system is implemented
+            // store.dispatch(addScore(SCOREBUNK))
+            
+            // Trigger bunker explosion
+            store.dispatch(
+              startExplosion({
+                x: bunker.x,
+                y: bunker.y,
+                dir: bunker.rot,
+                kind: bunker.kind
+              })
+            )
+          }
+        })
+        
+        // (c) Start ship explosion
+        store.dispatch(startShipDeath({ x: globalx, y: globaly }))
+        
+        // (d) TODO: Play death sound when sound system is implemented
+        // playSound(DEATH_SOUND)
+      }
     }
 
-    // 8. shift_figure - ship shadow
-    renderedBitmap = shiftFigure({
-      x: finalState.ship.shipx - (SCENTER - SHADOW_OFFSET_X),
-      y: finalState.ship.shipy - (SCENTER - SHADOW_OFFSET_Y),
-      def: shipMaskBitmap
-    })(renderedBitmap)
+    // 8. shift_figure - ship shadow (only if ship is alive)
+    // 9. full_figure - draw ship (only if ship is alive)
+    if (finalState.ship.deadCount === 0) {
+      renderedBitmap = shiftFigure({
+        x: finalState.ship.shipx - (SCENTER - SHADOW_OFFSET_X),
+        y: finalState.ship.shipy - (SCENTER - SHADOW_OFFSET_Y),
+        def: shipMaskBitmap
+      })(renderedBitmap)
 
-    // 9. full_figure - draw ship
-    // Ship position needs to be offset by SCENTER (15) to account for center point
-    // Original: full_figure(shipx-SCENTER, shipy-SCENTER, ship_defs[shiprot], ship_masks[shiprot], SHIPHT)
-    renderedBitmap = fullFigure({
-      x: finalState.ship.shipx - SCENTER,
-      y: finalState.ship.shipy - SCENTER,
-      def: shipDefBitmap,
-      mask: shipMaskBitmap
-    })(renderedBitmap)
+      // Ship position needs to be offset by SCENTER (15) to account for center point
+      // Original: full_figure(shipx-SCENTER, shipy-SCENTER, ship_defs[shiprot], ship_masks[shiprot], SHIPHT)
+      renderedBitmap = fullFigure({
+        x: finalState.ship.shipx - SCENTER,
+        y: finalState.ship.shipy - SCENTER,
+        def: shipDefBitmap,
+        mask: shipMaskBitmap
+      })(renderedBitmap)
+    }
 
     // Draw all active ship shots
     for (const shot of finalState.shots.shipshots) {

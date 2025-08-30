@@ -1,3 +1,9 @@
+// Death and respawn constants from GW.h
+export const DEAD_TIME = 60 // Frames of death animation
+export const SKILLBRADIUS = 100 // Radius for bunker death blast when ship dies
+export const SCOREBUNK = 50 // Points for destroying bunker
+export const STARTING_FUEL = 1000 // Fuel on respawn
+
 /* x-direction thrust provided in each direction (y, too, with some work) */
 export const SHIP = {
   thrustx: [

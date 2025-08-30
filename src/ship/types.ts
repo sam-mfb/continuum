@@ -31,4 +31,9 @@ export type ShipState = {
   // Last safe position before bouncing
   unbouncex: number
   unbouncey: number
+  // Death countdown timer (0 = alive, > 0 = dead)
+  deadCount: number
+  // Respawn position
+  startx: number
+  starty: number
 }
