@@ -7,8 +7,9 @@ import type { Store } from '@reduxjs/toolkit'
 import type { MonochromeBitmap, LineRec } from '@/walls/types'
 import type { ShipState } from '@/ship/types'
 import { blackTerrain } from '@/walls/render/blackTerrain'
+import { checkFigure } from '@/collision/checkFigure'
 import { eraseFigure } from '@/ship/render/eraseFigure'
-import { cloneBitmap } from '@/bitmap'
+import { SCENTER } from '@/figs/types'
 import { LINE_KIND } from '@/shared/types/line'
 
 export type CheckForBounceData = {
@@ -36,7 +37,16 @@ export function checkForBounce(deps: CheckForBounceDeps): MonochromeBitmap {
   const { screen, store, shipDef, wallData, viewport, worldwidth } = deps
   const shipState = store.getState().ship
   
-  // Step 1: Render bounce walls onto the screen
+  // Step 1: Check if there's already a collision before adding bounce walls
+  // This would be a collision with ghost walls or other non-bounce elements
+  const preExistingCollision = checkFigure(screen, {
+    x: shipState.shipx - SCENTER,
+    y: shipState.shipy - SCENTER,
+    height: 32, // SHIPHT
+    def: shipDef
+  })
+  
+  // Step 2: Render bounce walls onto the screen
   // This corresponds to black_terrain(L_BOUNCE) at Play.c:272
   const screenWithBounceWalls = blackTerrain({
     thekind: LINE_KIND.BOUNCE,
@@ -46,26 +56,19 @@ export function checkForBounce(deps: CheckForBounceDeps): MonochromeBitmap {
     worldwidth
   })(screen)
   
-  // Step 2: Create a test bitmap to check for collision
-  // We'll erase the ship and see if any pixels change
-  const testScreen = cloneBitmap(screenWithBounceWalls)
-  const erasedScreen = eraseFigure({
-    x: shipState.shipx,
-    y: shipState.shipy,
+  // Step 3: Check for collision after adding bounce walls
+  // This corresponds to check_figure() at Play.c:274
+  const collisionAfterBounce = checkFigure(screenWithBounceWalls, {
+    x: shipState.shipx - SCENTER,
+    y: shipState.shipy - SCENTER,
+    height: 32, // SHIPHT
     def: shipDef
-  })(testScreen)
+  })
   
-  // Step 3: Check if erasing the ship affected any pixels
-  // If it did, that means the ship was overlapping bounce walls
-  let collision = false
-  for (let i = 0; i < erasedScreen.data.length; i++) {
-    if (erasedScreen.data[i] !== screenWithBounceWalls.data[i]) {
-      collision = true
-      break
-    }
-  }
+  // Step 4: Only bounce if the collision is NEW (caused by bounce walls, not ghost walls)
+  const collision = !preExistingCollision && collisionAfterBounce
   
-  // Step 4: Handle collision result
+  // Step 5: Handle collision result
   if (collision) {
     // Find the closest bounce wall and calculate bounce physics
     // This is a simplified version - the full implementation would need
@@ -93,16 +96,27 @@ export function checkForBounce(deps: CheckForBounceDeps): MonochromeBitmap {
         })
       }
     }
+    
+    // CRITICAL: Erase the ship from the screen after bounce detection!
+    // This corresponds to Play.c:278-279
+    // This prevents the later fatal collision check from triggering on bounce walls
+    const screenWithErasedShip = eraseFigure({
+      x: shipState.shipx - SCENTER,
+      y: shipState.shipy - SCENTER,
+      def: shipDef
+    })(screenWithBounceWalls)
+    
+    return screenWithErasedShip
   } else {
     // No collision - update last safe position
-    // Corresponds to Play.c:285-286
+    // Corresponds to Play.c:283-285
     store.dispatch({
       type: 'ship/noBounce'
     })
+    
+    // Return the screen with bounce walls rendered (ship not erased)
+    return screenWithBounceWalls
   }
-  
-  // Return the screen with bounce walls rendered
-  return screenWithBounceWalls
 }
 
 /**
