@@ -28,4 +28,7 @@ export type ShipState = {
   // "left over" subpixel velocity from last move
   xslow: number
   yslow: number
+  // Last safe position before bouncing
+  unbouncex: number
+  unbouncey: number
 }

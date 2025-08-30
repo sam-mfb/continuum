@@ -19,7 +19,9 @@ const initialState: ShipState = {
   shipx: 0,
   shipy: 0,
   xslow: 0,
-  yslow: 0
+  yslow: 0,
+  unbouncex: 0,
+  unbouncey: 0
 }
 
 type ControlAction = {
@@ -118,6 +120,39 @@ export const shipSlice = createSlice({
       state.bouncing = false
       state.shielding = false
       // Keep fuel as is
+    },
+
+    bounceShip: (
+      state,
+      action: PayloadAction<{
+        wallNormal: { x: number; y: number }
+        dotProduct: number
+      }>
+    ) => {
+      const { wallNormal, dotProduct } = action.payload
+      
+      // Based on bounce_ship() from orig/Sources/Play.c:291-328
+      // Apply reflection force if velocity toward wall is below threshold
+      const MIN_BOUNCE_FORCE = 10 * 256 // Minimum bounce force to ensure clean separation
+      
+      // Calculate bounce force magnitude
+      let kickMagnitude = Math.abs(dotProduct) / 4
+      if (kickMagnitude < MIN_BOUNCE_FORCE) {
+        kickMagnitude = MIN_BOUNCE_FORCE
+      }
+      
+      // Apply bounce force in direction of wall normal
+      state.dx += wallNormal.x * kickMagnitude
+      state.dy += wallNormal.y * kickMagnitude
+      
+      // Set bouncing flag
+      state.bouncing = true
+    },
+
+    noBounce: state => {
+      state.bouncing = false
+      state.unbouncex = state.shipx
+      state.unbouncey = state.shipy
     }
   }
 })
