@@ -84,7 +84,9 @@ const initializeGame = async (): Promise<void> => {
     store.dispatch(
       shipSlice.actions.initShip({
         x: shipScreenX,
-        y: shipScreenY
+        y: shipScreenY,
+        globalx: planet1.xstart,  // Ship starts at planet's starting position
+        globaly: planet1.ystart
       })
     )
 
@@ -118,7 +120,9 @@ const resetGame = (): void => {
   store.dispatch(
     shipSlice.actions.resetShip({
       x: shipScreenX,
-      y: shipScreenY
+      y: shipScreenY,
+      globalx: state.planet.xstart,  // Reset to starting global position
+      globaly: state.planet.ystart
     })
   )
 
