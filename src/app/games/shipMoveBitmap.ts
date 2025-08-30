@@ -31,6 +31,7 @@ import { wallsSlice } from '@/walls/wallsSlice'
 import { viewClear } from '@/screen/render'
 import { LINE_KIND } from '@/walls/types'
 import { checkFigure } from '@/collision/checkFigure'
+import { checkForBounce } from '@/ship/physics/checkForBounce'
 
 // Configure store with all slices and containment middleware
 const store = buildGameStore()
@@ -302,18 +303,22 @@ export const createShipMoveBitmapRenderer =
       def: shipMaskBitmap
     })(renderedBitmap)
 
-    // 5. check_for_bounce would go here (not implemented yet)
-
-    // 6. black_terrain(L_BOUNCE) - bounce walls
-    renderedBitmap = blackTerrain({
-      thekind: LINE_KIND.BOUNCE,
-      kindPointers: finalState.walls.kindPointers,
-      organizedWalls: finalState.walls.organizedWalls,
+    // 5. check_for_bounce - check collision with bounce walls and update physics
+    // This replaces the separate black_terrain(L_BOUNCE) call since checkForBounce
+    // handles both rendering bounce walls and collision detection
+    renderedBitmap = checkForBounce({
+      screen: renderedBitmap,
+      store,
+      shipDef: shipMaskBitmap,
+      wallData: {
+        kindPointers: finalState.walls.kindPointers,
+        organizedWalls: finalState.walls.organizedWalls
+      },
       viewport: viewport,
       worldwidth: finalState.planet.worldwidth
-    })(renderedBitmap)
+    })
 
-    // 7. black_terrain(L_NORMAL) - normal walls
+    // 6. black_terrain(L_NORMAL) - normal walls
     renderedBitmap = blackTerrain({
       thekind: LINE_KIND.NORMAL,
       kindPointers: finalState.walls.kindPointers,
@@ -322,7 +327,7 @@ export const createShipMoveBitmapRenderer =
       worldwidth: finalState.planet.worldwidth
     })(renderedBitmap)
 
-    // 8. do_bunkers would go here (not implemented yet)
+    // 7. do_bunkers would go here (not implemented yet)
 
     // Check for collision after drawing all lethal objects
     // Following Play.c:243-245 pattern
@@ -338,14 +343,14 @@ export const createShipMoveBitmapRenderer =
       // Continue rendering to show the reset state
     }
 
-    // 9. shift_figure - ship shadow
+    // 8. shift_figure - ship shadow
     renderedBitmap = shiftFigure({
       x: finalState.ship.shipx - (SCENTER - SHADOW_OFFSET_X),
       y: finalState.ship.shipy - (SCENTER - SHADOW_OFFSET_Y),
       def: shipMaskBitmap
     })(renderedBitmap)
 
-    // 10. full_figure - draw ship
+    // 9. full_figure - draw ship
     // Ship position needs to be offset by SCENTER (15) to account for center point
     // Original: full_figure(shipx-SCENTER, shipy-SCENTER, ship_defs[shiprot], ship_masks[shiprot], SHIPHT)
     renderedBitmap = fullFigure({
