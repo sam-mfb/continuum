@@ -46,12 +46,27 @@ import { checkFigure } from '@/collision/checkFigure'
 import { checkForBounce } from '@/ship/physics/checkForBounce'
 import { doBunks } from '@/planet/render/bunker'
 import { rint } from '@/shared/rint'
-import { startShipDeath, startExplosion } from '@/explosions/explosionsSlice'
+import { 
+  startShipDeath, 
+  startExplosion,
+  updateExplosions,
+  explosionsSlice 
+} from '@/explosions/explosionsSlice'
+import { drawExplosions } from '@/explosions/render/drawExplosions'
+import type { ShardSprite, ShardSpriteSet } from '@/figs/types'
+import type { ExplosionsState } from '@/explosions/types'
 import { SKILLBRADIUS } from '@/ship/constants'
 import { xyindistance } from '@/shots/xyindistance'
 
 // Configure store with all slices and containment middleware
-const store = buildGameStore()
+const store = buildGameStore({
+  explosions: explosionsSlice.reducer
+})
+
+// Type for our extended state
+type ExtendedGameState = ReturnType<typeof store.getState> & {
+  explosions: ExplosionsState
+}
 
 // Track initialization state
 let initializationComplete = false
@@ -292,6 +307,18 @@ export const createShipMoveBitmapRenderer =
     // This decrements lifecount for active strafes
     store.dispatch(doStrafes())
 
+    // Update explosions (shards and sparks)
+    store.dispatch(
+      updateExplosions({
+        worldwidth: state.planet.worldwidth,
+        worldwrap: state.planet.worldwrap,
+        gravityVector: (_x: number, _y: number) => ({
+          xg: state.planet.gravx,
+          yg: state.planet.gravy
+        })
+      })
+    )
+
     // Get final state for drawing
     const finalState = store.getState()
     
@@ -387,10 +414,14 @@ export const createShipMoveBitmapRenderer =
         y: finalState.ship.shipy - SCENTER,
         def: shipMaskBitmap
       })(renderedBitmap)
+    }
 
-      // 5. check_for_bounce - check collision with bounce walls and update physics
-      // This replaces the separate black_terrain(L_BOUNCE) call since checkForBounce
-      // handles both rendering bounce walls and collision detection
+    // 5. check_for_bounce - check collision with bounce walls and update physics
+    // This replaces the separate black_terrain(L_BOUNCE) call since checkForBounce
+    // handles both rendering bounce walls and collision detection
+    // Note: Bounce walls should always be rendered, even when ship is dead
+    if (finalState.ship.deadCount === 0) {
+      // Only check collision when alive
       renderedBitmap = checkForBounce({
         screen: renderedBitmap,
         store,
@@ -402,6 +433,15 @@ export const createShipMoveBitmapRenderer =
         viewport: viewport,
         worldwidth: finalState.planet.worldwidth
       })
+    } else {
+      // When dead, just draw bounce walls without collision check
+      renderedBitmap = blackTerrain({
+        thekind: LINE_KIND.BOUNCE,
+        kindPointers: finalState.walls.kindPointers,
+        organizedWalls: finalState.walls.organizedWalls,
+        viewport: viewport,
+        worldwidth: finalState.planet.worldwidth
+      })(renderedBitmap)
     }
 
     // 6. black_terrain(L_NORMAL) - normal walls
@@ -622,6 +662,48 @@ export const createShipMoveBitmapRenderer =
           worldwidth: finalState.planet.worldwidth
         })(renderedBitmap)
       }
+    }
+
+    // Draw explosions (shards and sparks)
+    // Check if any explosions are active
+    const extendedState = finalState as ExtendedGameState
+    if (extendedState.explosions.sparksalive > 0 || 
+        extendedState.explosions.shards.some(s => s.lifecount > 0)) {
+      // Get shard images from sprites - only getSprite is used by drawExplosions
+      const shardImages = {
+        kinds: {} as Record<number, Record<number, ShardSprite>>,
+        getSprite: (kind: number, rotation: number) => {
+          const def = spriteService.getShardSprite(kind, rotation, {
+            variant: 'def'
+          })
+          const mask = spriteService.getShardSprite(kind, rotation, {
+            variant: 'mask'
+          })
+          const bg1 = spriteService.getShardSprite(kind, rotation, {
+            variant: 'background1'
+          })
+          const bg2 = spriteService.getShardSprite(kind, rotation, {
+            variant: 'background2'
+          })
+          return {
+            def: def.uint8,
+            mask: mask.uint8,
+            images: {
+              background1: bg1.uint8,
+              background2: bg2.uint8
+            }
+          }
+        }
+      } as ShardSpriteSet
+
+      renderedBitmap = drawExplosions({
+        explosions: extendedState.explosions,
+        screenx: finalState.screen.screenx,
+        screeny: finalState.screen.screeny,
+        worldwidth: finalState.planet.worldwidth,
+        worldwrap: finalState.planet.worldwrap,
+        shardImages
+      })(renderedBitmap)
     }
 
     // Copy rendered bitmap data back to original
