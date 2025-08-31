@@ -17,13 +17,16 @@ This document outlines the plan for implementing missing collision detection sys
 - Ship vs bounce walls (via `checkForBounce`)
 - Ship shots vs walls (predictive via `setLife`)
 - Bunker shots movement and rendering
+- Ship hitting bunkers (pixel collision working correctly)
+- Bunker explosions (sparks and shards implemented)
+- Distance functions (`xyindist` and `xyindistance` fully implemented)
+- Bunker destruction on ship death (within SKILLBRADIUS)
+- Crater creation for omnidirectional bunkers
 
 ### Missing Collisions ❌
 - Ship shots hitting bunkers
-- Ship hitting bunkers (may already work, needs verification)
 - Bunker shots hitting walls
 - Bunker shots hitting ship (may already work, needs verification)
-- Explosion effects for destroyed bunkers
 
 ## Implementation Plan
 
@@ -75,46 +78,26 @@ for (; bp->x < right; bp++)
 - `/src/shots/checkBunkerCollision.ts` - Existing function to integrate (implement `Play.c:767-784`)
 - `/src/explosions/explosionsSlice.ts` - Add bunker explosion action (called by kill_bunk at `Play.c:782`)
 
-### 2. Ship Hits (or Gets Near) Bunker
+### 2. Ship Hits (or Gets Near) Bunker ✅ IMPLEMENTED
 
-**Location**: After ship movement in main game loop
+**Status**: ✅ Working correctly
+
+**Location**: After ship movement in main game loop (`shipMoveBitmap.ts`)
 
 **Original C Code Reference**: `Play.c:237` (do_bunkers) and `Play.c:243-245` (check_figure)
 
-**Approach**:
-- **For collision (death)**: Use pixel collision after bunkers are drawn
-  - Bunkers are already being drawn in the correct order (after terrain, before collision check)
-  - The existing `checkFigure` call should already detect this!
-  - May need to verify bunkers are drawn with solid pixels
+**Implementation verified**:
+- Pixel collision is working correctly after bunkers are drawn
+- Bunkers are drawn in the correct order (after terrain, before collision check)
+- The existing `checkFigure` call properly detects collisions
+- Ship explodes when hitting bunkers
+- Nearby bunkers are destroyed on ship death (within SKILLBRADIUS=30)
 
-- **For shield proximity** (if implementing shield): 
-  - When shield active, check proximity to bunkers
-  - Similar to fuel cell collection (`Play.c:514-518`)
-
-**Key C Code for Drawing Order**:
-```c
-// Play.c:236-245
-black_terrain(L_NORMAL);
-do_bunkers();              // Draw bunkers (line 237)
-if (!shielding)
-    move_bullets();        // Draw bunker shots (line 239)
-
-if(!dead_count)
-{
-    if (check_figure(shipx-SCENTER, shipy-SCENTER,
-                    ship_masks[shiprot], SHIPHT))  // Check collision (line 243-244)
-        kill_ship();
-```
-
-**Implementation notes**:
-- Should already work if bunkers are drawn correctly
-- Test to verify pixel collision is working
-- No additional code needed if working correctly
-
-**Verification steps**:
-1. Confirm bunkers are drawn before `checkFigure` call
-2. Verify bunker sprites have solid collision masks
-3. Test ship flying into bunker
+**Key Implementation Details**:
+- Drawing order preserved from original (`Play.c:236-245`)
+- Bunker sprites have proper collision masks
+- Collision detection uses pixel-perfect detection via `checkFigure`
+- Ship death triggers bunker destruction check using `xyindist()` with correct global coordinates
 
 ### 3. Bunker Shots Hit Walls
 
@@ -192,28 +175,25 @@ if (shielding && sp->x > left && sp->x < right &&
 2. Verify `drawDotSafe` creates solid pixels
 3. Test ship getting hit by bunker shot
 
-### 5. Explosion System for Bunkers
+### 5. Explosion System for Bunkers ✅ IMPLEMENTED
 
-**Location**: New explosion handling in explosions slice
+**Status**: ✅ Fully implemented
 
-**Original C Code Reference**: `Bunkers.c:782` (kill_bunk call) - actual explosion code not shown in available sources
+**Location**: Explosions slice and game loop
 
-**Approach**:
-- When bunker is destroyed, create explosion:
-  1. Generate sparks at bunker position
-  2. Use `EXPLSPARKS` (20) sparks for bunker death
-  3. Each spark has random velocity and lifetime
-  4. Render sparks as small white dots
+**Original C Code Reference**: `Play.c:367` (start_explosion call)
 
-**Implementation notes**:
-- Already have explosion system for ship
-- Extend to handle bunker explosions
-- Use bunker-specific constants from GW.h
+**Implementation complete**:
+- Bunker explosions trigger when bunkers are destroyed
+- Uses `startExplosion` action with bunker position and type
+- Generates both sparks and shards based on bunker type
+- Different bunker types produce different explosion patterns
+- Omnidirectional bunkers (kind >= BUNKROTKINDS) create craters
 
-**Code locations**:
-- `/src/explosions/explosionsSlice.ts` - Add `createBunkerExplosion` action (called by kill_bunk)
-- `/src/explosions/constants.ts` - Add bunker explosion constants (from GW.h)
-- Game loop - Call explosion creation when bunker destroyed (at `Play.c:782`)
+**Code locations implemented**:
+- `/src/explosions/explosionsSlice.ts` - `startExplosion` action handles bunker explosions
+- `/src/app/games/shipMoveBitmap.ts` - Calls explosion creation when bunker destroyed
+- `/src/planet/planetSlice.ts` - `killBunker` action creates craters for appropriate bunker types
 
 **Constants from GW.h**:
 ```c
@@ -274,6 +254,27 @@ The current drawing order (lines ~300-450) is:
 ### Fix Required
 Move bunker shot rendering to happen before `checkFigure` call (around line 405, after bunkers).
 
+## Implemented Helper Functions ✅
+
+### Distance Detection Functions
+- **`xyindist()`** (`/src/shots/xyindist.ts`):
+  - Full implementation with bounding box check and distance calculation
+  - Used for ship death bunker destruction (SKILLBRADIUS)
+  - Properly handles signed arithmetic and <= comparison
+  - Includes detailed documentation of original C code discrepancy
+
+- **`xyindistance()`** (`/src/shots/xyindistance.ts`):
+  - Optimized version without bounding box check
+  - Assumes caller has pre-verified bounds
+  - Used for performance-critical inner loops
+
+### Assembly Emulator Instructions
+- **`muls`** - Signed 16x16 multiply to 32-bit result
+- **`neg_w`** - Negate word with proper sign extension
+- **`add_w`** - Add word preserving upper bits
+- **`cmp_w`** - Signed word comparison with flag setting
+- **`bgt`** - Branch if greater than (signed)
+
 ## Key Design Principles
 
 ### Three Collision Methods (From Original C Code)
@@ -320,11 +321,11 @@ Move bunker shot rendering to happen before `checkFigure` call (around line 405,
 
 ## Testing Strategy
 
-### Phase 1: Verify Existing Systems
+### Phase 1: Verify Existing Systems ✅ COMPLETE
 1. **Ship hitting bunker**:
-   - Should already work via pixel collision
-   - Test: Fly ship directly into bunker
-   - Expected: Ship explodes
+   - ✅ Working correctly via pixel collision
+   - ✅ Ship explodes when hitting bunker
+   - ✅ Nearby bunkers destroyed on ship death
 
 2. **Bunker shots hitting ship**:
    - Currently broken due to drawing order
@@ -343,9 +344,10 @@ Move bunker shot rendering to happen before `checkFigure` call (around line 405,
    - Special: Bounce walls should cause ricochet (`Terrain.c:226-228`)
 
 ### Phase 3: Visual Feedback
-1. **Bunker explosions**:
-   - Test: Destroy bunker
-   - Expected: 20 sparks fly outward
+1. **Bunker explosions** ✅ IMPLEMENTED:
+   - ✅ Bunkers explode with sparks and shards
+   - ✅ Different explosion patterns for different bunker types
+   - ✅ Craters created for omnidirectional bunkers
 
 2. **Multi-hit feedback**:
    - Test: Shoot hardy bunker
@@ -369,7 +371,7 @@ Move bunker shot rendering to happen before `checkFigure` call (around line 405,
 1. **Critical Fix**: Move bunker shot drawing before collision check (fix `Play.c:239` order)
 2. **High Priority**: Ship shots vs bunkers (core gameplay - `Play.c:767-784`)
 3. **High Priority**: Bunker shots vs walls (shot lifecycle - `Bunkers.c:180`)
-4. **Medium Priority**: Bunker explosions (visual feedback - referenced at `Play.c:782`)
+4. ~~**Medium Priority**: Bunker explosions~~ ✅ COMPLETE
 5. **Low Priority**: Multi-hit bunker effects (DIFFBUNK handling at `Play.c:778-781`)
 
 ## Files to Modify
@@ -392,15 +394,17 @@ Move bunker shot rendering to happen before `checkFigure` call (around line 405,
 
 ## Success Criteria
 
-- [ ] Ship dies when hitting bunker
+- [x] Ship dies when hitting bunker
 - [ ] Ship dies when hit by bunker shot
 - [ ] Bunkers explode when hit by ship shots
 - [ ] Hardy bunkers require multiple hits
 - [ ] Bunker shots disappear at walls
 - [ ] Bunker shots bounce off bounce walls
-- [ ] Bunker explosions show sparks
+- [x] Bunker explosions show sparks
+- [x] Bunkers destroyed on ship death (within SKILLBRADIUS)
+- [x] Craters created for omnidirectional bunkers
 - [ ] All collisions work across world wrap
-- [ ] Performance remains smooth
+- [x] Performance remains smooth
 
 ## Notes
 
@@ -412,24 +416,36 @@ Move bunker shot rendering to happen before `checkFigure` call (around line 405,
 ## Original C Code Function Map
 
 ### Bunker Management (`Bunkers.c`):
-- `do_bunkers()` (lines 26-49) - Main bunker update and rendering
-- `aim_bunk()` (lines 53-74) - Calculate bunker aiming direction
-- `aim_dir()` (lines 77-94) - Get angle to ship
-- `follow_shot()` (lines 97-113) - Create aimed shot for FOLLOWBUNK
-- `bunk_shoot()` (lines 125-190) - Main bunker shooting logic
-- `rand_shot()` (lines 193-209) - Create random direction shot
-- `do_bunks()` (lines 213-245) - Render bunkers to screen
+- ✅ `do_bunkers()` (lines 26-49) - Main bunker update and rendering → `/src/planet/render/bunker.ts` (`doBunks`)
+- ✅ `aim_bunk()` (lines 53-74) - Calculate bunker aiming direction → `/src/shots/aimBunk.ts`
+- ✅ `aim_dir()` (lines 77-94) - Get angle to ship → `/src/shots/aimDir.ts`
+- ✅ `follow_shot()` (lines 97-113) - Create aimed shot for FOLLOWBUNK → `/src/shots/followShot.ts`
+- ✅ `bunk_shoot()` (lines 125-190) - Main bunker shooting logic → `/src/shots/bunkShoot.ts`
+- ✅ `rand_shot()` (lines 193-209) - Create random direction shot → `/src/shots/randShot.ts`
+- ✅ `do_bunks()` (lines 213-245) - Render bunkers to screen → `/src/planet/render/bunker.ts` (`doBunks`)
 
 ### Collision Detection (`Play.c`):
-- `move_shipshots()` (lines 750-814) - Ship shot movement and bunker collision
-- `move_bullets()` (lines 816-846) - Bunker shot movement and shield check
-- Main render loop (lines 219-249) - Critical drawing order
+- ⚠️ `move_shipshots()` (lines 750-814) - Ship shot movement → `/src/shots/shotsSlice.ts` (partial - missing bunker collision)
+- ⚠️ `move_bullets()` (lines 816-846) - Bunker shot movement → `/src/shots/shotsSlice.ts` (partial - missing shield check)
+- ✅ Main render loop (lines 219-249) - Critical drawing order → `/src/app/games/shipMoveBitmap.ts`
+- ✅ `kill_ship()` (lines 332-348) - Ship death and bunker destruction → `/src/ship/shipSlice.ts` & `/src/app/games/shipMoveBitmap.ts`
+- ✅ `kill_bunk()` (lines 351-368) - Bunker destruction → `/src/planet/planetSlice.ts` (`killBunker`)
 
 ### Wall Collision (`Terrain.c`):
-- `set_life()` (lines 146-230) - Predictive collision with terrain lines
+- ✅ `set_life()` (lines 146-230) - Predictive collision with terrain lines → `/src/shots/setLife.ts`
 
 ### Additional Functions:
-- `legal_angle()` - Check if bunker can shoot at angle (not shown)
-- `kill_bunk()` - Destroy bunker and create explosion (not shown)
-- `xyindistance()` - Circular proximity detection (not shown)
-- `check_figure()` - Pixel-perfect collision (`Draw.c:227-273`)
+- ✅ `legal_angle()` - Check if bunker can shoot at angle → `/src/shots/legalAngle.ts`
+- ✅ `kill_bunk()` - Destroy bunker and create explosion → `/src/planet/planetSlice.ts` (`killBunker`)
+- ✅ `xyindistance()` - Circular proximity detection (optimized) → `/src/shots/xyindistance.ts`
+- ✅ `xyindist()` - Circular proximity with bounding box → `/src/shots/xyindist.ts`
+- ✅ `check_figure()` - Pixel-perfect collision (`Draw.c:227-273`) → `/src/collision/checkFigure.ts`
+- ✅ `start_explosion()` - Create explosion effects → `/src/explosions/explosionsSlice.ts` (`startExplosion`)
+- ✅ `start_death()` - Ship death explosion → `/src/explosions/explosionsSlice.ts` (`startShipDeath`)
+
+### Summary:
+- **Fully Implemented**: 17 functions ✅
+- **Partially Implemented**: 2 functions ⚠️ (missing bunker collision checks)
+- **Not Implemented**: 0 functions ❌
+
+Most of the core collision and bunker management system has been successfully ported!
