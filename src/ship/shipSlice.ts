@@ -230,18 +230,20 @@ export const shipSlice = createSlice({
     },
 
     /**
-     * Respawn the ship at start position
+     * Respawn the ship at current position after death
+     * Based on orig/Sources/Play.c:203-211
      */
     respawnShip: state => {
-      state.shipx = state.startx // Reset position
-      state.shipy = state.starty
+      // Don't reset position - ship respawns where it died
+      // Based on orig/Sources/Play.c:203-211
+      // Only reset velocity and fuel
       state.dx = 0 // Stop movement
       state.dy = 0
       state.xslow = 0
       state.yslow = 0
       state.fuel = STARTING_FUEL
-      state.shiprot = 0 // Reset rotation
-      // Reset other spawn state as needed
+      // Don't reset rotation - keep same orientation
+      // Reset activity states
       state.flaming = false
       state.flameBlink = 0
       state.thrusting = false

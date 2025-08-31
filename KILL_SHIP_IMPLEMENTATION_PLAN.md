@@ -45,12 +45,12 @@ decrementDeadCount: state => {
 }
 
 respawnShip: state => {
-  state.x = state.startx // Reset position
-  state.y = state.starty
-  state.vx = 0 // Stop movement
-  state.vy = 0
+  // Ship respawns at death location, not start position
+  // Based on orig/Sources/Play.c:203-211
+  state.dx = 0 // Stop movement
+  state.dy = 0
   state.fuel = STARTING_FUEL
-  // Reset other spawn state as needed
+  // Reset activity states but keep position and rotation
 }
 ```
 
@@ -201,9 +201,10 @@ STARTING_FUEL = 1000 // Fuel on respawn
 
 4. **Implement respawnShip reducer in shipSlice**
 
-   - Reset position to startx, starty
+   - Keep ship at death position (don't reset to start)
    - Reset velocity to 0
    - Reset fuel to STARTING_FUEL
+   - Based on orig/Sources/Play.c:203-211
 
 5. **Implement killBunker reducer in planetSlice**
 
