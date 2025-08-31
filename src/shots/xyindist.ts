@@ -60,8 +60,8 @@ export function xyindist(x: number, y: number, dist: number): boolean {
   // move.w y(A6), D2
   asm.D2 = y16
   
-  // muls D0, D0 - signed multiply dist * dist
-  asm.D0 = dist16 * dist16
+  // muls D0, D0 - signed multiply D0 * D0 (D0 currently contains -dist)
+  asm.D0 = asm.D0 * asm.D0  // (-dist) * (-dist) = dist²
   
   // muls D1, D1 - signed multiply x * x
   asm.D1 = asm.D1 * asm.D1
