@@ -261,10 +261,13 @@ export const createShipMoveBitmapRenderer =
       store.dispatch(shipSlice.actions.moveShip())
     }
 
+    // Get fresh state after potential respawn to avoid viewport desync
+    const currentState = store.getState()
+    
     // Move all bullets with collision detection
     // Calculate global ship position (screen + ship relative position)
-    const globalx = state.screen.screenx + state.ship.shipx
-    const globaly = state.screen.screeny + state.ship.shipy
+    const globalx = currentState.screen.screenx + currentState.ship.shipx
+    const globaly = currentState.screen.screeny + currentState.ship.shipy
 
     // Update bunker rotations for animated bunkers (GROUND, FOLLOW, GENERATOR)
     store.dispatch(updateBunkerRotations({ globalx, globaly }))
@@ -273,20 +276,20 @@ export const createShipMoveBitmapRenderer =
     // Check if bunkers should shoot this frame (probabilistic based on shootslow)
     // From Bunkers.c:30-31: if (rint(100) < shootslow) bunk_shoot();
     const shootRoll = rint(100)
-    if (shootRoll < state.planet.shootslow) {
+    if (shootRoll < currentState.planet.shootslow) {
       // Calculate screen boundaries for shot eligibility
-      const screenr = state.screen.screenx + SCRWTH
-      const screenb = state.screen.screeny + VIEWHT
+      const screenr = currentState.screen.screenx + SCRWTH
+      const screenb = currentState.screen.screeny + VIEWHT
       
       store.dispatch(
         bunkShoot({
-          screenx: state.screen.screenx,
+          screenx: currentState.screen.screenx,
           screenr: screenr,
-          screeny: state.screen.screeny,
+          screeny: currentState.screen.screeny,
           screenb: screenb,
-          bunkrecs: state.planet.bunkers,
-          worldwidth: state.planet.worldwidth,
-          worldwrap: state.planet.worldwrap,
+          bunkrecs: currentState.planet.bunkers,
+          worldwidth: currentState.planet.worldwidth,
+          worldwrap: currentState.planet.worldwrap,
           globalx: globalx,
           globaly: globaly
         })
@@ -295,23 +298,23 @@ export const createShipMoveBitmapRenderer =
 
     store.dispatch(
       shotsSlice.actions.moveShipshots({
-        bunkers: state.planet.bunkers,
+        bunkers: currentState.planet.bunkers,
         shipPosition: {
           x: globalx,
           y: globaly
         },
-        shipAlive: state.ship.deadCount === 0,
-        walls: state.planet.lines,
-        worldwidth: state.planet.worldwidth,
-        worldwrap: state.planet.worldwrap
+        shipAlive: currentState.ship.deadCount === 0,
+        walls: currentState.planet.lines,
+        worldwidth: currentState.planet.worldwidth,
+        worldwrap: currentState.planet.worldwrap
       })
     )
 
     // Move bunker shots
     store.dispatch(
       moveBullets({
-        worldwidth: state.planet.worldwidth,
-        worldwrap: state.planet.worldwrap
+        worldwidth: currentState.planet.worldwidth,
+        worldwrap: currentState.planet.worldwrap
       })
     )
 
@@ -322,11 +325,11 @@ export const createShipMoveBitmapRenderer =
     // Update explosions (shards and sparks)
     store.dispatch(
       updateExplosions({
-        worldwidth: state.planet.worldwidth,
-        worldwrap: state.planet.worldwrap,
+        worldwidth: currentState.planet.worldwidth,
+        worldwrap: currentState.planet.worldwrap,
         gravityVector: (_x: number, _y: number) => ({
-          xg: state.planet.gravx,
-          yg: state.planet.gravy
+          xg: currentState.planet.gravx,
+          yg: currentState.planet.gravy
         })
       })
     )
