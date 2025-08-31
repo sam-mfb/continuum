@@ -530,6 +530,13 @@ export const createShipMoveBitmapRenderer =
         
         for (let index = 0; index < bunkers.length; index++) {
           const bunker = bunkers[index]!
+          
+          // Match original C logic: stop at first bunker with negative rot (sentinel value)
+          // This marks the end of active bunkers in the array
+          if (bunker.rot < 0) {
+            break
+          }
+          
           if (
             bunker.alive &&
             xyindist(bunker.x - deathGlobalX, bunker.y - deathGlobalY, SKILLBRADIUS) &&
