@@ -518,17 +518,23 @@ export const createShipMoveBitmapRenderer =
         store.dispatch(shipSlice.actions.killShip())
         
         // (b) Death blast - destroy ONE nearby bunker (Play.c:338-346)
+        // Recalculate global position using CURRENT ship position after movement
+        // This fixes the bug where we were using stale position from before ship movement
+        const deathState = store.getState()
+        const deathGlobalX = deathState.screen.screenx + deathState.ship.shipx
+        const deathGlobalY = deathState.screen.screeny + deathState.ship.shipy
+        
         // Only kills bunkers in field of view for directional types
-        const bunkers = store.getState().planet.bunkers
+        const bunkers = deathState.planet.bunkers
         const BUNKROTKINDS = 2 // Kinds 0-1 are directional, 2+ are omnidirectional
         
         for (let index = 0; index < bunkers.length; index++) {
           const bunker = bunkers[index]!
           if (
             bunker.alive &&
-            xyindist(bunker.x - globalx, bunker.y - globaly, SKILLBRADIUS) &&
+            xyindist(bunker.x - deathGlobalX, bunker.y - deathGlobalY, SKILLBRADIUS) &&
             (bunker.kind >= BUNKROTKINDS || // Omnidirectional bunkers always killable
-             legalAngle(bunker.rot, bunker.x, bunker.y, globalx, globaly)) // Directional need angle check
+             legalAngle(bunker.rot, bunker.x, bunker.y, deathGlobalX, deathGlobalY)) // Directional need angle check
           ) {
             store.dispatch(killBunker({ index }))
             // TODO: Add score when score system is implemented
@@ -548,7 +554,7 @@ export const createShipMoveBitmapRenderer =
         }
         
         // (c) Start ship explosion
-        store.dispatch(startShipDeath({ x: globalx, y: globaly }))
+        store.dispatch(startShipDeath({ x: deathGlobalX, y: deathGlobalY }))
         
         // (d) TODO: Play death sound when sound system is implemented
         // playSound(DEATH_SOUND)
