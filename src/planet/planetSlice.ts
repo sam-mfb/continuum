@@ -2,6 +2,7 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { PlanetState } from './types'
 import { BunkerKind } from './types'
 import { BUNKROTKINDS, FUELFRAMES } from '@/figs/types'
+import { PLANET } from './constants'
 import { aimBunk } from '@/shots/aimBunk'
 import { rint } from '@/shared/rint'
 
@@ -188,13 +189,30 @@ export const planetSlice = createSlice({
 
     /**
      * Kill a bunker - part of ship death blast
-     * Based on kill_bunk() reference in Play.c:782
+     * Based on kill_bunk() from orig/Sources/Play.c:351-368
+     * Creates craters for omnidirectional bunkers (kinds >= BUNKROTKINDS)
      */
     killBunker: (state, action: PayloadAction<{ index: number }>) => {
       const bunker = state.bunkers[action.payload.index]
       if (bunker) {
         bunker.alive = false
-        // Note: Explosion triggered separately from game loop
+        
+        // Create crater for omnidirectional bunkers
+        // From Play.c:357-361: if (bp->kind >= BUNKROTKINDS)
+        if (bunker.kind >= BUNKROTKINDS && state.numcraters < PLANET.NUMCRATERS) {
+          state.craters[state.numcraters] = {
+            x: bunker.x,
+            y: bunker.y
+          }
+          state.numcraters++
+        }
+        
+        // TODO: Reset gravity if generator destroyed (Play.c:363-364)
+        // if (bunker.kind === 4) { // GENERATORBUNK
+        //   init_gravity()
+        // }
+        
+        // Note: Explosion and score handled separately from game loop
       }
     }
   }

@@ -45,6 +45,7 @@ import { LINE_KIND } from '@/walls/types'
 import { checkFigure } from '@/collision/checkFigure'
 import { checkForBounce } from '@/ship/physics/checkForBounce'
 import { doBunks } from '@/planet/render/bunker'
+import { drawCraters } from '@/planet/render/drawCraters'
 import { rint } from '@/shared/rint'
 import { 
   startShipDeath, 
@@ -347,6 +348,30 @@ export const createShipMoveBitmapRenderer =
 
     // Copy cleared bitmap data back to original
     bitmap.data.set(clearedBitmap.data)
+
+    // Draw craters (from Play.c:222 - draw_craters())
+    // Craters are drawn early, after screen clear but before walls
+    // Calculate on_right_side flag (Play.c:443)
+    const on_right_side = finalState.screen.screenx > finalState.planet.worldwidth - SCRWTH
+    
+    // Get crater images using existing getCraterSprite method
+    const craterImages = {
+      background1: spriteService.getCraterSprite({ variant: 'background1' }).uint8,
+      background2: spriteService.getCraterSprite({ variant: 'background2' }).uint8
+    }
+    
+    const crateredBitmap = drawCraters({
+      craters: finalState.planet.craters,
+      numcraters: finalState.planet.numcraters,
+      scrnx: finalState.screen.screenx,
+      scrny: finalState.screen.screeny,
+      worldwidth: finalState.planet.worldwidth,
+      on_right_side,
+      craterImages
+    })(bitmap)
+    
+    // Copy cratered bitmap data back
+    bitmap.data.set(crateredBitmap.data)
 
     // Setup viewport for wall rendering
     // Calculate screen bounds (right and bottom edges)
