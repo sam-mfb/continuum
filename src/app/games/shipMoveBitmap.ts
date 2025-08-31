@@ -56,7 +56,7 @@ import { drawExplosions } from '@/explosions/render/drawExplosions'
 import type { ShardSprite, ShardSpriteSet } from '@/figs/types'
 import type { ExplosionsState } from '@/explosions/types'
 import { SKILLBRADIUS } from '@/ship/constants'
-import { xyindistance } from '@/shots/xyindistance'
+import { xyindist } from '@/shots/xyindist'
 import { legalAngle } from '@/planet/legalAngle'
 
 // Configure store with all slices and containment middleware
@@ -526,7 +526,7 @@ export const createShipMoveBitmapRenderer =
           const bunker = bunkers[index]!
           if (
             bunker.alive &&
-            xyindistance(bunker.x - globalx, bunker.y - globaly, SKILLBRADIUS) &&
+            xyindist(bunker.x - globalx, bunker.y - globaly, SKILLBRADIUS) &&
             (bunker.kind >= BUNKROTKINDS || // Omnidirectional bunkers always killable
              legalAngle(bunker.rot, bunker.x, bunker.y, globalx, globaly)) // Directional need angle check
           ) {
