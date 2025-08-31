@@ -237,10 +237,10 @@ export const shipSlice = createSlice({
     respawnShip: state => {
       // Center ship on screen
       state.shipx = 128 // SCRWTH / 2
-      state.shipy = 96 // (TOPMARG + BOTMARG) / 2  
+      state.shipy = 96 // (TOPMARG + BOTMARG) / 2
       // Note: Screen position must be updated by caller to place ship at start
       // screenx = startx - shipx, screeny = starty - shipy
-      
+
       // Reset movement
       state.dx = 0
       state.dy = 0

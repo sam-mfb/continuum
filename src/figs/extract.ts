@@ -134,16 +134,7 @@ function extractBunkers(bitmap: Uint8Array): BunkerSprite[][] {
           // Copy mask to the corresponding def sprite
           const defSprite = rawData[row]?.[i - 4]
           if (defSprite) {
-            copyBitmapRegion(
-              bitmap,
-              512,
-              defSprite.mask,
-              x,
-              y,
-              48,
-              BUNKHT,
-              6
-            )
+            copyBitmapRegion(bitmap, 512, defSprite.mask, x, y, 48, BUNKHT, 6)
           }
           continue
         }

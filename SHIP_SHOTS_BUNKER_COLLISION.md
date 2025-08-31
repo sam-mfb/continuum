@@ -1,6 +1,7 @@
 # Ship Shots vs Bunker Collision Implementation Guide
 
 ## Overview
+
 This document provides a detailed implementation guide for ship shots hitting bunkers, with extensive citations to the original C source code to ensure exact pattern matching.
 
 ## Original C Implementation Reference
@@ -10,6 +11,7 @@ The core collision logic is in **`Play.c:760-814`** in the `move_shipshots()` fu
 ## Data Structures
 
 ### Shot Record (`GW.h:229-237`)
+
 ```c
 typedef struct
 {   int x, y,         /* current global int x, y of shot */
@@ -23,6 +25,7 @@ typedef struct
 ```
 
 ### Bunker Record (`GW.h:251-258`)
+
 ```c
 typedef struct
 {   int x, y,         /* global x, y, of center of base */
@@ -53,7 +56,7 @@ if (sp->lifecount)
 {
     // Play.c:762 - Move the shot first
     move_shot(sp);
-    
+
     // Play.c:763-766 - Calculate bounding box
     left = sp->x - BRADIUS;
     right = sp->x + BRADIUS;
@@ -78,9 +81,8 @@ for (; bp->x < right; bp++)
 
 ```typescript
 // Bounding box check (adaptation of Play.c:763-766, 770)
-if (bunker.x < left || bunker.x > right || 
-    bunker.y < top || bunker.y > bot) {
-    continue;  // Outside bounding box
+if (bunker.x < left || bunker.x > right || bunker.y < top || bunker.y > bot) {
+  continue // Outside bounding box
 }
 ```
 
@@ -125,16 +127,16 @@ The `>> 3` is dividing by 8 because velocities are stored as `speed * 8` (see `G
     // Play.c:776-777 - Destroy the shot
     sp->lifecount = sp->btime = 0;
     sp->strafedir = -1;
-    
+
     // Play.c:778-781 - Hardy bunker check
     if (bp->kind == DIFFBUNK &&
         (bp->rot & 3) == 2 &&
         --bp->rotcount > 0)
             break;      /* hardy bunker still alive */
-    
+
     // Play.c:782 - Destroy the bunker
     kill_bunk(bp);
-    
+
     // Play.c:783 - Exit bunker loop (one shot, one kill max)
     break;
 }
@@ -143,6 +145,7 @@ The `>> 3` is dividing by 8 because velocities are stored as `speed * 8` (see `G
 ### Hardy Bunker Logic (`Play.c:778-781`)
 
 Hardy bunkers are `DIFFBUNK` type with specific rotation:
+
 - **Condition**: `bp->kind == DIFFBUNK && (bp->rot & 3) == 2`
 - **Behavior**: Decrement `rotcount` and check if still alive
 - **Note**: The `--bp->rotcount` modifies the bunker's hit counter in place
@@ -159,10 +162,10 @@ register bunkrec *bp;
     // Play.c:354-355 - Score tables
     static int kindscores[5] = {100, 0, 100, 400, 500},
                diffscores[4] = {10, 200, 300, 200};
-    
+
     // Play.c:356 - Mark as dead
     bp->alive = FALSE;
-    
+
     // Play.c:357-362 - Create crater for omnidirectional bunkers
     if (bp->kind >= BUNKROTKINDS)
     {
@@ -170,21 +173,21 @@ register bunkrec *bp;
         craters[numcraters].y = bp->y;
         numcraters++;
     }
-    
+
     // Play.c:363-364 - Special handling for generator bunker
     if (bp->kind == GENERATORBUNK)
         init_gravity();
-    
+
     // Play.c:365-366 - Add score
     score_plus(bp->kind == DIFFBUNK ? diffscores[bp->rot & 3] :
                                        kindscores[bp->kind]);
-    
+
     // Play.c:367 - Start explosion
     start_explosion(bp->x, bp->y, bp->rot, bp->kind);
-    
+
     // Play.c:368 - Play sound
     start_sound(EXP1_SOUND);
-    
+
     // Play.c:369-370 - Check mission complete...
 }
 ```
@@ -198,110 +201,121 @@ register bunkrec *bp;
 
 // For each active shot (Play.c:760)
 if (shot.lifecount > 0) {
-    // Move shot first (Play.c:762)
-    moveShot(shot);
-    
-    // Calculate bounding box (Play.c:763-766)
-    const left = shot.x - BRADIUS;
-    const right = shot.x + BRADIUS;
-    const top = shot.y - BRADIUS;
-    const bot = shot.y + BRADIUS;
-    
-    // Check each bunker
-    for (const bunker of bunkers) {
-        // Alive check (Play.c:770)
-        if (!bunker.alive) continue;
-        
-        // Bounding box check (Play.c:770 - y bounds check)
-        if (bunker.x < left || bunker.x > right || 
-            bunker.y < top || bunker.y > bot) {
-            continue;
-        }
-        
-        // Circular collision (Play.c:771)
-        const dx = bunker.x - shot.x;
-        const dy = bunker.y - shot.y;
-        if (!xyindistance(dx, dy, BRADIUS)) {
-            continue;
-        }
-        
-        // Angle check for directional bunkers (Play.c:772-774)
-        if (bunker.kind < BUNKROTKINDS) {
-            // Calculate shot trajectory using previous position
-            const shotPrevX = shot.x - (shot.h >> 3);
-            const shotPrevY = shot.y - (shot.v >> 3);
-            
-            if (!legalAngle(bunker.rot, bunker.x, bunker.y, 
-                           shotPrevX, shotPrevY)) {
-                continue; // Hit from invalid angle
-            }
-        }
-        // Note: Omnidirectional (kind >= BUNKROTKINDS) skip angle check
-        
-        // Collision confirmed! (Play.c:775)
-        
-        // Destroy shot (Play.c:776-777)
-        shot.lifecount = 0;
-        shot.btime = 0;
-        shot.strafedir = -1;
-        
-        // Hardy bunker check (Play.c:778-781)
-        if (bunker.kind === DIFFBUNK && (bunker.rot & 3) === 2) {
-            // Initialize rotcount if needed (not in original, but needed for state)
-            if (!bunker.rotcount || bunker.rotcount <= 0) {
-                bunker.rotcount = 3;
-            }
-            
-            bunker.rotcount--;
-            
-            if (bunker.rotcount > 0) {
-                // Bunker survives, shot is consumed
-                break; // Play.c:781
-            }
-        }
-        
-        // Kill bunker (Play.c:782)
-        dispatch(killBunker({ 
-            bunkerId: bunker.id,
-            x: bunker.x,
-            y: bunker.y,
-            kind: bunker.kind,
-            rot: bunker.rot
-        }));
-        
-        // One shot can only kill one bunker (Play.c:783)
-        break;
+  // Move shot first (Play.c:762)
+  moveShot(shot)
+
+  // Calculate bounding box (Play.c:763-766)
+  const left = shot.x - BRADIUS
+  const right = shot.x + BRADIUS
+  const top = shot.y - BRADIUS
+  const bot = shot.y + BRADIUS
+
+  // Check each bunker
+  for (const bunker of bunkers) {
+    // Alive check (Play.c:770)
+    if (!bunker.alive) continue
+
+    // Bounding box check (Play.c:770 - y bounds check)
+    if (
+      bunker.x < left ||
+      bunker.x > right ||
+      bunker.y < top ||
+      bunker.y > bot
+    ) {
+      continue
     }
+
+    // Circular collision (Play.c:771)
+    const dx = bunker.x - shot.x
+    const dy = bunker.y - shot.y
+    if (!xyindistance(dx, dy, BRADIUS)) {
+      continue
+    }
+
+    // Angle check for directional bunkers (Play.c:772-774)
+    if (bunker.kind < BUNKROTKINDS) {
+      // Calculate shot trajectory using previous position
+      const shotPrevX = shot.x - (shot.h >> 3)
+      const shotPrevY = shot.y - (shot.v >> 3)
+
+      if (!legalAngle(bunker.rot, bunker.x, bunker.y, shotPrevX, shotPrevY)) {
+        continue // Hit from invalid angle
+      }
+    }
+    // Note: Omnidirectional (kind >= BUNKROTKINDS) skip angle check
+
+    // Collision confirmed! (Play.c:775)
+
+    // Destroy shot (Play.c:776-777)
+    shot.lifecount = 0
+    shot.btime = 0
+    shot.strafedir = -1
+
+    // Hardy bunker check (Play.c:778-781)
+    if (bunker.kind === DIFFBUNK && (bunker.rot & 3) === 2) {
+      // Initialize rotcount if needed (not in original, but needed for state)
+      if (!bunker.rotcount || bunker.rotcount <= 0) {
+        bunker.rotcount = 3
+      }
+
+      bunker.rotcount--
+
+      if (bunker.rotcount > 0) {
+        // Bunker survives, shot is consumed
+        break // Play.c:781
+      }
+    }
+
+    // Kill bunker (Play.c:782)
+    dispatch(
+      killBunker({
+        bunkerId: bunker.id,
+        x: bunker.x,
+        y: bunker.y,
+        kind: bunker.kind,
+        rot: bunker.rot
+      })
+    )
+
+    // One shot can only kill one bunker (Play.c:783)
+    break
+  }
 }
 ```
 
 ## Critical Implementation Details
 
 ### 1. **Order of Operations**
+
 - Move shot FIRST (Play.c:762)
 - Then check collisions with new position
 - This ensures proper collision at high speeds
 
 ### 2. **Bounding Box Optimization**
+
 - Original assumes sorted bunker array (Play.c:767-769)
 - We adapt with simple bounds checking for unsorted arrays
 
 ### 3. **Angle Calculation**
+
 - Must use PREVIOUS shot position (Play.c:773-774)
 - Previous = current - (velocity >> 3)
 - This determines the shot's approach angle
 
 ### 4. **Hardy Bunker State**
+
 - Original modifies `rotcount` in place (Play.c:780)
 - We need to track this in Redux state
 - Initialize to 3 hits if not set
 
 ### 5. **Collision Priority**
+
 - Shot destroyed immediately (Play.c:776-777)
 - Even if bunker survives (hardy), shot is consumed
 - Break ensures one shot = max one bunker kill
 
 ### 6. **Omnidirectional vs Directional**
+
 - `kind >= BUNKROTKINDS`: Can be hit from any angle
 - `kind < BUNKROTKINDS`: Must pass `legal_angle` check
 
@@ -324,10 +338,12 @@ Based on the original implementation:
 ## Files to Modify
 
 1. **`/src/shots/shotsSlice.ts`**
+
    - Add collision check in `moveShipshots` action
    - Following Play.c:760-814 exactly
 
 2. **`/src/planet/planetSlice.ts`**
+
    - Ensure bunker has `rotcount` field
    - `killBunker` action matching Play.c:351-370
 

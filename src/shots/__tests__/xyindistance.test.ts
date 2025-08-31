@@ -4,10 +4,10 @@ import { xyindistance } from '../xyindistance'
 /**
  * Tests for xyindistance based on orig/Sources/Play.c:1215
  * "XYINDISTANCE: like XYINDIST, but assumes x,y in 2dist X 2dist rect"
- * 
+ *
  * This is an optimized version that skips the bounding box check,
  * assuming the caller has already verified |x| < dist and |y| < dist
- * 
+ *
  * From the assembly at line 1229: "bgt.s @false" means it returns
  * TRUE when x² + y² <= dist² (same as xyindist)
  */
@@ -62,8 +62,8 @@ describe('xyindistance', () => {
   describe('assumes bounded input (no bounding box check)', () => {
     // These tests verify that xyindistance does NOT do bounding box rejection
     // In real usage, caller must ensure |x| < dist and |y| < dist
-    
-    it('does not reject x = dist (unlike xyindist\'s bounding box)', () => {
+
+    it("does not reject x = dist (unlike xyindist's bounding box)", () => {
       // xyindistance skips bounding box check, only does distance calculation
       // x=10, y=0: 10² + 0² = 100, dist² = 100, so 100 <= 100 returns true
       expect(xyindistance(10, 0, 10)).toBe(true)
@@ -97,7 +97,7 @@ describe('xyindistance', () => {
 
   describe('edge cases', () => {
     it('handles zero distance', () => {
-      expect(xyindistance(0, 0, 0)).toBe(true) // 0² + 0² = 0² 
+      expect(xyindistance(0, 0, 0)).toBe(true) // 0² + 0² = 0²
       expect(xyindistance(1, 0, 0)).toBe(false) // 1² > 0²
       expect(xyindistance(0, 1, 0)).toBe(false) // 1² > 0²
     })
@@ -133,7 +133,7 @@ describe('xyindistance', () => {
   describe('comparison with xyindist for valid bounded input', () => {
     // When input satisfies the bounds assumption, results should match xyindist
     // (except xyindistance doesn't do the bounding box check)
-    
+
     it('matches xyindist for small values', () => {
       // These are all within the assumed bounds
       const testCases = [
@@ -144,7 +144,7 @@ describe('xyindistance', () => {
         { x: 7, y: 0, dist: 10 },
         { x: 0, y: 7, dist: 10 }
       ]
-      
+
       for (const { x, y, dist } of testCases) {
         // We can't import xyindist here due to circular dependency,
         // but we can verify the expected mathematical result

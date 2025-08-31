@@ -196,22 +196,25 @@ export const planetSlice = createSlice({
       const bunker = state.bunkers[action.payload.index]
       if (bunker) {
         bunker.alive = false
-        
+
         // Create crater for omnidirectional bunkers
         // From Play.c:357-361: if (bp->kind >= BUNKROTKINDS)
-        if (bunker.kind >= BUNKROTKINDS && state.numcraters < PLANET.NUMCRATERS) {
+        if (
+          bunker.kind >= BUNKROTKINDS &&
+          state.numcraters < PLANET.NUMCRATERS
+        ) {
           state.craters[state.numcraters] = {
             x: bunker.x,
             y: bunker.y
           }
           state.numcraters++
         }
-        
+
         // TODO: Reset gravity if generator destroyed (Play.c:363-364)
         // if (bunker.kind === 4) { // GENERATORBUNK
         //   init_gravity()
         // }
-        
+
         // Note: Explosion and score handled separately from game loop
       }
     }

@@ -293,13 +293,13 @@ export const createInstructionSet = (
       // Extract lower 16 bits
       const word = value & 0xffff
       // Negate as 16-bit value
-      const negated = (-word) & 0xffff
+      const negated = -word & 0xffff
       // Sign-extend the result to 32 bits
       const result = (negated << 16) >> 16
-      
+
       // Store full 32-bit result (sign-extended)
       setReg(reg, result)
-      
+
       // Set flags based on 16-bit result
       setFlags(negated, 'w')
 
@@ -314,17 +314,17 @@ export const createInstructionSet = (
     muls: (dest: RegisterName, src: RegisterName): void => {
       const destValue = getReg(dest)
       const srcValue = getReg(src)
-      
+
       // Sign-extend lower 16 bits to 32 bits for signed multiplication
       const dest16 = (destValue << 16) >> 16
       const src16 = (srcValue << 16) >> 16
-      
+
       // Perform signed multiplication
       const result = dest16 * src16
-      
+
       // Store full 32-bit result
       setReg(dest, result)
-      
+
       // Set flags based on result
       registers.flags.negativeFlag = result < 0
       registers.flags.zeroFlag = result === 0
@@ -337,23 +337,23 @@ export const createInstructionSet = (
       const srcValue = getReg(src) & 0xffff
       const destValue = getReg(dest)
       const destLow = destValue & 0xffff
-      
+
       // Add lower 16 bits
       const sum = destLow + srcValue
       const result16 = sum & 0xffff
-      
+
       // Preserve upper 16 bits of destination, update lower 16
       const result32 = (destValue & 0xffff0000) | result16
       setReg(dest, result32)
-      
+
       // Set flags based on 16-bit result
       setFlags(result16, 'w')
-      
+
       // Set overflow and carry flags for addition
       const srcN = (srcValue & 0x8000) !== 0
       const dstN = (destLow & 0x8000) !== 0
       const resN = (result16 & 0x8000) !== 0
-      
+
       // V is set if we add two numbers of the same sign and the result's sign is different
       registers.flags.overflowFlag = srcN === dstN && srcN !== resN
       // C is set if there was a carry out of bit 15
@@ -364,26 +364,26 @@ export const createInstructionSet = (
     cmp_w: (src: RegisterName, dest: RegisterName): void => {
       const srcValue = getReg(src)
       const destValue = getReg(dest)
-      
+
       // Sign-extend lower 16 bits for signed comparison
       const src16 = (srcValue << 16) >> 16
       const dest16 = (destValue << 16) >> 16
-      
+
       // Perform signed subtraction (dest - src)
       const result = dest16 - src16
-      
+
       // Set flags based on signed result
       registers.flags.zeroFlag = result === 0
       registers.flags.negativeFlag = result < 0
-      
+
       // Set overflow flag for signed subtraction
       const srcN = src16 < 0
       const dstN = dest16 < 0
       const resN = result < 0
-      
+
       // V is set if subtracting numbers of opposite signs produces wrong sign
-      registers.flags.overflowFlag = (dstN !== srcN) && (resN !== dstN)
-      
+      registers.flags.overflowFlag = dstN !== srcN && resN !== dstN
+
       // C is set for unsigned comparison (borrow needed)
       const srcUns = srcValue & 0xffff
       const destUns = destValue & 0xffff

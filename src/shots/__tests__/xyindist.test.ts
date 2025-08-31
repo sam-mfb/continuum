@@ -3,18 +3,18 @@ import { xyindist } from '../xyindist'
 
 /**
  * Tests for xyindist based on orig/Sources/Play.c:1182
- * 
+ *
  * IMPORTANT: The original C comment incorrectly states:
  * "XYINDIST: Returns TRUE iff x^2 + y^2 < dist^2"
- * 
+ *
  * However, the actual assembly implementation returns TRUE when x² + y² <= dist²
  * This is proven by:
- * 1. Line 1204-1205: "cmp.w D0, D1; bgt.s @false" 
+ * 1. Line 1204-1205: "cmp.w D0, D1; bgt.s @false"
  *    - Compares dist² (D0) with x²+y² (D1)
  *    - Branches to false only if D1 > D0
  *    - Returns TRUE when D1 <= D0 (sum <= dist²)
  * 2. The bounding box checks also include boundaries (use blt/bgt, not ble/bge)
- * 
+ *
  * These tests verify the ACTUAL behavior (<=), not the comment's claim (<)
  */
 describe('xyindist', () => {
@@ -42,28 +42,28 @@ describe('xyindist', () => {
   describe('bounding box early rejection', () => {
     it('returns true if x = dist, false if x > dist', () => {
       // The assembly actually allows x = dist (uses blt which only rejects if dist < x)
-      expect(xyindist(10, 0, 10)).toBe(true)   // x = dist passes
-      expect(xyindist(11, 0, 10)).toBe(false)  // x > dist fails
+      expect(xyindist(10, 0, 10)).toBe(true) // x = dist passes
+      expect(xyindist(11, 0, 10)).toBe(false) // x > dist fails
     })
 
     it('returns true if y = dist, false if y > dist', () => {
       // The assembly actually allows y = dist (uses blt which only rejects if dist < y)
-      expect(xyindist(0, 10, 10)).toBe(true)   // y = dist passes
-      expect(xyindist(0, 11, 10)).toBe(false)  // y > dist fails
+      expect(xyindist(0, 10, 10)).toBe(true) // y = dist passes
+      expect(xyindist(0, 11, 10)).toBe(false) // y > dist fails
     })
 
     it('returns true if x = -dist, false if x < -dist', () => {
       // After neg.w, D0 = -dist, then bgt rejects if -dist > x
       // For x = -10: -10 > -10? No, so it passes
-      expect(xyindist(-10, 0, 10)).toBe(true)   // x = -dist passes
-      expect(xyindist(-11, 0, 10)).toBe(false)  // x < -dist fails
+      expect(xyindist(-10, 0, 10)).toBe(true) // x = -dist passes
+      expect(xyindist(-11, 0, 10)).toBe(false) // x < -dist fails
     })
 
     it('returns true if y = -dist, false if y < -dist', () => {
       // After neg.w, D0 = -dist, then bgt rejects if -dist > y
       // For y = -10: -10 > -10? No, so it passes
-      expect(xyindist(0, -10, 10)).toBe(true)   // y = -dist passes
-      expect(xyindist(0, -11, 10)).toBe(false)  // y < -dist fails
+      expect(xyindist(0, -10, 10)).toBe(true) // y = -dist passes
+      expect(xyindist(0, -11, 10)).toBe(false) // y < -dist fails
     })
 
     it('passes bounding box check for x = dist - 1', () => {
@@ -127,9 +127,9 @@ describe('xyindist', () => {
   describe('edge cases', () => {
     it('handles zero distance', () => {
       // With dist=0, only point at origin passes (0² + 0² <= 0²)
-      expect(xyindist(0, 0, 0)).toBe(true)   // 0² + 0² = 0, 0 <= 0 is true
-      expect(xyindist(1, 0, 0)).toBe(false)  // 1² + 0² = 1, 1 > 0
-      expect(xyindist(0, 1, 0)).toBe(false)  // 0² + 1² = 1, 1 > 0
+      expect(xyindist(0, 0, 0)).toBe(true) // 0² + 0² = 0, 0 <= 0 is true
+      expect(xyindist(1, 0, 0)).toBe(false) // 1² + 0² = 1, 1 > 0
+      expect(xyindist(0, 1, 0)).toBe(false) // 0² + 1² = 1, 1 > 0
     })
 
     it('handles very large distances', () => {
