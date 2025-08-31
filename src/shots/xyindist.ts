@@ -4,7 +4,7 @@ import { build68kArch } from '@/asm/emulator'
  * Check if a point is within a circular distance (general case)
  * Based on orig/Sources/Play.c:1182-1212
  * 
- * XYINDIST: Returns TRUE iff x^2 + y^2 < dist^2
+ * XYINDIST: Returns TRUE iff x^2 + y^2 < dist^2 (comment says <, but code does <=)
  * 
  * This is the general distance check function that:
  * 1. First does a bounding box check for early rejection
@@ -19,63 +19,65 @@ export function xyindist(x: number, y: number, dist: number): boolean {
   // Create 68K emulator instance
   const asm = build68kArch()
   
-  // Convert to signed 16-bit to match 68k word operations
-  const x16 = (x << 16) >> 16
-  const y16 = (y << 16) >> 16
-  const dist16 = (dist << 16) >> 16
-  
   // move.w dist(A6), D0
-  asm.D0 = dist16
+  asm.instructions.move_w('D0', dist)
   
   // cmp.w x(A6), D0
-  // blt.s @false
-  if (asm.D0 < x16) {
-    return false // @false: move.w #0, D0
-  }
-  
-  // cmp.w y(A6), D0
-  // blt.s @false
-  if (asm.D0 < y16) {
-    return false
-  }
-  
-  // neg.w D0
-  asm.D0 = -asm.D0 & 0xffff
-  
-  // cmp.w x(A6), D0
-  // bgt.s @false
-  if (asm.D0 > x16) {
+  // blt.s @false - branches if D0 < x (unsigned comparison for positive values)
+  if ((asm.D0 & 0xffff) < (x & 0xffff)) {
     return false
   }
   
   // cmp.w y(A6), D0
-  // bgt.s @false
-  if (asm.D0 > y16) {
+  // blt.s @false - branches if D0 < y (unsigned comparison for positive values)
+  if ((asm.D0 & 0xffff) < (y & 0xffff)) {
+    return false
+  }
+  
+  // neg.w D0 - negate D0 in place
+  asm.instructions.neg_w('D0')
+  
+  // cmp.w x(A6), D0
+  // bgt.s @false - branches if D0 > x (signed comparison)
+  // After neg, D0 contains -dist as a signed 32-bit value
+  const negDist = (asm.D0 << 16) >> 16 // Sign extend for comparison
+  const xSigned = (x << 16) >> 16
+  if (negDist > xSigned) {
+    return false
+  }
+  
+  // cmp.w y(A6), D0
+  // bgt.s @false - branches if D0 > y (signed comparison)
+  const ySigned = (y << 16) >> 16
+  if (negDist > ySigned) {
     return false
   }
   
   // move.w x(A6), D1
-  asm.D1 = x16
+  asm.instructions.move_w('D1', x)
   
   // move.w y(A6), D2
-  asm.D2 = y16
+  asm.instructions.move_w('D2', y)
   
-  // muls D0, D0 - signed multiply D0 * D0 (D0 currently contains -dist)
-  asm.D0 = asm.D0 * asm.D0  // (-dist) * (-dist) = dist²
+  // muls D0, D0 - squares D0 (which contains -dist from neg.w)
+  // Result: (-dist) * (-dist) = dist²
+  asm.instructions.muls('D0', 'D0')
   
-  // muls D1, D1 - signed multiply x * x
-  asm.D1 = asm.D1 * asm.D1
+  // muls D1, D1 - squares x
+  asm.instructions.muls('D1', 'D1')
   
-  // muls D2, D2 - signed multiply y * y
-  asm.D2 = asm.D2 * asm.D2
+  // muls D2, D2 - squares y
+  asm.instructions.muls('D2', 'D2')
   
-  // add.w D2, D1 - add y² to x²
-  asm.D1 = (asm.D1 + asm.D2) & 0xffff
+  // add.w D2, D1 - add y² to x² (only affects lower 16 bits)
+  asm.instructions.add_w('D2', 'D1')
   
   // cmp.w D0, D1 - compare dist² with x²+y²
-  // bgt.s @false - branch if D1 > D0
-  if (asm.D1 > (asm.D0 & 0xffff)) {
-    return false // @false: move.w #0, D0
+  asm.instructions.cmp_w('D0', 'D1')
+  
+  // bgt.s @false - branch if greater than
+  if (asm.instructions.bgt()) {
+    return false
   }
   
   // move.w #1, D0

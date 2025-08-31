@@ -23,7 +23,9 @@ export type InstructionSet = {
   asr_w: (value: number, bits: number) => number
   asr_l: (value: number, bits: number) => number
   swap: (value: number) => number
-  neg_w: (value: number) => number
+  neg_w: (reg: RegisterName) => void
+  muls: (dest: RegisterName, src: RegisterName) => void
+  add_w: (src: RegisterName, dest: RegisterName) => void
   addq_w: (dest: RegisterName, value: number) => void
   subq_w: (dest: RegisterName, value: number) => void
   adda_w: (dest: RegisterName, value: number) => void
@@ -33,6 +35,7 @@ export type InstructionSet = {
   tst_b: (value: number) => void
   tst_w: (value: number) => void
   cmp_b: (reg: RegisterName, value: number) => void
+  cmp_w: (src: RegisterName, dest: RegisterName) => void
 
   // Branch operations
   dbra: (counter: RegisterName) => boolean
@@ -284,21 +287,105 @@ export const createInstructionSet = (
       return result
     },
 
-    // Negate word (2's complement)
-    neg_w: (value: number): number => {
-      const word = value & 0xffff
-      const result = (~word + 1) & 0xffff
-
-      setFlags(result, 'w')
+    // Negate word (2's complement) - operates on register
+    neg_w: (reg: RegisterName): void => {
+      const value = getReg(reg)
+      // Sign extend lower 16 bits to 32 bits
+      const word = (value << 16) >> 16
+      // Negate the signed value - handle -0 case
+      const result = word === 0 ? 0 : -word
+      
+      // Store full 32-bit result
+      setReg(reg, result)
+      
+      // Set flags based on 16-bit result
+      setFlags(result & 0xffff, 'w')
 
       // V is set if negating the most negative number
-      registers.flags.overflowFlag = word === 0x8000
+      registers.flags.overflowFlag = (word & 0xffff) === 0x8000
 
-      // C is set if the result is non-zero (i.e., a borrow occurred)
-      // This is the same as the logical NOT of the Z flag.
-      registers.flags.carryFlag = !registers.flags.zeroFlag
+      // C is set if the result is non-zero
+      registers.flags.carryFlag = result !== 0
+    },
 
-      return result
+    // Signed multiply (16x16 -> 32)
+    muls: (dest: RegisterName, src: RegisterName): void => {
+      const destValue = getReg(dest)
+      const srcValue = getReg(src)
+      
+      // Sign-extend lower 16 bits to 32 bits for signed multiplication
+      const dest16 = (destValue << 16) >> 16
+      const src16 = (srcValue << 16) >> 16
+      
+      // Perform signed multiplication
+      const result = dest16 * src16
+      
+      // Store full 32-bit result
+      setReg(dest, result)
+      
+      // Set flags based on result
+      registers.flags.negativeFlag = result < 0
+      registers.flags.zeroFlag = result === 0
+      registers.flags.overflowFlag = false // muls clears V
+      registers.flags.carryFlag = false // muls clears C
+    },
+
+    // Add word (preserves upper bits of destination)
+    add_w: (src: RegisterName, dest: RegisterName): void => {
+      const srcValue = getReg(src) & 0xffff
+      const destValue = getReg(dest)
+      const destLow = destValue & 0xffff
+      
+      // Add lower 16 bits
+      const sum = destLow + srcValue
+      const result16 = sum & 0xffff
+      
+      // Preserve upper 16 bits of destination, update lower 16
+      const result32 = (destValue & 0xffff0000) | result16
+      setReg(dest, result32)
+      
+      // Set flags based on 16-bit result
+      setFlags(result16, 'w')
+      
+      // Set overflow and carry flags for addition
+      const srcN = (srcValue & 0x8000) !== 0
+      const dstN = (destLow & 0x8000) !== 0
+      const resN = (result16 & 0x8000) !== 0
+      
+      // V is set if we add two numbers of the same sign and the result's sign is different
+      registers.flags.overflowFlag = srcN === dstN && srcN !== resN
+      // C is set if there was a carry out of bit 15
+      registers.flags.carryFlag = sum > 0xffff
+    },
+
+    // Compare word (signed comparison)
+    cmp_w: (src: RegisterName, dest: RegisterName): void => {
+      const srcValue = getReg(src)
+      const destValue = getReg(dest)
+      
+      // Sign-extend lower 16 bits for signed comparison
+      const src16 = (srcValue << 16) >> 16
+      const dest16 = (destValue << 16) >> 16
+      
+      // Perform signed subtraction (dest - src)
+      const result = dest16 - src16
+      
+      // Set flags based on signed result
+      registers.flags.zeroFlag = result === 0
+      registers.flags.negativeFlag = result < 0
+      
+      // Set overflow flag for signed subtraction
+      const srcN = src16 < 0
+      const dstN = dest16 < 0
+      const resN = result < 0
+      
+      // V is set if subtracting numbers of opposite signs produces wrong sign
+      registers.flags.overflowFlag = (dstN !== srcN) && (resN !== dstN)
+      
+      // C is set for unsigned comparison (borrow needed)
+      const srcUns = srcValue & 0xffff
+      const destUns = destValue & 0xffff
+      registers.flags.carryFlag = srcUns > destUns
     },
 
     // Add quick word
