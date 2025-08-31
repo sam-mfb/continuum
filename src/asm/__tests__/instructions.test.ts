@@ -77,9 +77,8 @@ describe('68k instruction emulation', () => {
       
       instructions.neg_w('D0')
       
-      // Result should be -10 as a 32-bit signed value
+      // Result should be -10, but stored as signed in JavaScript
       expect(registers.data.D0).toBe(-10)
-      // Or in unsigned: 0xFFFFFFF6
     })
 
     it('negates a negative value', () => {
@@ -113,8 +112,8 @@ describe('68k instruction emulation', () => {
       instructions.neg_w('D0')
       
       // Should negate lower 16 bits (0x0010 = 16)
-      // Result: -16 = 0xFFFFFFF0
-      expect(registers.data.D0).toBe(0xFFFFFFF0)
+      // Result: -16 (which is 0xFFFFFFF0 in unsigned representation)
+      expect(registers.data.D0).toBe(-16)
     })
   })
 
@@ -170,8 +169,8 @@ describe('68k instruction emulation', () => {
       
       instructions.cmp_w('D0', 'D1') // Compare D1 - D0
       
-      expect(registers.flags.zero).toBe(true)
-      expect(registers.flags.negative).toBe(false)
+      expect(registers.flags.zeroFlag).toBe(true)
+      expect(registers.flags.negativeFlag).toBe(false)
     })
 
     it('compares D1 > D0 (positive values)', () => {
@@ -183,8 +182,8 @@ describe('68k instruction emulation', () => {
       
       instructions.cmp_w('D0', 'D1') // Compare D1 - D0
       
-      expect(registers.flags.zero).toBe(false)
-      expect(registers.flags.negative).toBe(false) // Result is positive
+      expect(registers.flags.zeroFlag).toBe(false)
+      expect(registers.flags.negativeFlag).toBe(false) // Result is positive
     })
 
     it('compares D1 < D0 (positive values)', () => {
@@ -196,8 +195,8 @@ describe('68k instruction emulation', () => {
       
       instructions.cmp_w('D0', 'D1') // Compare D1 - D0
       
-      expect(registers.flags.zero).toBe(false)
-      expect(registers.flags.negative).toBe(true) // Result is negative
+      expect(registers.flags.zeroFlag).toBe(false)
+      expect(registers.flags.negativeFlag).toBe(true) // Result is negative
     })
 
     it('handles signed comparison correctly', () => {
@@ -209,14 +208,14 @@ describe('68k instruction emulation', () => {
       
       instructions.cmp_w('D0', 'D1') // Compare 10 - (-10) = 20
       
-      expect(registers.flags.zero).toBe(false)
-      expect(registers.flags.negative).toBe(false) // 20 is positive
+      expect(registers.flags.zeroFlag).toBe(false)
+      expect(registers.flags.negativeFlag).toBe(false) // 20 is positive
       
       // Now compare the other way
       instructions.cmp_w('D1', 'D0') // Compare (-10) - 10 = -20
       
-      expect(registers.flags.zero).toBe(false)
-      expect(registers.flags.negative).toBe(true) // -20 is negative
+      expect(registers.flags.zeroFlag).toBe(false)
+      expect(registers.flags.negativeFlag).toBe(true) // -20 is negative
     })
 
     it('compares negative values correctly', () => {
@@ -228,8 +227,8 @@ describe('68k instruction emulation', () => {
       
       instructions.cmp_w('D0', 'D1') // Compare (-10) - (-20) = 10
       
-      expect(registers.flags.zero).toBe(false)
-      expect(registers.flags.negative).toBe(false) // 10 is positive
+      expect(registers.flags.zeroFlag).toBe(false)
+      expect(registers.flags.negativeFlag).toBe(false) // 10 is positive
     })
   })
 
@@ -239,9 +238,9 @@ describe('68k instruction emulation', () => {
       const instructions = createInstructionSet(registers)
       
       // Set up flags as if we just compared 100 with 50
-      registers.flags.zero = false
-      registers.flags.negative = false
-      registers.flags.overflow = false
+      registers.flags.zeroFlag = false
+      registers.flags.negativeFlag = false
+      registers.flags.overflowFlag = false
       
       expect(instructions.bgt()).toBe(true)
     })
@@ -251,9 +250,9 @@ describe('68k instruction emulation', () => {
       const instructions = createInstructionSet(registers)
       
       // Set up flags as if we just compared 50 with 100
-      registers.flags.zero = false
-      registers.flags.negative = true
-      registers.flags.overflow = false
+      registers.flags.zeroFlag = false
+      registers.flags.negativeFlag = true
+      registers.flags.overflowFlag = false
       
       expect(instructions.bgt()).toBe(false)
     })
@@ -263,9 +262,9 @@ describe('68k instruction emulation', () => {
       const instructions = createInstructionSet(registers)
       
       // Set up flags as if we just compared equal values
-      registers.flags.zero = true
-      registers.flags.negative = false
-      registers.flags.overflow = false
+      registers.flags.zeroFlag = true
+      registers.flags.negativeFlag = false
+      registers.flags.overflowFlag = false
       
       expect(instructions.bgt()).toBe(false)
     })

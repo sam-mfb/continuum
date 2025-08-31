@@ -290,22 +290,24 @@ export const createInstructionSet = (
     // Negate word (2's complement) - operates on register
     neg_w: (reg: RegisterName): void => {
       const value = getReg(reg)
-      // Sign extend lower 16 bits to 32 bits
-      const word = (value << 16) >> 16
-      // Negate the signed value - handle -0 case
-      const result = word === 0 ? 0 : -word
+      // Extract lower 16 bits
+      const word = value & 0xffff
+      // Negate as 16-bit value
+      const negated = (-word) & 0xffff
+      // Sign-extend the result to 32 bits
+      const result = (negated << 16) >> 16
       
-      // Store full 32-bit result
+      // Store full 32-bit result (sign-extended)
       setReg(reg, result)
       
       // Set flags based on 16-bit result
-      setFlags(result & 0xffff, 'w')
+      setFlags(negated, 'w')
 
       // V is set if negating the most negative number
-      registers.flags.overflowFlag = (word & 0xffff) === 0x8000
+      registers.flags.overflowFlag = word === 0x8000
 
       // C is set if the result is non-zero
-      registers.flags.carryFlag = result !== 0
+      registers.flags.carryFlag = negated !== 0
     },
 
     // Signed multiply (16x16 -> 32)
