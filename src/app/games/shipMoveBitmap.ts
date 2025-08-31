@@ -235,6 +235,17 @@ export const createShipMoveBitmapRenderer =
       const newDeadCount = store.getState().ship.deadCount
       if (newDeadCount === 0) {
         store.dispatch(shipSlice.actions.respawnShip())
+        // Update screen position to place ship at planet start position
+        // globalx = xstart, globaly = ystart (from init_ship)
+        // screenx = globalx - shipx, screeny = globaly - shipy
+        const planetState = store.getState().planet
+        const shipState = store.getState().ship
+        store.dispatch(
+          screenSlice.actions.setPosition({
+            x: planetState.xstart - shipState.shipx,
+            y: planetState.ystart - shipState.shipy
+          })
+        )
       }
     } else {
       // Only handle controls and move ship if alive

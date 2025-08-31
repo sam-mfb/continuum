@@ -230,19 +230,26 @@ export const shipSlice = createSlice({
     },
 
     /**
-     * Respawn the ship at current position after death
-     * Based on orig/Sources/Play.c:203-211
+     * Respawn the ship at planet start position after death
+     * Based on orig/Sources/Play.c:203-207 which calls init_ship
+     * init_ship (Play.c:173-174) resets to xstart, ystart
      */
     respawnShip: state => {
-      // Don't reset position - ship respawns where it died
-      // Based on orig/Sources/Play.c:203-211
-      // Only reset velocity and fuel
-      state.dx = 0 // Stop movement
+      // Center ship on screen
+      state.shipx = 128 // SCRWTH / 2
+      state.shipy = 96 // (TOPMARG + BOTMARG) / 2  
+      // Note: Screen position must be updated by caller to place ship at start
+      // screenx = startx - shipx, screeny = starty - shipy
+      
+      // Reset movement
+      state.dx = 0
       state.dy = 0
       state.xslow = 0
       state.yslow = 0
+      // Reset rotation to north
+      state.shiprot = 0
+      // Reset fuel
       state.fuel = STARTING_FUEL
-      // Don't reset rotation - keep same orientation
       // Reset activity states
       state.flaming = false
       state.flameBlink = 0
