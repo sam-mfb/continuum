@@ -310,6 +310,32 @@ export const createShipMoveBitmapRenderer =
       })
     )
 
+    // Process bunker kills from ship shot collisions
+    const shotsState = store.getState().shots
+    if (shotsState.pendingBunkerKills.length > 0) {
+      for (const bunkerIndex of shotsState.pendingBunkerKills) {
+        const bunker = state.planet.bunkers[bunkerIndex]
+        if (bunker) {
+          // Dispatch killBunker (handles difficult bunkers internally)
+          store.dispatch(killBunker({ index: bunkerIndex }))
+
+          // Start explosion for destroyed bunker
+          // Note: killBunker returns early for difficult bunkers that survive
+          const updatedBunker = store.getState().planet.bunkers[bunkerIndex]
+          if (updatedBunker && !updatedBunker.alive) {
+            store.dispatch(
+              startExplosion({
+                x: bunker.x,
+                y: bunker.y,
+                dir: bunker.rot,
+                kind: bunker.kind
+              })
+            )
+          }
+        }
+      }
+    }
+
     // Move bunker shots
     store.dispatch(
       moveBullets({

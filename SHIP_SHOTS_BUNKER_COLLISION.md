@@ -33,6 +33,7 @@ The collision detection follows **Play.c:760-814** in the `move_shipshots()` fun
 ### Detailed Collision Checks (Play.c:770-774)
 
 The collision requires ALL of these conditions:
+
 - Bunker is alive
 - Y position within bounds (top < y < bot)
 - Circular distance check passes: `xyindistance(dx, dy, BRADIUS)`
@@ -40,12 +41,14 @@ The collision requires ALL of these conditions:
 - For omnidirectional bunkers (kind >= BUNKROTKINDS): no angle check needed
 
 **Critical**: The angle check uses the shot's PREVIOUS position (Play.c:773-774):
+
 - Previous X = current X - (velocity_h >> 3)
 - Previous Y = current Y - (velocity_v >> 3)
 
 ### Difficult Bunker Logic (Play.c:778-781)
 
 Difficult bunkers (hard to kill) are DIFFBUNK type with `(rot & 3) == 2`:
+
 - These bunkers have `rotcount = 3` (set at level init, Play.c:145-146)
 - Decrement rotcount when hit
 - If rotcount > 0 after decrement, bunker survives
@@ -54,6 +57,7 @@ Difficult bunkers (hard to kill) are DIFFBUNK type with `(rot & 3) == 2`:
 ### Kill Bunker Function (Play.c:351-370)
 
 The `kill_bunk()` function handles bunker destruction:
+
 - Sets alive = FALSE
 - Creates crater for omnidirectional bunkers (kind >= BUNKROTKINDS)
 - Calls init_gravity() for GENERATORBUNK
@@ -66,8 +70,9 @@ The `kill_bunk()` function handles bunker destruction:
 ### Pre-requisite: Sort Bunkers at Level Load
 
 In `planetSlice.ts`, when loading a level, sort bunkers by X position to match the original's assumption (Play.c:767-769):
+
 ```typescript
-state.bunkers.sort((a, b) => a.x - b.x)  // Robustness addition
+state.bunkers.sort((a, b) => a.x - b.x) // Robustness addition
 ```
 
 ### Implementation Algorithm
@@ -75,11 +80,13 @@ state.bunkers.sort((a, b) => a.x - b.x)  // Robustness addition
 In `shotsSlice.ts` - `moveShipshots` reducer:
 
 1. **Clear previous collision results**
+
    ```typescript
    state.pendingBunkerKills = []
    ```
 
 2. **For each active shot** (Play.c:760-761)
+
    - Move shot first (Play.c:762)
    - Calculate bounding box using BRADIUS (Play.c:763-766)
 
@@ -87,8 +94,8 @@ In `shotsSlice.ts` - `moveShipshots` reducer:
    - Bunkers passed via `action.payload.bunkers`
    - Skip while `bunker.x < left`
    - Break when `bunker.x >= right`
-   
 4. **Check collision conditions in sequence** (Play.c:770-774):
+
    - Alive check
    - Y bounds check
    - Circular distance check
@@ -104,19 +111,21 @@ In `shotsSlice.ts` - `moveShipshots` reducer:
 In the game loop (where shots and planet updates are coordinated):
 
 1. **Dispatch moveShipshots** with current bunkers:
+
    ```typescript
    dispatch(moveShipshots({ bunkers: state.planet.bunkers }))
    ```
 
 2. **Read collision results** from shots state:
+
    ```typescript
    const { pendingBunkerKills } = state.shots
    ```
 
 3. **Dispatch to planet slice**:
    ```typescript
-   pendingBunkerKills.forEach(bunkerId => 
-     dispatch(killBunker(bunkerId))  // Handles both normal and difficult bunkers
+   pendingBunkerKills.forEach(
+     bunkerId => dispatch(killBunker(bunkerId)) // Handles both normal and difficult bunkers
    )
    ```
 
@@ -127,12 +136,14 @@ In `planetSlice.ts` - `killBunker` action (Play.c:351-370):
 **IMPORTANT BUG FIX**: The current `killBunker` action doesn't handle difficult bunkers. It needs to check for difficult bunkers and only kill them when rotcount reaches 0. This affects both ship shots AND ship death collisions.
 
 For difficult bunkers (DIFFBUNK with `(rot & 3) === 2`):
+
 1. These should have `rotcount = 3` from level init (Play.c:145-146)
 2. Check if rotcount > 1
 3. If yes, decrement rotcount and return (bunker survives)
 4. If no, proceed with destruction
 
 For all destroyed bunkers:
+
 1. Mark bunker as dead (alive = false)
 2. For omnidirectional bunkers (kind >= BUNKROTKINDS): create crater
 3. For GENERATORBUNK: call `initGravity()`
@@ -148,15 +159,18 @@ For all destroyed bunkers:
 1. **Move shot BEFORE collision check** (Play.c:762) - ensures proper collision at high speeds
 
 2. **Sorted bunker optimization** (Play.c:767-769):
+
    - Bunkers sorted by X at level load
    - Skip bunkers with `x < left`, exit when `x >= right`
    - Original assumes pre-sorted from editor
 
 3. **Shot trajectory for angle check** (Play.c:773-774):
+
    - Use PREVIOUS position: `current - (velocity >> 3)`
    - Determines approach angle for directional bunkers
 
 4. **Difficult bunker handling** (Play.c:778-781):
+
    - DIFFBUNK with `(rot & 3) === 2` needs 3 hits
    - `rotcount = 3` set at level init (Play.c:145-146)
    - Shot always consumed even if bunker survives
@@ -179,12 +193,14 @@ For all destroyed bunkers:
 ## Files to Modify
 
 1. **`/src/shots/shotsSlice.ts`**
+
    - Add state field: `pendingBunkerKills: string[]`
    - Update `moveShipshots` reducer to check collisions (Play.c:760-814)
    - Clear collision results at start of moveShipshots
    - Receive bunkers via action payload
 
 2. **`/src/planet/planetSlice.ts`**
+
    - Sort bunkers by X position when level loads (robustness addition)
    - Initialize `rotcount = 3` for difficult bunkers at level init (Play.c:145-146)
    - FIX `killBunker` action to handle difficult bunkers properly:
@@ -193,6 +209,7 @@ For all destroyed bunkers:
      - Otherwise: destroy bunker
 
 3. **Game loop file** (where frame updates happen)
+
    - Pass bunkers to moveShipshots action
    - Read collision results from shots state
    - Dispatch killBunker to planet slice (handles all bunker types)

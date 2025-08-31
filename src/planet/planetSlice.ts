@@ -97,8 +97,15 @@ export const planetSlice = createSlice({
     /**
      * Initialize bunkers for a new planet/game
      * Based on init_planet() at Play.c:137-147
+     *
+     * ROBUSTNESS: Also sorts bunkers by X position to optimize collision detection
+     * Original assumes bunkers are pre-sorted from editor (Play.c:767-769)
      */
     initializeBunkers: state => {
+      // First, sort bunkers by X position for collision optimization
+      // This ensures the optimization in Play.c:767-769 works correctly
+      state.bunkers.sort((a, b) => a.x - b.x)
+
       for (let i = 0; i < state.bunkers.length; i++) {
         const bunk = state.bunkers[i]!
 
@@ -188,35 +195,52 @@ export const planetSlice = createSlice({
     },
 
     /**
-     * Kill a bunker - part of ship death blast
-     * Based on kill_bunk() from orig/Sources/Play.c:351-368
-     * Creates craters for omnidirectional bunkers (kinds >= BUNKROTKINDS)
+     * Kill a bunker - handles both normal and difficult bunkers
+     * Based on kill_bunk() from orig/Sources/Play.c:351-368 and Play.c:778-781
+     *
+     * For difficult bunkers (DIFFBUNK with rot&3==2), requires 3 hits to destroy
+     * For all other bunkers, destroys immediately
      */
     killBunker: (state, action: PayloadAction<{ index: number }>) => {
       const bunker = state.bunkers[action.payload.index]
-      if (bunker) {
-        bunker.alive = false
+      if (!bunker || !bunker.alive) return
 
-        // Create crater for omnidirectional bunkers
-        // From Play.c:357-361: if (bp->kind >= BUNKROTKINDS)
-        if (
-          bunker.kind >= BUNKROTKINDS &&
-          state.numcraters < PLANET.NUMCRATERS
-        ) {
-          state.craters[state.numcraters] = {
-            x: bunker.x,
-            y: bunker.y
-          }
-          state.numcraters++
+      // Check for difficult bunker (Play.c:778-781)
+      // DIFFBUNK with (rot & 3) == 2 is "hard to kill"
+      if (bunker.kind === BunkerKind.DIFF && (bunker.rot & 3) === 2) {
+        // Ensure rotcount is initialized (should be 3 from level init)
+        if (!bunker.rotcount || bunker.rotcount <= 0) {
+          bunker.rotcount = 3
         }
 
-        // TODO: Reset gravity if generator destroyed (Play.c:363-364)
-        // if (bunker.kind === 4) { // GENERATORBUNK
-        //   init_gravity()
-        // }
+        // Decrement hit count
+        bunker.rotcount--
 
-        // Note: Explosion and score handled separately from game loop
+        // If still has hits remaining, bunker survives
+        if (bunker.rotcount > 0) {
+          return // Bunker takes damage but doesn't die
+        }
       }
+
+      // Destroy the bunker
+      bunker.alive = false
+
+      // Create crater for omnidirectional bunkers
+      // From Play.c:357-361: if (bp->kind >= BUNKROTKINDS)
+      if (bunker.kind >= BUNKROTKINDS && state.numcraters < PLANET.NUMCRATERS) {
+        state.craters[state.numcraters] = {
+          x: bunker.x,
+          y: bunker.y
+        }
+        state.numcraters++
+      }
+
+      // TODO: Reset gravity if generator destroyed (Play.c:363-364)
+      // if (bunker.kind === BunkerKind.GENERATOR) {
+      //   init_gravity()
+      // }
+
+      // Note: Explosion and score handled separately from game loop
     }
   }
 })

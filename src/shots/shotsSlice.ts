@@ -49,7 +49,8 @@ const initialState: ShotsState = {
     y: 0,
     lifecount: 0,
     rot: 0
-  }))
+  })),
+  pendingBunkerKills: []
 }
 
 export const shotsSlice = createSlice({
@@ -215,6 +216,9 @@ export const shotsSlice = createSlice({
       const { bunkers, shipPosition, shipAlive, walls, worldwidth, worldwrap } =
         action.payload
 
+      // Clear previous collision results (Play.c:760-761)
+      state.pendingBunkerKills = []
+
       // Process each active shot
       state.shipshots = state.shipshots.map(shot => {
         // Clear justDied flag from previous frame
@@ -236,13 +240,17 @@ export const shotsSlice = createSlice({
         // Only check if shot is still alive (lifecount > 0 means still traveling)
         if (updatedShot.lifecount > 0) {
           const bunkerResult = checkBunkerCollision(updatedShot, bunkers)
-          if (bunkerResult.hit) {
-            // Destroy the shot
+          if (bunkerResult.hit && bunkerResult.bunkerIndex !== undefined) {
+            // Destroy the shot (Play.c:776-777)
             updatedShot.lifecount = 0
             updatedShot.btime = 0
             updatedShot.strafedir = -1
-            // TODO: Handle bunker destruction in planet slice
-            // TODO: Handle hardy bunker special case
+
+            // Add bunker to kill list (Play.c:778-782)
+            // The killBunker action in planetSlice handles difficult bunkers
+            state.pendingBunkerKills.push(bunkerResult.bunkerIndex)
+
+            // One shot can only kill one bunker (Play.c:783)
             return updatedShot
           }
         }
