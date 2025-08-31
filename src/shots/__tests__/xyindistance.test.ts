@@ -63,10 +63,10 @@ describe('xyindistance', () => {
     // These tests verify that xyindistance does NOT do bounding box rejection
     // In real usage, caller must ensure |x| < dist and |y| < dist
     
-    it('does not reject x = dist (unlike xyindist)', () => {
-      // This would fail bounding box in xyindist, but xyindistance doesn't check
-      // x=10, y=0: distance = 10, should return true based on <= comparison
-      expect(xyindistance(10, 0, 10)).toBe(false) // Actually false because 10² = 100 and dist² = 100, but x=10 exactly
+    it('does not reject x = dist (unlike xyindist\'s bounding box)', () => {
+      // xyindistance skips bounding box check, only does distance calculation
+      // x=10, y=0: 10² + 0² = 100, dist² = 100, so 100 <= 100 returns true
+      expect(xyindistance(10, 0, 10)).toBe(true)
     })
 
     it('processes values that would fail bounding box', () => {
