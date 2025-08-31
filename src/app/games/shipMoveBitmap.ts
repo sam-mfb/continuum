@@ -57,6 +57,7 @@ import type { ShardSprite, ShardSpriteSet } from '@/figs/types'
 import type { ExplosionsState } from '@/explosions/types'
 import { SKILLBRADIUS } from '@/ship/constants'
 import { xyindistance } from '@/shots/xyindistance'
+import { legalAngle } from '@/planet/legalAngle'
 
 // Configure store with all slices and containment middleware
 const store = buildGameStore({
@@ -512,12 +513,18 @@ export const createShipMoveBitmapRenderer =
         // (a) Update ship state
         store.dispatch(shipSlice.actions.killShip())
         
-        // (b) Death blast - destroy nearby bunkers
+        // (b) Death blast - destroy ONE nearby bunker (Play.c:338-346)
+        // Only kills bunkers in field of view for directional types
         const bunkers = store.getState().planet.bunkers
-        bunkers.forEach((bunker, index) => {
+        const BUNKROTKINDS = 2 // Kinds 0-1 are directional, 2+ are omnidirectional
+        
+        for (let index = 0; index < bunkers.length; index++) {
+          const bunker = bunkers[index]!
           if (
             bunker.alive &&
-            xyindistance(bunker.x - globalx, bunker.y - globaly, SKILLBRADIUS)
+            xyindistance(bunker.x - globalx, bunker.y - globaly, SKILLBRADIUS) &&
+            (bunker.kind >= BUNKROTKINDS || // Omnidirectional bunkers always killable
+             legalAngle(bunker.rot, bunker.x, bunker.y, globalx, globaly)) // Directional need angle check
           ) {
             store.dispatch(killBunker({ index }))
             // TODO: Add score when score system is implemented
@@ -532,8 +539,9 @@ export const createShipMoveBitmapRenderer =
                 kind: bunker.kind
               })
             )
+            break // Only kill ONE bunker per death (Play.c:345)
           }
-        })
+        }
         
         // (c) Start ship explosion
         store.dispatch(startShipDeath({ x: globalx, y: globaly }))
