@@ -313,8 +313,14 @@ export const shotsSlice = createSlice({
     },
     moveBullets: (
       state,
-      action: PayloadAction<{ worldwidth: number; worldwrap: boolean }>
+      action: PayloadAction<{ 
+        worldwidth: number
+        worldwrap: boolean
+        readonly walls: readonly LineRec[]
+      }>
     ) => {
+      const { worldwidth, worldwrap, walls } = action.payload
+      
       // Process each bunker shot with same justDied logic as ship shots
       state.bunkshots = state.bunkshots.map(shot => {
         // Clear justDied flag from previous frame
@@ -326,17 +332,30 @@ export const shotsSlice = createSlice({
         }
 
         // Move the shot
-        updatedShot = moveShot(updatedShot, action.payload)
+        updatedShot = moveShot(updatedShot, { worldwidth, worldwrap })
 
-        // Mark as justDied if it died this frame
-        // This preserves the original's behavior of rendering shots
-        // for one frame after lifecount reaches 0 (Play.c:844 DRAW_SHOT)
-        if (updatedShot.lifecount === 0 && shot.lifecount > 0) {
+        // Handle wall bounce (Play.c:839-843)
+        // When shot hits a wall (lifecount==0) and has bounce time (btime>0)
+        if (updatedShot.lifecount === 0 && updatedShot.btime > 0) {
+          // Find the wall we hit
+          const hitWall = walls.find(w => w.id === updatedShot.hitlineId)
+          if (hitWall) {
+            // Backup to exact wall position (move back one frame)
+            updatedShot.x8 -= updatedShot.h
+            updatedShot.y8 -= updatedShot.v
+            updatedShot.x = updatedShot.x8 >> 3
+            updatedShot.y = updatedShot.y8 >> 3
+            
+            // Calculate bounce (new velocity based on wall normal)
+            updatedShot = bounceShotFunc(updatedShot, hitWall, walls, worldwidth, worldwrap)
+          }
+        }
+        // Mark as justDied if it died this frame (and not bouncing)
+        else if (updatedShot.lifecount === 0 && shot.lifecount > 0) {
           updatedShot.justDied = true
         }
 
         // TODO: Implement collision detection with ship (Play.c:830-838)
-        // TODO: Implement wall bounce handling (Play.c:839-843)
         // TODO: Implement strafe creation for dead shots
 
         return updatedShot
@@ -350,6 +369,7 @@ export const shotsSlice = createSlice({
         screeny: number
         screenb: number
         readonly bunkrecs: readonly Bunker[]
+        readonly walls: readonly LineRec[]
         worldwidth: number
         worldwrap: boolean
         globalx: number

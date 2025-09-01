@@ -288,6 +288,7 @@ export const createShipMoveBitmapRenderer =
           screeny: state.screen.screeny,
           screenb: screenb,
           bunkrecs: state.planet.bunkers,
+          walls: state.planet.lines,
           worldwidth: state.planet.worldwidth,
           worldwrap: state.planet.worldwrap,
           globalx: globalx,
@@ -340,7 +341,8 @@ export const createShipMoveBitmapRenderer =
     store.dispatch(
       moveBullets({
         worldwidth: state.planet.worldwidth,
-        worldwrap: state.planet.worldwrap
+        worldwrap: state.planet.worldwrap,
+        walls: state.planet.lines
       })
     )
 

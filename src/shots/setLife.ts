@@ -36,7 +36,7 @@ import { getLife } from './getLife'
  */
 export function setLife(
   shot: ShotRec,
-  walls: LineRec[],
+  walls: readonly LineRec[],
   totallife: number,
   ignoreWallId: string | undefined,
   worldwidth: number,

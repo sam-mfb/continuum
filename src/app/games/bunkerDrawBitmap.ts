@@ -334,6 +334,7 @@ export const createBunkerDrawBitmapRenderer =
           screeny: viewportState.y,
           screenb: screenb,
           bunkrecs: planetState.bunkers,
+          walls: planetState.lines,
           worldwidth: planetState.worldwidth,
           worldwrap: planetState.worldwrap,
           globalx: globalx,
@@ -346,7 +347,8 @@ export const createBunkerDrawBitmapRenderer =
     store.dispatch(
       moveBullets({
         worldwidth: planetState.worldwidth,
-        worldwrap: planetState.worldwrap
+        worldwrap: planetState.worldwrap,
+        walls: planetState.lines
       })
     )
 

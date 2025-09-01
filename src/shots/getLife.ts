@@ -107,7 +107,7 @@ export type GetLifeResult = {
  */
 export function getLife(
   shot: ShotRec,
-  walls: LineRec[],
+  walls: readonly LineRec[],
   totallife: number
 ): GetLifeResult {
   // Initialize with defaults
