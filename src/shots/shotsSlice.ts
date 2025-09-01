@@ -355,8 +355,17 @@ export const shotsSlice = createSlice({
           updatedShot.justDied = true
         }
 
+        // Handle strafe effect creation for dead shots (Play.c:844 DRAW_SHOT macro)
+        // Just like ship shots, bunker shots create strafes when hitting walls
+        if (updatedShot.lifecount === 0 && updatedShot.strafedir >= 0) {
+          state.strafes = startStrafeFunc(
+            updatedShot.x,
+            updatedShot.y,
+            updatedShot.strafedir
+          )(state.strafes)
+        }
+
         // TODO: Implement collision detection with ship (Play.c:830-838)
-        // TODO: Implement strafe creation for dead shots
 
         return updatedShot
       })

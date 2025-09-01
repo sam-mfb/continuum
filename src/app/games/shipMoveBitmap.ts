@@ -275,8 +275,9 @@ export const createShipMoveBitmapRenderer =
 
     // Check if bunkers should shoot this frame (probabilistic based on shootslow)
     // From Bunkers.c:30-31: if (rint(100) < shootslow) bunk_shoot();
+    // TESTING: Increased shot rate for easier testing (multiply by 5)
     const shootRoll = rint(100)
-    if (shootRoll < state.planet.shootslow) {
+    if (shootRoll < state.planet.shootslow * 5) {
       // Calculate screen boundaries for shot eligibility
       const screenr = state.screen.screenx + SCRWTH
       const screenb = state.screen.screeny + VIEWHT
@@ -556,7 +557,14 @@ export const createShipMoveBitmapRenderer =
     if (!finalState.ship.shielding) {
       // Shields prevent bunker shots from being drawn
       for (const shot of finalState.shots.bunkshots) {
-        if (shot.lifecount > 0) {
+        // Render shot if:
+        // - Still alive (lifecount > 0), OR
+        // - Just died without strafe (justDied && no strafe visual replacement)
+        // This matches the DRAW_SHOT macro behavior (Macros.h:18-25)
+        const shouldRender =
+          shot.lifecount > 0 || (shot.justDied === true && shot.strafedir < 0)
+
+        if (shouldRender) {
           // Convert world coordinates to screen coordinates
           const shotx = shot.x - finalState.screen.screenx
           const shoty = shot.y - finalState.screen.screeny
