@@ -40,7 +40,7 @@ import { getBackgroundPattern } from '@/shared/backgroundPattern'
 import { shiftFigure } from '@/ship/render/shiftFigure'
 import { whiteTerrain, blackTerrain } from '@/walls/render'
 import { wallsSlice } from '@/walls/wallsSlice'
-import { viewClear } from '@/screen/render'
+import { viewClear, viewWhite } from '@/screen/render'
 import { LINE_KIND } from '@/walls/types'
 import { checkFigure } from '@/collision/checkFigure'
 import { checkForBounce } from '@/ship/physics/checkForBounce'
@@ -51,7 +51,8 @@ import {
   startShipDeath,
   startExplosion,
   updateExplosions,
-  explosionsSlice
+  explosionsSlice,
+  clearShipDeathFlash
 } from '@/explosions/explosionsSlice'
 import { drawExplosions } from '@/explosions/render/drawExplosions'
 import type { ShardSprite, ShardSpriteSet } from '@/figs/types'
@@ -363,6 +364,20 @@ export const createShipMoveBitmapRenderer =
 
     // Get final state for drawing
     const finalState = store.getState()
+
+    // Check for ship death flash effect (Terrain.c:413 - set_screen(front_screen, 0L))
+    if (finalState.explosions.shipDeathFlash) {
+      // Fill viewport with white (preserve status bar)
+      const whiteBitmap = viewWhite()(bitmap)
+      bitmap.data.set(whiteBitmap.data)
+      
+      // Clear the flash for next frame
+      store.dispatch(clearShipDeathFlash())
+      
+      // Skip all other rendering and return early
+      // The flash lasts exactly one frame
+      return
+    }
 
     // First, create a crosshatch gray background using viewClear
     const clearedBitmap = viewClear({
