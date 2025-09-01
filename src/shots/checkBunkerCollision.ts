@@ -1,108 +1,73 @@
-/**
- * Check if a shot hits a bunker
- * Based on orig/Sources/Play.c:763-784 in move_shipshots()
- *
- * Assumes bunkers are pre-sorted by X position for optimization
- */
-
 import type { ShotRec } from './types'
 import type { Bunker } from '@/planet/types'
-import { xyindistance } from './xyindistance'
 import { legalAngle } from '@/planet/legalAngle'
+import { xyindistance } from './xyindistance'
+import { BUNKROTKINDS } from '@/figs'
 import { BRADIUS } from './constants'
-import { BUNKROTKINDS } from '@/figs/types'
-
-export type BunkerCollisionResult = {
-  hit: boolean
-  bunkerIndex?: number
-}
 
 /**
  * Check if a shot collides with any bunker
- * Implements the exact algorithm from Play.c:763-784
+ * Based on Play.c:763-784
  *
- * @param shot - The shot to check (must already be moved)
- * @param bunkers - Array of bunkers sorted by X position
- * @returns Collision result with bunker index if hit
+ * The original C code uses pointer arithmetic to iterate through bunkers.
+ * We use array indexing to achieve the same effect.
+ *
+ * @param shot - The shot to check for collision
+ * @param bunkers - Array of bunkers (sorted by x coordinate)
+ * @returns Object with hit flag and optional bunker index
  */
 export function checkBunkerCollision(
   shot: ShotRec,
   bunkers: readonly Bunker[]
-): BunkerCollisionResult {
-  // Calculate bounding box (Play.c:763-766)
+): { hit: boolean; bunkerIndex?: number } {
+  // Play.c:763-766 - Calculate bounding box
   const left = shot.x - BRADIUS
   const right = shot.x + BRADIUS
   const top = shot.y - BRADIUS
   const bot = shot.y + BRADIUS
 
-  // Implement exact C-style two-loop structure (Play.c:767-769)
-  // First loop: advance to first bunker where x >= left
-  let index = 0
-  while (index < bunkers.length) {
-    const bunker = bunkers[index]!
-    if (bunker.rot < 0) break // End marker check
-    if (bunker.x >= left) break // Found first bunker in range
-    index++
+  // Play.c:767-768 - Skip bunkers to the left of bounding box
+  // for (bp=bunkers; bp->x < left; bp++);
+  let bp = 0
+  for (; bp < bunkers.length && bunkers[bp]!.x < left; bp++) {
+    // Empty loop body - just advancing bp
   }
-  
-  // Second loop: process bunkers while x < right (Play.c:769)
-  while (index < bunkers.length) {
-    const bunker = bunkers[index]!
-    
-    // Check for end marker (rot < 0 indicates end of active bunkers)
-    if (bunker.rot < 0) {
-      break
-    }
-    
-    // Exit when bunker x >= right (matches C's "bp->x < right" condition)
-    if (bunker.x >= right) {
-      break
-    }
 
-    // Alive check (Play.c:770)
-    if (!bunker.alive) {
-      index++
-      continue
+  // Play.c:769-784 - Check bunkers within x range
+  // for (; bp->x < right; bp++)
+  for (; bp < bunkers.length && bunkers[bp]!.x < right; bp++) {
+    const bunker = bunkers[bp]!
+
+    // Play.c:770-774 - Combined condition check (all on one if statement)
+    if (
+      bunker.alive &&
+      bunker.y < bot &&
+      bunker.y > top &&
+      xyindistance(bunker.x - shot.x, bunker.y - shot.y, BRADIUS) &&
+      (bunker.kind >= BUNKROTKINDS ||
+        legalAngle(
+          bunker.rot,
+          bunker.x,
+          bunker.y,
+          shot.x - (shot.h >> 3),
+          shot.y - (shot.v >> 3)
+        ))
+    ) {
+      // Play.c:775-784 - Hit confirmed
+      // Note: We don't handle the shot destruction here (Play.c:776-777)
+      // That's handled by the caller in moveShipshots
+
+      // Play.c:778-781 - Check for hardy bunker
+      // Note: We don't handle hardy bunker logic here since that requires
+      // modifying the bunker, which we can't do with readonly array
+      // This is handled in the planetSlice reducer instead
+
+      // Play.c:782-783 - kill_bunk(bp); break;
+      return { hit: true, bunkerIndex: bp }
     }
-
-    // Y-axis bounding box check (Play.c:770)
-    // Original: bp->y < bot && bp->y > top
-    // Include bunkers where y is between top and bot (inclusive)
-    // The original game used inclusive boundaries in collision detection
-    if (!(bunker.y >= top && bunker.y <= bot)) {
-      index++
-      continue
-    }
-
-    // Circular collision check (Play.c:771)
-    const dx = bunker.x - shot.x
-    const dy = bunker.y - shot.y
-    if (!xyindistance(dx, dy, BRADIUS)) {
-      index++
-      continue
-    }
-
-    // Angle check for directional bunkers (Play.c:772-774)
-    if (bunker.kind < BUNKROTKINDS) {
-      // Calculate shot's previous position to determine trajectory
-      // Previous position = current - (velocity >> 3)
-      const shotPrevX = shot.x - (shot.h >> 3)
-      const shotPrevY = shot.y - (shot.v >> 3)
-
-      if (!legalAngle(bunker.rot, bunker.x, bunker.y, shotPrevX, shotPrevY)) {
-        index++
-        continue // Hit from invalid angle
-      }
-    }
-    // Note: Omnidirectional bunkers (kind >= BUNKROTKINDS) skip angle check
-
-    // Collision confirmed! (Play.c:775)
-    return { hit: true, bunkerIndex: index }
-    
-    // Move to next bunker (unreachable due to return, but matches C structure)
-    index++
   }
 
   // No collision found
   return { hit: false }
 }
+

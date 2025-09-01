@@ -52,27 +52,18 @@ import {
   startShipDeath,
   startExplosion,
   updateExplosions,
-  explosionsSlice,
   clearShipDeathFlash,
   resetSparksAlive,
   clearShards
 } from '@/explosions/explosionsSlice'
 import { drawExplosions } from '@/explosions/render/drawExplosions'
 import type { ShardSprite, ShardSpriteSet } from '@/figs/types'
-import type { ExplosionsState } from '@/explosions/types'
 import { SKILLBRADIUS } from '@/ship/constants'
 import { xyindist } from '@/shots/xyindist'
 import { legalAngle } from '@/planet/legalAngle'
 
 // Configure store with all slices and containment middleware
-const store = buildGameStore({
-  explosions: explosionsSlice.reducer
-})
-
-// Type for our extended state
-type ExtendedGameState = ReturnType<typeof store.getState> & {
-  explosions: ExplosionsState
-}
+const store = buildGameStore({})
 
 // Track initialization state
 let initializationComplete = false
@@ -227,7 +218,7 @@ export const createShipMoveBitmapRenderer =
       const newDeadCount = store.getState().ship.deadCount
       if (newDeadCount === 0) {
         store.dispatch(shipSlice.actions.respawnShip())
-        
+
         // Clear explosion and shot state per init_ship() in Play.c:182-187
         // sparksalive = 0 (Play.c:182)
         store.dispatch(resetSparksAlive())
@@ -235,7 +226,7 @@ export const createShipMoveBitmapRenderer =
         store.dispatch(clearBunkShots())
         // for(i=0; i<NUMSHARDS; i++) shards[i].lifecount = 0 (Play.c:186-187)
         store.dispatch(clearShards())
-        
+
         // Update screen position to place ship at planet start position
         // globalx = xstart, globaly = ystart (from init_ship)
         // screenx = globalx - shipx, screeny = globaly - shipy
@@ -382,10 +373,10 @@ export const createShipMoveBitmapRenderer =
       // Fill viewport with white (preserve status bar)
       const whiteBitmap = viewWhite()(bitmap)
       bitmap.data.set(whiteBitmap.data)
-      
+
       // Clear the flash for next frame
       store.dispatch(clearShipDeathFlash())
-      
+
       // Skip all other rendering and return early
       // The flash lasts exactly one frame
       return
@@ -807,7 +798,7 @@ export const createShipMoveBitmapRenderer =
 
     // Draw explosions (shards and sparks)
     // Check if any explosions are active
-    const extendedState = finalState as ExtendedGameState
+    const extendedState = finalState
     if (
       extendedState.explosions.sparksalive > 0 ||
       extendedState.explosions.shards.some(s => s.lifecount > 0)
