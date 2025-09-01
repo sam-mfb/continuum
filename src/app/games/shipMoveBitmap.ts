@@ -24,7 +24,8 @@ import {
   clearAllShots,
   doStrafes,
   bunkShoot,
-  moveBullets
+  moveBullets,
+  clearBunkShots
 } from '@/shots/shotsSlice'
 import { ShipControl } from '@/ship/types'
 import { shipControl } from './shipControlThunk'
@@ -52,7 +53,9 @@ import {
   startExplosion,
   updateExplosions,
   explosionsSlice,
-  clearShipDeathFlash
+  clearShipDeathFlash,
+  resetSparksAlive,
+  clearShards
 } from '@/explosions/explosionsSlice'
 import { drawExplosions } from '@/explosions/render/drawExplosions'
 import type { ShardSprite, ShardSpriteSet } from '@/figs/types'
@@ -224,6 +227,15 @@ export const createShipMoveBitmapRenderer =
       const newDeadCount = store.getState().ship.deadCount
       if (newDeadCount === 0) {
         store.dispatch(shipSlice.actions.respawnShip())
+        
+        // Clear explosion and shot state per init_ship() in Play.c:182-187
+        // sparksalive = 0 (Play.c:182)
+        store.dispatch(resetSparksAlive())
+        // for(i=0; i<NUMSHOTS; i++) bunkshots[i].lifecount = 0 (Play.c:184-185)
+        store.dispatch(clearBunkShots())
+        // for(i=0; i<NUMSHARDS; i++) shards[i].lifecount = 0 (Play.c:186-187)
+        store.dispatch(clearShards())
+        
         // Update screen position to place ship at planet start position
         // globalx = xstart, globaly = ystart (from init_ship)
         // screenx = globalx - shipx, screeny = globaly - shipy

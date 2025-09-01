@@ -399,6 +399,21 @@ export const shotsSlice = createSlice({
         lifecount: 0,
         rot: 0
       }))
+    },
+    
+    /**
+     * Clear bunker shots when ship respawns
+     * Based on init_ship() in Play.c:184-185
+     * 
+     * The original game clears all bunker shots on respawn:
+     * for(i=0; i<NUMSHOTS; i++) bunkshots[i].lifecount = 0;
+     * 
+     * Note: Does NOT clear ship shots or strafes
+     */
+    clearBunkShots: state => {
+      // Reset all bunk shots by clearing their lifecount
+      // We reinitialize the whole shot to ensure clean state
+      state.bunkshots = state.bunkshots.map(() => initializeShot())
     }
   }
 })
@@ -410,7 +425,8 @@ export const {
   moveShipshots,
   moveBullets,
   bunkShoot,
-  clearAllShots
+  clearAllShots,
+  clearBunkShots
 } = shotsSlice.actions
 
 export default shotsSlice.reducer

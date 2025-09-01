@@ -420,6 +420,35 @@ export const explosionsSlice = createSlice({
      */
     clearShipDeathFlash: state => {
       state.shipDeathFlash = false
+    },
+
+    /**
+     * Reset sparksalive when ship respawns
+     * Based on init_ship() in Play.c:182
+     * 
+     * The original game sets sparksalive = 0 on respawn but does NOT:
+     * - Clear the sparks array
+     * - Reset totalsparks
+     * This fixes the bug where sparks going out of bounds north don't
+     * properly decrement sparksalive, leaving bunker explosions blocked.
+     */
+    resetSparksAlive: state => {
+      state.sparksalive = 0
+      // Note: Intentionally not touching totalsparks or spark array data
+      // to match original behavior exactly
+    },
+
+    /**
+     * Clear shards when ship respawns
+     * Based on init_ship() in Play.c:186-187
+     * 
+     * The original game clears all shard lifecounts on respawn:
+     * for(i=0; i<NUMSHARDS; i++) shards[i].lifecount = 0;
+     */
+    clearShards: state => {
+      // Reset all shards by clearing their lifecount
+      // We reinitialize the whole shard to ensure clean state
+      state.shards = state.shards.map(() => initializeShard())
     }
   }
 })
@@ -430,7 +459,9 @@ export const {
   startBlowup,
   updateExplosions,
   clearExplosions,
-  clearShipDeathFlash
+  clearShipDeathFlash,
+  resetSparksAlive,
+  clearShards
 } = explosionsSlice.actions
 
 export const explosionsReducer = explosionsSlice.reducer
