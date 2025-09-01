@@ -325,10 +325,11 @@ export const explosionsSlice = createSlice({
       action: PayloadAction<{
         worldwidth: number
         worldwrap: boolean
-        gravityVector: (x: number, y: number) => { xg: number; yg: number }
+        gravx: number
+        gravy: number
       }>
     ) => {
-      const { worldwidth, gravityVector } = action.payload
+      const { worldwidth, gravx, gravy } = action.payload
       const worldwth8 = worldwidth << 3
 
       // Update shards (Terrain.c:456-478)
@@ -343,9 +344,9 @@ export const explosionsSlice = createSlice({
           shard.v -= shard.v >> SH_SLOW
 
           // Apply gravity (Terrain.c:461-463)
-          const { xg, yg } = gravityVector(shard.x, shard.y)
-          shard.h += xg << 2
-          shard.v += yg << 2
+          // For now, using constant gravity - can be extended for position-dependent gravity later
+          shard.h += gravx << 2
+          shard.v += gravy << 2
 
           // Update position (Terrain.c:464-465)
           shard.x += shard.h >> 8

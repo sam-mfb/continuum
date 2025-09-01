@@ -19,7 +19,6 @@ import {
   updateExplosions
 } from '@/explosions/explosionsSlice'
 import { drawExplosions } from '@/explosions/render/drawExplosions'
-import { gravityVector } from '@/shared/gravityVector'
 import type { ExplosionsState } from '@/explosions/types'
 import { drawBunker } from '@/planet/render/bunker'
 import { viewClear } from '@/screen/render'
@@ -308,25 +307,12 @@ export const createExplosionBitmapRenderer =
     }
 
     if (anyExplosionActive) {
-      const gravityVectorFunc = (
-        x: number,
-        y: number
-      ): { xg: number; yg: number } =>
-        gravityVector({
-          x,
-          y,
-          gravx: state.planet.gravx,
-          gravy: state.planet.gravy,
-          gravityPoints: [],
-          worldwidth: state.planet.worldwidth,
-          worldwrap: state.planet.worldwrap
-        })
-
       store.dispatch(
         updateExplosions({
           worldwidth: state.planet.worldwidth,
           worldwrap: state.planet.worldwrap,
-          gravityVector: gravityVectorFunc
+          gravx: state.planet.gravx,
+          gravy: state.planet.gravy
         })
       )
     }

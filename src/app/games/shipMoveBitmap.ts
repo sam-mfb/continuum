@@ -353,10 +353,8 @@ export const createShipMoveBitmapRenderer =
       updateExplosions({
         worldwidth: state.planet.worldwidth,
         worldwrap: state.planet.worldwrap,
-        gravityVector: (_x: number, _y: number) => ({
-          xg: state.planet.gravx,
-          yg: state.planet.gravy
-        })
+        gravx: state.planet.gravx,
+        gravy: state.planet.gravy
       })
     )
 
