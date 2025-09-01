@@ -69,8 +69,13 @@ export function setLife(
   }
 
   // Return updated shot with calculated values
+  // CRITICAL: Synchronize pixel coordinates from sub-pixel coordinates
+  // The original get_life() (Terrain.c:154-155) updates sp->x and sp->y
+  // This must happen to avoid using stale coordinates in collision checks
   return {
     ...shot,
+    x: shot.x8 >> 3,  // Sync pixel coordinate from sub-pixel
+    y: shot.y8 >> 3,  // Sync pixel coordinate from sub-pixel
     lifecount: result.framesToImpact,
     strafedir: result.strafedir,
     btime: result.btime,
