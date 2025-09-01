@@ -1,19 +1,21 @@
 # Discrepancy Report: Bunker Collision Bounding Box
 
-This document outlines a key logical discrepancy between our modern TypeScript implementation and the original game's behavior, which is the likely cause of shots failing to register on the edges of bunkers.
+This document outlines a key logical discrepancy between our modern TypeScript implementation and the original game's behavior, which was the cause of shots failing to register on the edges of bunkers.
 
-## Issue: Strict Inequality in Bunker Collision Bounding Box
+## ~~Issue: Strict Inequality in Bunker Collision Bounding Box~~ FIXED
 
-The primary discrepancy lies in the y-axis bounding box check within the bunker collision detection routine. Our implementation uses a strict inequality (`<`, `>`), whereas the original game's logic was consistently inclusive (`<=`, `>=`), especially in collision detection routines.
+The primary discrepancy lay in the y-axis bounding box check within the bunker collision detection routine. Our implementation used a strict inequality (`<`, `>`), whereas the original game's logic was consistently inclusive (`<=`, `>=`), especially in collision detection routines.
 
-This causes a bug where a bunker is ignored if its center `y` coordinate falls exactly on the top or bottom edge of the shot's bounding box.
+This caused a bug where a bunker was ignored if its center `y` coordinate fell exactly on the top or bottom edge of the shot's bounding box.
 
-### Code Citation: Modern Implementation
+**Status: FIXED** - Changed to use inclusive boundaries (`>=`, `<=`) to match the original game's collision detection philosophy.
 
-The issue is in `src/shots/checkBunkerCollision.ts`. The comment correctly cites the original line, but the logic was implemented with strict inequality, which is incorrect.
+### Code Citation: Modern Implementation (Before Fix)
+
+The issue was in `src/shots/checkBunkerCollision.ts`. The comment correctly cited the original line, but the logic was implemented with strict inequality, which was incorrect.
 
 ```typescript
-// File: src/shots/checkBunkerCollision.ts, line 70
+// File: src/shots/checkBunkerCollision.ts, line 70 (BEFORE FIX)
 
 // Y-axis bounding box check (Play.c:770)
 // Original: bp->y < bot && bp->y > top
@@ -24,7 +26,24 @@ if (!(bunker.y > top && bunker.y < bot)) {
 }
 ```
 
-The expression `!(bunker.y > top && bunker.y < bot)` evaluates to `bunker.y <= top || bunker.y >= bot`, which incorrectly excludes bunkers exactly on the boundary.
+The expression `!(bunker.y > top && bunker.y < bot)` evaluated to `bunker.y <= top || bunker.y >= bot`, which incorrectly excluded bunkers exactly on the boundary.
+
+### Fixed Implementation
+
+```typescript
+// File: src/shots/checkBunkerCollision.ts, line 72 (AFTER FIX)
+
+// Y-axis bounding box check (Play.c:770)
+// Original: bp->y < bot && bp->y > top
+// Include bunkers where y is between top and bot (inclusive)
+// The original game used inclusive boundaries in collision detection
+if (!(bunker.y >= top && bunker.y <= bot)) {
+  index++
+  continue
+}
+```
+
+Now correctly uses inclusive boundaries to match the original game's behavior.
 
 ### Analysis of Original Game Logic
 

@@ -67,8 +67,9 @@ export function checkBunkerCollision(
 
     // Y-axis bounding box check (Play.c:770)
     // Original: bp->y < bot && bp->y > top
-    // Include bunkers where y is between top and bot (exclusive)
-    if (!(bunker.y > top && bunker.y < bot)) {
+    // Include bunkers where y is between top and bot (inclusive)
+    // The original game used inclusive boundaries in collision detection
+    if (!(bunker.y >= top && bunker.y <= bot)) {
       index++
       continue
     }
