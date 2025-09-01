@@ -35,28 +35,33 @@ export function checkBunkerCollision(
   const top = shot.y - BRADIUS
   const bot = shot.y + BRADIUS
 
-  // Check bunkers using sorted optimization (Play.c:767-769)
-  for (let index = 0; index < bunkers.length; index++) {
+  // Implement exact C-style two-loop structure (Play.c:767-769)
+  // First loop: advance to first bunker where x >= left
+  let index = 0
+  while (index < bunkers.length) {
     const bunker = bunkers[index]!
-
+    if (bunker.rot < 0) break // End marker check
+    if (bunker.x >= left) break // Found first bunker in range
+    index++
+  }
+  
+  // Second loop: process bunkers while x < right (Play.c:769)
+  while (index < bunkers.length) {
+    const bunker = bunkers[index]!
+    
     // Check for end marker (rot < 0 indicates end of active bunkers)
     if (bunker.rot < 0) {
       break
     }
-
-    // Early exit if bunker is past right boundary (Play.c:769)
-    // Since bunkers are sorted by X, no need to check further
+    
+    // Exit when bunker x >= right (matches C's "bp->x < right" condition)
     if (bunker.x >= right) {
       break
     }
 
-    // Skip bunkers too far left (Play.c:767-768)
-    if (bunker.x < left) {
-      continue
-    }
-
     // Alive check (Play.c:770)
     if (!bunker.alive) {
+      index++
       continue
     }
 
@@ -64,6 +69,7 @@ export function checkBunkerCollision(
     // Original: bp->y < bot && bp->y > top
     // Include bunkers where y is between top and bot (exclusive)
     if (!(bunker.y > top && bunker.y < bot)) {
+      index++
       continue
     }
 
@@ -71,6 +77,7 @@ export function checkBunkerCollision(
     const dx = bunker.x - shot.x
     const dy = bunker.y - shot.y
     if (!xyindistance(dx, dy, BRADIUS)) {
+      index++
       continue
     }
 
@@ -82,6 +89,7 @@ export function checkBunkerCollision(
       const shotPrevY = shot.y - (shot.v >> 3)
 
       if (!legalAngle(bunker.rot, bunker.x, bunker.y, shotPrevX, shotPrevY)) {
+        index++
         continue // Hit from invalid angle
       }
     }
@@ -89,6 +97,9 @@ export function checkBunkerCollision(
 
     // Collision confirmed! (Play.c:775)
     return { hit: true, bunkerIndex: index }
+    
+    // Move to next bunker (unreachable due to return, but matches C structure)
+    index++
   }
 
   // No collision found
