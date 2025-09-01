@@ -331,23 +331,118 @@ Based on original implementation:
 - [ ] Performance with many shots remains good
 - [ ] Shots work across world wrap boundaries
 
-## Files to Modify
+## Files to Modify - Specific Changes Required
 
-1. **`/src/shots/bunkShoot.ts`**
+### 1. **`/src/shots/shotsSlice.ts` - bunkShoot reducer**
 
-   - Add `setLife(shot, null)` call after creating shot
-   - Following Bunkers.c:180
+**Current State:** Bunker shots are created without any wall collision calculation.
 
-2. **`/src/shots/setLife.ts`**
+**Required Change:** Add `setLife()` call after creating each shot.
 
-   - Already exists for ship shots
-   - Ensure it works for bunker shots too
-   - Following Terrain.c:146-230
+```typescript
+// In bunkShoot reducer, after creating each shot:
+// BEFORE: shot is added directly to state.bunkshots
+// AFTER: Add this before pushing to array:
 
-3. **`/src/shots/shotsSlice.ts`**
-   - Ensure `moveBullets` respects lifecount
-   - NO collision checking needed (already in setLife)
-   - Following Play.c:826-846
+// Calculate wall collision (Bunkers.c:180)
+setLife(shot, null, action.payload.walls, worldwidth, worldwrap)
+```
+
+**Also need to:** Add `walls` to the `bunkShoot` action payload type.
+
+### 2. **`/src/shots/shotsSlice.ts` - moveBullets reducer**
+
+**Current State:** `moveBullets` just moves shots and decrements lifecount, no bounce handling.
+
+**Required Change:** Add bounce detection and handling after moving each shot.
+
+```typescript
+// In moveBullets reducer, after moveShot(shot):
+// ADD this bounce handling:
+
+if (shot.lifecount === 0 && shot.btime > 0) {
+  // Shot hit a bounce wall
+  backupShot(shot)  // Move back to exact wall position
+  bounceShot(shot)  // Calculate new velocity vector
+  // Recalculate collision for new trajectory
+  setLife(shot, shot.hitline, action.payload.walls, worldwidth, worldwrap)
+}
+```
+
+**Also need to:** Add `walls` to the `moveBullets` action payload type.
+
+### 3. **`/src/app/games/shipMoveBitmap.ts` and other games**
+
+**Current State:** Dispatches `bunkShoot` without wall data.
+
+**Required Change:** Add walls to the action payload.
+
+```typescript
+// BEFORE:
+store.dispatch(
+  bunkShoot({
+    screenx: state.screen.screenx,
+    screenr: screenr,
+    screeny: state.screen.screeny,
+    screenb: screenb,
+    bunkrecs: state.planet.bunkers,
+    worldwidth: state.planet.worldwidth,
+    worldwrap: state.planet.worldwrap,
+    globalx: globalx,
+    globaly: globaly
+  })
+)
+
+// AFTER: Add walls
+store.dispatch(
+  bunkShoot({
+    // ... existing params
+    walls: state.planet.lines  // ADD THIS
+  })
+)
+```
+
+**Similarly for `moveBullets`:**
+```typescript
+// BEFORE:
+store.dispatch(
+  moveBullets({
+    worldwidth: state.planet.worldwidth,
+    worldwrap: state.planet.worldwrap
+  })
+)
+
+// AFTER: Add walls
+store.dispatch(
+  moveBullets({
+    worldwidth: state.planet.worldwidth,
+    worldwrap: state.planet.worldwrap,
+    walls: state.planet.lines  // ADD THIS
+  })
+)
+```
+
+### 4. **`/src/shots/setLife.ts`**
+
+**Current State:** Already exists and implements predictive collision for ship shots.
+
+**Required Change:** None - it should already work for bunker shots. Just needs to be called.
+
+### 5. **`/src/shots/types.ts`**
+
+**Current State:** Verify `BulletRec` has all needed fields.
+
+**Required Fields:**
+- `hitline: Line | null` - reference to the wall that will be hit
+- `btime: number` - bounce time (cycles after bounce)
+
+If missing, add these fields to the `BulletRec` type.
+
+### 6. **Implement helper functions (if not exist)**
+
+Need to implement or verify existence of:
+- `backupShot(shot)` - moves shot back to exact wall collision point
+- `bounceShot(shot)` - calculates new velocity after bounce
 
 ## Critical Difference from Ship Shots
 
