@@ -199,7 +199,7 @@ function App({ spriteService }: AppProps): React.JSX.Element {
                   bitmapRenderer: createStatusBarDemo(spriteService)
                 } as BitmapGameDefinition
               ]}
-              defaultGameIndex={0}
+              defaultGameIndex={6} // Ship Move (Bitmap) is at index 6
               scale={2} // Display at 2x size (1024x684)
               pixelated={true} // Keep pixels sharp
               statsConfig={
