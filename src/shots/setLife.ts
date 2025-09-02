@@ -74,8 +74,8 @@ export function setLife(
   // This must happen to avoid using stale coordinates in collision checks
   return {
     ...shot,
-    x: shot.x8 >> 3,  // Sync pixel coordinate from sub-pixel
-    y: shot.y8 >> 3,  // Sync pixel coordinate from sub-pixel
+    x: shot.x8 >> 3, // Sync pixel coordinate from sub-pixel
+    y: shot.y8 >> 3, // Sync pixel coordinate from sub-pixel
     lifecount: result.framesToImpact,
     strafedir: result.strafedir,
     btime: result.btime,

@@ -126,7 +126,7 @@ export const shotsSlice = createSlice({
             ...newShot,
             x8: newX8,
             y8: newY8,
-            x: newX8 >> 3,  // Keep x,y in sync with x8,y8 after advancing
+            x: newX8 >> 3, // Keep x,y in sync with x8,y8 after advancing
             y: newY8 >> 3,
             lifecount: newShot.lifecount - 1
           }
@@ -308,14 +308,14 @@ export const shotsSlice = createSlice({
     },
     moveBullets: (
       state,
-      action: PayloadAction<{ 
+      action: PayloadAction<{
         worldwidth: number
         worldwrap: boolean
         readonly walls: readonly LineRec[]
       }>
     ) => {
       const { worldwidth, worldwrap, walls } = action.payload
-      
+
       // Process each bunker shot with same justDied logic as ship shots
       state.bunkshots = state.bunkshots.map(shot => {
         // Clear justDied flag from previous frame
@@ -340,9 +340,15 @@ export const shotsSlice = createSlice({
             updatedShot.y8 -= updatedShot.v
             updatedShot.x = updatedShot.x8 >> 3
             updatedShot.y = updatedShot.y8 >> 3
-            
+
             // Calculate bounce (new velocity based on wall normal)
-            updatedShot = bounceShotFunc(updatedShot, hitWall, walls, worldwidth, worldwrap)
+            updatedShot = bounceShotFunc(
+              updatedShot,
+              hitWall,
+              walls,
+              worldwidth,
+              worldwrap
+            )
           }
         }
         // Mark as justDied if it died this frame (and not bouncing)
@@ -395,14 +401,14 @@ export const shotsSlice = createSlice({
         rot: 0
       }))
     },
-    
+
     /**
      * Clear bunker shots when ship respawns
      * Based on init_ship() in Play.c:184-185
-     * 
+     *
      * The original game clears all bunker shots on respawn:
      * for(i=0; i<NUMSHOTS; i++) bunkshots[i].lifecount = 0;
-     * 
+     *
      * Note: Does NOT clear ship shots or strafes
      */
     clearBunkShots: state => {

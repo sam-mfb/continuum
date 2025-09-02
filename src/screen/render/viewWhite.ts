@@ -25,14 +25,14 @@ import { SBARSIZE } from '@/screen/constants'
 export function viewWhite(): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
     const newScreen = cloneBitmap(screen)
-    
+
     // Fill everything after the status bar with white (all bits cleared to 0)
     // In our bitmap format, 0x00 = all bits clear = all pixels white/off
     // This matches the original's set_screen(front_screen, 0L) where 0L meant white
     for (let i = SBARSIZE; i < newScreen.data.length; i++) {
       newScreen.data[i] = 0x00
     }
-    
+
     return newScreen
   }
 }

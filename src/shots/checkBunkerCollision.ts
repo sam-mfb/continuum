@@ -70,4 +70,3 @@ export function checkBunkerCollision(
   // No collision found
   return { hit: false }
 }
-

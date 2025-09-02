@@ -106,15 +106,15 @@ export const planetSlice = createSlice({
       // This ensures the optimization in Play.c:767-769 works correctly
       // IMPORTANT: Only sort active bunkers (those with rot >= 0)
       // The sentinel bunker (rot < 0) must remain at the end
-      
+
       // Find the sentinel index (first bunker with rot < 0)
       let sentinelIndex = state.bunkers.findIndex(b => b.rot < 0)
       if (sentinelIndex === -1) sentinelIndex = state.bunkers.length
-      
+
       // Sort only the active bunkers (before sentinel)
       const activeBunkers = state.bunkers.slice(0, sentinelIndex)
       activeBunkers.sort((a, b) => a.x - b.x)
-      
+
       // Replace the active portion while keeping sentinel at end
       state.bunkers.splice(0, sentinelIndex, ...activeBunkers)
 

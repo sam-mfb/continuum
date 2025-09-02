@@ -215,8 +215,8 @@ export function bunkShoot(deps: {
     newShot = setLife(
       newShot,
       deps.walls,
-      newShot.lifecount + newShot.btime,  // totallife
-      undefined,  // No wall to ignore (new shot)
+      newShot.lifecount + newShot.btime, // totallife
+      undefined, // No wall to ignore (new shot)
       deps.worldwidth,
       deps.worldwrap
     )

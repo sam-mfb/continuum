@@ -7,6 +7,7 @@ The shield system in Continuum provides temporary invulnerability through a fuel
 ## Core Shield State
 
 ### State Variables (Play.c)
+
 - `shielding` (Play.c:71) - Boolean flag indicating active shield status
 - `fuel` - Global fuel counter that must be > 0 for shield activation
 - `refueling` (Play.c:72) - Set to FALSE when shield activates, preventing simultaneous refueling
@@ -14,6 +15,7 @@ The shield system in Continuum provides temporary invulnerability through a fuel
 ## Activation Mechanisms
 
 ### Primary Activation - Manual Control
+
 The shield activates when KEY_SHIELD is pressed AND fuel is available (Play.c:507-527):
 
 1. **Input Check** - `move_ship()` checks if KEY_SHIELD is pressed and fuel > 0 (Play.c:507)
@@ -24,6 +26,7 @@ The shield activates when KEY_SHIELD is pressed AND fuel is available (Play.c:50
 6. **Fuel Cell Collection** - Immediately collects any fuel cells within FRADIUS (Play.c:512-524)
 
 ### Secondary Activation - Self-Hit Feedback
+
 When ship's own bullet enters shield radius (Play.c:787-794):
 
 1. **Collision Check** in `move_shipshots()` detects own bullet within SHRADIUS (Play.c:787-789)
@@ -36,6 +39,7 @@ Note: This secondary activation doesn't check fuel and appears to be a one-frame
 ## Deactivation
 
 Shield deactivates when (Play.c:526-527):
+
 - KEY_SHIELD is released, OR
 - Fuel reaches 0
 
@@ -48,6 +52,7 @@ Sets `shielding = FALSE` immediately with no fade-out period.
 The `move_bullets()` function handles enemy bullet collision with shield:
 
 1. **Bounding Box Check** - First checks if bullet is within rectangular region around ship (Play.c:830-831)
+
    - Left boundary: `globalx - SCENTER`
    - Right boundary: `globalx + SCENTER`
    - Top boundary: `globaly - SCENTER`
@@ -62,6 +67,7 @@ The `move_bullets()` function handles enemy bullet collision with shield:
    - Uses `continue` to skip drawing the bullet
 
 ### Protection Radius
+
 - SHRADIUS = 12 pixels from ship center (GW.h:77)
 - Creates circular protection zone
 - Uses mathematical distance calculation, not pixel collision
@@ -73,11 +79,13 @@ The `move_bullets()` function handles enemy bullet collision with shield:
 The shield system leverages specific drawing order for correct behavior:
 
 1. **Pre-Shield Phase** (Play.c:219-237)
+
    - Terrain, bunkers, and most objects drawn
    - If NOT shielding, `move_bullets()` called here (Play.c:238-239)
    - Bullets get drawn to screen buffer
 
 2. **Ship Rendering** (Play.c:241-251)
+
    - Ship collision check via `check_figure()` (Play.c:244)
    - Ship drawing with `full_figure()` (Play.c:248-249)
 
@@ -105,6 +113,7 @@ When shield activates, immediately checks all fuel cells:
 ### Firing Restriction (Play.c:529-556)
 
 Shield blocks bullet firing (Play.c:534):
+
 - `move_ship()` checks `!shielding` before creating new bullet
 - Prevents ship from firing while shield active
 - No stored charge or delayed fire when shield drops
@@ -123,12 +132,14 @@ The shield visual effect uses `erase_figure()` with `shield_def` sprite:
 ## Resource Consumption
 
 ### Fuel Economics
+
 - FUELSHIELD = 83 units per frame (GW.h:139)
 - FUELGAIN = 2000 units per fuel cell collected (assumed from game balance)
 - MAXFUEL = fuel capacity limit (prevents overflow)
 - Net effect: Shield burns fuel rapidly but can gain fuel through collection
 
 ### Performance Characteristics
+
 - No gradual power-up or power-down
 - Instant on/off switching
 - No cooldown period
@@ -138,24 +149,28 @@ The shield visual effect uses `erase_figure()` with `shield_def` sprite:
 ## Death and Reset
 
 When ship dies via `kill_ship()` (Play.c:334-369):
+
 - Sets `shielding = FALSE` along with other state flags (Play.c:337)
 - Ensures clean state for respawn
 
 ## Design Insights
 
 ### Why Manual-Only Activation
+
 - Creates risk/reward decision for players
 - Fuel management becomes strategic resource
 - Prevents passive play style
 - Rewards skilled dodging over shield reliance
 
 ### Why No Pixel Collision
+
 - Mathematical collision is precise and predictable
 - Avoids edge cases with fast-moving bullets
 - Consistent circular protection zone
 - Better performance than pixel checking every bullet every frame
 
 ### Why Firing Restriction
+
 - Prevents invulnerable attack strategy
 - Forces choice between offense and defense
 - Maintains game balance

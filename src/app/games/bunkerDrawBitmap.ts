@@ -15,7 +15,11 @@ import planetReducer, {
   updateBunkerRotations,
   initializeBunkers
 } from '@/planet/planetSlice'
-import shotsReducer, { bunkShoot, moveBullets, doStrafes } from '@/shots/shotsSlice'
+import shotsReducer, {
+  bunkShoot,
+  moveBullets,
+  doStrafes
+} from '@/shots/shotsSlice'
 import { BunkerKind } from '@/figs/types'
 import type { Bunker, PlanetState } from '@/planet/types'
 import { drawDotSafe } from '@/shots/render/drawDotSafe'
