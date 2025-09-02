@@ -15,10 +15,15 @@ import planetReducer, {
   updateBunkerRotations,
   initializeBunkers
 } from '@/planet/planetSlice'
-import shotsReducer, { bunkShoot, moveBullets } from '@/shots/shotsSlice'
+import shotsReducer, {
+  bunkShoot,
+  moveBullets,
+  doStrafes
+} from '@/shots/shotsSlice'
 import { BunkerKind } from '@/figs/types'
 import type { Bunker, PlanetState } from '@/planet/types'
 import { drawDotSafe } from '@/shots/render/drawDotSafe'
+import { drawStrafe } from '@/shots/render/drawStrafe'
 import { rint } from '@/shared/rint'
 import { SBARHT } from '@/screen/constants'
 import { isOnRightSide } from '@/shared/viewport'
@@ -322,7 +327,8 @@ export const createBunkerDrawBitmapRenderer =
 
     // Check if bunkers should shoot this frame (probabilistic based on shootslow)
     // if (rint(100) < shootslow) bunk_shoot(); (Bunkers.c:30-31)
-    if (rint(100) < planetState.shootslow) {
+    // TESTING: Increased shot rate for easier testing (multiply by 5)
+    if (rint(100) < planetState.shootslow * 5) {
       // Calculate screen boundaries for shot eligibility
       const screenb = viewportState.y + bitmap.height
       const screenr = viewportState.x + bitmap.width
@@ -334,6 +340,7 @@ export const createBunkerDrawBitmapRenderer =
           screeny: viewportState.y,
           screenb: screenb,
           bunkrecs: planetState.bunkers,
+          walls: planetState.lines,
           worldwidth: planetState.worldwidth,
           worldwrap: planetState.worldwrap,
           globalx: globalx,
@@ -346,9 +353,13 @@ export const createBunkerDrawBitmapRenderer =
     store.dispatch(
       moveBullets({
         worldwidth: planetState.worldwidth,
-        worldwrap: planetState.worldwrap
+        worldwrap: planetState.worldwrap,
+        walls: planetState.lines
       })
     )
+
+    // Update strafe lifecounts (decrements each frame)
+    store.dispatch(doStrafes())
 
     // Draw bunkers at normal position
     let renderedBitmap = doBunks({
@@ -424,7 +435,14 @@ export const createBunkerDrawBitmapRenderer =
     // Draw all bunker shots
     const updatedShotsState = store.getState().shots
     for (const shot of updatedShotsState.bunkshots) {
-      if (shot.lifecount > 0) {
+      // Render shot if:
+      // - Still alive (lifecount > 0), OR
+      // - Just died without strafe (justDied && no strafe visual replacement)
+      // This matches the DRAW_SHOT macro behavior (Macros.h:18-25)
+      const shouldRender =
+        shot.lifecount > 0 || (shot.justDied === true && shot.strafedir < 0)
+
+      if (shouldRender) {
         // Check if shot is visible on screen at normal position
         const shotScreenX = shot.x - viewportState.x
         const shotScreenY = shot.y - viewportState.y
@@ -456,6 +474,21 @@ export const createBunkerDrawBitmapRenderer =
             )
           }
         }
+      }
+    }
+
+    // Draw strafes (visual effects when shots hit walls)
+    // Both ship shots and bunker shots create strafes when hitting non-bounce walls
+    for (const strafe of updatedShotsState.strafes) {
+      if (strafe.lifecount > 0) {
+        renderedBitmap = drawStrafe({
+          x: strafe.x,
+          y: strafe.y,
+          rot: strafe.rot,
+          scrnx: viewportState.x,
+          scrny: viewportState.y,
+          worldwidth: planetState.worldwidth
+        })(renderedBitmap)
       }
     }
 

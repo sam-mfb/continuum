@@ -10,16 +10,29 @@ import type { BitmapRenderer } from '../../bitmap'
 import { fullFigure } from '../../ship/render/fullFigure'
 import { drawShipShot } from '../../shots/render/drawShipShot'
 import { drawStrafe } from '../../shots/render/drawStrafe'
+import { drawDotSafe } from '../../shots/render/drawDotSafe'
 import { shipSlice } from '@/ship/shipSlice'
-import { planetSlice } from '@/planet/planetSlice'
+import {
+  planetSlice,
+  updateBunkerRotations,
+  initializeBunkers,
+  killBunker
+} from '@/planet/planetSlice'
 import { screenSlice } from '@/screen/screenSlice'
-import { shotsSlice, clearAllShots, doStrafes } from '@/shots/shotsSlice'
+import {
+  shotsSlice,
+  clearAllShots,
+  doStrafes,
+  bunkShoot,
+  moveBullets,
+  clearBunkShots
+} from '@/shots/shotsSlice'
 import { ShipControl } from '@/ship/types'
 import { shipControl } from './shipControlThunk'
 import { buildGameStore } from './store'
 import { SCRWTH, VIEWHT, TOPMARG, BOTMARG } from '@/screen/constants'
 import type { SpriteServiceV2 } from '@/sprites/service'
-import { SCENTER } from '@/figs/types'
+import { SCENTER, type BunkerKind } from '@/figs/types'
 import { flameOn } from '@/ship/render/flameOn'
 import { grayFigure } from '@/ship/render/grayFigure'
 import { eraseFigure } from '@/ship/render/eraseFigure'
@@ -28,12 +41,29 @@ import { getBackgroundPattern } from '@/shared/backgroundPattern'
 import { shiftFigure } from '@/ship/render/shiftFigure'
 import { whiteTerrain, blackTerrain } from '@/walls/render'
 import { wallsSlice } from '@/walls/wallsSlice'
-import { viewClear } from '@/screen/render'
+import { viewClear, viewWhite } from '@/screen/render'
 import { LINE_KIND } from '@/walls/types'
 import { checkFigure } from '@/collision/checkFigure'
+import { checkForBounce } from '@/ship/physics/checkForBounce'
+import { doBunks } from '@/planet/render/bunker'
+import { drawCraters } from '@/planet/render/drawCraters'
+import { rint } from '@/shared/rint'
+import {
+  startShipDeath,
+  startExplosion,
+  updateExplosions,
+  clearShipDeathFlash,
+  resetSparksAlive,
+  clearShards
+} from '@/explosions/explosionsSlice'
+import { drawExplosions } from '@/explosions/render/drawExplosions'
+import type { ShardSprite, ShardSpriteSet } from '@/figs/types'
+import { SKILLBRADIUS } from '@/ship/constants'
+import { xyindist } from '@/shots/xyindist'
+import { legalAngle } from '@/planet/legalAngle'
 
 // Configure store with all slices and containment middleware
-const store = buildGameStore()
+const store = buildGameStore({})
 
 // Track initialization state
 let initializationComplete = false
@@ -76,12 +106,25 @@ const initializeGame = async (): Promise<void> => {
     // Initialize walls with planet 1's walls
     store.dispatch(wallsSlice.actions.initWalls({ walls: planet1.lines }))
 
+    // Initialize bunkers for animated bunker support
+    store.dispatch(initializeBunkers())
+
     // Initialize ship at center of screen (following Play.c:175-179)
     const shipScreenX = SCRWTH / 2 // 256
     const shipScreenY = Math.floor((TOPMARG + BOTMARG) / 2) // 159
 
     store.dispatch(
       shipSlice.actions.initShip({
+        x: shipScreenX,
+        y: shipScreenY,
+        globalx: planet1.xstart, // Ship starts at planet's starting position
+        globaly: planet1.ystart
+      })
+    )
+
+    // Set the respawn position
+    store.dispatch(
+      shipSlice.actions.setStartPosition({
         x: shipScreenX,
         y: shipScreenY
       })
@@ -117,7 +160,9 @@ const resetGame = (): void => {
   store.dispatch(
     shipSlice.actions.resetShip({
       x: shipScreenX,
-      y: shipScreenY
+      y: shipScreenY,
+      globalx: state.planet.xstart, // Reset to starting global position
+      globaly: state.planet.ystart
     })
   )
 
@@ -164,6 +209,38 @@ export const createShipMoveBitmapRenderer =
       return
     }
 
+    // Handle death countdown and respawn BEFORE getting state for the frame
+    // This ensures we don't have stale state after respawn
+    const prelimState = store.getState()
+    if (prelimState.ship.deadCount > 0) {
+      // Ship is dead - decrement counter and check for respawn
+      store.dispatch(shipSlice.actions.decrementDeadCount())
+      const newDeadCount = store.getState().ship.deadCount
+      if (newDeadCount === 0) {
+        store.dispatch(shipSlice.actions.respawnShip())
+
+        // Clear explosion and shot state per init_ship() in Play.c:182-187
+        // sparksalive = 0 (Play.c:182)
+        store.dispatch(resetSparksAlive())
+        // for(i=0; i<NUMSHOTS; i++) bunkshots[i].lifecount = 0 (Play.c:184-185)
+        store.dispatch(clearBunkShots())
+        // for(i=0; i<NUMSHARDS; i++) shards[i].lifecount = 0 (Play.c:186-187)
+        store.dispatch(clearShards())
+
+        // Update screen position to place ship at planet start position
+        // globalx = xstart, globaly = ystart (from init_ship)
+        // screenx = globalx - shipx, screeny = globaly - shipy
+        const respawnState = store.getState()
+        store.dispatch(
+          screenSlice.actions.setPosition({
+            x: respawnState.planet.xstart - respawnState.ship.shipx,
+            y: respawnState.planet.ystart - respawnState.ship.shipy
+          })
+        )
+      }
+    }
+
+    // NOW get the state for this frame - after any respawn updates
     const state = store.getState()
 
     // Check for ESC key to reset game
@@ -178,21 +255,52 @@ export const createShipMoveBitmapRenderer =
       y: state.planet.gravy
     }
 
-    // Handle controls
-    store.dispatch(
-      shipControl({
-        controlsPressed: getPressedControls(frame.keysDown),
-        gravity
-      })
-    )
+    // Process ship controls and movement only if alive
+    if (state.ship.deadCount === 0) {
+      // Only handle controls and move ship if alive
+      store.dispatch(
+        shipControl({
+          controlsPressed: getPressedControls(frame.keysDown),
+          gravity
+        })
+      )
 
-    // Move ship - containment middleware will automatically apply
-    store.dispatch(shipSlice.actions.moveShip())
+      // Move ship - containment middleware will automatically apply
+      store.dispatch(shipSlice.actions.moveShip())
+    }
 
     // Move all bullets with collision detection
     // Calculate global ship position (screen + ship relative position)
     const globalx = state.screen.screenx + state.ship.shipx
     const globaly = state.screen.screeny + state.ship.shipy
+
+    // Update bunker rotations for animated bunkers (GROUND, FOLLOW, GENERATOR)
+    store.dispatch(updateBunkerRotations({ globalx, globaly }))
+
+    // Check if bunkers should shoot this frame (probabilistic based on shootslow)
+    // From Bunkers.c:30-31: if (rint(100) < shootslow) bunk_shoot();
+    // TESTING: Increased shot rate for easier testing (multiply by 5)
+    const shootRoll = rint(100)
+    if (shootRoll < state.planet.shootslow * 5) {
+      // Calculate screen boundaries for shot eligibility
+      const screenr = state.screen.screenx + SCRWTH
+      const screenb = state.screen.screeny + VIEWHT
+
+      store.dispatch(
+        bunkShoot({
+          screenx: state.screen.screenx,
+          screenr: screenr,
+          screeny: state.screen.screeny,
+          screenb: screenb,
+          bunkrecs: state.planet.bunkers,
+          walls: state.planet.lines,
+          worldwidth: state.planet.worldwidth,
+          worldwrap: state.planet.worldwrap,
+          globalx: globalx,
+          globaly: globaly
+        })
+      )
+    }
 
     store.dispatch(
       shotsSlice.actions.moveShipshots({
@@ -201,10 +309,45 @@ export const createShipMoveBitmapRenderer =
           x: globalx,
           y: globaly
         },
-        shipAlive: true, // TODO: Check if ship is dead when death system is implemented
+        shipAlive: state.ship.deadCount === 0,
         walls: state.planet.lines,
         worldwidth: state.planet.worldwidth,
         worldwrap: state.planet.worldwrap
+      })
+    )
+
+    // Process bunker kills from ship shot collisions
+    const shotsState = store.getState().shots
+    if (shotsState.pendingBunkerKills.length > 0) {
+      for (const bunkerIndex of shotsState.pendingBunkerKills) {
+        const bunker = state.planet.bunkers[bunkerIndex]
+        if (bunker) {
+          // Dispatch killBunker (handles difficult bunkers internally)
+          store.dispatch(killBunker({ index: bunkerIndex }))
+
+          // Start explosion for destroyed bunker
+          // Note: killBunker returns early for difficult bunkers that survive
+          const updatedBunker = store.getState().planet.bunkers[bunkerIndex]
+          if (updatedBunker && !updatedBunker.alive) {
+            store.dispatch(
+              startExplosion({
+                x: bunker.x,
+                y: bunker.y,
+                dir: bunker.rot,
+                kind: bunker.kind
+              })
+            )
+          }
+        }
+      }
+    }
+
+    // Move bunker shots
+    store.dispatch(
+      moveBullets({
+        worldwidth: state.planet.worldwidth,
+        worldwrap: state.planet.worldwrap,
+        walls: state.planet.lines
       })
     )
 
@@ -212,8 +355,32 @@ export const createShipMoveBitmapRenderer =
     // This decrements lifecount for active strafes
     store.dispatch(doStrafes())
 
+    // Update explosions (shards and sparks)
+    store.dispatch(
+      updateExplosions({
+        worldwidth: state.planet.worldwidth,
+        worldwrap: state.planet.worldwrap,
+        gravx: state.planet.gravx,
+        gravy: state.planet.gravy
+      })
+    )
+
     // Get final state for drawing
     const finalState = store.getState()
+
+    // Check for ship death flash effect (Terrain.c:413 - set_screen(front_screen, 0L))
+    if (finalState.explosions.shipDeathFlash) {
+      // Fill viewport with white (preserve status bar)
+      const whiteBitmap = viewWhite()(bitmap)
+      bitmap.data.set(whiteBitmap.data)
+
+      // Clear the flash for next frame
+      store.dispatch(clearShipDeathFlash())
+
+      // Skip all other rendering and return early
+      // The flash lasts exactly one frame
+      return
+    }
 
     // First, create a crosshatch gray background using viewClear
     const clearedBitmap = viewClear({
@@ -223,6 +390,33 @@ export const createShipMoveBitmapRenderer =
 
     // Copy cleared bitmap data back to original
     bitmap.data.set(clearedBitmap.data)
+
+    // Draw craters (from Play.c:222 - draw_craters())
+    // Craters are drawn early, after screen clear but before walls
+    // Calculate on_right_side flag (Play.c:443)
+    const on_right_side =
+      finalState.screen.screenx > finalState.planet.worldwidth - SCRWTH
+
+    // Get crater images using existing getCraterSprite method
+    const craterImages = {
+      background1: spriteService.getCraterSprite({ variant: 'background1' })
+        .uint8,
+      background2: spriteService.getCraterSprite({ variant: 'background2' })
+        .uint8
+    }
+
+    const crateredBitmap = drawCraters({
+      craters: finalState.planet.craters,
+      numcraters: finalState.planet.numcraters,
+      scrnx: finalState.screen.screenx,
+      scrny: finalState.screen.screeny,
+      worldwidth: finalState.planet.worldwidth,
+      on_right_side,
+      craterImages
+    })(bitmap)
+
+    // Copy cratered bitmap data back
+    bitmap.data.set(crateredBitmap.data)
 
     // Setup viewport for wall rendering
     // Calculate screen bounds (right and bottom edges)
@@ -250,31 +444,35 @@ export const createShipMoveBitmapRenderer =
     const SHADOW_OFFSET_Y = 5
 
     // Following Play.c order:
-    // 1. gray_figure - ship shadow background
-    // Compute background patterns for y and y+1 positions
-    const align0 = getAlignment({
-      screenX: finalState.screen.screenx,
-      screenY: finalState.screen.screeny,
-      objectX: 0,
-      objectY: 0
-    })
-    const align1 = getAlignment({
-      screenX: finalState.screen.screenx,
-      screenY: finalState.screen.screeny,
-      objectX: 0,
-      objectY: 1
-    })
-    const background: readonly [number, number] = [
-      getBackgroundPattern(align0),
-      getBackgroundPattern(align1)
-    ]
+    // 1. gray_figure - ship shadow background (only if ship is alive)
+    let renderedBitmap = bitmap
 
-    let renderedBitmap = grayFigure({
-      x: finalState.ship.shipx - (SCENTER - SHADOW_OFFSET_X),
-      y: finalState.ship.shipy - (SCENTER - SHADOW_OFFSET_Y),
-      def: shipMaskBitmap,
-      background
-    })(bitmap)
+    if (finalState.ship.deadCount === 0) {
+      // Compute background patterns for y and y+1 positions
+      const align0 = getAlignment({
+        screenX: finalState.screen.screenx,
+        screenY: finalState.screen.screeny,
+        objectX: 0,
+        objectY: 0
+      })
+      const align1 = getAlignment({
+        screenX: finalState.screen.screenx,
+        screenY: finalState.screen.screeny,
+        objectX: 0,
+        objectY: 1
+      })
+      const background: readonly [number, number] = [
+        getBackgroundPattern(align0),
+        getBackgroundPattern(align1)
+      ]
+
+      renderedBitmap = grayFigure({
+        x: finalState.ship.shipx - (SCENTER - SHADOW_OFFSET_X),
+        y: finalState.ship.shipy - (SCENTER - SHADOW_OFFSET_Y),
+        def: shipMaskBitmap,
+        background
+      })(renderedBitmap)
+    }
 
     // 2. white_terrain - wall undersides/junctions
     renderedBitmap = whiteTerrain({
@@ -295,25 +493,44 @@ export const createShipMoveBitmapRenderer =
       worldwidth: finalState.planet.worldwidth
     })(renderedBitmap)
 
-    // 4. erase_figure - erase ship area
-    renderedBitmap = eraseFigure({
-      x: finalState.ship.shipx - SCENTER,
-      y: finalState.ship.shipy - SCENTER,
-      def: shipMaskBitmap
-    })(renderedBitmap)
+    // 4. erase_figure - erase ship area (only if ship is alive)
+    if (finalState.ship.deadCount === 0) {
+      renderedBitmap = eraseFigure({
+        x: finalState.ship.shipx - SCENTER,
+        y: finalState.ship.shipy - SCENTER,
+        def: shipMaskBitmap
+      })(renderedBitmap)
+    }
 
-    // 5. check_for_bounce would go here (not implemented yet)
+    // 5. check_for_bounce - check collision with bounce walls and update physics
+    // This replaces the separate black_terrain(L_BOUNCE) call since checkForBounce
+    // handles both rendering bounce walls and collision detection
+    // Note: Bounce walls should always be rendered, even when ship is dead
+    if (finalState.ship.deadCount === 0) {
+      // Only check collision when alive
+      renderedBitmap = checkForBounce({
+        screen: renderedBitmap,
+        store,
+        shipDef: shipMaskBitmap,
+        wallData: {
+          kindPointers: finalState.walls.kindPointers,
+          organizedWalls: finalState.walls.organizedWalls
+        },
+        viewport: viewport,
+        worldwidth: finalState.planet.worldwidth
+      })
+    } else {
+      // When dead, just draw bounce walls without collision check
+      renderedBitmap = blackTerrain({
+        thekind: LINE_KIND.BOUNCE,
+        kindPointers: finalState.walls.kindPointers,
+        organizedWalls: finalState.walls.organizedWalls,
+        viewport: viewport,
+        worldwidth: finalState.planet.worldwidth
+      })(renderedBitmap)
+    }
 
-    // 6. black_terrain(L_BOUNCE) - bounce walls
-    renderedBitmap = blackTerrain({
-      thekind: LINE_KIND.BOUNCE,
-      kindPointers: finalState.walls.kindPointers,
-      organizedWalls: finalState.walls.organizedWalls,
-      viewport: viewport,
-      worldwidth: finalState.planet.worldwidth
-    })(renderedBitmap)
-
-    // 7. black_terrain(L_NORMAL) - normal walls
+    // 6. black_terrain(L_NORMAL) - normal walls
     renderedBitmap = blackTerrain({
       thekind: LINE_KIND.NORMAL,
       kindPointers: finalState.walls.kindPointers,
@@ -322,38 +539,181 @@ export const createShipMoveBitmapRenderer =
       worldwidth: finalState.planet.worldwidth
     })(renderedBitmap)
 
-    // 8. do_bunkers would go here (not implemented yet)
+    // 7. do_bunkers - render all bunkers
+    renderedBitmap = doBunks({
+      bunkrec: finalState.planet.bunkers,
+      scrnx: finalState.screen.screenx,
+      scrny: finalState.screen.screeny,
+      getSprite: (kind: BunkerKind, rotation: number) => {
+        // Get sprites with proper variants
+        const defSprite = spriteService.getBunkerSprite(kind, rotation, {
+          variant: 'def'
+        })
+        const maskSprite = spriteService.getBunkerSprite(kind, rotation, {
+          variant: 'mask'
+        })
+        const bg1Sprite = spriteService.getBunkerSprite(kind, rotation, {
+          variant: 'background1'
+        })
+        const bg2Sprite = spriteService.getBunkerSprite(kind, rotation, {
+          variant: 'background2'
+        })
 
-    // Check for collision after drawing all lethal objects
-    // Following Play.c:243-245 pattern
-    const collision = checkFigure(renderedBitmap, {
-      x: finalState.ship.shipx - SCENTER,
-      y: finalState.ship.shipy - SCENTER,
-      height: 32, // SHIPHT
-      def: shipMaskBitmap
-    })
+        return {
+          def: defSprite.uint8,
+          mask: maskSprite.uint8,
+          images: {
+            background1: bg1Sprite.uint8,
+            background2: bg2Sprite.uint8
+          }
+        }
+      }
+    })(renderedBitmap)
 
-    if (collision) {
-      resetGame()
-      // Continue rendering to show the reset state
+    // 8. move_bullets - Draw bunker shots BEFORE collision check (Play.c:238-239)
+    // This must happen before check_figure() so shots can kill the ship via pixel collision
+    if (!finalState.ship.shielding) {
+      // Shields prevent bunker shots from being drawn
+      for (const shot of finalState.shots.bunkshots) {
+        // Render shot if:
+        // - Still alive (lifecount > 0), OR
+        // - Just died without strafe (justDied && no strafe visual replacement)
+        // This matches the DRAW_SHOT macro behavior (Macros.h:18-25)
+        const shouldRender =
+          shot.lifecount > 0 || (shot.justDied === true && shot.strafedir < 0)
+
+        if (shouldRender) {
+          // Convert world coordinates to screen coordinates
+          const shotx = shot.x - finalState.screen.screenx
+          const shoty = shot.y - finalState.screen.screeny
+
+          // Check if shot is visible on screen (matching DRAW_SHOT macro)
+          if (
+            shotx >= 0 &&
+            shotx < SCRWTH - 1 &&
+            shoty >= 0 &&
+            shoty < VIEWHT - 1
+          ) {
+            renderedBitmap = drawDotSafe(shotx, shoty, renderedBitmap)
+          }
+
+          // Handle world wrapping for toroidal worlds
+          if (
+            finalState.planet.worldwrap &&
+            finalState.screen.screenx > finalState.planet.worldwidth - SCRWTH
+          ) {
+            const wrappedShotx =
+              shot.x + finalState.planet.worldwidth - finalState.screen.screenx
+
+            if (
+              wrappedShotx >= 0 &&
+              wrappedShotx < SCRWTH - 1 &&
+              shoty >= 0 &&
+              shoty < VIEWHT - 1
+            ) {
+              renderedBitmap = drawDotSafe(wrappedShotx, shoty, renderedBitmap)
+            }
+          }
+        }
+      }
     }
 
-    // 9. shift_figure - ship shadow
-    renderedBitmap = shiftFigure({
-      x: finalState.ship.shipx - (SCENTER - SHADOW_OFFSET_X),
-      y: finalState.ship.shipy - (SCENTER - SHADOW_OFFSET_Y),
-      def: shipMaskBitmap
-    })(renderedBitmap)
+    // 9. Check for collision after drawing all lethal objects
+    // Following Play.c:243-245 pattern
+    // Only check collision if ship is alive
+    if (finalState.ship.deadCount === 0) {
+      const collision = checkFigure(renderedBitmap, {
+        x: finalState.ship.shipx - SCENTER,
+        y: finalState.ship.shipy - SCENTER,
+        height: 32, // SHIPHT
+        def: shipMaskBitmap
+      })
 
-    // 10. full_figure - draw ship
-    // Ship position needs to be offset by SCENTER (15) to account for center point
-    // Original: full_figure(shipx-SCENTER, shipy-SCENTER, ship_defs[shiprot], ship_masks[shiprot], SHIPHT)
-    renderedBitmap = fullFigure({
-      x: finalState.ship.shipx - SCENTER,
-      y: finalState.ship.shipy - SCENTER,
-      def: shipDefBitmap,
-      mask: shipMaskBitmap
-    })(renderedBitmap)
+      if (collision) {
+        // Ship collision detected - trigger death sequence
+
+        // (a) Update ship state
+        store.dispatch(shipSlice.actions.killShip())
+
+        // (b) Death blast - destroy ONE nearby bunker (Play.c:338-346)
+        // Recalculate global position using CURRENT ship position after movement
+        // This fixes the bug where we were using stale position from before ship movement
+        const deathState = store.getState()
+        const deathGlobalX = deathState.screen.screenx + deathState.ship.shipx
+        const deathGlobalY = deathState.screen.screeny + deathState.ship.shipy
+
+        // Only kills bunkers in field of view for directional types
+        const bunkers = deathState.planet.bunkers
+        const BUNKROTKINDS = 2 // Kinds 0-1 are directional, 2+ are omnidirectional
+
+        for (let index = 0; index < bunkers.length; index++) {
+          const bunker = bunkers[index]!
+
+          // Match original C logic: stop at first bunker with negative rot (sentinel value)
+          // This marks the end of active bunkers in the array
+          if (bunker.rot < 0) {
+            break
+          }
+
+          if (
+            bunker.alive &&
+            xyindist(
+              bunker.x - deathGlobalX,
+              bunker.y - deathGlobalY,
+              SKILLBRADIUS
+            ) &&
+            (bunker.kind >= BUNKROTKINDS || // Omnidirectional bunkers always killable
+              legalAngle(
+                bunker.rot,
+                bunker.x,
+                bunker.y,
+                deathGlobalX,
+                deathGlobalY
+              )) // Directional need angle check
+          ) {
+            store.dispatch(killBunker({ index }))
+            // TODO: Add score when score system is implemented
+            // store.dispatch(addScore(SCOREBUNK))
+
+            // Trigger bunker explosion
+            store.dispatch(
+              startExplosion({
+                x: bunker.x,
+                y: bunker.y,
+                dir: bunker.rot,
+                kind: bunker.kind
+              })
+            )
+            break // Only kill ONE bunker per death (Play.c:345)
+          }
+        }
+
+        // (c) Start ship explosion
+        store.dispatch(startShipDeath({ x: deathGlobalX, y: deathGlobalY }))
+
+        // (d) TODO: Play death sound when sound system is implemented
+        // playSound(DEATH_SOUND)
+      }
+    }
+
+    // 10. shift_figure - ship shadow (only if ship is alive)
+    // 11. full_figure - draw ship (only if ship is alive)
+    if (finalState.ship.deadCount === 0) {
+      renderedBitmap = shiftFigure({
+        x: finalState.ship.shipx - (SCENTER - SHADOW_OFFSET_X),
+        y: finalState.ship.shipy - (SCENTER - SHADOW_OFFSET_Y),
+        def: shipMaskBitmap
+      })(renderedBitmap)
+
+      // Ship position needs to be offset by SCENTER (15) to account for center point
+      // Original: full_figure(shipx-SCENTER, shipy-SCENTER, ship_defs[shiprot], ship_masks[shiprot], SHIPHT)
+      renderedBitmap = fullFigure({
+        x: finalState.ship.shipx - SCENTER,
+        y: finalState.ship.shipy - SCENTER,
+        def: shipDefBitmap,
+        mask: shipMaskBitmap
+      })(renderedBitmap)
+    }
 
     // Draw all active ship shots
     for (const shot of finalState.shots.shipshots) {
@@ -434,6 +794,50 @@ export const createShipMoveBitmapRenderer =
           worldwidth: finalState.planet.worldwidth
         })(renderedBitmap)
       }
+    }
+
+    // Draw explosions (shards and sparks)
+    // Check if any explosions are active
+    const extendedState = finalState
+    if (
+      extendedState.explosions.sparksalive > 0 ||
+      extendedState.explosions.shards.some(s => s.lifecount > 0)
+    ) {
+      // Get shard images from sprites - only getSprite is used by drawExplosions
+      const shardImages = {
+        kinds: {} as Record<number, Record<number, ShardSprite>>,
+        getSprite: (kind: number, rotation: number) => {
+          const def = spriteService.getShardSprite(kind, rotation, {
+            variant: 'def'
+          })
+          const mask = spriteService.getShardSprite(kind, rotation, {
+            variant: 'mask'
+          })
+          const bg1 = spriteService.getShardSprite(kind, rotation, {
+            variant: 'background1'
+          })
+          const bg2 = spriteService.getShardSprite(kind, rotation, {
+            variant: 'background2'
+          })
+          return {
+            def: def.uint8,
+            mask: mask.uint8,
+            images: {
+              background1: bg1.uint8,
+              background2: bg2.uint8
+            }
+          }
+        }
+      } as ShardSpriteSet
+
+      renderedBitmap = drawExplosions({
+        explosions: extendedState.explosions,
+        screenx: finalState.screen.screenx,
+        screeny: finalState.screen.screeny,
+        worldwidth: finalState.planet.worldwidth,
+        worldwrap: finalState.planet.worldwrap,
+        shardImages
+      })(renderedBitmap)
     }
 
     // Copy rendered bitmap data back to original

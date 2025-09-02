@@ -1,7 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { ShipState } from './types'
 import { ShipControl } from './types'
-import { SHIP } from './constants'
+import { SHIP, DEAD_TIME, STARTING_FUEL } from './constants'
 
 const initialState: ShipState = {
   shiprot: 0,
@@ -19,7 +19,12 @@ const initialState: ShipState = {
   shipx: 0,
   shipy: 0,
   xslow: 0,
-  yslow: 0
+  yslow: 0,
+  unbouncex: 0,
+  unbouncey: 0,
+  deadCount: 0,
+  startx: 0,
+  starty: 0
 }
 
 type ControlAction = {
@@ -31,9 +36,25 @@ export const shipSlice = createSlice({
   name: 'ship',
   initialState,
   reducers: {
-    initShip: (state, action: PayloadAction<{ x: number; y: number }>) => {
+    initShip: (
+      state,
+      action: PayloadAction<{
+        x: number
+        y: number
+        globalx?: number
+        globaly?: number
+      }>
+    ) => {
       state.shipx = action.payload.x
       state.shipy = action.payload.y
+      // If global coordinates provided, initialize unbounce position
+      if (
+        action.payload.globalx !== undefined &&
+        action.payload.globaly !== undefined
+      ) {
+        state.unbouncex = action.payload.globalx
+        state.unbouncey = action.payload.globaly
+      }
     },
     updatePosition: (
       state,
@@ -99,7 +120,15 @@ export const shipSlice = createSlice({
       state.yslow &= 255
     },
 
-    resetShip: (state, action: PayloadAction<{ x: number; y: number }>) => {
+    resetShip: (
+      state,
+      action: PayloadAction<{
+        x: number
+        y: number
+        globalx?: number
+        globaly?: number
+      }>
+    ) => {
       // Reset position
       state.shipx = action.payload.x
       state.shipy = action.payload.y
@@ -117,7 +146,129 @@ export const shipSlice = createSlice({
       state.firing = false
       state.bouncing = false
       state.shielding = false
+      // Reset unbounce position if global coords provided
+      if (
+        action.payload.globalx !== undefined &&
+        action.payload.globaly !== undefined
+      ) {
+        state.unbouncex = action.payload.globalx
+        state.unbouncey = action.payload.globaly
+      }
       // Keep fuel as is
+    },
+
+    bounceShip: (
+      state,
+      action: PayloadAction<{
+        norm: number // Direction index (0-15) pointing away from wall
+      }>
+    ) => {
+      const { norm } = action.payload
+
+      // Exact implementation of bounce_ship() from orig/Sources/Play.c:291-328
+      // Get bounce vector components from the norm direction
+      const x1 = SHIP.bounce_vecs[norm]!
+      const y1 = SHIP.bounce_vecs[(norm + 12) & 15]! // 12 positions = 270 degrees in 16-direction system
+
+      // Calculate dot product of velocity with bounce direction
+      // Using Long integers like original (dot is 'register long')
+      const dot = state.dx * x1 + state.dy * y1
+
+      // Check if velocity toward wall is below threshold (Play.c:317)
+      if (dot < 256 * 64) {
+        // 256*64 = 16384
+        // Calculate bounce force
+        let absDot = dot < 0 ? -dot : dot // Play.c:319-320
+
+        // Minimum bounce force (Play.c:321-322)
+        if (absDot < 10 * 256) {
+          absDot = 10 * 256 // 2560
+        }
+
+        // Apply bounce kick (Play.c:323-326)
+        // Original uses division by (24*48) = 1152
+        const xkick = Math.floor((x1 * absDot) / (24 * 48))
+        const ykick = Math.floor((y1 * absDot) / (24 * 48))
+
+        state.dx += xkick
+        state.dy += ykick
+      }
+
+      // Set bouncing flag (Play.c:277)
+      state.bouncing = true
+    },
+
+    noBounce: (
+      state,
+      action: PayloadAction<{ globalx: number; globaly: number }>
+    ) => {
+      state.bouncing = false
+      // Store global coordinates like original (Play.c:284-285)
+      state.unbouncex = action.payload.globalx
+      state.unbouncey = action.payload.globaly
+    },
+
+    /**
+     * Kill the ship - based on kill_ship() in Play.c:685-700
+     */
+    killShip: state => {
+      state.deadCount = DEAD_TIME // Start death countdown
+      state.flaming = false // Stop all ship activities
+      state.thrusting = false
+      state.refueling = false
+      state.shielding = false
+      // Note: vx (dx), vy (dy) preserved - ship continues drifting while dead
+    },
+
+    /**
+     * Decrement the death counter
+     */
+    decrementDeadCount: state => {
+      if (state.deadCount > 0) {
+        state.deadCount--
+      }
+    },
+
+    /**
+     * Respawn the ship at planet start position after death
+     * Based on orig/Sources/Play.c:203-207 which calls init_ship
+     * init_ship (Play.c:173-174) resets to xstart, ystart
+     */
+    respawnShip: state => {
+      // Center ship on screen
+      state.shipx = 128 // SCRWTH / 2
+      state.shipy = 96 // (TOPMARG + BOTMARG) / 2
+      // Note: Screen position must be updated by caller to place ship at start
+      // screenx = startx - shipx, screeny = starty - shipy
+
+      // Reset movement
+      state.dx = 0
+      state.dy = 0
+      state.xslow = 0
+      state.yslow = 0
+      // Reset rotation to north
+      state.shiprot = 0
+      // Reset fuel
+      state.fuel = STARTING_FUEL
+      // Reset activity states
+      state.flaming = false
+      state.flameBlink = 0
+      state.thrusting = false
+      state.firing = false
+      state.bouncing = false
+      state.refueling = false
+      state.shielding = false
+    },
+
+    /**
+     * Set the ship's start/respawn position
+     */
+    setStartPosition: (
+      state,
+      action: PayloadAction<{ x: number; y: number }>
+    ) => {
+      state.startx = action.payload.x
+      state.starty = action.payload.y
     }
   }
 })

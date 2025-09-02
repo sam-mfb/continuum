@@ -47,7 +47,8 @@ const initialState: ExplosionsState = {
   shards: Array.from({ length: NUMSHARDS }, initializeShard),
   sparks: Array.from({ length: NUMSPARKS }, initializeSpark),
   totalsparks: 0,
-  sparksalive: 0
+  sparksalive: 0,
+  shipDeathFlash: false
 }
 
 export const explosionsSlice = createSlice({
@@ -212,6 +213,10 @@ export const explosionsSlice = createSlice({
     ) => {
       const { x, y } = action.payload
 
+      // Set white flash flag (Terrain.c:413 - set_screen(front_screen, 0L))
+      // This creates the "obnoxious" white screen flash effect
+      state.shipDeathFlash = true
+
       // Ship explosions use 100 sparks, no shards (Terrain.c:415-423)
       // This is just a wrapper around start_blowup with ship-specific parameters
       state.totalsparks = SHIPSPARKS
@@ -325,10 +330,11 @@ export const explosionsSlice = createSlice({
       action: PayloadAction<{
         worldwidth: number
         worldwrap: boolean
-        gravityVector: (x: number, y: number) => { xg: number; yg: number }
+        gravx: number
+        gravy: number
       }>
     ) => {
-      const { worldwidth, gravityVector } = action.payload
+      const { worldwidth, gravx, gravy } = action.payload
       const worldwth8 = worldwidth << 3
 
       // Update shards (Terrain.c:456-478)
@@ -343,9 +349,9 @@ export const explosionsSlice = createSlice({
           shard.v -= shard.v >> SH_SLOW
 
           // Apply gravity (Terrain.c:461-463)
-          const { xg, yg } = gravityVector(shard.x, shard.y)
-          shard.h += xg << 2
-          shard.v += yg << 2
+          // For now, using constant gravity - can be extended for position-dependent gravity later
+          shard.h += gravx << 2
+          shard.v += gravy << 2
 
           // Update position (Terrain.c:464-465)
           shard.x += shard.h >> 8
@@ -405,6 +411,44 @@ export const explosionsSlice = createSlice({
       state.sparks = state.sparks.map(() => initializeSpark())
       state.totalsparks = 0
       state.sparksalive = 0
+      state.shipDeathFlash = false
+    },
+
+    /**
+     * Clear the ship death flash after rendering one frame
+     * This ensures the white flash only lasts one frame
+     */
+    clearShipDeathFlash: state => {
+      state.shipDeathFlash = false
+    },
+
+    /**
+     * Reset sparksalive when ship respawns
+     * Based on init_ship() in Play.c:182
+     *
+     * The original game sets sparksalive = 0 on respawn but does NOT:
+     * - Clear the sparks array
+     * - Reset totalsparks
+     * This fixes the bug where sparks going out of bounds north don't
+     * properly decrement sparksalive, leaving bunker explosions blocked.
+     */
+    resetSparksAlive: state => {
+      state.sparksalive = 0
+      // Note: Intentionally not touching totalsparks or spark array data
+      // to match original behavior exactly
+    },
+
+    /**
+     * Clear shards when ship respawns
+     * Based on init_ship() in Play.c:186-187
+     *
+     * The original game clears all shard lifecounts on respawn:
+     * for(i=0; i<NUMSHARDS; i++) shards[i].lifecount = 0;
+     */
+    clearShards: state => {
+      // Reset all shards by clearing their lifecount
+      // We reinitialize the whole shard to ensure clean state
+      state.shards = state.shards.map(() => initializeShard())
     }
   }
 })
@@ -414,7 +458,10 @@ export const {
   startShipDeath,
   startBlowup,
   updateExplosions,
-  clearExplosions
+  clearExplosions,
+  clearShipDeathFlash,
+  resetSparksAlive,
+  clearShards
 } = explosionsSlice.actions
 
 export const explosionsReducer = explosionsSlice.reducer

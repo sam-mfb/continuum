@@ -55,7 +55,7 @@ function backupShot(shot: ShotRec): ShotRec {
 export function bounceShot(
   shot: ShotRec,
   wall: LineRec,
-  walls: LineRec[],
+  walls: readonly LineRec[],
   worldwidth: number,
   worldwrap: boolean
 ): ShotRec {

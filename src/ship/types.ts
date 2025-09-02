@@ -28,4 +28,12 @@ export type ShipState = {
   // "left over" subpixel velocity from last move
   xslow: number
   yslow: number
+  // Last safe position before bouncing
+  unbouncex: number
+  unbouncey: number
+  // Death countdown timer (0 = alive, > 0 = dead)
+  deadCount: number
+  // Respawn position
+  startx: number
+  starty: number
 }

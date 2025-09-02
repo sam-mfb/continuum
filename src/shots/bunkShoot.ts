@@ -1,12 +1,14 @@
 import type { Bunker } from '@/planet/types'
 import { BunkerKind } from '@/planet/types'
 import type { ShotRec } from './types'
+import type { LineRec } from '@/shared/types/line'
 import { SHOT, xbshotstart, ybshotstart } from './constants'
 import { SCRWTH, SOFTBORDER } from '@/screen/constants'
 import { PLANET } from '@/planet/constants'
 import { aimBunk } from './aimBunk'
 import { aimDir } from './aimDir'
 import { rint } from '@/shared/rint'
+import { setLife } from './setLife'
 
 /**
  * Create a shot for following bunker
@@ -109,6 +111,7 @@ export function bunkShoot(deps: {
   screeny: number
   screenb: number
   readonly bunkrecs: readonly Bunker[]
+  readonly walls: readonly LineRec[]
   worldwidth: number
   worldwrap: boolean
   globalx: number
@@ -202,10 +205,21 @@ export function bunkShoot(deps: {
           })
 
     // Apply transformations to create new shot
-    const newShot = initializeShot({
+    let newShot = initializeShot({
       bp,
       lifecount: SHOT.BUNKSHLEN
     })(velocityTransformer(sp))
+
+    // CRITICAL: Calculate wall collision (Bunkers.c:180)
+    // This pre-calculates when/where the shot will hit a wall
+    newShot = setLife(
+      newShot,
+      deps.walls,
+      newShot.lifecount + newShot.btime, // totallife
+      undefined, // No wall to ignore (new shot)
+      deps.worldwidth,
+      deps.worldwrap
+    )
 
     // Update the shot in the array immutably
     const newBunkshots = [...bunkshots]

@@ -113,33 +113,28 @@ function extractBunkers(bitmap: Uint8Array): BunkerSprite[][] {
   const totalRows = 8 // BUNKKINDS + 3 from the C code
 
   // First pass: Extract all the raw data
+  // Note: From orig/Sources/Figs.c:395-396, the extraction rectangle is:
+  // SETRECT(fromrect, i*BUNKHT + 1, j*BUNKHT + 1, i*BUNKHT + (BUNKHT-1), j*BUNKHT + (BUNKHT-1))
+  // This extracts a 47x47 region starting at offset (1,1) within each 48x48 tile.
+  // However, our copyBitmapRegion is byte-oriented, so we need to copy full 48x48 tiles
   const rawData: BunkerSprite[][] = []
   for (let row = 0; row < totalRows; row++) {
     rawData[row] = []
 
     for (let i = 0; i < 8; i++) {
       const sprite = createBunkerSprite()
-      const x = i * 48 + 1
-      const y = row * 48 + 1
+      const x = i * 48
+      const y = row * 48
 
       if (row < BUNKROTKINDS) {
         // Rotating bunkers: first 4 are defs, next 4 are masks
         if (i < 4) {
-          copyBitmapRegion(bitmap, 512, sprite.def, x, y, 46, BUNKHT - 2, 6)
+          copyBitmapRegion(bitmap, 512, sprite.def, x, y, 48, BUNKHT, 6)
         } else {
           // Copy mask to the corresponding def sprite
           const defSprite = rawData[row]?.[i - 4]
           if (defSprite) {
-            copyBitmapRegion(
-              bitmap,
-              512,
-              defSprite.mask,
-              x,
-              y,
-              46,
-              BUNKHT - 2,
-              6
-            )
+            copyBitmapRegion(bitmap, 512, defSprite.mask, x, y, 48, BUNKHT, 6)
           }
           continue
         }
@@ -147,9 +142,9 @@ function extractBunkers(bitmap: Uint8Array): BunkerSprite[][] {
         // Animated bunkers: entire row is either all defs or all masks
         const isDefRow = row % 2 === 0
         if (isDefRow) {
-          copyBitmapRegion(bitmap, 512, sprite.def, x, y, 46, BUNKHT - 2, 6)
+          copyBitmapRegion(bitmap, 512, sprite.def, x, y, 48, BUNKHT, 6)
         } else {
-          copyBitmapRegion(bitmap, 512, sprite.mask, x, y, 46, BUNKHT - 2, 6)
+          copyBitmapRegion(bitmap, 512, sprite.mask, x, y, 48, BUNKHT, 6)
         }
       }
 

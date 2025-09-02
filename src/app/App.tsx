@@ -31,6 +31,7 @@ import { createShardTestBitmapRenderer } from './games/shardTestBitmap'
 import { strafeTestBitmapRenderer } from './games/strafeTestBitmap'
 import { createStarBackgroundBitmapRenderer } from './games/starBackgroundBitmap'
 import { createStatusBarDemo } from './games/statusBarDemo'
+import { createShieldDemoRenderer } from './games/shieldDemo'
 import './App.css'
 
 type AppProps = {
@@ -197,9 +198,14 @@ function App({ spriteService }: AppProps): React.JSX.Element {
                   type: 'bitmap',
                   name: 'Status Bar Demo (Type text, ↑↓ level, Enter resets)',
                   bitmapRenderer: createStatusBarDemo(spriteService)
+                } as BitmapGameDefinition,
+                {
+                  type: 'bitmap',
+                  name: 'Shield Demo (SPACE to activate, Z/X rotate)',
+                  bitmapRenderer: createShieldDemoRenderer(spriteService)
                 } as BitmapGameDefinition
               ]}
-              defaultGameIndex={0}
+              defaultGameIndex={6} // Ship Move (Bitmap) is at index 6
               scale={2} // Display at 2x size (1024x684)
               pixelated={true} // Keep pixels sharp
               statsConfig={

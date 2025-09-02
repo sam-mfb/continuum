@@ -2,6 +2,12 @@ export type ShotsState = {
   shipshots: ShotRec[]
   bunkshots: ShotRec[]
   strafes: StrafeRec[]
+  /**
+   * Bunker indices that need to be destroyed after collision detection.
+   * Cleared at the start of each moveShipshots action.
+   * Used to communicate collision results to the game loop.
+   */
+  pendingBunkerKills: number[]
 }
 
 /**

@@ -49,7 +49,8 @@ const initialState: ShotsState = {
     y: 0,
     lifecount: 0,
     rot: 0
-  }))
+  })),
+  pendingBunkerKills: []
 }
 
 export const shotsSlice = createSlice({
@@ -89,9 +90,9 @@ export const shotsSlice = createSlice({
         const yrot = (shiprot + 24) & 31
 
         // Create new shot object
-        // IMPORTANT: We preserve the old x,y values from the existing shot
-        // The original C code doesn't update x,y when creating a shot,
-        // only x8,y8. The x,y fields get updated by move_shot() later.
+        // Note: We initially preserve old x,y values from the existing shot,
+        // but setLife() will sync them from x8,y8 to match the original's
+        // get_life() behavior (Terrain.c:154-155)
         let newShot: ShotRec = {
           ...state.shipshots[i]!, // Keep old x,y values
           h: SHOT.shotvecs[shiprot]! + (dx >> 5),
@@ -118,19 +119,16 @@ export const shotsSlice = createSlice({
 
         if (newShot.lifecount > 0) {
           // Advance shot by one frame (Play.c:545-547)
-          // CRITICAL: The original C code only updates x8/y8 here, NOT x/y!
-          // The x/y fields retain their old values (from previous shot in this slot)
-          // until move_shot() is called in the next frame. This affects getstrafedir
-          // calculations since it uses the old x/y values, not the new position.
+          // Update sub-pixel coordinates only - x,y were already synced by setLife()
           const newX8 = newShot.x8 + SHOT.shotvecs[shiprot]!
           const newY8 = newShot.y8 + SHOT.shotvecs[yrot]!
           newShot = {
             ...newShot,
             x8: newX8,
             y8: newY8,
+            x: newX8 >> 3, // Keep x,y in sync with x8,y8 after advancing
+            y: newY8 >> 3,
             lifecount: newShot.lifecount - 1
-            // DO NOT update x and y here - they should keep their old values
-            // to match the original's behavior for getstrafedir calculations
           }
         }
 
@@ -215,6 +213,9 @@ export const shotsSlice = createSlice({
       const { bunkers, shipPosition, shipAlive, walls, worldwidth, worldwrap } =
         action.payload
 
+      // Clear previous collision results (Play.c:760-761)
+      state.pendingBunkerKills = []
+
       // Process each active shot
       state.shipshots = state.shipshots.map(shot => {
         // Clear justDied flag from previous frame
@@ -233,36 +234,38 @@ export const shotsSlice = createSlice({
         // but we still need to check for bounces. Don't return early here!
 
         // 2. Check bunker collisions (Play.c:763-784)
-        // Only check if shot is still alive (lifecount > 0 means still traveling)
-        if (updatedShot.lifecount > 0) {
-          const bunkerResult = checkBunkerCollision(updatedShot, bunkers)
-          if (bunkerResult.hit) {
-            // Destroy the shot
-            updatedShot.lifecount = 0
-            updatedShot.btime = 0
-            updatedShot.strafedir = -1
-            // TODO: Handle bunker destruction in planet slice
-            // TODO: Handle hardy bunker special case
-            return updatedShot
-          }
+        // IMPORTANT: Check collision even if lifecount is 0 after moving!
+        // The original checks collision at the final position regardless of lifecount.
+        // This ensures shots that expire on their last frame can still hit targets.
+        const bunkerResult = checkBunkerCollision(updatedShot, bunkers)
+        if (bunkerResult.hit && bunkerResult.bunkerIndex !== undefined) {
+          // Destroy the shot (Play.c:776-777)
+          updatedShot.lifecount = 0
+          updatedShot.btime = 0
+          updatedShot.strafedir = -1
+
+          // Add bunker to kill list (Play.c:778-782)
+          // The killBunker action in planetSlice handles difficult bunkers
+          state.pendingBunkerKills.push(bunkerResult.bunkerIndex)
+
+          // One shot can only kill one bunker (Play.c:783)
+          return updatedShot
         }
 
         // 3. Check ship collision - friendly fire (Play.c:785-795)
-        // Only check if shot is still alive
-        if (updatedShot.lifecount > 0) {
-          const shipResult = checkShipCollision(
-            updatedShot,
-            shipPosition,
-            shipAlive
-          )
-          if (shipResult.hit) {
-            // Destroy the shot and trigger shield
-            updatedShot.lifecount = 0
-            updatedShot.btime = 0
-            updatedShot.strafedir = -1
-            // TODO: Trigger shield activation in ship slice
-            return updatedShot
-          }
+        // Like bunker collision, this also happens regardless of lifecount
+        const shipResult = checkShipCollision(
+          updatedShot,
+          shipPosition,
+          shipAlive
+        )
+        if (shipResult.hit) {
+          // Destroy the shot and trigger shield
+          updatedShot.lifecount = 0
+          updatedShot.btime = 0
+          updatedShot.strafedir = -1
+          // TODO: Trigger shield activation in ship slice
+          return updatedShot
         }
 
         // 4. Check wall collision and bounce (Play.c:796-800)
@@ -305,8 +308,14 @@ export const shotsSlice = createSlice({
     },
     moveBullets: (
       state,
-      action: PayloadAction<{ worldwidth: number; worldwrap: boolean }>
+      action: PayloadAction<{
+        worldwidth: number
+        worldwrap: boolean
+        readonly walls: readonly LineRec[]
+      }>
     ) => {
+      const { worldwidth, worldwrap, walls } = action.payload
+
       // Process each bunker shot with same justDied logic as ship shots
       state.bunkshots = state.bunkshots.map(shot => {
         // Clear justDied flag from previous frame
@@ -318,18 +327,46 @@ export const shotsSlice = createSlice({
         }
 
         // Move the shot
-        updatedShot = moveShot(updatedShot, action.payload)
+        updatedShot = moveShot(updatedShot, { worldwidth, worldwrap })
 
-        // Mark as justDied if it died this frame
-        // This preserves the original's behavior of rendering shots
-        // for one frame after lifecount reaches 0 (Play.c:844 DRAW_SHOT)
-        if (updatedShot.lifecount === 0 && shot.lifecount > 0) {
+        // Handle wall bounce (Play.c:839-843)
+        // When shot hits a wall (lifecount==0) and has bounce time (btime>0)
+        if (updatedShot.lifecount === 0 && updatedShot.btime > 0) {
+          // Find the wall we hit
+          const hitWall = walls.find(w => w.id === updatedShot.hitlineId)
+          if (hitWall) {
+            // Backup to exact wall position (move back one frame)
+            updatedShot.x8 -= updatedShot.h
+            updatedShot.y8 -= updatedShot.v
+            updatedShot.x = updatedShot.x8 >> 3
+            updatedShot.y = updatedShot.y8 >> 3
+
+            // Calculate bounce (new velocity based on wall normal)
+            updatedShot = bounceShotFunc(
+              updatedShot,
+              hitWall,
+              walls,
+              worldwidth,
+              worldwrap
+            )
+          }
+        }
+        // Mark as justDied if it died this frame (and not bouncing)
+        else if (updatedShot.lifecount === 0 && shot.lifecount > 0) {
           updatedShot.justDied = true
         }
 
+        // Handle strafe effect creation for dead shots (Play.c:844 DRAW_SHOT macro)
+        // Just like ship shots, bunker shots create strafes when hitting walls
+        if (updatedShot.lifecount === 0 && updatedShot.strafedir >= 0) {
+          state.strafes = startStrafeFunc(
+            updatedShot.x,
+            updatedShot.y,
+            updatedShot.strafedir
+          )(state.strafes)
+        }
+
         // TODO: Implement collision detection with ship (Play.c:830-838)
-        // TODO: Implement wall bounce handling (Play.c:839-843)
-        // TODO: Implement strafe creation for dead shots
 
         return updatedShot
       })
@@ -342,6 +379,7 @@ export const shotsSlice = createSlice({
         screeny: number
         screenb: number
         readonly bunkrecs: readonly Bunker[]
+        readonly walls: readonly LineRec[]
         worldwidth: number
         worldwrap: boolean
         globalx: number
@@ -362,6 +400,21 @@ export const shotsSlice = createSlice({
         lifecount: 0,
         rot: 0
       }))
+    },
+
+    /**
+     * Clear bunker shots when ship respawns
+     * Based on init_ship() in Play.c:184-185
+     *
+     * The original game clears all bunker shots on respawn:
+     * for(i=0; i<NUMSHOTS; i++) bunkshots[i].lifecount = 0;
+     *
+     * Note: Does NOT clear ship shots or strafes
+     */
+    clearBunkShots: state => {
+      // Reset all bunk shots by clearing their lifecount
+      // We reinitialize the whole shot to ensure clean state
+      state.bunkshots = state.bunkshots.map(() => initializeShot())
     }
   }
 })
@@ -373,7 +426,8 @@ export const {
   moveShipshots,
   moveBullets,
   bunkShoot,
-  clearAllShots
+  clearAllShots,
+  clearBunkShots
 } = shotsSlice.actions
 
 export default shotsSlice.reducer

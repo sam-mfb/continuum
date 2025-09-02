@@ -247,7 +247,7 @@ function precomputeAllSprites(
     fuel: new Map(),
     shard: new Map(),
     crater: new Map(),
-    shield: precomputeFormats(allSprites.shield.def, 32, 22), // Shield is 32x22
+    shield: precomputeFormats(allSprites.shield.def, 32, 32), // Shield is 32x32 (same as SHIPHT)
     flame: new Map(),
     strafe: new Map(),
     digit: new Map(),
@@ -290,7 +290,7 @@ function precomputeAllSprites(
     } else {
       // Animated bunkers: 8 frames
       for (let frame = 0; frame < 8; frame++) {
-        const sprite = allSprites.bunkers.getSprite(kind, 0, frame)
+        const sprite = allSprites.bunkers.getSprite(kind, frame)
         storage.bunker.set(
           `${kind}-${frame}-def`,
           precomputeFormats(sprite.def, 48, 48)
