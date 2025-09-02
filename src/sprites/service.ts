@@ -247,7 +247,7 @@ function precomputeAllSprites(
     fuel: new Map(),
     shard: new Map(),
     crater: new Map(),
-    shield: precomputeFormats(allSprites.shield.def, 32, 22), // Shield is 32x22
+    shield: precomputeFormats(allSprites.shield.def, 32, 32), // Shield is 32x32 (same as SHIPHT)
     flame: new Map(),
     strafe: new Map(),
     digit: new Map(),
