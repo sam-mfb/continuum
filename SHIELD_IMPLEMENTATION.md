@@ -64,57 +64,85 @@ if (shielding && sp->x > left && sp->x < right &&
 }
 ```
 
-**Our Implementation** - In `moveBullets` thunk:
+**Our Implementation** - In `moveBullets` reducer action:
+
+First, update the action payload type to include ship data:
 ```typescript
-export const moveBullets = createAsyncThunk(
-  'shots/moveBullets',
-  async (params: MoveBulletsParams, { getState }) => {
-    const state = getState() as RootState
-    const bullets = state.shots.bunkshots
-    
-    // Check shield protection if active
-    if (state.ship.shielding) {
-      // Calculate global ship position (Play.c:273-274 pattern)
-      const shipGlobalX = state.screen.screenx + state.ship.shipx
-      const shipGlobalY = state.screen.screeny + state.ship.shipy
-      
+// In shotsSlice.ts - update moveBullets action payload
+moveBullets: (
+  state,
+  action: PayloadAction<{
+    worldwidth: number
+    worldwrap: boolean
+    readonly walls: readonly LineRec[]
+    // Add ship-related fields for shield protection
+    shipGlobalX?: number
+    shipGlobalY?: number
+    shielding?: boolean
+  }>
+) => {
+  const { worldwidth, worldwrap, walls, shipGlobalX, shipGlobalY, shielding } = action.payload
+
+  // Process each bunker shot
+  state.bunkshots = state.bunkshots.map(shot => {
+    // Clear justDied flag from previous frame
+    let updatedShot = { ...shot, justDied: false }
+
+    // Skip completely dead shots
+    if (shot.lifecount <= 0) {
+      return updatedShot
+    }
+
+    // Check shield protection BEFORE moving (Play.c:830-838)
+    if (shielding && shipGlobalX !== undefined && shipGlobalY !== undefined) {
       // Bounding box for optimization (Play.c:822-825)
       const left = shipGlobalX - SCENTER   // SCENTER = 15 (GW.h:75)
       const right = shipGlobalX + SCENTER
       const top = shipGlobalY - SCENTER
       const bot = shipGlobalY + SCENTER
       
-      const processedBullets = bullets.map(bullet => {
-        // Bounding box check first (Play.c:830-831)
-        if (bullet.x > left && bullet.x < right && 
-            bullet.y > top && bullet.y < bot) {
-          
-          // Precise distance check (Play.c:832-833)
-          // SHRADIUS = 12 (GW.h:77)
-          if (xyindistance(bullet.x - shipGlobalX, 
-                          bullet.y - shipGlobalY, SHRADIUS)) {
-            // Destroy bullet (Play.c:835-837)
-            return {
-              ...bullet,
-              lifecount: 0,      // Terminate bullet
-              btime: 0,          // Cancel bounce timer
-              strafedir: -1,     // Cancel strafing
-              justDied: true     // Prevent rendering this frame
-            }
-          }
-        }
+      // Bounding box check first (Play.c:830-831)
+      if (shot.x > left && shot.x < right && 
+          shot.y > top && shot.y < bot) {
         
-        // Normal bullet movement if not destroyed
-        return moveShot(bullet, params)
-      })
-      
-      return processedBullets
+        // Precise distance check (Play.c:832-833)
+        // SHRADIUS = 12 (GW.h:77)
+        if (xyindistance(shot.x - shipGlobalX, 
+                        shot.y - shipGlobalY, SHRADIUS)) {
+          // Destroy bullet (Play.c:835-837)
+          updatedShot.lifecount = 0      // Terminate bullet
+          updatedShot.btime = 0          // Cancel bounce timer
+          updatedShot.strafedir = -1     // Cancel strafing
+          updatedShot.justDied = true    // Mark for final frame render
+          return updatedShot              // Skip further processing
+        }
+      }
     }
-    
-    // No shield - normal bullet movement
-    return bullets.map(b => moveShot(b, params))
-  }
-)
+
+    // Move the shot (only if not destroyed by shield)
+    updatedShot = moveShot(updatedShot, { worldwidth, worldwrap })
+
+    // Handle wall bounce... (existing code continues)
+  })
+}
+```
+
+And in the orchestrator (e.g., `shipMoveBitmap.ts`) where `moveBullets` is dispatched:
+```typescript
+// Calculate ship's global position for shield protection
+const shipGlobalX = finalState.screen.screenx + finalState.ship.shipx
+const shipGlobalY = finalState.screen.screeny + finalState.ship.shipy
+
+// Dispatch moveBullets with ship data
+store.dispatch(shotsSlice.actions.moveBullets({
+  worldwidth,
+  worldwrap,
+  walls,
+  // Include ship data for shield protection
+  shipGlobalX,
+  shipGlobalY,
+  shielding: finalState.ship.shielding
+}))
 ```
 
 ### 3. Fuel Cell Collection on Shield Activation
@@ -333,7 +361,8 @@ From the original source files:
    - Orchestrator detects activation → triggers fuel cell collection
 
 2. **Bullet Protection**:
-   - moveBullets thunk reads ship.shielding → processes bullets → returns destroyed list
+   - Orchestrator calculates ship global position → passes to moveBullets reducer
+   - moveBullets reducer checks shield protection → destroys bullets in shield radius
 
 3. **Self-Hit Feedback**:
    - moveShipshots detects self-hit → sets flag → orchestrator activates feedback
