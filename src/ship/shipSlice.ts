@@ -1,17 +1,18 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { ShipState } from './types'
 import { ShipControl } from './types'
-import { SHIP, DEAD_TIME, STARTING_FUEL } from './constants'
+import { SHIP, DEAD_TIME, FUELSTART, FUELGAIN } from './constants'
 
 const initialState: ShipState = {
   shiprot: 0,
-  fuel: 10000,
+  fuel: FUELSTART,
+  lives: 3,
   flaming: false,
   flameBlink: 0,
   thrusting: false,
   firing: false,
   bouncing: false,
-  refueling: false,
+  refueling: false, // Note: This variable exists in the original game (Play.c:72) but was never actually used (always FALSE)
   shielding: false,
   dx: 0,
   dy: 0,
@@ -217,6 +218,11 @@ export const shipSlice = createSlice({
       state.thrusting = false
       state.refueling = false
       state.shielding = false
+      // Decrement lives when ship dies
+      if (state.lives > 0) {
+        state.lives--
+      }
+      // Note: Fuel is NOT reset here - that happens on respawn (Play.c:205)
       // Note: vx (dx), vy (dy) preserved - ship continues drifting while dead
     },
 
@@ -249,7 +255,7 @@ export const shipSlice = createSlice({
       // Reset rotation to north
       state.shiprot = 0
       // Reset fuel
-      state.fuel = STARTING_FUEL
+      state.fuel = FUELSTART
       // Reset activity states
       state.flaming = false
       state.flameBlink = 0
@@ -269,6 +275,91 @@ export const shipSlice = createSlice({
     ) => {
       state.startx = action.payload.x
       state.starty = action.payload.y
+    },
+
+    /**
+     * Activate shield
+     * Based on Play.c:508, 511
+     */
+    shieldActivate: state => {
+      state.shielding = true
+      state.refueling = false // Stop refueling when shield is active (Play.c:511)
+    },
+
+    /**
+     * Deactivate shield
+     * Based on Play.c:527
+     */
+    shieldDeactivate: state => {
+      state.shielding = false
+    },
+    /**
+     * Activate shield for one frame as feedback for self-hit
+     * Based on Play.c:790 - shielding = TRUE when ship hits itself
+     * Note: Shield will deactivate next frame unless SPACE key is held
+     */
+    activateShieldFeedback: state => {
+      state.shielding = true
+      // Note: refueling is not affected by feedback activation
+    },
+
+    /**
+     * Start refueling
+     * Based on Play.c refueling logic
+     */
+    refuelingOn: state => {
+      state.refueling = true
+    },
+
+    /**
+     * Stop refueling
+     * Based on Play.c:511
+     */
+    refuelingOff: state => {
+      state.refueling = false
+    },
+
+    /**
+     * Consume fuel (for thrusting or shielding)
+     * Based on fuel_minus() in Play.c
+     */
+    consumeFuel: (state, action: PayloadAction<number>) => {
+      state.fuel = Math.max(0, state.fuel - action.payload)
+      if (state.fuel === 0) {
+        // If out of fuel, can't shield anymore
+        state.shielding = false
+      }
+    },
+
+    /**
+     * Collect fuel cells
+     * Based on fuel_minus(-FUELGAIN) in Play.c:520
+     * @param numCells - Number of fuel cells collected
+     */
+    collectFuel: (state, action: PayloadAction<number>) => {
+      state.fuel += action.payload * FUELGAIN
+    },
+
+    /**
+     * Set lives count (for initialization or game over)
+     */
+    setLives: (state, action: PayloadAction<number>) => {
+      state.lives = action.payload
+    },
+
+    /**
+     * Award an extra life
+     * Based on Play.c when player gets extra ship
+     */
+    extraLife: state => {
+      state.lives++
+    },
+
+    /**
+     * Reset lives for new game
+     */
+    resetLives: state => {
+      state.lives = 3
     }
   }
 })

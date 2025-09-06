@@ -7,6 +7,11 @@
 
 import { type MonochromeBitmap } from '@/bitmap'
 import { writeFuel } from './writeFuel'
+import { writeLives } from './writeLives'
+import { writeScore } from './writeScore'
+import { writeBonus } from './writeBonus'
+import { writeLevel } from './writeLevel'
+import { writeMessage } from './writeMessage'
 import type { SpriteServiceV2 } from '@/sprites/service'
 
 /**
@@ -16,35 +21,42 @@ import type { SpriteServiceV2 } from '@/sprites/service'
  * the front screen. This is called during the game loop to update
  * values that change frequently without doing a full redraw.
  *
- * We can extend this to support other frequently changing fields
- * as needed, using null to indicate "don't update this field".
+ * We extend this to support all status bar fields for the refactoring
+ * where status bar is rendered at the orchestration level.
  *
  * @param deps Dependencies object containing:
- *   @param fuel - Current fuel amount (null to skip update)
+ *   @param fuel - Current fuel amount
+ *   @param lives - Number of ship lives
+ *   @param score - Current score
+ *   @param bonus - Current planet bonus
+ *   @param level - Current level number
+ *   @param message - Current message text (null for none)
  *   @param spriteService - Service providing sprites and status bar template
  * @returns Pure function that transforms a screen bitmap
  *
  * @see orig/Sources/Play.c:1027-1034 update_sbar()
  */
 export function updateSbar(deps: {
-  fuel: number | null
+  fuel: number
+  lives: number
+  score: number
+  bonus: number
+  level: number
+  message: string | null
   spriteService: SpriteServiceV2
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
-    const { fuel, spriteService } = deps
+    const { fuel, lives, score, bonus, level, message, spriteService } = deps
 
     let result = screen
 
-    // Update fuel if provided
-    // Original: if (fuelold) { writeint(296, 12, fuel, front_screen); }
-    if (fuel !== null) {
-      result = writeFuel({ fuel, spriteService })(result)
-    }
-
-    // Could extend to update other fields as needed:
-    // - Score (if it changes frequently)
-    // - Bonus (as it counts down)
-    // But the original only updates fuel
+    // Update all fields
+    result = writeFuel({ fuel, spriteService })(result)
+    result = writeLives({ lives, spriteService })(result)
+    result = writeScore({ score, spriteService })(result)
+    result = writeBonus({ bonus, spriteService })(result)
+    result = writeLevel({ level, spriteService })(result)
+    result = writeMessage({ message, spriteService })(result)
 
     return result
   }

@@ -8,6 +8,12 @@ export type ShotsState = {
    * Used to communicate collision results to the game loop.
    */
   pendingBunkerKills: number[]
+  /**
+   * Flag indicating the ship hit itself with its own shot.
+   * When true, shield feedback should be activated for one frame.
+   * Based on Play.c:787-794 self-hit detection.
+   */
+  selfHitShield: boolean
 }
 
 /**

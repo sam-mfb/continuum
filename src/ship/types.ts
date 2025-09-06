@@ -10,6 +10,8 @@ export type ShipState = {
   /** between 0 and 31 */
   shiprot: number
   fuel: number
+  /** Number of remaining lives/ships */
+  lives: number
   /** used for animation */
   flaming: boolean
   flameBlink: number

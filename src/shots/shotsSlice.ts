@@ -10,6 +10,8 @@ import { moveShot } from './moveShot'
 import { checkBunkerCollision } from './checkBunkerCollision'
 import { checkShipCollision } from './checkShipCollision'
 import { startStrafe as startStrafeFunc } from './startStrafe'
+import { xyindistance } from './xyindistance'
+import { SHRADIUS } from '@/ship/constants'
 
 /**
  * Shot Lifecycle Architecture Note:
@@ -50,7 +52,8 @@ const initialState: ShotsState = {
     lifecount: 0,
     rot: 0
   })),
-  pendingBunkerKills: []
+  pendingBunkerKills: [],
+  selfHitShield: false
 }
 
 export const shotsSlice = createSlice({
@@ -215,6 +218,7 @@ export const shotsSlice = createSlice({
 
       // Clear previous collision results (Play.c:760-761)
       state.pendingBunkerKills = []
+      state.selfHitShield = false // Reset self-hit flag
 
       // Process each active shot
       state.shipshots = state.shipshots.map(shot => {
@@ -260,11 +264,12 @@ export const shotsSlice = createSlice({
           shipAlive
         )
         if (shipResult.hit) {
-          // Destroy the shot and trigger shield
+          // Set flag for shield feedback (Play.c:790)
+          state.selfHitShield = true
+          // Destroy the shot (Play.c:792)
           updatedShot.lifecount = 0
           updatedShot.btime = 0
           updatedShot.strafedir = -1
-          // TODO: Trigger shield activation in ship slice
           return updatedShot
         }
 
@@ -312,9 +317,20 @@ export const shotsSlice = createSlice({
         worldwidth: number
         worldwrap: boolean
         readonly walls: readonly LineRec[]
+        // Ship-related fields for shield protection
+        shipGlobalX?: number
+        shipGlobalY?: number
+        shielding?: boolean
       }>
     ) => {
-      const { worldwidth, worldwrap, walls } = action.payload
+      const {
+        worldwidth,
+        worldwrap,
+        walls,
+        shipGlobalX,
+        shipGlobalY,
+        shielding
+      } = action.payload
 
       // Process each bunker shot with same justDied logic as ship shots
       state.bunkshots = state.bunkshots.map(shot => {
@@ -326,7 +342,37 @@ export const shotsSlice = createSlice({
           return updatedShot
         }
 
-        // Move the shot
+        // Check shield protection BEFORE moving (Play.c:830-838)
+        if (
+          shielding &&
+          shipGlobalX !== undefined &&
+          shipGlobalY !== undefined
+        ) {
+          // Bounding box for optimization (Play.c:822-825)
+          // Use SHRADIUS for shield protection bounding box
+          const left = shipGlobalX - SHRADIUS // SHRADIUS = 12 (GW.h:77)
+          const right = shipGlobalX + SHRADIUS
+          const top = shipGlobalY - SHRADIUS
+          const bot = shipGlobalY + SHRADIUS
+
+          // Bounding box check first (Play.c:830-831)
+          if (shot.x > left && shot.x < right && shot.y > top && shot.y < bot) {
+            // Precise distance check (Play.c:832-833)
+            // SHRADIUS = 12 (GW.h:77)
+            if (
+              xyindistance(shot.x - shipGlobalX, shot.y - shipGlobalY, SHRADIUS)
+            ) {
+              // Destroy bullet (Play.c:835-837)
+              updatedShot.lifecount = 0 // Terminate bullet
+              updatedShot.btime = 0 // Cancel bounce timer
+              updatedShot.strafedir = -1 // Cancel strafing
+              updatedShot.justDied = true // Mark for final frame render
+              return updatedShot // Skip further processing
+            }
+          }
+        }
+
+        // Move the shot (only if not destroyed by shield)
         updatedShot = moveShot(updatedShot, { worldwidth, worldwrap })
 
         // Handle wall bounce (Play.c:839-843)
@@ -365,8 +411,6 @@ export const shotsSlice = createSlice({
             updatedShot.strafedir
           )(state.strafes)
         }
-
-        // TODO: Implement collision detection with ship (Play.c:830-838)
 
         return updatedShot
       })

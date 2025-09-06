@@ -16,6 +16,8 @@ import {
   planetSlice,
   updateBunkerRotations,
   initializeBunkers,
+  initializeFuels,
+  updateFuelAnimations,
   killBunker
 } from '@/planet/planetSlice'
 import { screenSlice } from '@/screen/screenSlice'
@@ -43,10 +45,13 @@ import { whiteTerrain, blackTerrain } from '@/walls/render'
 import { wallsSlice } from '@/walls/wallsSlice'
 import { viewClear, viewWhite } from '@/screen/render'
 import { LINE_KIND } from '@/walls/types'
+import { updateSbar, sbarClear } from '@/status/render'
+import { statusSlice } from '@/status/statusSlice'
 import { checkFigure } from '@/collision/checkFigure'
 import { checkForBounce } from '@/ship/physics/checkForBounce'
 import { doBunks } from '@/planet/render/bunker'
 import { drawCraters } from '@/planet/render/drawCraters'
+import { drawFuels } from '@/planet/render/drawFuels'
 import { rint } from '@/shared/rint'
 import {
   startShipDeath,
@@ -108,6 +113,13 @@ const initializeGame = async (): Promise<void> => {
 
     // Initialize bunkers for animated bunker support
     store.dispatch(initializeBunkers())
+
+    // Initialize fuel cells
+    store.dispatch(initializeFuels())
+
+    // Initialize status state
+    store.dispatch(statusSlice.actions.initStatus())
+    store.dispatch(statusSlice.actions.setPlanetBonus(planet1.planetbonus))
 
     // Initialize ship at center of screen (following Play.c:175-179)
     const shipScreenX = SCRWTH / 2 // 256
@@ -277,11 +289,14 @@ export const createShipMoveBitmapRenderer =
     // Update bunker rotations for animated bunkers (GROUND, FOLLOW, GENERATOR)
     store.dispatch(updateBunkerRotations({ globalx, globaly }))
 
+    // Update fuel cell animations
+    store.dispatch(updateFuelAnimations())
+
     // Check if bunkers should shoot this frame (probabilistic based on shootslow)
     // From Bunkers.c:30-31: if (rint(100) < shootslow) bunk_shoot();
-    // TESTING: Increased shot rate for easier testing (multiply by 5)
+    // TESTING: Increased shot rate for easier testing (multiply by 20)
     const shootRoll = rint(100)
-    if (shootRoll < state.planet.shootslow * 5) {
+    if (shootRoll < state.planet.shootslow * 20) {
       // Calculate screen boundaries for shot eligibility
       const screenr = state.screen.screenx + SCRWTH
       const screenb = state.screen.screeny + VIEWHT
@@ -342,12 +357,31 @@ export const createShipMoveBitmapRenderer =
       }
     }
 
-    // Move bunker shots
+    // Handle self-hit shield feedback (Play.c:790-791)
+    if (shotsState.selfHitShield) {
+      // Activate shield for one frame as feedback
+      store.dispatch(shipSlice.actions.activateShieldFeedback())
+      // Note: Shield will deactivate next frame unless SPACE key is held
+
+      // TODO: Play sound (Play.c:791)
+      // playSound(SHLD_SOUND)
+    }
+
+    // Move bunker shots with shield protection check
+    // Calculate ship's global position for shield protection
+    const currentState = store.getState()
+    const shipGlobalX = currentState.screen.screenx + currentState.ship.shipx
+    const shipGlobalY = currentState.screen.screeny + currentState.ship.shipy
+
     store.dispatch(
       moveBullets({
         worldwidth: state.planet.worldwidth,
         worldwrap: state.planet.worldwrap,
-        walls: state.planet.lines
+        walls: state.planet.lines,
+        // Include ship data for shield protection
+        shipGlobalX,
+        shipGlobalY,
+        shielding: currentState.ship.shielding
       })
     )
 
@@ -418,6 +452,58 @@ export const createShipMoveBitmapRenderer =
     // Copy cratered bitmap data back
     bitmap.data.set(crateredBitmap.data)
 
+    // Draw fuel cells (from Terrain.c - do_fuels is called after craters)
+    // Get fuel sprites from service
+    const fuelSprites = {
+      getFrame: (
+        frame: number
+      ): { images: { background1: Uint8Array; background2: Uint8Array } } => {
+        const bg1 = spriteService.getFuelSprite(frame, {
+          variant: 'background1'
+        })
+        const bg2 = spriteService.getFuelSprite(frame, {
+          variant: 'background2'
+        })
+        return {
+          images: {
+            background1: bg1.uint8,
+            background2: bg2.uint8
+          }
+        }
+      },
+      emptyCell: {
+        images: {
+          background1: spriteService.getFuelSprite(8, {
+            variant: 'background1'
+          }).uint8,
+          background2: spriteService.getFuelSprite(8, {
+            variant: 'background2'
+          }).uint8
+        }
+      }
+    }
+
+    const fuelBitmap = drawFuels({
+      fuels: finalState.planet.fuels,
+      scrnx: finalState.screen.screenx,
+      scrny: finalState.screen.screeny,
+      fuelSprites
+    })(bitmap)
+
+    // Copy fuel bitmap data back
+    bitmap.data.set(fuelBitmap.data)
+
+    // Handle world wrapping for fuel cells
+    if (on_right_side && finalState.planet.worldwrap) {
+      const wrappedFuelBitmap = drawFuels({
+        fuels: finalState.planet.fuels,
+        scrnx: finalState.screen.screenx - finalState.planet.worldwidth,
+        scrny: finalState.screen.screeny,
+        fuelSprites
+      })(bitmap)
+      bitmap.data.set(wrappedFuelBitmap.data)
+    }
+
     // Setup viewport for wall rendering
     // Calculate screen bounds (right and bottom edges)
     const viewport = {
@@ -446,6 +532,26 @@ export const createShipMoveBitmapRenderer =
     // Following Play.c order:
     // 1. gray_figure - ship shadow background (only if ship is alive)
     let renderedBitmap = bitmap
+
+    // Draw status bar (happens before game rendering)
+    // First clear with the template
+    const statusBarTemplate = spriteService.getStatusBarTemplate()
+    renderedBitmap = sbarClear({ statusBarTemplate })(renderedBitmap)
+
+    // Then update with current values from state
+    const statusData = {
+      fuel: finalState.ship.fuel,
+      lives: finalState.ship.lives,
+      score: finalState.status.score,
+      bonus: finalState.status.planetbonus,
+      level: finalState.status.currentlevel,
+      message: finalState.status.curmessage,
+      spriteService
+    }
+
+    // Use newSbar for initial frame or major changes, updateSbar for incremental updates
+    // For now, we'll use updateSbar each frame since it updates all fields
+    renderedBitmap = updateSbar(statusData)(renderedBitmap)
 
     if (finalState.ship.deadCount === 0) {
       // Compute background patterns for y and y+1 positions
@@ -713,6 +819,59 @@ export const createShipMoveBitmapRenderer =
         def: shipDefBitmap,
         mask: shipMaskBitmap
       })(renderedBitmap)
+    }
+
+    // Draw shield effect if active (Play.c:252-255)
+    if (finalState.ship.shielding) {
+      // Draw shield using erase_figure (Play.c:254)
+      const shieldSprite = spriteService.getShieldSprite()
+      renderedBitmap = eraseFigure({
+        x: finalState.ship.shipx - SCENTER, // Same position as ship
+        y: finalState.ship.shipy - SCENTER,
+        def: shieldSprite.bitmap // shield_def (Figs.c:71)
+      })(renderedBitmap)
+
+      // When shielding, draw bullets AFTER shield (Play.c:252-253)
+      // Bullets are already destroyed by moveBullets reducer, but we still draw surviving ones
+      for (const shot of finalState.shots.bunkshots) {
+        // Render shot if still alive or just died without strafe
+        const shouldRender =
+          shot.lifecount > 0 || (shot.justDied === true && shot.strafedir < 0)
+
+        if (shouldRender) {
+          // Convert world coordinates to screen coordinates
+          const shotx = shot.x - finalState.screen.screenx
+          const shoty = shot.y - finalState.screen.screeny
+
+          // Check if shot is visible on screen
+          if (
+            shotx >= 0 &&
+            shotx < SCRWTH - 1 &&
+            shoty >= 0 &&
+            shoty < VIEWHT - 1
+          ) {
+            renderedBitmap = drawDotSafe(shotx, shoty, renderedBitmap)
+          }
+
+          // Handle world wrapping for toroidal worlds
+          if (
+            finalState.planet.worldwrap &&
+            finalState.screen.screenx > finalState.planet.worldwidth - SCRWTH
+          ) {
+            const wrappedShotx =
+              shot.x + finalState.planet.worldwidth - finalState.screen.screenx
+
+            if (
+              wrappedShotx >= 0 &&
+              wrappedShotx < SCRWTH - 1 &&
+              shoty >= 0 &&
+              shoty < VIEWHT - 1
+            ) {
+              renderedBitmap = drawDotSafe(wrappedShotx, shoty, renderedBitmap)
+            }
+          }
+        }
+      }
     }
 
     // Draw all active ship shots

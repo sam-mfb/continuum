@@ -253,6 +253,26 @@ export const planetSlice = createSlice({
       // }
 
       // Note: Explosion and score handled separately from game loop
+    },
+
+    /**
+     * Mark fuel cells as collected when shield activates near them
+     * Based on Play.c:512-524 - fuel collection during shield activation
+     *
+     * @param indices - Array of fuel cell indices to collect
+     */
+    collectFuelCells: (state, action: PayloadAction<number[]>) => {
+      const indices = action.payload
+      indices.forEach(index => {
+        const fuel = state.fuels[index]
+        if (fuel && fuel.alive) {
+          fuel.alive = false
+          fuel.currentfig = FUELFRAMES // Start explosion animation (8 frames)
+          // Note: Actual fuel addition to ship is handled by shipSlice.collectFuel
+          // TODO: Play FUEL_SOUND (Play.c:522)
+          // TODO: Add SCOREFUEL to score (Play.c:521)
+        }
+      })
     }
   }
 })
@@ -263,6 +283,7 @@ export const {
   initializeBunkers,
   updateFuelAnimations,
   initializeFuels,
-  killBunker
+  killBunker,
+  collectFuelCells
 } = planetSlice.actions
 export default planetSlice.reducer
