@@ -25,6 +25,7 @@ The ship slice will own all shield-related state, matching the original's global
 ### 1. Manual Shield Activation
 
 **Original Implementation** (Play.c:507-527):
+
 ```c
 if ( (pressed & KEY_SHIELD) && fuel)
 {   shielding = TRUE;
@@ -38,6 +39,7 @@ else
 ```
 
 **Our Implementation** - In `shipControlThunk`:
+
 ```typescript
 // Check for shield control and fuel availability
 if (controlsPressed.includes(ShipControl.SHIELD) && state.ship.fuel > 0) {
@@ -53,9 +55,10 @@ if (controlsPressed.includes(ShipControl.SHIELD) && state.ship.fuel > 0) {
 ### 2. Enemy Bullet Protection
 
 **Original Implementation** (Play.c:830-837):
+
 ```c
 if (shielding && sp->x > left && sp->x < right &&
-        sp->y > top && sp->y < bot && 
+        sp->y > top && sp->y < bot &&
         xyindistance(sp->x - globalx, sp->y - globaly, SHRADIUS))
 {
     sp->lifecount = sp->btime = 0;
@@ -67,6 +70,7 @@ if (shielding && sp->x > left && sp->x < right &&
 **Our Implementation** - In `moveBullets` reducer action:
 
 First, update the action payload type to include ship data:
+
 ```typescript
 // In shotsSlice.ts - update moveBullets action payload
 moveBullets: (
@@ -81,7 +85,8 @@ moveBullets: (
     shielding?: boolean
   }>
 ) => {
-  const { worldwidth, worldwrap, walls, shipGlobalX, shipGlobalY, shielding } = action.payload
+  const { worldwidth, worldwrap, walls, shipGlobalX, shipGlobalY, shielding } =
+    action.payload
 
   // Process each bunker shot
   state.bunkshots = state.bunkshots.map(shot => {
@@ -96,25 +101,24 @@ moveBullets: (
     // Check shield protection BEFORE moving (Play.c:830-838)
     if (shielding && shipGlobalX !== undefined && shipGlobalY !== undefined) {
       // Bounding box for optimization (Play.c:822-825)
-      const left = shipGlobalX - SCENTER   // SCENTER = 15 (GW.h:75)
+      const left = shipGlobalX - SCENTER // SCENTER = 15 (GW.h:75)
       const right = shipGlobalX + SCENTER
       const top = shipGlobalY - SCENTER
       const bot = shipGlobalY + SCENTER
-      
+
       // Bounding box check first (Play.c:830-831)
-      if (shot.x > left && shot.x < right && 
-          shot.y > top && shot.y < bot) {
-        
+      if (shot.x > left && shot.x < right && shot.y > top && shot.y < bot) {
         // Precise distance check (Play.c:832-833)
         // SHRADIUS = 12 (GW.h:77)
-        if (xyindistance(shot.x - shipGlobalX, 
-                        shot.y - shipGlobalY, SHRADIUS)) {
+        if (
+          xyindistance(shot.x - shipGlobalX, shot.y - shipGlobalY, SHRADIUS)
+        ) {
           // Destroy bullet (Play.c:835-837)
-          updatedShot.lifecount = 0      // Terminate bullet
-          updatedShot.btime = 0          // Cancel bounce timer
-          updatedShot.strafedir = -1     // Cancel strafing
-          updatedShot.justDied = true    // Mark for final frame render
-          return updatedShot              // Skip further processing
+          updatedShot.lifecount = 0 // Terminate bullet
+          updatedShot.btime = 0 // Cancel bounce timer
+          updatedShot.strafedir = -1 // Cancel strafing
+          updatedShot.justDied = true // Mark for final frame render
+          return updatedShot // Skip further processing
         }
       }
     }
@@ -128,33 +132,37 @@ moveBullets: (
 ```
 
 And in the orchestrator (e.g., `shipMoveBitmap.ts`) where `moveBullets` is dispatched:
+
 ```typescript
 // Calculate ship's global position for shield protection
 const shipGlobalX = finalState.screen.screenx + finalState.ship.shipx
 const shipGlobalY = finalState.screen.screeny + finalState.ship.shipy
 
 // Dispatch moveBullets with ship data
-store.dispatch(shotsSlice.actions.moveBullets({
-  worldwidth,
-  worldwrap,
-  walls,
-  // Include ship data for shield protection
-  shipGlobalX,
-  shipGlobalY,
-  shielding: finalState.ship.shielding
-}))
+store.dispatch(
+  shotsSlice.actions.moveBullets({
+    worldwidth,
+    worldwrap,
+    walls,
+    // Include ship data for shield protection
+    shipGlobalX,
+    shipGlobalY,
+    shielding: finalState.ship.shielding
+  })
+)
 ```
 
 ### 3. Fuel Cell Collection on Shield Activation
 
 **Original Implementation** (Play.c:512-524):
+
 ```c
 for(fp=fuels; fp->x < 10000; fp++)
 {
     xdif = globalx - fp->x;
     ydif = globaly - fp->y;
     if (fp->alive && xyindist(xdif, ydif, FRADIUS))
-    {   
+    {
         fp->alive = FALSE;
         fp->currentfig = FUELFRAMES;
         fuel_minus(-FUELGAIN);  /* wow, a kludge! */
@@ -165,6 +173,7 @@ for(fp=fuels; fp->x < 10000; fp++)
 ```
 
 **Our Implementation** - Orchestrated in `shipMoveBitmap.ts`:
+
 ```typescript
 // After processing ship controls
 const prevShielding = state.ship.shielding
@@ -176,39 +185,39 @@ if (!prevShielding && newState.ship.shielding) {
   // Calculate global ship position
   const shipGlobalX = newState.screen.screenx + newState.ship.shipx
   const shipGlobalY = newState.screen.screeny + newState.ship.shipy
-  
+
   // Check all fuel cells (Play.c:512-524)
   const collectedFuels: number[] = []
-  
+
   newState.planet.fuels.forEach((fuel, index) => {
     if (fuel.alive) {
       const xdif = shipGlobalX - fuel.x
       const ydif = shipGlobalY - fuel.y
-      
+
       // FRADIUS check (Play.c:516)
       if (xyindist(xdif, ydif, FRADIUS)) {
         collectedFuels.push(index)
       }
     }
   })
-  
+
   // Dispatch collection actions if any fuel cells found
   if (collectedFuels.length > 0) {
     // Update planet state (Play.c:518-519)
-    store.dispatch(planetSlice.actions.collectFuelCells({
-      indices: collectedFuels,
-      setCurrentFig: FUELFRAMES  // For explosion animation
-    }))
-    
+    store.dispatch(
+      planetSlice.actions.collectFuelCells({
+        indices: collectedFuels,
+        setCurrentFig: FUELFRAMES // For explosion animation
+      })
+    )
+
     // Add fuel to ship (Play.c:520)
     // FUELGAIN = 2000 (assumed from game balance)
-    store.dispatch(shipSlice.actions.addFuel(
-      collectedFuels.length * FUELGAIN
-    ))
-    
+    store.dispatch(shipSlice.actions.addFuel(collectedFuels.length * FUELGAIN))
+
     // TODO: Add score when implemented (Play.c:521)
     // store.dispatch(scoreSlice.actions.addScore(SCOREFUEL * collectedFuels.length))
-    
+
     // TODO: Play sound when implemented (Play.c:522)
     // playSound(FUEL_SOUND)
   }
@@ -218,8 +227,9 @@ if (!prevShielding && newState.ship.shielding) {
 ### 4. Self-Hit Shield Feedback
 
 **Original Implementation** (Play.c:787-794):
+
 ```c
-if (xyindistance(sp->x - globalx, sp->y - globaly, SHRADIUS) && 
+if (xyindistance(sp->x - globalx, sp->y - globaly, SHRADIUS) &&
     !dead_count)
 {
     shielding = TRUE;
@@ -230,27 +240,29 @@ if (xyindistance(sp->x - globalx, sp->y - globaly, SHRADIUS) &&
 ```
 
 **Our Implementation** - In `moveShipshots` action:
+
 ```typescript
 // In shotsSlice
 moveShipshots: (state, action) => {
   const { shipPosition, shipAlive } = action.payload
   let selfHitDetected = false
-  
+
   state.shipshots = state.shipshots.map(shot => {
     // Check for self-hit (Play.c:787-789)
     if (shot.lifecount > 0 && shipAlive) {
-      if (xyindistance(shot.x - shipPosition.x, 
-                       shot.y - shipPosition.y, SHRADIUS)) {
+      if (
+        xyindistance(shot.x - shipPosition.x, shot.y - shipPosition.y, SHRADIUS)
+      ) {
         selfHitDetected = true
         // Destroy the bullet (Play.c:792)
         return { ...shot, lifecount: 0, btime: 0 }
       }
     }
-    
+
     // Normal shot movement
     return moveShot(shot)
   })
-  
+
   // Store flag for consumer to handle
   state.selfHitShield = selfHitDetected
 }
@@ -261,7 +273,7 @@ if (shotsState.selfHitShield) {
   // Activate shield for one frame (Play.c:790)
   store.dispatch(shipSlice.actions.activateShieldFeedback())
   // Note: Shield will deactivate next frame unless KEY_SHIELD is held
-  
+
   // TODO: Play sound (Play.c:791)
   // playSound(SHLD_SOUND)
 }
@@ -270,17 +282,19 @@ if (shotsState.selfHitShield) {
 ### 5. Firing Restriction While Shielding
 
 **Original Implementation** (Play.c:534):
+
 ```c
 if(i<NUMBULLETS && !shielding)
 {   // Create new bullet
 ```
 
 **Our Implementation** - Already exists in shipControlThunk:
+
 ```typescript
 // In shipControl thunk
 if (controlsPressed.includes(ShipControl.FIRE)) {
   const state = getState()
-  
+
   // Check shielding prevents firing (Play.c:534)
   if (!state.ship.shielding) {
     // Find available bullet slot and create shot
@@ -292,25 +306,27 @@ if (controlsPressed.includes(ShipControl.FIRE)) {
 ### 6. Shield Visual Rendering
 
 **Original Implementation** (Play.c:252-255):
+
 ```c
-if (shielding) 
+if (shielding)
 {   move_bullets();
     erase_figure(shipx-SCENTER, shipy-SCENTER, shield_def, SHIPHT);
 }
 ```
 
 **Our Implementation** - In `shipMoveBitmap.ts` after ship rendering (line ~715):
+
 ```typescript
 // Draw shield effect if active (Play.c:252-255)
 if (finalState.ship.shielding) {
   // Move bullets handled earlier in the frame
-  
+
   // Draw shield using erase_figure (Play.c:254)
   const shieldSprite = spriteService.getShieldSprite()
   renderedBitmap = eraseFigure({
-    x: finalState.ship.shipx - SCENTER,  // Same position as ship
+    x: finalState.ship.shipx - SCENTER, // Same position as ship
     y: finalState.ship.shipy - SCENTER,
-    def: shieldSprite.bitmap              // shield_def (Figs.c:71)
+    def: shieldSprite.bitmap // shield_def (Figs.c:71)
   })(renderedBitmap)
 }
 ```
@@ -324,6 +340,7 @@ The original game's drawing order is critical for shield functionality (Play.c:2
 3. **Lines 252-255**: If shielding, `move_bullets()` called AFTER ship (bullets destroyed before draw)
 
 Our implementation must maintain this order in `shipMoveBitmap.ts`:
+
 ```typescript
 // Around line 575
 if (!finalState.ship.shielding) {
@@ -356,15 +373,18 @@ From the original source files:
 
 ## State Flow Summary
 
-1. **Shield Activation**: 
+1. **Shield Activation**:
+
    - User presses SPACE → shipControlThunk → shipSlice.setShielding(true)
    - Orchestrator detects activation → triggers fuel cell collection
 
 2. **Bullet Protection**:
+
    - Orchestrator calculates ship global position → passes to moveBullets reducer
    - moveBullets reducer checks shield protection → destroys bullets in shield radius
 
 3. **Self-Hit Feedback**:
+
    - moveShipshots detects self-hit → sets flag → orchestrator activates feedback
 
 4. **Rendering**:

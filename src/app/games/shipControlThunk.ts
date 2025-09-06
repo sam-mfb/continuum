@@ -2,6 +2,7 @@ import type { Action, ThunkAction } from '@reduxjs/toolkit'
 import { shipSlice } from '@/ship/shipSlice'
 import { shotsSlice } from '@/shots/shotsSlice'
 import { ShipControl } from '@/ship/types'
+import { FUELSHIELD } from '@/ship/constants'
 import type { GameState } from './store'
 
 type ControlAction = {
@@ -33,27 +34,18 @@ export const shipControl =
       walls.updatedWalls.length > 0 ? walls.updatedWalls : walls.organizedWalls
     )
 
-    //	if ( (pressed & KEY_SHIELD) && fuel)
-    //	{	shielding = TRUE;
-    //		start_sound(SHLD_SOUND);
-    //		fuel_minus(FUELSHIELD);
-    //		refueling = FALSE;
-    //		for(fp=fuels; fp->x < 10000; fp++)
-    //		{
-    //			xdif = globalx - fp->x;
-    //			ydif = globaly - fp->y;
-    //			if (fp->alive && xyindist(xdif, ydif, FRADIUS))
-    //			{
-    //				fp->alive = FALSE;
-    //				fp->currentfig = FUELFRAMES;
-    //				fuel_minus(-FUELGAIN);	/* wow, a kludge! */
-    //				score_plus(SCOREFUEL);
-    //				start_sound(FUEL_SOUND);
-    //			}
-    //		}
-    //	}
-    //	else
-    //		shielding = FALSE;
+    // Handle shield activation - from Play.c:507-527
+    if (pressed.has(ShipControl.SHIELD) && ship.fuel > 0) {
+      // Activate shield (also stops refueling)
+      dispatch(shipSlice.actions.shieldActivate())
+      // Consume fuel for shielding
+      dispatch(shipSlice.actions.consumeFuel(FUELSHIELD))
+      // Note: Fuel cell collection on shield activation will be handled in orchestrator
+      // TODO: start_sound(SHLD_SOUND)
+    } else {
+      // Deactivate shield when key released or out of fuel
+      dispatch(shipSlice.actions.shieldDeactivate())
+    }
 
     // Handle firing logic - from original shipControl lines 107-132
     /* check for fire */

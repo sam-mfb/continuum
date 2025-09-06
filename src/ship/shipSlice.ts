@@ -1,7 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { ShipState } from './types'
 import { ShipControl } from './types'
-import { SHIP, DEAD_TIME, STARTING_FUEL } from './constants'
+import { SHIP, DEAD_TIME, STARTING_FUEL, FUELGAIN } from './constants'
 
 const initialState: ShipState = {
   shiprot: 0,
@@ -269,6 +269,69 @@ export const shipSlice = createSlice({
     ) => {
       state.startx = action.payload.x
       state.starty = action.payload.y
+    },
+
+    /**
+     * Activate shield
+     * Based on Play.c:508, 511
+     */
+    shieldActivate: state => {
+      state.shielding = true
+      state.refueling = false // Stop refueling when shield is active (Play.c:511)
+    },
+
+    /**
+     * Deactivate shield
+     * Based on Play.c:527
+     */
+    shieldDeactivate: state => {
+      state.shielding = false
+    },
+
+    /**
+     * Start refueling
+     * Based on Play.c refueling logic
+     */
+    refuelingOn: state => {
+      state.refueling = true
+    },
+
+    /**
+     * Stop refueling
+     * Based on Play.c:511
+     */
+    refuelingOff: state => {
+      state.refueling = false
+    },
+
+    /**
+     * Consume fuel (for thrusting or shielding)
+     * Based on fuel_minus() in Play.c
+     */
+    consumeFuel: (state, action: PayloadAction<number>) => {
+      state.fuel = Math.max(0, state.fuel - action.payload)
+      if (state.fuel === 0) {
+        // If out of fuel, can't shield anymore
+        state.shielding = false
+      }
+    },
+
+    /**
+     * Collect fuel cells
+     * Based on fuel_minus(-FUELGAIN) in Play.c:520
+     * @param numCells - Number of fuel cells collected
+     */
+    collectFuel: (state, action: PayloadAction<number>) => {
+      state.fuel += action.payload * FUELGAIN
+    },
+
+    /**
+     * Activate shield feedback for one frame when hit by own bullet
+     * Based on Play.c:790
+     */
+    activateShieldFeedback: state => {
+      state.shielding = true
+      // Note: Will be deactivated next frame unless SHIELD key is held
     }
   }
 })

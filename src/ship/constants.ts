@@ -4,6 +4,13 @@ export const SKILLBRADIUS = 30 // Radius for bunker death blast when ship dies (
 export const SCOREBUNK = 50 // Points for destroying bunker
 export const STARTING_FUEL = 1000 // Fuel on respawn
 
+// Shield-related constants from GW.h
+export const FUELSHIELD = 83 // Fuel consumed per frame while shielding (GW.h:139)
+export const SHRADIUS = 12 // Shield protection radius in pixels (GW.h:77)
+
+// Fuel constants from GW.h
+export const FUELGAIN = 2000 // Amount of fuel gained from cell (GW.h:140)
+
 /* x-direction thrust provided in each direction (y, too, with some work) */
 export const SHIP = {
   thrustx: [
