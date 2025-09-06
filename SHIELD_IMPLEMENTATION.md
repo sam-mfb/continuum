@@ -43,12 +43,11 @@ else
 ```typescript
 // Check for shield control and fuel availability
 if (controlsPressed.includes(ShipControl.SHIELD) && state.ship.fuel > 0) {
-  dispatch(shipSlice.actions.setShielding(true))
+  dispatch(shipSlice.actions.shieldActivate()) // Sets shielding=true, refueling=false
   dispatch(shipSlice.actions.consumeFuel(FUELSHIELD)) // 83 units/frame (GW.h:139)
-  dispatch(shipSlice.actions.setRefueling(false))
-  // Fuel cell collection handled separately (see section 3)
+  // Fuel cell collection handled in same thunk (see section 3)
 } else {
-  dispatch(shipSlice.actions.setShielding(false))
+  dispatch(shipSlice.actions.shieldDeactivate())
 }
 ```
 
@@ -172,55 +171,53 @@ for(fp=fuels; fp->x < 10000; fp++)
 }
 ```
 
-**Our Implementation** - Orchestrated in `shipMoveBitmap.ts`:
+**Our Implementation** - In `shipControlThunk` (immediately after shield activation):
 
 ```typescript
-// After processing ship controls
-const prevShielding = state.ship.shielding
-store.dispatch(shipControl({ controlsPressed, gravity }))
-const newState = store.getState()
+// Inside shipControlThunk, right after shield activation:
+if (pressed.has(ShipControl.SHIELD) && ship.fuel > 0) {
+  dispatch(shipSlice.actions.shieldActivate())
+  dispatch(shipSlice.actions.consumeFuel(FUELSHIELD))
 
-// Check if shield just activated (Play.c:507-508 timing)
-if (!prevShielding && newState.ship.shielding) {
-  // Calculate global ship position
-  const shipGlobalX = newState.screen.screenx + newState.ship.shipx
-  const shipGlobalY = newState.screen.screeny + newState.ship.shipy
-
-  // Check all fuel cells (Play.c:512-524)
+  // Collect fuel cells immediately when shield activates (Play.c:512-524)
   const collectedFuels: number[] = []
+  const globalx = screen.screenx + ship.shipx
+  const globaly = screen.screeny + ship.shipy
 
-  newState.planet.fuels.forEach((fuel, index) => {
+  planet.fuels.forEach((fuel, index) => {
     if (fuel.alive) {
-      const xdif = shipGlobalX - fuel.x
-      const ydif = shipGlobalY - fuel.y
-
-      // FRADIUS check (Play.c:516)
+      const xdif = globalx - fuel.x
+      const ydif = globaly - fuel.y
+      // FRADIUS = 30 (GW.h:138)
       if (xyindist(xdif, ydif, FRADIUS)) {
         collectedFuels.push(index)
       }
     }
   })
 
-  // Dispatch collection actions if any fuel cells found
   if (collectedFuels.length > 0) {
-    // Update planet state (Play.c:518-519)
-    store.dispatch(
-      planetSlice.actions.collectFuelCells({
-        indices: collectedFuels,
-        setCurrentFig: FUELFRAMES // For explosion animation
-      })
-    )
-
-    // Add fuel to ship (Play.c:520)
-    // FUELGAIN = 2000 (assumed from game balance)
-    store.dispatch(shipSlice.actions.addFuel(collectedFuels.length * FUELGAIN))
-
-    // TODO: Add score when implemented (Play.c:521)
-    // store.dispatch(scoreSlice.actions.addScore(SCOREFUEL * collectedFuels.length))
-
-    // TODO: Play sound when implemented (Play.c:522)
-    // playSound(FUEL_SOUND)
+    // Update planet state - mark fuels as dead and start animation
+    dispatch(planetSlice.actions.collectFuelCells(collectedFuels))
+    // Add fuel to ship (collectFuel already multiplies by FUELGAIN internally)
+    dispatch(shipSlice.actions.collectFuel(collectedFuels.length))
+    // TODO: Add score when implemented
+    // TODO: Play FUEL_SOUND
   }
+}
+```
+
+**Required planetSlice action:**
+
+```typescript
+// In planetSlice reducers:
+collectFuelCells: (state, action: PayloadAction<number[]>) => {
+  const indices = action.payload
+  indices.forEach(index => {
+    if (state.fuels[index]) {
+      state.fuels[index].alive = false
+      state.fuels[index].currentfig = FUELFRAMES // Start explosion animation
+    }
+  })
 }
 ```
 
@@ -365,10 +362,11 @@ From the original source files:
 
 - `SHRADIUS = 12` - Shield protection radius in pixels (GW.h:77)
 - `FUELSHIELD = 83` - Fuel consumed per frame while shielding (GW.h:139)
-- `FRADIUS` - Fuel cell collection radius (value TBD from testing)
-- `FUELGAIN = 2000` - Fuel gained per cell (estimated from game balance)
+- `FRADIUS = 30` - Distance from fuel to pick it up (GW.h:138)
+- `FUELGAIN = 2000` - Amount of fuel gained from cell (GW.h:140)
 - `SCENTER = 15` - Half ship width for positioning (GW.h:75)
 - `SHIPHT = 32` - Ship/shield sprite height (GW.h:73)
+- `FUELFRAMES = 8` - Number of animation frames for fuel explosion
 - `SCOREFUEL` - Score for collecting fuel cell (when score implemented)
 
 ## State Flow Summary

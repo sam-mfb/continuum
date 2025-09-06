@@ -1,8 +1,10 @@
 import type { Action, ThunkAction } from '@reduxjs/toolkit'
 import { shipSlice } from '@/ship/shipSlice'
 import { shotsSlice } from '@/shots/shotsSlice'
+import { planetSlice } from '@/planet/planetSlice'
 import { ShipControl } from '@/ship/types'
-import { FUELSHIELD } from '@/ship/constants'
+import { FUELSHIELD, FRADIUS } from '@/ship/constants'
+import { xyindist } from '@/shots/xyindist'
 import type { GameState } from './store'
 
 type ControlAction = {
@@ -40,7 +42,30 @@ export const shipControl =
       dispatch(shipSlice.actions.shieldActivate())
       // Consume fuel for shielding
       dispatch(shipSlice.actions.consumeFuel(FUELSHIELD))
-      // Note: Fuel cell collection on shield activation will be handled in orchestrator
+
+      // Collect fuel cells immediately when shield activates (Play.c:512-524)
+      const collectedFuels: number[] = []
+
+      planet.fuels.forEach((fuel, index) => {
+        if (fuel.alive) {
+          const xdif = globalx - fuel.x
+          const ydif = globaly - fuel.y
+          // FRADIUS = 30 (GW.h:138)
+          if (xyindist(xdif, ydif, FRADIUS)) {
+            collectedFuels.push(index)
+          }
+        }
+      })
+
+      if (collectedFuels.length > 0) {
+        // Update planet state - mark fuels as dead and start animation
+        dispatch(planetSlice.actions.collectFuelCells(collectedFuels))
+        // Add fuel to ship (collectFuel already multiplies by FUELGAIN internally)
+        dispatch(shipSlice.actions.collectFuel(collectedFuels.length))
+        // TODO: Add score when implemented (Play.c:521 - SCOREFUEL)
+        // TODO: Play FUEL_SOUND (Play.c:522)
+      }
+
       // TODO: start_sound(SHLD_SOUND)
     } else {
       // Deactivate shield when key released or out of fuel

@@ -11,7 +11,7 @@ const initialState: ShipState = {
   thrusting: false,
   firing: false,
   bouncing: false,
-  refueling: false,
+  refueling: false, // Note: This variable exists in the original game (Play.c:72) but was never actually used (always FALSE)
   shielding: false,
   dx: 0,
   dy: 0,

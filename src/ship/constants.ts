@@ -10,6 +10,7 @@ export const SHRADIUS = 12 // Shield protection radius in pixels (GW.h:77)
 
 // Fuel constants from GW.h
 export const FUELGAIN = 2000 // Amount of fuel gained from cell (GW.h:140)
+export const FRADIUS = 30 // Distance from fuel to pick it up (GW.h:138)
 
 /* x-direction thrust provided in each direction (y, too, with some work) */
 export const SHIP = {
