@@ -1,10 +1,10 @@
 import { type MonochromeBitmap } from '@lib/bitmap'
-import { SCRWTH, VIEWHT } from '@core/screen/constants'
+import { SCRWTH, VIEWHT } from '@core/screen'
 import { FUELHT, FUELFRAMES } from '@core/figs/types'
 import type { Fuel } from '../types'
 import { FUELCENTER } from '../constants'
 import { drawMedium } from './drawMedium'
-import { getAlignment } from '@core/shared/alignment'
+import { getAlignment } from '@core/shared'
 
 /**
  * From draw_fuels() in orig/Sources/Terrain.c at 293-313

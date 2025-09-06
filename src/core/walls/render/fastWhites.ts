@@ -5,7 +5,7 @@
 import type { MonochromeBitmap, WhiteRec } from '../types'
 import { whiteWallPiece } from './whiteWallPiece'
 import { eorWallPiece } from './eorWallPiece'
-import { getAlignment } from '@core/shared/alignment'
+import { getAlignment } from '@core/shared'
 
 // Constants from the original assembly code
 const SCREEN_MARGIN = 15 // Pixels to check left of screen for whites that extend into view

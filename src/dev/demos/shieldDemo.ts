@@ -6,16 +6,16 @@
  */
 
 import type { BitmapRenderer } from '@lib/bitmap'
-import { fullFigure } from '@core/ship/render/fullFigure'
-import { eraseFigure } from '@core/ship/render/eraseFigure'
-import { grayFigure } from '@core/ship/render/grayFigure'
-import { shiftFigure } from '@core/ship/render/shiftFigure'
-import type { SpriteServiceV2 } from '@core/sprites/service'
+import { fullFigure } from '@core/ship'
+import { eraseFigure } from '@core/ship'
+import { grayFigure } from '@core/ship'
+import { shiftFigure } from '@core/ship'
+import type { SpriteServiceV2 } from '@core/sprites'
 import { SCENTER } from '@core/figs/types'
-import { SCRWTH, VIEWHT } from '@core/screen/constants'
-import { viewClear } from '@core/screen/render'
-import { getAlignment } from '@core/shared/alignment'
-import { getBackgroundPattern } from '@core/shared/backgroundPattern'
+import { SCRWTH, VIEWHT } from '@core/screen'
+import { viewClear } from '@core/screen'
+import { getAlignment } from '@core/shared'
+import { getBackgroundPattern } from '@core/shared'
 
 // Ship position (center of screen)
 const SHIP_X = SCRWTH / 2

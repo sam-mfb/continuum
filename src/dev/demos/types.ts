@@ -1,10 +1,10 @@
 import type { BitmapRenderer } from '@lib/bitmap'
-import type { PlanetState } from '@core/planet/types'
-import type { WallsState } from '@core/walls/types'
-import type { GameViewState } from '@dev/store/gameViewSlice'
-import type { ScreenState } from '@core/screen/types'
-import type { AppDispatch } from '@dev/store/store'
-import type { SpriteServiceV2 } from '@core/sprites/service'
+import type { PlanetState } from '@core/planet'
+import type { WallsState } from '@core/walls'
+import type { GameViewState } from '@dev/store'
+import type { ScreenState } from '@core/screen'
+import type { AppDispatch } from '@dev/store'
+import type { SpriteServiceV2 } from '@core/sprites'
 
 /**
  * Narrow store interface for game renderers.

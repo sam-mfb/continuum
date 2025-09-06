@@ -3,6 +3,7 @@
 Recreates the original Continuum sound system using Web Audio API. Manages real-time audio generation, sound effects, and maintains compatibility with the original 1986 Mac audio characteristics.
 
 ## Key Files
+
 - `soundSlice.ts` - Redux slice for sound state management
 - `soundManager.ts` - Top-level sound system interface
 - `soundEngine.ts` - Central coordinator for audio pipeline
@@ -11,4 +12,5 @@ Recreates the original Continuum sound system using Web Audio API. Manages real-
 - `generators/` - Individual sound effect generators (thruster, explosions, etc.)
 
 ## Original Source
+
 Based on original sound system from `orig/Sources/Sound.c` and Mac Sound Driver implementation.

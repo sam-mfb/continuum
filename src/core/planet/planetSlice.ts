@@ -3,8 +3,8 @@ import type { PlanetState } from './types'
 import { BunkerKind } from './types'
 import { BUNKROTKINDS, FUELFRAMES } from '@core/figs/types'
 import { PLANET } from './constants'
-import { aimBunk } from '@core/shots/aimBunk'
-import { rint } from '@core/shared/rint'
+import { aimBunk } from '@core/shots'
+import { rint } from '@core/shared'
 
 // Constants from GW.h
 const BUNKFRAMES = 8

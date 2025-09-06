@@ -4,7 +4,7 @@
 
 import { createRegisters, type AsmRegisters } from './registers'
 import { createInstructionSet, type InstructionSet } from './instructions'
-import type { DeepPartial } from '@core/shared/types'
+import type { DeepPartial } from '@core/shared'
 
 /**
  * 68K assembler emulator context

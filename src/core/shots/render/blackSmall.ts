@@ -1,6 +1,6 @@
 import { cloneBitmap, type MonochromeBitmap } from '@lib/bitmap'
-import { SBARHT } from '@core/screen/constants'
-import { build68kArch } from '@lib/asm/emulator'
+import { SBARHT } from '@core/screen'
+import { build68kArch } from '@lib/asm'
 import { findBAddress } from '@lib/asm/assemblyMacros'
 
 /**

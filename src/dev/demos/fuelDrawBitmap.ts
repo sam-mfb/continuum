@@ -8,22 +8,19 @@
  */
 
 import type { BitmapRenderer } from '@lib/bitmap'
-import { drawFuels } from '@core/planet/render/drawFuels'
+import { drawFuels } from '@core/planet'
 import { configureStore } from '@reduxjs/toolkit'
-import planetReducer, {
-  loadPlanet,
-  updateFuelAnimations
-} from '@core/planet/planetSlice'
-import type { Fuel, PlanetState } from '@core/planet/types'
+import { planetSlice, loadPlanet, updateFuelAnimations } from '@core/planet'
+import type { Fuel, PlanetState } from '@core/planet'
 import { isOnRightSide } from '@core/shared/viewport'
 import { FUELFRAMES } from '@core/figs/types'
-import type { SpriteServiceV2 } from '@core/sprites/service'
-import { viewClear } from '@core/screen/render'
+import type { SpriteServiceV2 } from '@core/sprites'
+import { viewClear } from '@core/screen'
 
 // Create store with planet slice
 const store = configureStore({
   reducer: {
-    planet: planetReducer
+    planet: planetSlice.reducer
   }
 })
 

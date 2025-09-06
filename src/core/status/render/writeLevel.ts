@@ -7,8 +7,8 @@
 
 import { type MonochromeBitmap } from '@lib/bitmap'
 import { writeInt } from './writeInt'
-import { LEVEL_X, LEVEL_Y } from '@core/status/constants'
-import type { SpriteServiceV2 } from '@core/sprites/service'
+import { LEVEL_X, LEVEL_Y } from '@core/status'
+import type { SpriteServiceV2 } from '@core/sprites'
 
 /**
  * Writes the level number at its fixed position on the status bar.

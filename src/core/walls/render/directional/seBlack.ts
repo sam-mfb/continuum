@@ -6,11 +6,11 @@
 import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
 import { drawNeline } from '../lines/drawNeline'
-import { build68kArch } from '@lib/asm/emulator'
+import { build68kArch } from '@lib/asm'
 import { findWAddress } from '@lib/asm/assemblyMacros'
 import { LINE_DIR } from '../../../shared/types/line'
-import { getAlignment } from '@core/shared/alignment'
-import { getBackgroundPattern } from '@core/shared/backgroundPattern'
+import { getAlignment } from '@core/shared'
+import { getBackgroundPattern } from '@core/shared'
 
 // Masks from orig/Sources/Walls.c:861-862
 const SE_MASK = 0xf8000000

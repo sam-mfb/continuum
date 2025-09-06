@@ -1,12 +1,12 @@
 import type { MonochromeBitmap } from '@lib/bitmap'
 import { cloneBitmap } from '@lib/bitmap'
-import { SCRWTH, VIEWHT } from '@core/screen/constants'
+import { SCRWTH, VIEWHT } from '@core/screen'
 import type { ExplosionsState } from '../types'
 import { SHARDHT, NUMSHARDS, NUMSPARKS } from '../constants'
 import { drawShard } from './drawShard'
 import { drawSparkSafe } from './drawSparkSafe'
 import type { ShardSpriteSet } from '@core/figs/types'
-import { getAlignment } from '@core/shared/alignment'
+import { getAlignment } from '@core/shared'
 
 /**
  * Render all active explosions (shards and sparks)

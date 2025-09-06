@@ -1,7 +1,9 @@
 # Source Code Reorganization Plan
 
 ## Overview
+
 Restructure the src/ directory to create clear separation between:
+
 - Core game implementation (direct ports from original)
 - Helper libraries (modern utilities)
 - Development tools app
@@ -59,14 +61,16 @@ src/
 ## Reorganization Phases
 
 ### Phase 1: Create New Directory Structure
+
 1. Create core/, lib/, dev/, and game/ directories
 2. Create subdirectories within each
 3. No file moves yet - just directory creation
 
 ### Phase 2: Move Core Game Modules
+
 1. Move game logic directories to core/:
    - ship/ → core/ship/ (including physics functions)
-   - collision/* → core/ship/ (merge collision functions into ship)
+   - collision/\* → core/ship/ (merge collision functions into ship)
    - planet/ → core/planet/
    - shots/ → core/shots/
    - walls/ → core/walls/
@@ -80,24 +84,29 @@ src/
    - shared/ → core/shared/
 
 ### Phase 3: Move Helper Libraries
+
 1. Move asm/ → lib/asm/
 2. Move bitmap/ → lib/bitmap/
 
 ### Phase 4: Reorganize Dev App
+
 1. Move app/ contents to dev/:
+
    - app/App.tsx → dev/App.tsx
    - app/App.css → dev/App.css (rename to index.css)
    - app/components/ → dev/components/
    - app/games/ → dev/demos/
-   - app/draw*.ts → dev/draw/
+   - app/draw\*.ts → dev/draw/
    - app/getBunkerAngles.ts → dev/draw/
 
 2. Move dev-specific assets:
+
    - art/ → dev/art/
    - file/ → dev/file/
    - assets/ → distribute contents then delete
 
 3. Move dev-specific store files:
+
    - store/ → dev/store/
    - Move app/games/store.ts → dev/store/gameStore.ts
    - Move app/games/containmentMiddleware.ts → dev/store/
@@ -109,6 +118,7 @@ src/
    - Move components/SoundTestPanel.tsx → dev/components/
 
 ### Phase 5: Setup Game App Structure
+
 1. Create minimal game app structure:
    - Create game/index.html
    - Create game/main.tsx (minimal entry)
@@ -116,6 +126,7 @@ src/
    - Create game/index.css (empty for now)
 
 ### Phase 6: Update Build Configuration
+
 1. Update vite.config.ts for multi-app setup
 2. Update package.json scripts:
    - `npm run dev` → serves dev/index.html
@@ -124,41 +135,48 @@ src/
    - `npm run build:game` → builds game app
 
 ### Phase 7: Update Import Paths
+
 1. Update all imports to reflect new structure
 2. Use path aliases:
-   - @core/* → src/core/*
-   - @lib/* → src/lib/*
-   - @dev/* → src/dev/*
+   - @core/_ → src/core/_
+   - @lib/_ → src/lib/_
+   - @dev/_ → src/dev/_
 3. Run typecheck and fix any issues
 
 ### Phase 8: Test & Verify
+
 1. Verify dev app runs correctly
 2. Run all tests and fix paths
 3. Ensure lint and typecheck pass
 4. Create simple test for game app entry
 
 ### Phase 9: Cleanup
+
 1. Remove old empty directories
 2. Update .gitignore if needed
 3. Update CLAUDE.md with new structure
 4. Commit changes
 
 ### Phase 10: Documentation
+
 Create README files at each level to explain the organizational structure:
 
 1. **src/README.md** - Overall organization explaining the four main directories
+
    - core/ - Direct ports from original game
    - lib/ - Modern helper libraries
    - dev/ - Development tools application
    - game/ - Production game application
 
 2. **Second level READMEs:**
+
    - core/README.md - Explains game modules organization
    - lib/README.md - Describes helper libraries
    - dev/README.md - Development app structure
    - game/README.md - Game app structure
 
 3. **Third level READMEs (core modules):**
+
    - core/ship/README.md - Ship control, physics, and collision detection
    - core/planet/README.md - Planet generation and management
    - core/shots/README.md - Projectile system
@@ -173,6 +191,7 @@ Create README files at each level to explain the organizational structure:
    - core/shared/README.md - Shared utilities
 
 4. **Third level READMEs (lib):**
+
    - lib/asm/README.md - 68K assembly emulator for ported code
    - lib/bitmap/README.md - Monochrome bitmap rendering system
 

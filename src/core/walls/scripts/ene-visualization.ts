@@ -12,7 +12,7 @@ import { LINE_KIND, NEW_TYPE } from '../types'
 import { createWall } from '../unpack'
 import { initWalls } from '../init'
 import { whiteTerrain, blackTerrain } from '../render'
-import { SBARHT } from '@core/screen/constants'
+import { SBARHT } from '@core/screen'
 
 const main = (): void => {
   // 1. Define the single line to be rendered using createWall.

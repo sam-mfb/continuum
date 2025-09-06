@@ -4,7 +4,7 @@
  */
 
 import type { ShotRec } from './types'
-import type { LineRec } from '@core/shared/types/line'
+import type { LineRec } from '@core/shared'
 import { BOUNCE_VECS } from './constants'
 import { setLife } from './setLife'
 import { idiv } from './integerMath'

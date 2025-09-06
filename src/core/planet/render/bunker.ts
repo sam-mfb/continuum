@@ -1,16 +1,16 @@
 import { cloneBitmap, type MonochromeBitmap } from '@lib/bitmap'
-import { SBARHT, SCRWTH, VIEWHT } from '@core/screen/constants'
+import { SBARHT, SCRWTH, VIEWHT } from '@core/screen'
 import {
   BUNKHT,
   BUNKROTKINDS,
   type BunkerSprite,
   type BunkerKind
 } from '@core/figs/types'
-import { build68kArch } from '@lib/asm/emulator'
+import { build68kArch } from '@lib/asm'
 import { jsrWAddress } from '@lib/asm/assemblyMacros'
 import type { Bunker } from '../types'
 import { xbcenter, ybcenter } from '../constants'
-import { getAlignment } from '@core/shared/alignment'
+import { getAlignment } from '@core/shared'
 
 /**
  * From do_bunks() in orig/Sources/Bunkers.c at 213-245

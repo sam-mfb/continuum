@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import { store } from '@dev/store/store'
+import { store } from '@dev/store'
 import { SoundType } from '../constants'
 import { setVolume, toggleSound } from '../soundSlice'
 

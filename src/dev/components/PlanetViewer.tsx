@@ -7,7 +7,7 @@ import { drawFuels } from '../draw/drawFuels'
 import { drawCraters } from '../draw/drawCraters'
 import { drawShip } from '../draw/drawShip'
 import { PlanetGameViewer } from './PlanetGameViewer'
-import type { SpriteServiceV2 } from '@core/sprites/service'
+import type { SpriteServiceV2 } from '@core/sprites'
 
 type PlanetViewerProps = {
   spriteService: SpriteServiceV2

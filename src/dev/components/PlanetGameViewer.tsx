@@ -1,14 +1,18 @@
 import { useEffect, useRef, useState, type JSX } from 'react'
 import { useAppSelector, useAppDispatch, store } from '../store/store'
-import { createMonochromeBitmap, clearBitmap, bitmapToCanvas } from '@lib/bitmap'
+import {
+  createMonochromeBitmap,
+  clearBitmap,
+  bitmapToCanvas
+} from '@lib/bitmap'
 import { createPlanetRenderer } from '../demos/planetRendererFactory'
-import { wallsActions } from '@core/walls/wallsSlice'
+import { wallsActions } from '@core/walls'
 import { gameViewActions } from '../store/gameViewSlice'
-import { screenSlice } from '@core/screen/screenSlice'
-import type { PlanetState } from '@core/planet/types'
+import { screenSlice } from '@core/screen'
+import type { PlanetState } from '@core/planet'
 import type { BitmapRenderer, MonochromeBitmap } from '@lib/bitmap'
 import type { GameRendererStore } from '../demos/types'
-import type { SpriteServiceV2 } from '@core/sprites/service'
+import type { SpriteServiceV2 } from '@core/sprites'
 
 type PlanetGameViewerProps = {
   spriteService: SpriteServiceV2

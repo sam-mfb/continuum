@@ -1,5 +1,5 @@
 import type { Alignment } from './alignment'
-import { BACKGROUND_PATTERNS } from '@core/screen/constants'
+import { BACKGROUND_PATTERNS } from '@core/screen'
 
 // Re-export from screen constants for convenience
 export { BACKGROUND_PATTERNS }

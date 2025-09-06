@@ -9,16 +9,21 @@ The actual playable Continuum game. This is a standalone React application separ
 ## Structure
 
 ### `App.tsx` & `main.tsx`
+
 Application entry points for the game.
 
 ### `index.html`
+
 HTML entry point for the game app.
 
 ### `index.css`
+
 Game-specific styles (completely separate from dev app styles).
 
 ### `components/`
+
 Game UI components (to be implemented):
+
 - Main game canvas
 - Menu system
 - HUD overlay

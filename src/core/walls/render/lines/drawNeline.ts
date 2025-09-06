@@ -4,7 +4,7 @@
  */
 
 import type { MonochromeBitmap } from '../../types'
-import { build68kArch } from '@lib/asm/emulator'
+import { build68kArch } from '@lib/asm'
 import { jsrBAddress } from '@lib/asm/assemblyMacros'
 import { SCRWTH } from '../../../screen/constants'
 

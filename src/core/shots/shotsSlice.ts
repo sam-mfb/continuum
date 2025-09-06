@@ -1,8 +1,8 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { ShotRec, ShotsState } from './types'
 import { SHOT, NUMSTRAFES, STRAFE_LIFE } from './constants'
-import type { Bunker } from '@core/planet/types'
-import type { LineRec } from '@core/shared/types/line'
+import type { Bunker } from '@core/planet'
+import type { LineRec } from '@core/shared'
 import { bunkShoot as bunkShootFn } from './bunkShoot'
 import { setLife } from './setLife'
 import { bounceShot as bounceShotFunc } from './bounceShot'
@@ -11,7 +11,7 @@ import { checkBunkerCollision } from './checkBunkerCollision'
 import { checkShipCollision } from './checkShipCollision'
 import { startStrafe as startStrafeFunc } from './startStrafe'
 import { xyindistance } from './xyindistance'
-import { SHRADIUS } from '@core/ship/constants'
+import { SHRADIUS } from '@core/ship'
 
 /**
  * Shot Lifecycle Architecture Note:

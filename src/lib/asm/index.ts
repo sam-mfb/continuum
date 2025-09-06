@@ -1,10 +1,12 @@
 /**
- * @fileoverview 68K assembler emulator exports
+ * @fileoverview ASM module - 68K assembly emulation utilities
  */
 
+// Core emulator functions
 export { build68kArch } from './emulator'
-export type { Asm68k } from './emulator'
-export type { AsmRegisters } from './registers'
-export type { InstructionSet } from './instructions'
-export { createRegisters } from './registers'
-export { createInstructionSet } from './instructions'
+
+// BigEnd utilities
+export { createBigEnd } from './bigEnd'
+
+// Assembly macros
+export * from './assemblyMacros'

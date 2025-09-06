@@ -7,8 +7,8 @@
  */
 
 import type { MonochromeBitmap } from '@lib/bitmap'
-import { SCRWTH, VIEWHT } from '@core/screen/constants'
-import { rint } from '@core/shared/rint'
+import { SCRWTH, VIEWHT } from '@core/screen'
+import { rint } from '@core/shared'
 import { setScreen } from './setScreen'
 import { clearPoint } from './clearPoint'
 

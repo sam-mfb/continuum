@@ -4,16 +4,16 @@
 // Lookup tables from: Play.c:46-47 (xlength, ylength arrays)
 // Constants from: GW.h (PLANSIZE=1540, PLANHEAD=30, NUMLINES=125, etc.)
 
-import { createBigEnd } from '@lib/asm/bigEnd'
-import type { Bunker, Crater, Fuel, PlanetState } from '@core/planet/types'
+import { createBigEnd } from '@lib/asm'
+import type { Bunker, Crater, Fuel, PlanetState } from '@core/planet'
 import type {
   LineRec,
   LineDir,
   LineType,
   LineKind,
   NewType
-} from '@core/shared/types/line'
-import { generateLineId } from '@core/shared/types/line'
+} from '@core/shared'
+import { generateLineId } from '@core/shared'
 
 export function parsePlanet(
   planetsBuffer: ArrayBuffer,

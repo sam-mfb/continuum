@@ -7,7 +7,7 @@ import { VIEWHT, SCRWTH, SBARHT, SCRHT } from '../../../screen/constants'
 import { drawEline } from '../lines/drawEline'
 import { jsrWAddress } from '@lib/asm/assemblyMacros'
 import { LINE_DIR } from '../../../shared/types/line'
-import { build68kArch } from '@lib/asm/emulator'
+import { build68kArch } from '@lib/asm'
 
 /**
  * Draws black parts of eastward lines

@@ -7,8 +7,8 @@
 
 import { type MonochromeBitmap } from '@lib/bitmap'
 import { writeStr } from './writeStr'
-import { MESSAGE_X, MESSAGE_Y } from '@core/status/constants'
-import type { SpriteServiceV2 } from '@core/sprites/service'
+import { MESSAGE_X, MESSAGE_Y } from '@core/status'
+import type { SpriteServiceV2 } from '@core/sprites'
 
 /**
  * Writes a text message at the message area of the status bar.

@@ -7,7 +7,7 @@
  */
 
 import { cloneBitmap, type MonochromeBitmap } from '@lib/bitmap'
-import { SBARHT } from '@core/screen/constants'
+import { SBARHT } from '@core/screen'
 import { jsrWAddress } from '@lib/asm/assemblyMacros'
 
 /**

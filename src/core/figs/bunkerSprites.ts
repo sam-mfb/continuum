@@ -1,8 +1,8 @@
 import type { BunkerSprite, BunkerSpriteSet } from './types'
 import { BunkerKind, BUNKROTKINDS, BUNKER_ROTATIONS, BUNKHT } from './types'
 import { rotateBunker90CW } from './rotate'
-import { getBackgroundPattern } from '@core/shared/backgroundPattern'
-import type { Alignment } from '@core/shared/alignment'
+import { getBackgroundPattern } from '@core/shared'
+import type { Alignment } from '@core/shared'
 
 // Create a bunker sprite set from extracted arrays
 export function createBunkerSpriteSet(

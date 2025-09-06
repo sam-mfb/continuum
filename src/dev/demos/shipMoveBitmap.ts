@@ -7,11 +7,11 @@
  */
 
 import type { BitmapRenderer } from '@lib/bitmap'
-import { fullFigure } from '@core/ship/render/fullFigure'
-import { drawShipShot } from '@core/shots/render/drawShipShot'
-import { drawStrafe } from '@core/shots/render/drawStrafe'
-import { drawDotSafe } from '@core/shots/render/drawDotSafe'
-import { shipSlice } from '@core/ship/shipSlice'
+import { fullFigure } from '@core/ship'
+import { drawShipShot } from '@core/shots'
+import { drawStrafe } from '@core/shots'
+import { drawDotSafe } from '@core/shots'
+import { shipSlice } from '@core/ship'
 import {
   planetSlice,
   updateBunkerRotations,
@@ -19,8 +19,8 @@ import {
   initializeFuels,
   updateFuelAnimations,
   killBunker
-} from '@core/planet/planetSlice'
-import { screenSlice } from '@core/screen/screenSlice'
+} from '@core/planet'
+import { screenSlice } from '@core/screen'
 import {
   shotsSlice,
   clearAllShots,
@@ -28,31 +28,31 @@ import {
   bunkShoot,
   moveBullets,
   clearBunkShots
-} from '@core/shots/shotsSlice'
-import { ShipControl } from '@core/ship/types'
+} from '@core/shots'
+import { ShipControl } from '@core/ship'
 import { shipControl } from './shipControlThunk'
-import { buildGameStore } from '@dev/store/gameStore'
-import { SCRWTH, VIEWHT, TOPMARG, BOTMARG } from '@core/screen/constants'
-import type { SpriteServiceV2 } from '@core/sprites/service'
+import { buildGameStore } from '@dev/store'
+import { SCRWTH, VIEWHT, TOPMARG, BOTMARG } from '@core/screen'
+import type { SpriteServiceV2 } from '@core/sprites'
 import { SCENTER, type BunkerKind } from '@core/figs/types'
-import { flameOn } from '@core/ship/render/flameOn'
-import { grayFigure } from '@core/ship/render/grayFigure'
-import { eraseFigure } from '@core/ship/render/eraseFigure'
-import { getAlignment } from '@core/shared/alignment'
-import { getBackgroundPattern } from '@core/shared/backgroundPattern'
-import { shiftFigure } from '@core/ship/render/shiftFigure'
-import { whiteTerrain, blackTerrain } from '@core/walls/render'
-import { wallsSlice } from '@core/walls/wallsSlice'
-import { viewClear, viewWhite } from '@core/screen/render'
-import { LINE_KIND } from '@core/walls/types'
-import { updateSbar, sbarClear } from '@core/status/render'
-import { statusSlice } from '@core/status/statusSlice'
-import { checkFigure } from '@core/ship/checkFigure'
-import { checkForBounce } from '@core/ship/physics/checkForBounce'
-import { doBunks } from '@core/planet/render/bunker'
-import { drawCraters } from '@core/planet/render/drawCraters'
-import { drawFuels } from '@core/planet/render/drawFuels'
-import { rint } from '@core/shared/rint'
+import { flameOn } from '@core/ship'
+import { grayFigure } from '@core/ship'
+import { eraseFigure } from '@core/ship'
+import { getAlignment } from '@core/shared'
+import { getBackgroundPattern } from '@core/shared'
+import { shiftFigure } from '@core/ship'
+import { whiteTerrain, blackTerrain } from '@core/walls'
+import { wallsSlice } from '@core/walls'
+import { viewClear, viewWhite } from '@core/screen'
+import { LINE_KIND } from '@core/walls'
+import { updateSbar, sbarClear } from '@core/status'
+import { statusSlice } from '@core/status'
+import { checkFigure } from '@core/ship'
+import { checkForBounce } from '@core/ship'
+import { doBunks } from '@core/planet'
+import { drawCraters } from '@core/planet'
+import { drawFuels } from '@core/planet'
+import { rint } from '@core/shared'
 import {
   startShipDeath,
   startExplosion,
@@ -60,12 +60,12 @@ import {
   clearShipDeathFlash,
   resetSparksAlive,
   clearShards
-} from '@core/explosions/explosionsSlice'
-import { drawExplosions } from '@core/explosions/render/drawExplosions'
+} from '@core/explosions'
+import { drawExplosions } from '@core/explosions'
 import type { ShardSprite, ShardSpriteSet } from '@core/figs/types'
-import { SKILLBRADIUS } from '@core/ship/constants'
-import { xyindist } from '@core/shots/xyindist'
-import { legalAngle } from '@core/planet/legalAngle'
+import { SKILLBRADIUS } from '@core/ship'
+import { xyindist } from '@core/shots'
+import { legalAngle } from '@core/planet'
 
 // Configure store with all slices and containment middleware
 const store = buildGameStore({})

@@ -6,7 +6,7 @@
  */
 
 import { cloneBitmap, type MonochromeBitmap } from '@lib/bitmap'
-import { SBARSIZE, VIEWSIZE } from '@core/screen/constants'
+import { SBARSIZE, VIEWSIZE } from '@core/screen'
 
 /**
  * Fills the view area with a solid color.

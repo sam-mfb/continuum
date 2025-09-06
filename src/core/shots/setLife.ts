@@ -1,5 +1,5 @@
 import type { ShotRec } from './types'
-import type { LineRec } from '@core/shared/types/line'
+import type { LineRec } from '@core/shared'
 import { getLife } from './getLife'
 
 /**

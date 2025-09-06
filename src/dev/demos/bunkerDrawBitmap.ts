@@ -7,33 +7,30 @@
  */
 
 import type { BitmapRenderer } from '@lib/bitmap'
-import { doBunks } from '@core/planet/render/bunker'
+import { doBunks } from '@core/planet'
 import { configureStore } from '@reduxjs/toolkit'
-import type { SpriteServiceV2 } from '@core/sprites/service'
-import planetReducer, {
+import type { SpriteServiceV2 } from '@core/sprites'
+import {
+  planetSlice,
   loadPlanet,
   updateBunkerRotations,
   initializeBunkers
-} from '@core/planet/planetSlice'
-import shotsReducer, {
-  bunkShoot,
-  moveBullets,
-  doStrafes
-} from '@core/shots/shotsSlice'
+} from '@core/planet'
+import { shotsSlice, bunkShoot, moveBullets, doStrafes } from '@core/shots'
 import { BunkerKind } from '@core/figs/types'
-import type { Bunker, PlanetState } from '@core/planet/types'
-import { drawDotSafe } from '@core/shots/render/drawDotSafe'
-import { drawStrafe } from '@core/shots/render/drawStrafe'
-import { rint } from '@core/shared/rint'
-import { SBARHT } from '@core/screen/constants'
+import type { Bunker, PlanetState } from '@core/planet'
+import { drawDotSafe } from '@core/shots'
+import { drawStrafe } from '@core/shots'
+import { rint } from '@core/shared'
+import { SBARHT } from '@core/screen'
 import { isOnRightSide } from '@core/shared/viewport'
-import { viewClear } from '@core/screen/render'
+import { viewClear } from '@core/screen'
 
 // Create store with planet and shots slices
 const store = configureStore({
   reducer: {
-    planet: planetReducer,
-    shots: shotsReducer
+    planet: planetSlice.reducer,
+    shots: shotsSlice.reducer
   }
 })
 

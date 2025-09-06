@@ -1,7 +1,7 @@
 import type { ShardSprite, ShardSpriteSet } from './types'
 import { SHARDKINDS, SHARDHT } from './types'
-import { getBackgroundPattern } from '@core/shared/backgroundPattern'
-import type { Alignment } from '@core/shared/alignment'
+import { getBackgroundPattern } from '@core/shared'
+import type { Alignment } from '@core/shared'
 
 // Create a shard sprite set from extracted arrays
 export function createShardSpriteSet(

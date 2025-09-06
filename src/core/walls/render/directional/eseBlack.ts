@@ -5,11 +5,11 @@
 
 import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
-import { build68kArch } from '@lib/asm/emulator'
+import { build68kArch } from '@lib/asm'
 import { jsrWAddress } from '@lib/asm/assemblyMacros'
 import { drawEseline } from '../lines/drawEseline'
-import { getAlignment } from '@core/shared/alignment'
-import { getBackgroundPattern } from '@core/shared/backgroundPattern'
+import { getAlignment } from '@core/shared'
+import { getBackgroundPattern } from '@core/shared'
 
 // Masks from orig/Sources/Walls.c:728-729
 const ESE_MASK = 0xfc000000

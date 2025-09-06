@@ -7,7 +7,7 @@ import {
   SHIPHT,
   VIEWHT,
   SCRWTH
-} from '@core/screen/constants'
+} from '@core/screen'
 
 export type ContainmentResult = {
   shipx: number

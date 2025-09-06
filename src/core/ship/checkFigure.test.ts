@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { checkFigure } from './checkFigure'
 import type { MonochromeBitmap } from '@lib/bitmap'
 import { createMonochromeBitmap } from '@lib/bitmap/create'
-import { SBARHT } from '@core/screen/constants'
+import { SBARHT } from '@core/screen'
 
 // Helper to create a 32-pixel wide mask with specific bit patterns
 // IMPORTANT: Sprite bit N maps to screen pixel position (31 - N)

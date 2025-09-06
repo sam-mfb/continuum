@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
 import { store } from './store/store'
-import { createSpriteServiceV2 } from '@core/sprites/service'
+import { createSpriteServiceV2 } from '@core/sprites'
 import App from './App'
 import './index.css'
 

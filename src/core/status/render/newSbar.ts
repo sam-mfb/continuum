@@ -13,7 +13,7 @@ import { writeLevel } from './writeLevel'
 import { writeScore } from './writeScore'
 import { writeFuel } from './writeFuel'
 import { writeBonus } from './writeBonus'
-import type { SpriteServiceV2 } from '@core/sprites/service'
+import type { SpriteServiceV2 } from '@core/sprites'
 
 /**
  * Performs a complete redraw of the status bar.

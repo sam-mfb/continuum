@@ -1,11 +1,11 @@
 import type { Action, ThunkAction } from '@reduxjs/toolkit'
-import { shipSlice } from '@core/ship/shipSlice'
-import { shotsSlice } from '@core/shots/shotsSlice'
-import { planetSlice } from '@core/planet/planetSlice'
-import { ShipControl } from '@core/ship/types'
-import { FUELSHIELD, FRADIUS } from '@core/ship/constants'
-import { xyindist } from '@core/shots/xyindist'
-import type { GameState } from '@dev/store/gameStore'
+import { shipSlice } from '@core/ship'
+import { shotsSlice } from '@core/shots'
+import { planetSlice } from '@core/planet'
+import { ShipControl } from '@core/ship'
+import { FUELSHIELD, FRADIUS } from '@core/ship'
+import { xyindist } from '@core/shots'
+import type { GameState } from '@dev/store'
 
 type ControlAction = {
   controlsPressed: ShipControl[]

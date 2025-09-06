@@ -1,9 +1,9 @@
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
-import type { GalaxyHeader } from '@core/galaxy/types'
-import { Galaxy } from '@core/galaxy/methods'
-import { parsePlanet } from '@core/planet/parsePlanet'
-import type { PlanetState } from '@core/planet/types'
+import type { GalaxyHeader } from '@core/galaxy'
+import { Galaxy } from '@core/galaxy'
+import { parsePlanet } from '@core/planet'
+import type { PlanetState } from '@core/planet'
 
 type GalaxyState = {
   loadedGalaxy: GalaxyHeader | null

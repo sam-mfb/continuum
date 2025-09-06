@@ -7,8 +7,8 @@
 
 import { type MonochromeBitmap } from '@lib/bitmap'
 import { writeLong } from './writeLong'
-import { SCORE_Y, SCORE_X_NORMAL, SCORE_X_LARGE } from '@core/status/constants'
-import type { SpriteServiceV2 } from '@core/sprites/service'
+import { SCORE_Y, SCORE_X_NORMAL, SCORE_X_LARGE } from '@core/status'
+import type { SpriteServiceV2 } from '@core/sprites'
 
 /**
  * Writes the score value at a position that varies based on magnitude.

@@ -7,7 +7,7 @@
  */
 
 import { cloneBitmap, type MonochromeBitmap } from '@lib/bitmap'
-import { SBARSIZE } from '@core/screen/constants'
+import { SBARSIZE } from '@core/screen'
 
 /**
  * Restores the status bar from a clean template.

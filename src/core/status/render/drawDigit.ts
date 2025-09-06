@@ -7,7 +7,7 @@
  */
 
 import { cloneBitmap, type MonochromeBitmap } from '@lib/bitmap'
-import { DIGHEIGHT } from '@core/status/constants'
+import { DIGHEIGHT } from '@core/status'
 
 /**
  * Draws a single digit or character on the status bar.

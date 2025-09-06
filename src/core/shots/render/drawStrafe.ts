@@ -1,7 +1,7 @@
 import { type MonochromeBitmap } from '@lib/bitmap'
 import { blackSmall } from './blackSmall'
 import { strafeDefs } from '@core/figs/hardcodedSprites'
-import { VIEWHT, SCRWTH } from '@core/screen/constants'
+import { VIEWHT, SCRWTH } from '@core/screen'
 
 // Constants from orig/Sources/GW.h:122-123
 const STRAFEHT = 8 // height of a strafe

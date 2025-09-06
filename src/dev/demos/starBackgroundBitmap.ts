@@ -12,12 +12,15 @@
  */
 
 import type { BitmapRenderer } from '@lib/bitmap'
-import { viewClear } from '@core/screen/render'
+import { viewClear } from '@core/screen'
 import { starBackground } from '@core/screen/render/starBackground'
-import { createFizzTransition, type FizzTransition } from '@core/screen/render/fizz'
-import { fullFigure } from '@core/ship/render/fullFigure'
-import { SCRWTH, VIEWHT } from '@core/screen/constants'
-import type { SpriteServiceV2 } from '@core/sprites/service'
+import {
+  createFizzTransition,
+  type FizzTransition
+} from '@core/screen/render/fizz'
+import { fullFigure } from '@core/ship'
+import { SCRWTH, VIEWHT } from '@core/screen'
+import type { SpriteServiceV2 } from '@core/sprites'
 import { SCENTER } from '@core/figs/types'
 import { cloneBitmap } from '@lib/bitmap'
 

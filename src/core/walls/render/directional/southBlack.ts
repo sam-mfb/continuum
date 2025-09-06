@@ -7,8 +7,8 @@ import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
 import { drawNline } from '../lines/drawNline'
 import { findWAddress } from '@lib/asm/assemblyMacros'
 import { LINE_DIR } from '../../../shared/types/line'
-import { getAlignment } from '@core/shared/alignment'
-import { getBackgroundPattern } from '@core/shared/backgroundPattern'
+import { getAlignment } from '@core/shared'
+import { getBackgroundPattern } from '@core/shared'
 
 // Masks from orig/Sources/Walls.c:1141-1142
 const SOUTH_BLACK = 0xc0000000

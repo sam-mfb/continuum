@@ -6,7 +6,7 @@
 import type { LineRec, MonochromeBitmap } from '../../types'
 import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
 import { drawEneline } from '../lines/drawEneline'
-import { build68kArch } from '@lib/asm/emulator'
+import { build68kArch } from '@lib/asm'
 import { jsrWAddress } from '@lib/asm/assemblyMacros'
 import { eneWhite } from './eneWhite'
 import { LINE_DIR } from '../../../shared/types/line'

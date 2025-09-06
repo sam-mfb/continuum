@@ -1,7 +1,7 @@
 import type { CraterSprite } from './types'
 import { CRATERHT } from './types'
-import { getBackgroundPattern } from '@core/shared/backgroundPattern'
-import type { Alignment } from '@core/shared/alignment'
+import { getBackgroundPattern } from '@core/shared'
+import type { Alignment } from '@core/shared'
 
 // Process crater sprite with background patterns
 export function processCraterSprite(

@@ -1,4 +1,4 @@
-import { readBinaryFileSync } from '@dev/file/fileReader'
+import { readBinaryFileSync } from '@dev/file'
 import { describe, expect, it } from 'vitest'
 import { join } from 'path'
 import { Galaxy } from '../methods'

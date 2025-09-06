@@ -12,9 +12,9 @@
 
 import type { BitmapRenderer } from '@lib/bitmap'
 import { cloneBitmap } from '@lib/bitmap'
-import { viewClear } from '@core/screen/render'
-import { newSbar } from '@core/status/render'
-import type { SpriteServiceV2 } from '@core/sprites/service'
+import { viewClear } from '@core/screen'
+import { newSbar } from '@core/status'
+import type { SpriteServiceV2 } from '@core/sprites'
 
 // State for the demo - persists across render calls
 type StatusBarState = {

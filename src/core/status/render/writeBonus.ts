@@ -7,8 +7,8 @@
 
 import { type MonochromeBitmap } from '@lib/bitmap'
 import { writeInt } from './writeInt'
-import { BONUS_X, BONUS_Y } from '@core/status/constants'
-import type { SpriteServiceV2 } from '@core/sprites/service'
+import { BONUS_X, BONUS_Y } from '@core/status'
+import type { SpriteServiceV2 } from '@core/sprites'
 
 /**
  * Writes the planet bonus value at its fixed position on the status bar.

@@ -1,5 +1,5 @@
-import type { Bunker } from '@core/planet/types'
-import { ptToAngle } from '@core/shared/ptToAngle'
+import type { Bunker } from '@core/planet'
+import { ptToAngle } from '@core/shared'
 
 /**
  * Calculate angle from bunker to ship

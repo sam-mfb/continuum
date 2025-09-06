@@ -7,13 +7,13 @@
  */
 
 import type { BitmapRenderer } from '@lib/bitmap'
-import type { LineRec } from '@core/walls/types'
-import { whiteTerrain, blackTerrain } from '@core/walls/render'
-import { wallsActions } from '@core/walls/wallsSlice'
-import { buildGameStore } from '@dev/store/gameStore'
-import { LINE_KIND, NEW_TYPE } from '@core/walls/types'
-import { createWall } from '@core/walls/unpack'
-import { viewClear } from '@core/screen/render'
+import type { LineRec } from '@core/walls'
+import { whiteTerrain, blackTerrain } from '@core/walls'
+import { wallsActions } from '@core/walls'
+import { buildGameStore } from '@dev/store'
+import { LINE_KIND, NEW_TYPE } from '@core/walls'
+import { createWall } from '@core/walls'
+import { viewClear } from '@core/screen'
 
 // Create store instance
 const store = buildGameStore()

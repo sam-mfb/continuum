@@ -1,6 +1,6 @@
 import type { ShotRec } from './types'
-import type { Bunker } from '@core/planet/types'
-import { legalAngle } from '@core/planet/legalAngle'
+import type { Bunker } from '@core/planet'
+import { legalAngle } from '@core/planet'
 import { xyindistance } from './xyindistance'
 import { BUNKROTKINDS } from '@core/figs'
 import { BRADIUS } from './constants'

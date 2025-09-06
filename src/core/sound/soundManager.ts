@@ -3,7 +3,7 @@
  * Phase 6: Full implementation with new audio system
  */
 
-import { store } from '@dev/store/store'
+import { store } from '@dev/store'
 import { SoundType } from './constants'
 import { createSoundEngine } from './soundEngine'
 import {

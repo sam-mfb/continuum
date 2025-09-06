@@ -7,7 +7,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import type { RootState } from '@dev/store/store'
+import type { RootState } from '@dev/store'
 import { setVolume, toggleSound } from '@core/sound/soundSlice'
 import { soundManager } from '@core/sound'
 import { createTestSounds } from '@core/sound/generators/testSounds'

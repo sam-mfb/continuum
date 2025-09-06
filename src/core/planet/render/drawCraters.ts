@@ -1,10 +1,10 @@
 import { type MonochromeBitmap } from '@lib/bitmap'
-import { SCRWTH, VIEWHT } from '@core/screen/constants'
+import { SCRWTH, VIEWHT } from '@core/screen'
 import { CRATERHT } from '@core/figs/types'
 import type { Crater } from '../types'
 import { CRATERCENTER } from '../constants'
 import { drawMedium } from './drawMedium'
-import { getAlignment } from '@core/shared/alignment'
+import { getAlignment } from '@core/shared'
 
 /**
  * From draw_craters() in orig/Sources/Terrain.c at 507-527

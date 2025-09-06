@@ -1,6 +1,6 @@
 import { cloneBitmap, type MonochromeBitmap } from '@lib/bitmap'
-import { SBARHT } from '@core/screen/constants'
-import { build68kArch } from '@lib/asm/emulator'
+import { SBARHT } from '@core/screen'
+import { build68kArch } from '@lib/asm'
 import { findWAddress } from '@lib/asm/assemblyMacros'
 
 // Shot patterns from orig/Sources/Draw.c:620-621

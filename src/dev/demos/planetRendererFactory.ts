@@ -5,31 +5,33 @@
  */
 
 import type { PlanetRendererFactory, GameRendererStore } from './types'
-import type { PlanetState } from '@core/planet/types'
+import type { PlanetState } from '@core/planet'
 import type { BitmapRenderer } from '@lib/bitmap'
-import { whiteTerrain, blackTerrain } from '@core/walls/render'
-import { wallsActions } from '@core/walls/wallsSlice'
-import { screenSlice } from '@core/screen/screenSlice'
-import { gameViewActions } from '@dev/store/gameViewSlice'
-import { LINE_KIND } from '@core/walls/types'
-import { VIEWHT } from '@core/screen/constants'
+import { whiteTerrain, blackTerrain } from '@core/walls'
+import { wallsActions } from '@core/walls'
+import { screenSlice } from '@core/screen'
+import { gameViewSlice } from '@dev/store'
+const gameViewActions = gameViewSlice.actions
+import { LINE_KIND } from '@core/walls'
+import { VIEWHT } from '@core/screen'
 import { isOnRightSide } from '@core/shared/viewport'
-import { doBunks } from '@core/planet/render/bunker'
+import { doBunks } from '@core/planet'
 import { configureStore } from '@reduxjs/toolkit'
-import planetReducer, {
+import {
+  planetSlice,
   loadPlanet,
   updateBunkerRotations,
   initializeFuels,
   updateFuelAnimations
-} from '@core/planet/planetSlice'
-import { drawFuels } from '@core/planet/render/drawFuels'
-import { drawCraters } from '@core/planet/render/drawCraters'
-import { viewClear } from '@core/screen/render'
+} from '@core/planet'
+import { drawFuels } from '@core/planet'
+import { drawCraters } from '@core/planet'
+import { viewClear } from '@core/screen'
 
 // Create store with planet slice
 const bunkerStore = configureStore({
   reducer: {
-    planet: planetReducer
+    planet: planetSlice.reducer
   }
 })
 

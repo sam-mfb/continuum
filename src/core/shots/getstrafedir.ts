@@ -1,5 +1,5 @@
-import { LINE_TYPE, LINE_KIND } from '@core/shared/types/line'
-import type { LineRec } from '@core/shared/types/line'
+import { LINE_TYPE, LINE_KIND } from '@core/shared'
+import type { LineRec } from '@core/shared'
 import { bouncedirtable, stdirtable } from './constants'
 
 /**

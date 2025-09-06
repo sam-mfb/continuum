@@ -7,7 +7,7 @@ import type { MonochromeBitmap } from '../../types'
 import { SCRHT, SBARHT } from '../../../screen/constants'
 import { jsrWAddress, negIfNeg } from '@lib/asm/assemblyMacros'
 import { LINE_DIR } from '../../../shared/types/line'
-import { build68kArch } from '@lib/asm/emulator'
+import { build68kArch } from '@lib/asm'
 
 /**
  * Draw an east-north-east diagonal line (2 pixels wide, shallow angle)

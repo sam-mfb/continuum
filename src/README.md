@@ -5,22 +5,29 @@ This directory contains the complete source code for the Continuum web port, org
 ## Directory Structure
 
 ### `core/` - Core Game Implementation
+
 Direct ports from the original 68K Mac game. Contains all game logic, physics, rendering, and state management that powers the actual gameplay.
 
-### `lib/` - Helper Libraries  
+### `lib/` - Helper Libraries
+
 Modern utility libraries that support the game implementation but aren't direct ports from the original:
+
 - Assembly emulator for handling 68K code
 - Bitmap rendering system for monochrome graphics
 
 ### `dev/` - Development Tools Application
+
 A React application providing visual tools for developing and testing the game:
+
 - Component viewers for sprites, planets, graphics
 - Test games and demos
 - Redux DevTools integration
 - Run with `npm run dev`
 
 ### `game/` - Production Game Application
+
 The actual playable game (to be implemented):
+
 - Standalone React application
 - Uses core game modules
 - Run with `npm run game`
@@ -34,6 +41,7 @@ The actual playable game (to be implemented):
 ## Path Aliases
 
 The project uses TypeScript path aliases for clean imports:
+
 - `@core/*` → `src/core/*`
 - `@lib/*` → `src/lib/*`
 - `@dev/*` → `src/dev/*`

@@ -8,7 +8,7 @@
 
 import { type MonochromeBitmap } from '@lib/bitmap'
 import { drawDigit } from './drawDigit'
-import type { SpriteServiceV2 } from '@core/sprites/service'
+import type { SpriteServiceV2 } from '@core/sprites'
 
 /**
  * Writes an integer right-aligned at the specified position.

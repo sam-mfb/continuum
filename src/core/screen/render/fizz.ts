@@ -11,7 +11,7 @@
  */
 
 import { cloneBitmap, type MonochromeBitmap } from '@lib/bitmap'
-import { SBARSIZE } from '@core/screen/constants'
+import { SBARSIZE } from '@core/screen'
 
 /**
  * Creates a complete random dissolve effect from one screen to another.

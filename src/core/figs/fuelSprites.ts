@@ -1,7 +1,7 @@
 import type { FuelSprite, FuelSpriteSet } from './types'
 import { FUELFRAMES, FUEL_TOTAL_FRAMES, FUELHT } from './types'
-import { getBackgroundPattern } from '@core/shared/backgroundPattern'
-import type { Alignment } from '@core/shared/alignment'
+import { getBackgroundPattern } from '@core/shared'
+import type { Alignment } from '@core/shared'
 
 // Create a fuel sprite set from extracted arrays
 export function createFuelSpriteSet(fuelArrays: FuelSprite[]): FuelSpriteSet {

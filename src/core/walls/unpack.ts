@@ -21,8 +21,8 @@
  * ## Usage Example
  *
  * ```typescript
- * import { createWall } from '@core/walls/unpack'
- * import { NEW_TYPE, LINE_KIND } from '@core/walls/types'
+ * import { createWall } from '@core/walls'
+ * import { NEW_TYPE, LINE_KIND } from '@core/walls'
  *
  * // Create a wall going South (vertical down)
  * const southWall = createWall(50, 30, 25, NEW_TYPE.S, LINE_KIND.NORMAL, 0)

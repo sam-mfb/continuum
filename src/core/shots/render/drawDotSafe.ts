@@ -1,6 +1,6 @@
 import type { MonochromeBitmap } from '@lib/bitmap'
 import { cloneBitmap } from '@lib/bitmap'
-import { SBARHT } from '@core/screen/constants'
+import { SBARHT } from '@core/screen'
 
 /**
  * Draw a 2x2 black dot on the screen (used for bunker shots)

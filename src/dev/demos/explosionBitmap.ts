@@ -7,21 +7,21 @@
  */
 
 import type { BitmapRenderer, MonochromeBitmap } from '@lib/bitmap'
-import { planetSlice } from '@core/planet/planetSlice'
-import { screenSlice } from '@core/screen/screenSlice'
-import { buildGameStore } from '@dev/store/gameStore'
-import type { SpriteServiceV2 } from '@core/sprites/service'
+import { planetSlice } from '@core/planet'
+import { screenSlice } from '@core/screen'
+import { buildGameStore } from '@dev/store'
+import type { SpriteServiceV2 } from '@core/sprites'
 import type { ShardSprite, ShardSpriteSet } from '@core/figs/types'
-import { xbcenter, ybcenter } from '@core/planet/constants'
+import { xbcenter, ybcenter } from '@core/planet'
 import {
   explosionsSlice,
   startExplosion,
   updateExplosions
-} from '@core/explosions/explosionsSlice'
-import { drawExplosions } from '@core/explosions/render/drawExplosions'
-import type { ExplosionsState } from '@core/explosions/types'
-import { drawBunker } from '@core/planet/render/bunker'
-import { viewClear } from '@core/screen/render'
+} from '@core/explosions'
+import { drawExplosions } from '@core/explosions'
+import type { ExplosionsState } from '@core/explosions'
+import { drawBunker } from '@core/planet'
+import { viewClear } from '@core/screen'
 
 // Configure store with explosions slice
 const store = buildGameStore({

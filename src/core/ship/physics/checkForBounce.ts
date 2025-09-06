@@ -4,13 +4,13 @@
  */
 
 import type { Store } from '@reduxjs/toolkit'
-import type { MonochromeBitmap, LineRec } from '@core/walls/types'
-import type { ShipState } from '@core/ship/types'
+import type { MonochromeBitmap, LineRec } from '@core/walls'
+import type { ShipState } from '@core/ship'
 import { blackTerrain } from '@core/walls/render/blackTerrain'
-import { checkFigure } from '@core/ship/checkFigure'
-import { eraseFigure } from '@core/ship/render/eraseFigure'
+import { checkFigure } from '@core/ship'
+import { eraseFigure } from '@core/ship'
 import { SCENTER } from '@core/figs/types'
-import { LINE_KIND } from '@core/shared/types/line'
+import { LINE_KIND } from '@core/shared'
 
 // Bounce direction tables from Terrain.c:234-240
 // First index: 0 = below wall, 1 = above wall

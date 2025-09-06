@@ -1,4 +1,4 @@
-import { createBigEnd } from '@lib/asm/bigEnd'
+import { createBigEnd } from '@lib/asm'
 import type {
   GalaxyBuffer,
   GalaxyComponents,

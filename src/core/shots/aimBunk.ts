@@ -1,4 +1,4 @@
-import type { Bunker } from '@core/planet/types'
+import type { Bunker } from '@core/planet'
 import { aimDir } from './aimDir'
 
 /**

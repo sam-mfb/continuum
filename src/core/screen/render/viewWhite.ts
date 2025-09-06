@@ -7,7 +7,7 @@
  */
 
 import { cloneBitmap, type MonochromeBitmap } from '@lib/bitmap'
-import { SBARSIZE } from '@core/screen/constants'
+import { SBARSIZE } from '@core/screen'
 
 /**
  * Fills the main view area with white (all bits set).

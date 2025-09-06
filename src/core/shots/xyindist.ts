@@ -1,4 +1,4 @@
-import { build68kArch } from '@lib/asm/emulator'
+import { build68kArch } from '@lib/asm'
 
 /**
  * Check if a point is within a circular distance (general case)

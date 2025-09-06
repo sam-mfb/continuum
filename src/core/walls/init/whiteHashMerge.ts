@@ -1,8 +1,8 @@
 import type { WhiteRec, JunctionRec } from '../types'
 import { hashFigure } from './whitePatterns'
 import { patternToByteArray } from './utils'
-import { getBackgroundPattern } from '@core/shared/backgroundPattern'
-import type { Alignment } from '@core/shared/alignment'
+import { getBackgroundPattern } from '@core/shared'
+import type { Alignment } from '@core/shared'
 
 /**
  * Checks if a white piece has any close neighbors.

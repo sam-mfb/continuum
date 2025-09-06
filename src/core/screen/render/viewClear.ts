@@ -7,9 +7,9 @@
  */
 
 import { cloneBitmap, type MonochromeBitmap } from '@lib/bitmap'
-import { SBARSIZE, VIEWHT } from '@core/screen/constants'
-import { getAlignment } from '@core/shared/alignment'
-import { getBackgroundPattern } from '@core/shared/backgroundPattern'
+import { SBARSIZE, VIEWHT } from '@core/screen'
+import { getAlignment } from '@core/shared'
+import { getBackgroundPattern } from '@core/shared'
 
 /**
  * Fills the main view area with alternating gray pattern.

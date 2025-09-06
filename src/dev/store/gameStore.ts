@@ -1,13 +1,13 @@
-import { planetSlice } from '@core/planet/planetSlice'
-import { screenSlice } from '@core/screen/screenSlice'
-import { shipSlice } from '@core/ship/shipSlice'
-import { shotsSlice } from '@core/shots/shotsSlice'
-import { wallsSlice } from '@core/walls/wallsSlice'
+import { planetSlice } from '@core/planet'
+import { screenSlice } from '@core/screen'
+import { shipSlice } from '@core/ship'
+import { shotsSlice } from '@core/shots'
+import { wallsSlice } from '@core/walls'
 import { spritesSlice } from './spritesSlice'
-import { statusSlice } from '@core/status/statusSlice'
+import { statusSlice } from '@core/status'
 import { configureStore, type Reducer } from '@reduxjs/toolkit'
 import { containmentMiddleware } from './containmentMiddleware'
-import { explosionsSlice } from '@core/explosions/explosionsSlice'
+import { explosionsSlice } from '@core/explosions'
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function buildGameStore<

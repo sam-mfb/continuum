@@ -1,15 +1,15 @@
 import type { GameLoopFunction } from '../components/GameView'
 import { drawShip } from '../draw/drawShip'
 import { drawShot } from '../draw/drawShot'
-import { shipSlice } from '@core/ship/shipSlice'
-import { planetSlice } from '@core/planet/planetSlice'
-import { screenSlice } from '@core/screen/screenSlice'
-import { shotsSlice } from '@core/shots/shotsSlice'
-import { ShipControl } from '@core/ship/types'
+import { shipSlice } from '@core/ship'
+import { planetSlice } from '@core/planet'
+import { screenSlice } from '@core/screen'
+import { shotsSlice } from '@core/shots'
+import { ShipControl } from '@core/ship'
 import { drawBackground } from './drawBackground'
 import { shipControl } from './shipControlThunk'
-import { buildGameStore } from '@dev/store/gameStore'
-import { SCRWTH, VIEWHT } from '@core/screen/constants'
+import { buildGameStore } from '@dev/store'
+import { SCRWTH, VIEWHT } from '@core/screen'
 
 // Configure store with all slices and containment middleware
 const store = buildGameStore()

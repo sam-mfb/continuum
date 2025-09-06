@@ -7,8 +7,8 @@
 
 import { type MonochromeBitmap } from '@lib/bitmap'
 import { drawDigit } from './drawDigit'
-import { LIVES_START_X, LIVES_Y, LIVES_SPACING } from '@core/status/constants'
-import type { SpriteServiceV2 } from '@core/sprites/service'
+import { LIVES_START_X, LIVES_Y, LIVES_SPACING } from '@core/status'
+import type { SpriteServiceV2 } from '@core/sprites'
 
 /**
  * Draws ship icons to represent the number of remaining lives.

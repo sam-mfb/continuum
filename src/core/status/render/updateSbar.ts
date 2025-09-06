@@ -12,7 +12,7 @@ import { writeScore } from './writeScore'
 import { writeBonus } from './writeBonus'
 import { writeLevel } from './writeLevel'
 import { writeMessage } from './writeMessage'
-import type { SpriteServiceV2 } from '@core/sprites/service'
+import type { SpriteServiceV2 } from '@core/sprites'
 
 /**
  * Performs an incremental update of frequently changing status bar fields.

@@ -7,9 +7,9 @@ import { VIEWHT, SCRWTH, SBARHT } from '../../../screen/constants'
 import { drawNeline } from '../lines/drawNeline'
 import { findWAddress, jsrWAddress } from '@lib/asm/assemblyMacros'
 import { LINE_DIR } from '../../../shared/types/line'
-import { getAlignment } from '@core/shared/alignment'
-import { getBackgroundPattern } from '@core/shared/backgroundPattern'
-import { build68kArch } from '@lib/asm/emulator'
+import { getAlignment } from '@core/shared'
+import { getBackgroundPattern } from '@core/shared'
+import { build68kArch } from '@lib/asm'
 
 // Masks from orig/Sources/Walls.c:203-204
 const NE_MASK = 0xfffe0000

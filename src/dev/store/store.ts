@@ -6,11 +6,11 @@ import galaxyReducer from './galaxySlice'
 import graphicsReducer from './graphicsSlice'
 import spritesReducer from './spritesSlice'
 import soundReducer from '@core/sound/soundSlice'
-import { wallsSlice } from '@core/walls/wallsSlice'
+import { wallsSlice } from '@core/walls'
 import gameViewReducer from './gameViewSlice'
-import { screenSlice } from '@core/screen/screenSlice'
+import { screenSlice } from '@core/screen'
 
-export const store = configureStore({
+const store = configureStore({
   reducer: {
     ui: uiReducer,
     galaxy: galaxyReducer,
@@ -36,3 +36,7 @@ export type AppDispatch = typeof store.dispatch
 
 export const useAppDispatch: () => AppDispatch = useDispatch
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
+
+// Export store as both named and default
+export { store }
+export default store

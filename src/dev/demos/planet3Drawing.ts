@@ -7,15 +7,15 @@
  */
 
 import type { BitmapRenderer } from '@lib/bitmap'
-import type { PlanetState } from '@core/planet/types'
-import { whiteTerrain, blackTerrain } from '@core/walls/render'
-import { wallsActions } from '@core/walls/wallsSlice'
-import { buildGameStore } from '@dev/store/gameStore'
-import { LINE_KIND } from '@core/walls/types'
-import { Galaxy } from '@core/galaxy/methods'
-import { parsePlanet } from '@core/planet/parsePlanet'
-import { VIEWHT } from '@core/screen/constants'
-import { viewClear } from '@core/screen/render'
+import type { PlanetState } from '@core/planet'
+import { whiteTerrain, blackTerrain } from '@core/walls'
+import { wallsActions } from '@core/walls'
+import { buildGameStore } from '@dev/store'
+import { LINE_KIND } from '@core/walls'
+import { Galaxy } from '@core/galaxy'
+import { parsePlanet } from '@core/planet'
+import { VIEWHT } from '@core/screen'
+import { viewClear } from '@core/screen'
 
 // Create store instance
 const store = buildGameStore()

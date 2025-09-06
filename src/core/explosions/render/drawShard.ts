@@ -1,7 +1,7 @@
 import type { MonochromeBitmap } from '@lib/bitmap'
 import { cloneBitmap } from '@lib/bitmap'
-import { SBARHT, SCRWTH, VIEWHT } from '@core/screen/constants'
-import { build68kArch } from '@lib/asm/emulator'
+import { SBARHT, SCRWTH, VIEWHT } from '@core/screen'
+import { build68kArch } from '@lib/asm'
 import { jsrWAddress } from '@lib/asm/assemblyMacros'
 
 /**

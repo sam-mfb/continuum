@@ -1,4 +1,4 @@
-import { SCRWTH, VIEWHT } from '@core/screen/constants'
+import { SCRWTH, VIEWHT } from '@core/screen'
 
 /**
  * Draw a grid background to help visualize movement and world boundaries
