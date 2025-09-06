@@ -13,6 +13,7 @@ import { BunkerKind } from '@core/figs/types'
 import type { AllSprites } from '@core/figs/types'
 import { createMonochromeBitmap } from '@lib/bitmap'
 import type { MonochromeBitmap } from '@lib/bitmap/types'
+import { ASSET_PATHS } from '@core/constants'
 
 // Sprite variants - explicit background selection
 export type ShipVariant = 'def' | 'mask'
@@ -113,7 +114,7 @@ type PrecomputedStorage = {
  */
 export async function createSpriteServiceV2(): Promise<SpriteServiceV2> {
   // Load sprite resource file
-  const response = await fetch('/art/graphics/rsrc_260.bin')
+  const response = await fetch(ASSET_PATHS.SPRITE_RESOURCE)
   if (!response.ok) {
     throw new Error('Failed to load sprite resource')
   }
@@ -122,7 +123,7 @@ export async function createSpriteServiceV2(): Promise<SpriteServiceV2> {
   const allSprites = extractAllSprites(arrayBuffer)
 
   // Load status bar template
-  const statusBarResponse = await fetch('/art/graphics/rsrc_259.bin')
+  const statusBarResponse = await fetch(ASSET_PATHS.STATUS_BAR_RESOURCE)
   if (!statusBarResponse.ok) {
     throw new Error('Failed to load status bar resource')
   }

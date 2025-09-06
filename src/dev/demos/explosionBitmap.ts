@@ -22,6 +22,7 @@ import { drawExplosions } from '@core/explosions'
 import type { ExplosionsState } from '@core/explosions'
 import { drawBunker } from '@core/planet'
 import { viewClear } from '@core/screen'
+import { ASSET_PATHS } from '@core/constants'
 
 // Configure store with explosions slice
 const store = buildGameStore({
@@ -180,7 +181,7 @@ const initializeGame = async (): Promise<void> => {
 
     // Load the release galaxy file to get planet data
     console.log('Loading galaxy file...')
-    const response = await fetch('/art/release_galaxy.bin')
+    const response = await fetch(ASSET_PATHS.GALAXY_DATA)
     if (!response.ok) {
       throw new Error('Failed to load galaxy file')
     }

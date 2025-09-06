@@ -16,6 +16,7 @@ import { Galaxy } from '@core/galaxy'
 import { parsePlanet } from '@core/planet'
 import { VIEWHT } from '@core/screen'
 import { viewClear } from '@core/screen'
+import { ASSET_PATHS } from '@core/constants'
 
 // Create store instance
 const store = buildGameStore()
@@ -29,7 +30,7 @@ let planet3DataPromise: Promise<PlanetState> | null = null
 async function loadPlanet3(): Promise<PlanetState> {
   try {
     // Load release galaxy file
-    const response = await fetch('/art/release_galaxy.bin')
+    const response = await fetch(ASSET_PATHS.GALAXY_DATA)
     if (!response.ok) {
       throw new Error(`Failed to load galaxy: ${response.statusText}`)
     }

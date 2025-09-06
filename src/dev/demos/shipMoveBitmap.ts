@@ -66,6 +66,7 @@ import type { ShardSprite, ShardSpriteSet } from '@core/figs/types'
 import { SKILLBRADIUS } from '@core/ship'
 import { xyindist } from '@core/shots'
 import { legalAngle } from '@core/planet'
+import { ASSET_PATHS } from '@core/constants'
 
 // Configure store with all slices and containment middleware
 const store = buildGameStore({})
@@ -81,7 +82,7 @@ const initializeGame = async (): Promise<void> => {
 
     // Load the release galaxy file to get planet data
     console.log('Loading galaxy file...')
-    const response = await fetch('/art/release_galaxy.bin')
+    const response = await fetch(ASSET_PATHS.GALAXY_DATA)
     if (!response.ok) {
       throw new Error('Failed to load galaxy file')
     }

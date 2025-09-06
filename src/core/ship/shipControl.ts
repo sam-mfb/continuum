@@ -1,21 +1,11 @@
 import type { Action, ThunkAction } from '@reduxjs/toolkit'
+import type { GameState } from '@dev/store'
 import { shipSlice } from '@core/ship'
 import { shotsSlice } from '@core/shots'
 import { planetSlice } from '@core/planet'
-import { screenSlice } from '@core/screen'
-import { wallsSlice } from '@core/walls'
 import { ShipControl } from '@core/ship'
 import { FUELSHIELD, FRADIUS } from '@core/ship'
 import { xyindist } from '@core/shots'
-
-// GameState type - represents the combined state of all game slices
-type GameState = {
-  ship: ReturnType<typeof shipSlice.reducer>
-  screen: ReturnType<typeof screenSlice.reducer>
-  walls: ReturnType<typeof wallsSlice.reducer>
-  planet: ReturnType<typeof planetSlice.reducer>
-  shots: ReturnType<typeof shotsSlice.reducer>
-}
 
 type ControlAction = {
   controlsPressed: ShipControl[]
