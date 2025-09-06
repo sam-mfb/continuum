@@ -11,6 +11,7 @@ export { shipSlice } from './shipSlice'
 
 // Ship functions
 export { checkFigure } from './checkFigure'
+export { shipControl } from './shipControl'
 
 // Physics
 export { checkForBounce } from './physics/checkForBounce'

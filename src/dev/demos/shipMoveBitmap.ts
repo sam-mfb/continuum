@@ -30,7 +30,7 @@ import {
   clearBunkShots
 } from '@core/shots'
 import { ShipControl } from '@core/ship'
-import { shipControl } from './shipControlThunk'
+import { shipControl } from '@core/ship'
 import { buildGameStore } from '@dev/store'
 import { SCRWTH, VIEWHT, TOPMARG, BOTMARG } from '@core/screen'
 import type { SpriteServiceV2 } from '@core/sprites'

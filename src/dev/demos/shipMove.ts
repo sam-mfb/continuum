@@ -7,7 +7,7 @@ import { screenSlice } from '@core/screen'
 import { shotsSlice } from '@core/shots'
 import { ShipControl } from '@core/ship'
 import { drawBackground } from './drawBackground'
-import { shipControl } from './shipControlThunk'
+import { shipControl } from '@core/ship'
 import { buildGameStore } from '@dev/store'
 import { SCRWTH, VIEWHT } from '@core/screen'
 
