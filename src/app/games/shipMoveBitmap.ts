@@ -16,6 +16,8 @@ import {
   planetSlice,
   updateBunkerRotations,
   initializeBunkers,
+  initializeFuels,
+  updateFuelAnimations,
   killBunker
 } from '@/planet/planetSlice'
 import { screenSlice } from '@/screen/screenSlice'
@@ -47,6 +49,7 @@ import { checkFigure } from '@/collision/checkFigure'
 import { checkForBounce } from '@/ship/physics/checkForBounce'
 import { doBunks } from '@/planet/render/bunker'
 import { drawCraters } from '@/planet/render/drawCraters'
+import { drawFuels } from '@/planet/render/drawFuels'
 import { rint } from '@/shared/rint'
 import {
   startShipDeath,
@@ -108,6 +111,9 @@ const initializeGame = async (): Promise<void> => {
 
     // Initialize bunkers for animated bunker support
     store.dispatch(initializeBunkers())
+
+    // Initialize fuel cells
+    store.dispatch(initializeFuels())
 
     // Initialize ship at center of screen (following Play.c:175-179)
     const shipScreenX = SCRWTH / 2 // 256
@@ -277,6 +283,9 @@ export const createShipMoveBitmapRenderer =
     // Update bunker rotations for animated bunkers (GROUND, FOLLOW, GENERATOR)
     store.dispatch(updateBunkerRotations({ globalx, globaly }))
 
+    // Update fuel cell animations
+    store.dispatch(updateFuelAnimations())
+
     // Check if bunkers should shoot this frame (probabilistic based on shootslow)
     // From Bunkers.c:30-31: if (rint(100) < shootslow) bunk_shoot();
     // TESTING: Increased shot rate for easier testing (multiply by 20)
@@ -426,6 +435,58 @@ export const createShipMoveBitmapRenderer =
 
     // Copy cratered bitmap data back
     bitmap.data.set(crateredBitmap.data)
+
+    // Draw fuel cells (from Terrain.c - do_fuels is called after craters)
+    // Get fuel sprites from service
+    const fuelSprites = {
+      getFrame: (
+        frame: number
+      ): { images: { background1: Uint8Array; background2: Uint8Array } } => {
+        const bg1 = spriteService.getFuelSprite(frame, {
+          variant: 'background1'
+        })
+        const bg2 = spriteService.getFuelSprite(frame, {
+          variant: 'background2'
+        })
+        return {
+          images: {
+            background1: bg1.uint8,
+            background2: bg2.uint8
+          }
+        }
+      },
+      emptyCell: {
+        images: {
+          background1: spriteService.getFuelSprite(8, {
+            variant: 'background1'
+          }).uint8,
+          background2: spriteService.getFuelSprite(8, {
+            variant: 'background2'
+          }).uint8
+        }
+      }
+    }
+
+    const fuelBitmap = drawFuels({
+      fuels: finalState.planet.fuels,
+      scrnx: finalState.screen.screenx,
+      scrny: finalState.screen.screeny,
+      fuelSprites
+    })(bitmap)
+
+    // Copy fuel bitmap data back
+    bitmap.data.set(fuelBitmap.data)
+
+    // Handle world wrapping for fuel cells
+    if (on_right_side && finalState.planet.worldwrap) {
+      const wrappedFuelBitmap = drawFuels({
+        fuels: finalState.planet.fuels,
+        scrnx: finalState.screen.screenx - finalState.planet.worldwidth,
+        scrny: finalState.screen.screeny,
+        fuelSprites
+      })(bitmap)
+      bitmap.data.set(wrappedFuelBitmap.data)
+    }
 
     // Setup viewport for wall rendering
     // Calculate screen bounds (right and bottom edges)
