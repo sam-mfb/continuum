@@ -26,11 +26,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@/engine/*": ["src/engine/*"],
-      "@/assets/*": ["src/assets/*"],
-      "@/asm/*": ["src/asm/*"],
-      "@/file/*": ["src/file/*"],
-      "@/galaxy/*": ["src/galaxy/*"]
+      "@core/*": ["src/core/*"],
+      "@lib/*": ["src/lib/*"],
+      "@dev/*": ["src/dev/*"]
     }
   },
   "include": ["src/**/*"],

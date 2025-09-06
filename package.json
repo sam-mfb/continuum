@@ -4,8 +4,11 @@
   "type": "module",
   "description": "Recreation of the 68000 Mac game Continuum for the web",
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 3000",
-    "build": "tsc && vite build",
+    "dev": "vite",
+    "game": "VITE_APP_MODE=game vite",
+    "build:dev": "tsc && vite build",
+    "build:game": "tsc && VITE_APP_MODE=game vite build",
+    "build": "npm run build:dev && npm run build:game",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
