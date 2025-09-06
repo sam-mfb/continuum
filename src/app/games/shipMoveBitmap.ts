@@ -279,9 +279,9 @@ export const createShipMoveBitmapRenderer =
 
     // Check if bunkers should shoot this frame (probabilistic based on shootslow)
     // From Bunkers.c:30-31: if (rint(100) < shootslow) bunk_shoot();
-    // TESTING: Increased shot rate for easier testing (multiply by 5)
+    // TESTING: Increased shot rate for easier testing (multiply by 20)
     const shootRoll = rint(100)
-    if (shootRoll < state.planet.shootslow * 5) {
+    if (shootRoll < state.planet.shootslow * 20) {
       // Calculate screen boundaries for shot eligibility
       const screenr = state.screen.screenx + SCRWTH
       const screenb = state.screen.screeny + VIEWHT
@@ -722,6 +722,59 @@ export const createShipMoveBitmapRenderer =
         def: shipDefBitmap,
         mask: shipMaskBitmap
       })(renderedBitmap)
+    }
+
+    // Draw shield effect if active (Play.c:252-255)
+    if (finalState.ship.shielding) {
+      // Draw shield using erase_figure (Play.c:254)
+      const shieldSprite = spriteService.getShieldSprite()
+      renderedBitmap = eraseFigure({
+        x: finalState.ship.shipx - SCENTER, // Same position as ship
+        y: finalState.ship.shipy - SCENTER,
+        def: shieldSprite.bitmap // shield_def (Figs.c:71)
+      })(renderedBitmap)
+
+      // When shielding, draw bullets AFTER shield (Play.c:252-253)
+      // Bullets are already destroyed by moveBullets reducer, but we still draw surviving ones
+      for (const shot of finalState.shots.bunkshots) {
+        // Render shot if still alive or just died without strafe
+        const shouldRender =
+          shot.lifecount > 0 || (shot.justDied === true && shot.strafedir < 0)
+
+        if (shouldRender) {
+          // Convert world coordinates to screen coordinates
+          const shotx = shot.x - finalState.screen.screenx
+          const shoty = shot.y - finalState.screen.screeny
+
+          // Check if shot is visible on screen
+          if (
+            shotx >= 0 &&
+            shotx < SCRWTH - 1 &&
+            shoty >= 0 &&
+            shoty < VIEWHT - 1
+          ) {
+            renderedBitmap = drawDotSafe(shotx, shoty, renderedBitmap)
+          }
+
+          // Handle world wrapping for toroidal worlds
+          if (
+            finalState.planet.worldwrap &&
+            finalState.screen.screenx > finalState.planet.worldwidth - SCRWTH
+          ) {
+            const wrappedShotx =
+              shot.x + finalState.planet.worldwidth - finalState.screen.screenx
+
+            if (
+              wrappedShotx >= 0 &&
+              wrappedShotx < SCRWTH - 1 &&
+              shoty >= 0 &&
+              shoty < VIEWHT - 1
+            ) {
+              renderedBitmap = drawDotSafe(wrappedShotx, shoty, renderedBitmap)
+            }
+          }
+        }
+      }
     }
 
     // Draw all active ship shots
