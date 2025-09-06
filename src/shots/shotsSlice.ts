@@ -11,7 +11,6 @@ import { checkBunkerCollision } from './checkBunkerCollision'
 import { checkShipCollision } from './checkShipCollision'
 import { startStrafe as startStrafeFunc } from './startStrafe'
 import { xyindistance } from './xyindistance'
-import { SCENTER } from '@/figs/types'
 import { SHRADIUS } from '@/ship/constants'
 
 /**
@@ -350,10 +349,11 @@ export const shotsSlice = createSlice({
           shipGlobalY !== undefined
         ) {
           // Bounding box for optimization (Play.c:822-825)
-          const left = shipGlobalX - SCENTER // SCENTER = 15 (GW.h:75)
-          const right = shipGlobalX + SCENTER
-          const top = shipGlobalY - SCENTER
-          const bot = shipGlobalY + SCENTER
+          // Use SHRADIUS for shield protection bounding box
+          const left = shipGlobalX - SHRADIUS // SHRADIUS = 12 (GW.h:77)
+          const right = shipGlobalX + SHRADIUS
+          const top = shipGlobalY - SHRADIUS
+          const bot = shipGlobalY + SHRADIUS
 
           // Bounding box check first (Play.c:830-831)
           if (shot.x > left && shot.x < right && shot.y > top && shot.y < bot) {
