@@ -351,6 +351,16 @@ export const createShipMoveBitmapRenderer =
       }
     }
 
+    // Handle self-hit shield feedback (Play.c:790-791)
+    if (shotsState.selfHitShield) {
+      // Activate shield for one frame as feedback
+      store.dispatch(shipSlice.actions.activateShieldFeedback())
+      // Note: Shield will deactivate next frame unless SPACE key is held
+
+      // TODO: Play sound (Play.c:791)
+      // playSound(SHLD_SOUND)
+    }
+
     // Move bunker shots with shield protection check
     // Calculate ship's global position for shield protection
     const currentState = store.getState()

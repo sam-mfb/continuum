@@ -287,6 +287,15 @@ export const shipSlice = createSlice({
     shieldDeactivate: state => {
       state.shielding = false
     },
+    /**
+     * Activate shield for one frame as feedback for self-hit
+     * Based on Play.c:790 - shielding = TRUE when ship hits itself
+     * Note: Shield will deactivate next frame unless SPACE key is held
+     */
+    activateShieldFeedback: state => {
+      state.shielding = true
+      // Note: refueling is not affected by feedback activation
+    },
 
     /**
      * Start refueling
@@ -323,15 +332,6 @@ export const shipSlice = createSlice({
      */
     collectFuel: (state, action: PayloadAction<number>) => {
       state.fuel += action.payload * FUELGAIN
-    },
-
-    /**
-     * Activate shield feedback for one frame when hit by own bullet
-     * Based on Play.c:790
-     */
-    activateShieldFeedback: state => {
-      state.shielding = true
-      // Note: Will be deactivated next frame unless SHIELD key is held
     }
   }
 })

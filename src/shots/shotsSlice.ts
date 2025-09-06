@@ -53,7 +53,8 @@ const initialState: ShotsState = {
     lifecount: 0,
     rot: 0
   })),
-  pendingBunkerKills: []
+  pendingBunkerKills: [],
+  selfHitShield: false
 }
 
 export const shotsSlice = createSlice({
@@ -218,6 +219,7 @@ export const shotsSlice = createSlice({
 
       // Clear previous collision results (Play.c:760-761)
       state.pendingBunkerKills = []
+      state.selfHitShield = false // Reset self-hit flag
 
       // Process each active shot
       state.shipshots = state.shipshots.map(shot => {
@@ -263,11 +265,12 @@ export const shotsSlice = createSlice({
           shipAlive
         )
         if (shipResult.hit) {
-          // Destroy the shot and trigger shield
+          // Set flag for shield feedback (Play.c:790)
+          state.selfHitShield = true
+          // Destroy the shot (Play.c:792)
           updatedShot.lifecount = 0
           updatedShot.btime = 0
           updatedShot.strafedir = -1
-          // TODO: Trigger shield activation in ship slice
           return updatedShot
         }
 
