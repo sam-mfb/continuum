@@ -4,6 +4,7 @@ import { shipSlice } from '@/ship/shipSlice'
 import { shotsSlice } from '@/shots/shotsSlice'
 import { wallsSlice } from '@/walls/wallsSlice'
 import { spritesSlice } from '@/store/spritesSlice'
+import { statusSlice } from '@/status/statusSlice'
 import { configureStore, type Reducer } from '@reduxjs/toolkit'
 import { containmentMiddleware } from './containmentMiddleware'
 import { explosionsSlice } from '@/explosions/explosionsSlice'
@@ -20,6 +21,7 @@ export function buildGameStore<
       shots: shotsSlice.reducer,
       walls: wallsSlice.reducer,
       sprites: spritesSlice.reducer,
+      status: statusSlice.reducer,
       explosions: explosionsSlice.reducer,
       ...additionalReducers
     },

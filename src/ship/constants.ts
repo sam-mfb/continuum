@@ -2,7 +2,7 @@
 export const DEAD_TIME = 60 // Frames of death animation (GW.h:89)
 export const SKILLBRADIUS = 30 // Radius for bunker death blast when ship dies (GW.h:90)
 export const SCOREBUNK = 50 // Points for destroying bunker
-export const STARTING_FUEL = 1000 // Fuel on respawn
+export const FUELSTART = 10000 // Starting amount of fuel (GW.h:136)
 
 // Shield-related constants from GW.h
 export const FUELSHIELD = 83 // Fuel consumed per frame while shielding (GW.h:139)

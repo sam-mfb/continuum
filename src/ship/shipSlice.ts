@@ -1,11 +1,12 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { ShipState } from './types'
 import { ShipControl } from './types'
-import { SHIP, DEAD_TIME, STARTING_FUEL, FUELGAIN } from './constants'
+import { SHIP, DEAD_TIME, FUELSTART, FUELGAIN } from './constants'
 
 const initialState: ShipState = {
   shiprot: 0,
-  fuel: 10000,
+  fuel: FUELSTART,
+  lives: 3,
   flaming: false,
   flameBlink: 0,
   thrusting: false,
@@ -217,6 +218,11 @@ export const shipSlice = createSlice({
       state.thrusting = false
       state.refueling = false
       state.shielding = false
+      // Decrement lives when ship dies
+      if (state.lives > 0) {
+        state.lives--
+      }
+      // Note: Fuel is NOT reset here - that happens on respawn (Play.c:205)
       // Note: vx (dx), vy (dy) preserved - ship continues drifting while dead
     },
 
@@ -249,7 +255,7 @@ export const shipSlice = createSlice({
       // Reset rotation to north
       state.shiprot = 0
       // Reset fuel
-      state.fuel = STARTING_FUEL
+      state.fuel = FUELSTART
       // Reset activity states
       state.flaming = false
       state.flameBlink = 0
@@ -332,6 +338,28 @@ export const shipSlice = createSlice({
      */
     collectFuel: (state, action: PayloadAction<number>) => {
       state.fuel += action.payload * FUELGAIN
+    },
+
+    /**
+     * Set lives count (for initialization or game over)
+     */
+    setLives: (state, action: PayloadAction<number>) => {
+      state.lives = action.payload
+    },
+
+    /**
+     * Award an extra life
+     * Based on Play.c when player gets extra ship
+     */
+    extraLife: state => {
+      state.lives++
+    },
+
+    /**
+     * Reset lives for new game
+     */
+    resetLives: state => {
+      state.lives = 3
     }
   }
 })

@@ -45,6 +45,8 @@ import { whiteTerrain, blackTerrain } from '@/walls/render'
 import { wallsSlice } from '@/walls/wallsSlice'
 import { viewClear, viewWhite } from '@/screen/render'
 import { LINE_KIND } from '@/walls/types'
+import { updateSbar, sbarClear } from '@/status/render'
+import { statusSlice } from '@/status/statusSlice'
 import { checkFigure } from '@/collision/checkFigure'
 import { checkForBounce } from '@/ship/physics/checkForBounce'
 import { doBunks } from '@/planet/render/bunker'
@@ -114,6 +116,10 @@ const initializeGame = async (): Promise<void> => {
 
     // Initialize fuel cells
     store.dispatch(initializeFuels())
+
+    // Initialize status state
+    store.dispatch(statusSlice.actions.initStatus())
+    store.dispatch(statusSlice.actions.setPlanetBonus(planet1.planetbonus))
 
     // Initialize ship at center of screen (following Play.c:175-179)
     const shipScreenX = SCRWTH / 2 // 256
@@ -526,6 +532,26 @@ export const createShipMoveBitmapRenderer =
     // Following Play.c order:
     // 1. gray_figure - ship shadow background (only if ship is alive)
     let renderedBitmap = bitmap
+
+    // Draw status bar (happens before game rendering)
+    // First clear with the template
+    const statusBarTemplate = spriteService.getStatusBarTemplate()
+    renderedBitmap = sbarClear({ statusBarTemplate })(renderedBitmap)
+
+    // Then update with current values from state
+    const statusData = {
+      fuel: finalState.ship.fuel,
+      lives: finalState.ship.lives,
+      score: finalState.status.score,
+      bonus: finalState.status.planetbonus,
+      level: finalState.status.currentlevel,
+      message: finalState.status.curmessage,
+      spriteService
+    }
+
+    // Use newSbar for initial frame or major changes, updateSbar for incremental updates
+    // For now, we'll use updateSbar each frame since it updates all fields
+    renderedBitmap = updateSbar(statusData)(renderedBitmap)
 
     if (finalState.ship.deadCount === 0) {
       // Compute background patterns for y and y+1 positions
