@@ -342,12 +342,21 @@ export const createShipMoveBitmapRenderer =
       }
     }
 
-    // Move bunker shots
+    // Move bunker shots with shield protection check
+    // Calculate ship's global position for shield protection
+    const currentState = store.getState()
+    const shipGlobalX = currentState.screen.screenx + currentState.ship.shipx
+    const shipGlobalY = currentState.screen.screeny + currentState.ship.shipy
+
     store.dispatch(
       moveBullets({
         worldwidth: state.planet.worldwidth,
         worldwrap: state.planet.worldwrap,
-        walls: state.planet.lines
+        walls: state.planet.lines,
+        // Include ship data for shield protection
+        shipGlobalX,
+        shipGlobalY,
+        shielding: currentState.ship.shielding
       })
     )
 

@@ -349,12 +349,13 @@ export const createBunkerDrawBitmapRenderer =
       )
     }
 
-    // Move all bunker shots
+    // Move all bunker shots (no ship/shield in this demo)
     store.dispatch(
       moveBullets({
         worldwidth: planetState.worldwidth,
         worldwrap: planetState.worldwrap,
         walls: planetState.lines
+        // Optional ship parameters omitted - no shield protection needed
       })
     )
 
