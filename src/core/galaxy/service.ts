@@ -126,6 +126,25 @@ export function createGalaxyService(): GalaxyService {
         levelNum
       )
       
+      // Check if walls are sorted by startx (required for optimizations)
+      const walls = planet.lines
+      let isSorted = true
+      for (let i = 1; i < walls.length; i++) {
+        if (walls[i].startx < walls[i - 1].startx) {
+          isSorted = false
+          break
+        }
+      }
+      
+      planet.wallsSorted = isSorted
+      
+      if (!isSorted) {
+        console.warn(
+          `Planet ${levelNum}: Walls are NOT sorted by startx. ` +
+          `This may cause collision detection and junction finding issues.`
+        )
+      }
+      
       storage.parsedPlanetsCache.set(levelNum, planet)
       return planet
     },

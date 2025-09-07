@@ -88,6 +88,7 @@ export function loadLevel(
     dimensions: `${planet.worldwidth}x${planet.worldheight}`,
     start: `(${planet.xstart}, ${planet.ystart})`,
     walls: planet.lines.length,
+    wallsSorted: planet.wallsSorted,
     bunkers: planet.bunkers.filter(b => b.rot >= 0).length,
     fuels: planet.fuels.length
   })

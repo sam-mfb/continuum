@@ -15,6 +15,7 @@ export type PlanetState = {
   bunkers: Bunker[]
   fuels: Fuel[]
   craters: Crater[]
+  wallsSorted: boolean // Debug flag: true if walls were sorted by startx after loading
 }
 
 export type Bunker = {

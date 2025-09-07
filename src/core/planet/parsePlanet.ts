@@ -220,6 +220,7 @@ export function parsePlanet(
     lines,
     bunkers,
     fuels,
-    craters
+    craters,
+    wallsSorted: false // Walls are in file order, not sorted by startx
   }
 }
