@@ -280,6 +280,18 @@ export const shipSlice = createSlice({
     },
 
     /**
+     * Reset the ship's velocity and rotation
+     * Used when transitioning between levels to prevent velocity/rotation carryover
+     */
+    resetShip: state => {
+      state.dx = 0
+      state.dy = 0
+      state.xslow = 0
+      state.yslow = 0
+      state.shiprot = 0  // Reset to north
+    },
+
+    /**
      * Set the ship's start/respawn position
      */
     setStartPosition: (

@@ -206,6 +206,8 @@ export const createGameRenderer =
     if (!state.game.transitioning && checkLevelComplete(state)) {
       console.log(`Level ${state.game.currentLevel} complete!`)
       store.dispatch(markLevelComplete())
+      // Reset ship velocity and rotation to prevent carrying over during transition
+      store.dispatch(shipSlice.actions.resetShip())
     }
 
     // Check for game over (all lives lost)
