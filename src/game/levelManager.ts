@@ -23,7 +23,8 @@ import { SCRWTH, TOPMARG, BOTMARG } from '@core/screen'
 import { 
   nextLevel, 
   resetGame,
-  endTransition
+  endTransition,
+  getPlanetsBuffer
 } from './gameSlice'
 import { INITIAL_LIVES, LEVEL_COMPLETE_DELAY, GAME_OVER_DELAY } from './constants'
 import type { GameState } from './gameSlice'
@@ -74,15 +75,16 @@ export function loadLevel(
   levelNum: number
 ): void {
   const state = store.getState()
+  const planetsBuffer = getPlanetsBuffer()
   
-  if (!state.game.galaxyHeader || !state.game.planetsBuffer) {
+  if (!state.game.galaxyHeader || !planetsBuffer) {
     console.error('Galaxy data not loaded')
     return
   }
 
   // Parse the planet data for this level
   const planet = parsePlanet(
-    state.game.planetsBuffer,
+    planetsBuffer,
     state.game.galaxyHeader.indexes,
     levelNum
   )

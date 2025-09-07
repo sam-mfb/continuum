@@ -6,11 +6,14 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import type { GalaxyHeader } from '@core/galaxy'
 import { STARTING_LEVEL, GAME_OVER_MESSAGE, LEVEL_COMPLETE_MESSAGE } from './constants'
 
+// Module-level storage for non-serializable data
+let planetsBufferCache: ArrayBuffer | null = null
+
 export interface GameState {
   // Level progression
   currentLevel: number
   galaxyHeader: GalaxyHeader | null
-  planetsBuffer: ArrayBuffer | null
+  hasPlanetsBuffer: boolean // Flag to indicate if buffer is loaded
   
   // Game status
   gameOver: boolean
@@ -25,7 +28,7 @@ export interface GameState {
 const initialState: GameState = {
   currentLevel: STARTING_LEVEL,
   galaxyHeader: null,
-  planetsBuffer: null,
+  hasPlanetsBuffer: false,
   gameOver: false,
   levelComplete: false,
   transitioning: false,
@@ -43,7 +46,9 @@ export const gameSlice = createSlice({
       planetsBuffer: ArrayBuffer 
     }>) => {
       state.galaxyHeader = action.payload.header
-      state.planetsBuffer = action.payload.planetsBuffer
+      // Store ArrayBuffer outside Redux to avoid serialization issues
+      planetsBufferCache = action.payload.planetsBuffer
+      state.hasPlanetsBuffer = true
     },
 
     // Level progression
@@ -126,5 +131,13 @@ export const {
   setStatusMessage,
   clearStatusMessage
 } = gameSlice.actions
+
+// Selector to get the planets buffer from cache
+export const getPlanetsBuffer = (): ArrayBuffer | null => planetsBufferCache
+
+// Helper to clear the cache (useful for testing or cleanup)
+export const clearPlanetsBufferCache = (): void => {
+  planetsBufferCache = null
+}
 
 export default gameSlice.reducer
