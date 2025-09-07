@@ -48,6 +48,14 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     // Keyboard handlers
     const handleKeyDown = (e: KeyboardEvent) => {
       keysDownRef.current.add(e.code)
+      // Prevent default browser behavior for game control keys
+      if (e.code === 'Space' || // Shield
+          e.code === 'KeyZ' ||  // Left
+          e.code === 'KeyX' ||  // Right
+          e.code === 'Period' || // Thrust
+          e.code === 'Slash') {  // Fire
+        e.preventDefault()
+      }
     }
 
     const handleKeyUp = (e: KeyboardEvent) => {
