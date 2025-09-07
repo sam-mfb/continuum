@@ -7,6 +7,7 @@ import type { LineRec } from './types/line'
 import { LINE_TYPE } from './types/line'
 import type { Point } from './pt2xy'
 import { pt2xy } from './pt2xy'
+import { idiv } from '@lib/integer-math'
 
 /**
  * Slope table from orig/Sources/Play.c:43
@@ -68,9 +69,12 @@ export function pt2line(thept: Point, line: LineRec): number {
   
   // Utils.c:136-138 - Complex perpendicular distance calculation
   // This finds the perpendicular projection of the point onto the line
-  const numerator = h * ((m2 * (line.startx - thept.h) / 2) - line.starty + thept.v)
-  const denominator = g + (h * m2 / 2)
-  const dx = numerator / denominator
+  // NOTE: Must use integer arithmetic to match original C code
+  const term1 = (m2 * (line.startx - thept.h)) >> 1 // Integer division by 2 using right shift
+  const numerator = h * (term1 - line.starty + thept.v)
+  const term2 = (h * m2) >> 1 // Integer division by 2 using right shift
+  const denominator = g + term2
+  const dx = denominator === 0 ? 0 : idiv(numerator, denominator) // Integer division
   
   // Utils.c:139-142 - Calculate dy based on line type
   let dy: number
@@ -79,7 +83,7 @@ export function pt2line(thept: Point, line: LineRec): number {
     dy = thept.v - line.starty
   } else {
     // Other lines - calculate based on dx and slope
-    dy = (dx * -g) / h
+    dy = idiv(dx * -g, h) // Integer division
   }
   
   // Utils.c:144-150 - Check if perpendicular point is within line segment

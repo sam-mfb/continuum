@@ -7,7 +7,7 @@ import type { ShotRec } from './types'
 import type { LineRec } from '@core/shared'
 import { BOUNCE_VECS } from './constants'
 import { setLife } from './setLife'
-import { idiv } from './integerMath'
+import { idiv } from '@lib/integer-math'
 
 /**
  * Backs up a shot position to prevent wall clipping after bounce

@@ -156,23 +156,22 @@ describe('pt2line', () => {
         up_down: LINE_DIR.DN
       })
 
-      it('calculates distance using original algorithm', () => {
-        // The original algorithm doesn't give true perpendicular distance
-        // but uses a specific calculation with slopes2 table
+      it('calculates distance using original integer algorithm', () => {
+        // The original algorithm uses integer arithmetic throughout
         // For point (150,125) on line (100,100)-(200,150):
-        // Following the exact calculation from Utils.c:
-        // dx = -8.333..., dy = 16.666...
-        // Result = dx^2 + dy^2 = 69.44... + 277.77... = 347.22...
+        // With integer math: dx = -8, dy = 16 (truncated from floating point)
+        // Result = dx^2 + dy^2 = 64 + 256 = 320
         const testPoint: Point = { h: 150, v: 125 }
-        expect(pt2line(testPoint, neLine)).toBeCloseTo(347.2222222222223, 10)
+        expect(pt2line(testPoint, neLine)).toBe(320)
         
         // Start point should return exactly 0
         const startPoint: Point = { h: 100, v: 100 }
         expect(pt2line(startPoint, neLine)).toBe(0)
         
         // Point slightly off the line
+        // With integer math, different result due to truncation
         const offPoint: Point = { h: 150, v: 130 }
-        expect(pt2line(offPoint, neLine)).toBeCloseTo(222.22222222222229, 10)
+        expect(pt2line(offPoint, neLine)).toBe(180)
       })
 
       it('calculates distance to endpoints when projection outside segment', () => {
