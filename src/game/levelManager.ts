@@ -4,7 +4,7 @@
 
 import type { Store } from '@reduxjs/toolkit'
 import type { GameState as CoreGameState } from '@dev/store'
-import { parsePlanet } from '@core/planet'
+import { getGalaxyService } from '@core/galaxy'
 import { planetSlice } from '@core/planet'
 import { shipSlice } from '@core/ship'
 import { screenSlice } from '@core/screen'
@@ -23,8 +23,7 @@ import { SCRWTH, TOPMARG, BOTMARG } from '@core/screen'
 import { 
   nextLevel, 
   resetGame,
-  endTransition,
-  getPlanetsBuffer
+  endTransition
 } from './gameSlice'
 import { INITIAL_LIVES, LEVEL_COMPLETE_DELAY, GAME_OVER_DELAY } from './constants'
 import type { GameState } from './gameSlice'
@@ -75,19 +74,15 @@ export function loadLevel(
   levelNum: number
 ): void {
   const state = store.getState()
-  const planetsBuffer = getPlanetsBuffer()
+  const galaxyService = getGalaxyService()
   
-  if (!state.game.galaxyHeader || !planetsBuffer) {
+  if (!state.game.galaxyHeader || !galaxyService.isLoaded()) {
     console.error('Galaxy data not loaded')
     return
   }
 
-  // Parse the planet data for this level
-  const planet = parsePlanet(
-    planetsBuffer,
-    state.game.galaxyHeader.indexes,
-    levelNum
-  )
+  // Get the planet data for this level from the service
+  const planet = galaxyService.getPlanet(levelNum)
 
   console.log(`Loading level ${levelNum}:`, {
     dimensions: `${planet.worldwidth}x${planet.worldheight}`,

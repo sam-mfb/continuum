@@ -60,12 +60,11 @@ import type { ShardSprite, ShardSpriteSet } from '@core/figs/types'
 import { SKILLBRADIUS } from '@core/ship'
 import { xyindist } from '@core/shots'
 import { legalAngle } from '@core/planet'
-import { ASSET_PATHS } from '@core/constants'
-import { Galaxy } from '@core/galaxy'
+import { getGalaxyService } from '@core/galaxy'
 
 // Game-specific imports
 import gameReducer, {
-  loadGalaxyData,
+  loadGalaxyHeader,
   markLevelComplete,
   triggerGameOver,
   updateTransition
@@ -93,26 +92,15 @@ const initializeGame = async (): Promise<void> => {
   try {
     console.log('Starting game initialization...')
 
-    // Load the release galaxy file
+    // Load the release galaxy file using the service
     console.log('Loading galaxy file...')
-    const response = await fetch(ASSET_PATHS.GALAXY_DATA)
-    if (!response.ok) {
-      throw new Error('Failed to load galaxy file')
-    }
-
-    const arrayBuffer = await response.arrayBuffer()
-    console.log('Galaxy file loaded, size:', arrayBuffer.byteLength)
-
-    const { headerBuffer, planetsBuffer } = Galaxy.splitBuffer(arrayBuffer)
-    const galaxyHeader = Galaxy.parseHeader(headerBuffer)
+    const galaxyService = getGalaxyService()
+    const galaxyHeader = await galaxyService.loadGalaxy()
     console.log('Galaxy header:', galaxyHeader)
     console.log(`Galaxy contains ${galaxyHeader.planets} levels`)
 
-    // Store galaxy data in game state
-    store.dispatch(loadGalaxyData({ 
-      header: galaxyHeader, 
-      planetsBuffer 
-    }))
+    // Store galaxy header in Redux (no ArrayBuffer)
+    store.dispatch(loadGalaxyHeader(galaxyHeader))
 
     // Initialize lives
     store.dispatch(shipSlice.actions.setLives(INITIAL_LIVES))
