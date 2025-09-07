@@ -51,12 +51,11 @@ export const createSoundEngine = (): SoundEngine => {
   }
 
   /**
-   * Set the master volume (placeholder for now)
+   * Set the master volume
    * @param volume - Volume level from 0 to 1
    */
   const setVolume = (volume: number): void => {
-    // TODO: Implement volume control in the generator/buffer system
-    console.log('setVolume:', volume)
+    bufferManager.setVolume(volume)
   }
 
   /**
@@ -95,7 +94,18 @@ export const createSoundEngine = (): SoundEngine => {
       // Special case: play fizz sound followed by echo
       playFizzEchoSequence()
     } else {
-      currentGenerator = allGenerators[soundType]
+      const generator = allGenerators[soundType]
+      
+      // Reset/restart the generator if it has a start or reset method
+      if (generator) {
+        if ('start' in generator && typeof generator.start === 'function') {
+          generator.start()
+        } else if ('reset' in generator && typeof generator.reset === 'function') {
+          generator.reset()
+        }
+      }
+      
+      currentGenerator = generator
       bufferManager.setGenerator(currentGenerator)
     }
   }
