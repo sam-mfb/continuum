@@ -19,7 +19,7 @@ createSpriteServiceV2()
   .then(spriteService => {
     console.log('Sprite service initialized')
 
-    setAlignmentMode('world-fixed')
+    setAlignmentMode('screen-fixed')
 
     const renderer = createGameRenderer(spriteService)
 

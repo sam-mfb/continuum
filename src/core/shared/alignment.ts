@@ -146,8 +146,11 @@ export function createAlignmentSystem(): {
         // Global position - mode-dependent calculation
         if (mode === 'screen-fixed') {
           // Screen-fixed: pattern stays fixed relative to screen
-          // Always return 0 so pattern doesn't change as viewport moves
-          return 0 as Alignment
+          // Calculate based on sprite's screen position to match background
+          // Screen position = world position - viewport position
+          const screenPosX = pos.x - pos.screenX
+          const screenPosY = pos.y - pos.screenY
+          return ((screenPosX + screenPosY) & 1) as Alignment
         } else {
           // World-fixed: pattern stays fixed relative to world (default)
           // Use world coordinates, creating stable alignment for objects
