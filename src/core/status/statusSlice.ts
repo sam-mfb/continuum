@@ -26,21 +26,6 @@ export const statusSlice = createSlice({
   name: 'status',
   initialState,
   reducers: {
-    // Play.c: score_plus() - adds to score
-    scorePlus: (state, action: PayloadAction<number>) => {
-      state.score += action.payload
-    },
-
-    // Play.c: write_bonus() - decrements bonus (called each frame)
-    writeBonus: state => {
-      if (state.planetbonus > 0) {
-        state.planetbonus -= 10
-        if (state.planetbonus < 0) {
-          state.planetbonus = 0
-        }
-      }
-    },
-
     // Decrement bonus countdown - called every 10 frames (Play.c:197-201)
     decrementBonus: state => {
       if (state.planetbonus > 0) {
@@ -81,13 +66,7 @@ export const statusSlice = createSlice({
   }
 })
 
-export const {
-  scorePlus,
-  writeBonus,
-  setMessage,
-  setPlanetBonus,
-  nextLevel,
-  initStatus
-} = statusSlice.actions
+export const { setMessage, setPlanetBonus, nextLevel, initStatus } =
+  statusSlice.actions
 
 export const statusReducer = statusSlice.reducer
