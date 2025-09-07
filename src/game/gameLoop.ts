@@ -288,9 +288,9 @@ export const createGameRenderer =
       globaly = contained.globaly
       on_right_side = contained.on_right_side
     } else {
-      // Ship is dead, still need to calculate position for other systems
-      globalx = state.screen.screenx + state.ship.shipx
-      globaly = state.screen.screeny + state.ship.shipy
+      // Ship is dead, still need to use position for other systems
+      globalx = state.ship.globalx
+      globaly = state.ship.globaly
       on_right_side = state.screen.screenx > state.planet.worldwidth - SCRWTH
     }
 
@@ -817,11 +817,10 @@ export const createGameRenderer =
         store.dispatch(shipSlice.actions.killShip())
 
         // (b) Death blast - destroy ONE nearby bunker (Play.c:338-346)
-        // Recalculate global position using CURRENT ship position after movement
-        // This fixes the bug where we were using stale position from before ship movement
+        // Use global position from state (already calculated by containShip)
         const deathState = store.getState()
-        const deathGlobalX = deathState.screen.screenx + deathState.ship.shipx
-        const deathGlobalY = deathState.screen.screeny + deathState.ship.shipy
+        const deathGlobalX = deathState.ship.globalx
+        const deathGlobalY = deathState.ship.globaly
 
         // Only kills bunkers in field of view for directional types
         const bunkers = deathState.planet.bunkers
