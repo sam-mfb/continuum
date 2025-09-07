@@ -359,7 +359,7 @@ export const createBunkerDrawBitmapRenderer =
     // Update strafe lifecounts (decrements each frame)
     store.dispatch(doStrafes())
 
-    // Draw bunkers at normal position
+    // Draw bunkers at normal position (Bunkers.c:46 - "do_bunks(screenx, screeny);")
     let renderedBitmap = doBunks({
       bunkrec: planetState.bunkers,
       scrnx: viewportState.x,
@@ -390,7 +390,8 @@ export const createBunkerDrawBitmapRenderer =
       }
     })(bitmap)
 
-    // If wrapping world and near right edge, draw wrapped bunkers
+    // Second pass - wrapped position (Bunkers.c:47-48)
+    // "if (on_right_side) do_bunks(screenx-worldwidth, screeny);"
     const onRightSide = isOnRightSide(
       viewportState.x,
       bitmap.width,

@@ -631,6 +631,7 @@ export const createGameRenderer =
     })(renderedBitmap)
 
     // 7. do_bunkers - render all bunkers
+    // First pass - normal position (Bunkers.c:46 - "do_bunks(screenx, screeny);")
     renderedBitmap = doBunks({
       bunkrec: finalState.planet.bunkers,
       scrnx: finalState.screen.screenx,
@@ -660,6 +661,40 @@ export const createGameRenderer =
         }
       }
     })(renderedBitmap)
+
+    // Second pass - wrapped position (Bunkers.c:47-48)
+    // "if (on_right_side) do_bunks(screenx-worldwidth, screeny);"
+    if (on_right_side && finalState.planet.worldwrap) {
+      renderedBitmap = doBunks({
+        bunkrec: finalState.planet.bunkers,
+        scrnx: finalState.screen.screenx - finalState.planet.worldwidth,
+        scrny: finalState.screen.screeny,
+        getSprite: (kind: BunkerKind, rotation: number) => {
+          // Get sprites with proper variants
+          const defSprite = spriteService.getBunkerSprite(kind, rotation, {
+            variant: 'def'
+          })
+          const maskSprite = spriteService.getBunkerSprite(kind, rotation, {
+            variant: 'mask'
+          })
+          const bg1Sprite = spriteService.getBunkerSprite(kind, rotation, {
+            variant: 'background1'
+          })
+          const bg2Sprite = spriteService.getBunkerSprite(kind, rotation, {
+            variant: 'background2'
+          })
+
+          return {
+            def: defSprite.uint8,
+            mask: maskSprite.uint8,
+            images: {
+              background1: bg1Sprite.uint8,
+              background2: bg2Sprite.uint8
+            }
+          }
+        }
+      })(renderedBitmap)
+    }
 
     // 8. move_bullets - Draw bunker shots BEFORE collision check (Play.c:238-239)
     // This must happen before check_figure() so shots can kill the ship via pixel collision
