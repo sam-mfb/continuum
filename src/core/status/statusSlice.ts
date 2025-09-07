@@ -41,6 +41,21 @@ export const statusSlice = createSlice({
       }
     },
 
+    // Decrement bonus countdown - called every 10 frames (Play.c:197-201)
+    decrementBonus: state => {
+      if (state.planetbonus > 0) {
+        state.planetbonus -= 10
+        if (state.planetbonus < 0) {
+          state.planetbonus = 0
+        }
+      }
+    },
+
+    // Add score - alias for scorePlus for clarity
+    addScore: (state, action: PayloadAction<number>) => {
+      state.score += action.payload
+    },
+
     // Play.c: set current message (curmessage = ...)
     setMessage: (state, action: PayloadAction<StatusMessage>) => {
       state.curmessage = action.payload

@@ -6,6 +6,7 @@
  * but with complete game flow.
  */
 
+import type { Store } from '@reduxjs/toolkit'
 import type { BitmapRenderer } from '@lib/bitmap'
 import { fullFigure } from '@core/ship'
 import { drawShipShot } from '@core/shots'
@@ -43,7 +44,7 @@ import { starBackground } from '@core/screen/render/starBackground'
 import { createFizzTransition, type FizzTransition } from '@core/screen/render/fizz'
 import { cloneBitmap } from '@lib/bitmap'
 import { LINE_KIND } from '@core/walls'
-import { updateSbar, sbarClear } from '@core/status'
+import { updateSbar, sbarClear, statusSlice } from '@core/status'
 import { checkFigure } from '@core/ship'
 import { checkForBounce } from '@core/ship'
 import { doBunks } from '@core/planet'
@@ -133,7 +134,7 @@ const initializeGame = async (): Promise<void> => {
     store.dispatch(shipSlice.actions.setLives(INITIAL_LIVES))
 
     // Load level 1 using the level manager
-    loadLevel(store as any, 1)
+    loadLevel(store as Store<ExtendedGameState>, 1)
 
     initializationComplete = true
     console.log('Game initialization complete')
@@ -213,24 +214,40 @@ export const createGameRenderer =
     // NOW get the state for this frame - after any respawn updates
     const state = store.getState() as ExtendedGameState
 
+    // Decrement bonus countdown every 10 frames (Play.c:197-201)
+    // Only countdown if not transitioning and ship is playing
+    if (!state.game.transitioning && !transitionState.active) {
+      if (frame.frameCount % 10 === 0) {
+        store.dispatch(statusSlice.actions.decrementBonus())
+      }
+    }
+
     // Handle game state transitions
     if (state.game.transitioning) {
       store.dispatch(updateTransition())
       
       // Handle level complete transition
       if (state.game.levelComplete) {
-        handleLevelCompleteTransition(store as any)
+        handleLevelCompleteTransition(store as Store<ExtendedGameState>)
       }
       
       // Handle game over transition
       if (state.game.gameOver) {
-        handleGameOverTransition(store as any)
+        handleGameOverTransition(store as Store<ExtendedGameState>)
       }
     }
 
     // Check for level completion (only if not already transitioning)
     if (!state.game.transitioning && !transitionState.active && checkLevelComplete(state)) {
       console.log(`Level ${state.game.currentLevel} complete!`)
+      
+      // Award bonus points (Play.c:107 - score_plus(planetbonus))
+      const bonusPoints = state.status.planetbonus
+      if (bonusPoints > 0) {
+        store.dispatch(statusSlice.actions.addScore(bonusPoints))
+        console.log(`Awarded ${bonusPoints} bonus points`)
+      }
+      
       store.dispatch(markLevelComplete())
       // Don't stop ship yet - it keeps moving during the countdown!
       // Ship can even die during this period (Play.c:109-113)
@@ -519,7 +536,7 @@ export const createGameRenderer =
           transitionState.delayFrames = 0
           
           // Trigger the actual level load
-          handleLevelCompleteTransition(store as any)
+          handleLevelCompleteTransition(store as Store<ExtendedGameState>)
         }
         return
       } else {
