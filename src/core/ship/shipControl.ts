@@ -3,6 +3,7 @@ import type { GameState } from '@dev/store'
 import { shipSlice } from '@core/ship'
 import { shotsSlice } from '@core/shots'
 import { planetSlice } from '@core/planet'
+import { statusSlice } from '@core/status'
 import { ShipControl } from '@core/ship'
 import { FUELSHIELD, FRADIUS } from '@core/ship'
 import { xyindist } from '@core/shots'
@@ -62,7 +63,10 @@ export const shipControl =
         dispatch(planetSlice.actions.collectFuelCells(collectedFuels))
         // Add fuel to ship (collectFuel already multiplies by FUELGAIN internally)
         dispatch(shipSlice.actions.collectFuel(collectedFuels.length))
-        // TODO: Add score when implemented (Play.c:521 - SCOREFUEL)
+        // Award score for each fuel cell collected (Play.c:521)
+        for (let i = 0; i < collectedFuels.length; i++) {
+          dispatch(statusSlice.actions.scoreFuel())
+        }
         // TODO: Play FUEL_SOUND (Play.c:522)
       }
 

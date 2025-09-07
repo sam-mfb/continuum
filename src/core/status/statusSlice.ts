@@ -1,4 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
+import { type BunkerKind } from '@core/figs/types'
+import { getBunkerScore, SCORE_FUEL } from './scoring'
 
 // All possible status messages from Play.c
 export type StatusMessage =
@@ -39,6 +41,17 @@ export const statusSlice = createSlice({
     // Add score - alias for scorePlus for clarity
     addScore: (state, action: PayloadAction<number>) => {
       state.score += action.payload
+    },
+
+    // Score for destroying a bunker (Play.c:365-366)
+    scoreBunker: (state, action: PayloadAction<{ kind: BunkerKind; rot: number }>) => {
+      const points = getBunkerScore(action.payload.kind, action.payload.rot)
+      state.score += points
+    },
+
+    // Score for collecting fuel (Play.c:521)
+    scoreFuel: state => {
+      state.score += SCORE_FUEL
     },
 
     // Play.c: set current message (curmessage = ...)

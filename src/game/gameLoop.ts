@@ -401,6 +401,14 @@ export const createGameRenderer =
           // Note: killBunker returns early for difficult bunkers that survive
           const updatedBunker = store.getState().planet.bunkers[bunkerIndex]
           if (updatedBunker && !updatedBunker.alive) {
+            // Award score for bunker destruction (Play.c:365-366)
+            store.dispatch(
+              statusSlice.actions.scoreBunker({
+                kind: bunker.kind,
+                rot: bunker.rot
+              })
+            )
+            
             store.dispatch(
               startExplosion({
                 x: bunker.x,
@@ -974,8 +982,18 @@ export const createGameRenderer =
               )) // Directional need angle check
           ) {
             store.dispatch(killBunker({ index }))
-            // TODO: Add score when score system is implemented
-            // store.dispatch(addScore(SCOREBUNK))
+            
+            // Check if bunker was actually destroyed (difficult bunkers might survive)
+            const updatedBunker = store.getState().planet.bunkers[index]
+            if (!updatedBunker || !updatedBunker.alive) {
+              // Award score for bunker destruction (Play.c:365-366)
+              store.dispatch(
+                statusSlice.actions.scoreBunker({
+                  kind: bunker.kind,
+                  rot: bunker.rot
+                })
+              )
+            }
 
             // Trigger bunker explosion
             store.dispatch(
