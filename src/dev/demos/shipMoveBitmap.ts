@@ -172,7 +172,7 @@ const resetGame = (): void => {
   const shipScreenY = Math.floor((TOPMARG + BOTMARG) / 2) // 159
 
   store.dispatch(
-    shipSlice.actions.resetShip({
+    shipSlice.actions.initShip({
       x: shipScreenX,
       y: shipScreenY,
       globalx: state.planet.xstart, // Reset to starting global position

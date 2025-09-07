@@ -39,6 +39,9 @@ import { getBackgroundPattern } from '@core/shared'
 import { shiftFigure } from '@core/ship'
 import { whiteTerrain, blackTerrain } from '@core/walls'
 import { viewClear, viewWhite } from '@core/screen'
+import { starBackground } from '@core/screen/render/starBackground'
+import { createFizzTransition, type FizzTransition } from '@core/screen/render/fizz'
+import { cloneBitmap } from '@lib/bitmap'
 import { LINE_KIND } from '@core/walls'
 import { updateSbar, sbarClear } from '@core/status'
 import { checkFigure } from '@core/ship'
@@ -87,6 +90,29 @@ const store = buildGameStore({
 // Track initialization state
 let initializationComplete = false
 let initializationError: Error | null = null
+
+// Track fizz transition state
+type TransitionState = {
+  active: boolean
+  preDelayFrames: number  // Countdown before transition starts
+  fizzTransition: FizzTransition | null
+  fromBitmap: Uint8Array | null
+  toBitmap: Uint8Array | null
+  delayFrames: number
+}
+
+const transitionState: TransitionState = {
+  active: false,
+  preDelayFrames: 0,
+  fizzTransition: null,
+  fromBitmap: null,
+  toBitmap: null,
+  delayFrames: 0
+}
+
+const MICO_DELAY_FRAMES = 45 // Delay before transition starts (MICODELAY from GW.h)
+const TRANSITION_DELAY_FRAMES = 30 // ~1.5 seconds at 20 FPS (original uses 150 ticks)
+const FIZZ_DURATION = 26 // Based on measurements of fizz time on a Mac Plus
 
 // Initialize game on module load
 const initializeGame = async (): Promise<void> => {
@@ -203,11 +229,16 @@ export const createGameRenderer =
     }
 
     // Check for level completion (only if not already transitioning)
-    if (!state.game.transitioning && checkLevelComplete(state)) {
+    if (!state.game.transitioning && !transitionState.active && checkLevelComplete(state)) {
       console.log(`Level ${state.game.currentLevel} complete!`)
       store.dispatch(markLevelComplete())
-      // Reset ship velocity and rotation to prevent carrying over during transition
-      store.dispatch(shipSlice.actions.resetShip())
+      // Don't stop ship yet - it keeps moving during the countdown!
+      // Ship can even die during this period (Play.c:109-113)
+      
+      // Start countdown to transition (micocycles from Play.c)
+      transitionState.active = true
+      transitionState.preDelayFrames = MICO_DELAY_FRAMES
+      transitionState.delayFrames = 0
     }
 
     // Check for game over (all lives lost)
@@ -410,23 +441,95 @@ export const createGameRenderer =
     const finalState = store.getState()
     const extFinalState = finalState as ExtendedGameState
 
-    // Handle transition effects (fade out/in for level changes)
-    if (extFinalState.game.transitioning) {
-      // During transitions, show a fade effect
-      const fadeProgress = Math.min(extFinalState.game.transitionFrame / 30, 1)
-      
-      // For first half of transition, fade to black
-      // For second half, stay black (new level will fade in)
-      if (fadeProgress < 1) {
-        // Partial fade - still render the scene but darken it
-        // We'll render normally then apply fade at the end
-      } else {
-        // Full black during level load
-        bitmap.data.fill(0)
+    // Handle fizz transition effect (crackle() from Play.c)
+    if (transitionState.active) {
+      // Handle pre-transition delay (micocycles countdown)
+      if (transitionState.preDelayFrames > 0) {
+        transitionState.preDelayFrames--
         
-        // Still update and show status bar with message
+        // When countdown reaches zero, stop the ship
+        if (transitionState.preDelayFrames === 0) {
+          store.dispatch(shipSlice.actions.stopShipMovement())
+        }
+        
+        // Continue rendering the game normally during pre-delay
+        // Fall through to normal rendering
+      } else if (!transitionState.fizzTransition) {
+        // Pre-delay complete, initialize the fizz transition on first frame
+        // Create the "from" bitmap - current game state
+        const fromBitmap = cloneBitmap(bitmap)
+        // Render the current game state (will be done below)
+        // We'll capture it after normal rendering
+        
+        // Create the "to" bitmap - star background with ship if alive
+        const toBitmap = cloneBitmap(bitmap)
+        const shipSprite = finalState.ship.deadCount === 0 ? 
+          spriteService.getShipSprite(finalState.ship.shiprot, { variant: 'def' }) : null
+        const shipMaskSprite = finalState.ship.deadCount === 0 ?
+          spriteService.getShipSprite(finalState.ship.shiprot, { variant: 'mask' }) : null
+        
+        const starBg = starBackground({
+          starCount: 150,
+          additionalRender: finalState.ship.deadCount === 0 ? screen =>
+            fullFigure({
+              x: finalState.ship.shipx - SCENTER,
+              y: finalState.ship.shipy - SCENTER,
+              def: shipSprite!.bitmap,
+              mask: shipMaskSprite!.bitmap
+            })(screen) : undefined
+        })(toBitmap)
+        
+        // Store bitmaps
+        transitionState.fromBitmap = new Uint8Array(fromBitmap.data)
+        transitionState.toBitmap = new Uint8Array(starBg.data)
+        
+        // We'll create the actual fizz transition after rendering the current frame
+        // Fall through to render the current game state first
+      } else if (transitionState.fizzTransition.isComplete) {
+        // Fizz complete, show star background during delay
+        if (transitionState.toBitmap) {
+          bitmap.data.set(transitionState.toBitmap)
+        }
+        
+        // Update status bar
         const statusBarTemplate = spriteService.getStatusBarTemplate()
         let renderedBitmap = sbarClear({ statusBarTemplate })(bitmap)
+        const statusData = {
+          fuel: finalState.ship.fuel,
+          lives: finalState.ship.lives,
+          score: finalState.status.score,
+          bonus: finalState.status.planetbonus,
+          level: extFinalState.game.currentLevel,
+          message: extFinalState.game.statusMessage || '',
+          spriteService
+        }
+        renderedBitmap = updateSbar(statusData)(renderedBitmap)
+        bitmap.data.set(renderedBitmap.data)
+        
+        transitionState.delayFrames++
+        
+        // After delay, proceed with level transition
+        if (transitionState.delayFrames >= TRANSITION_DELAY_FRAMES) {
+          // Clean up transition state
+          transitionState.active = false
+          transitionState.preDelayFrames = 0
+          transitionState.fizzTransition = null
+          transitionState.fromBitmap = null
+          transitionState.toBitmap = null
+          transitionState.delayFrames = 0
+          
+          // Trigger the actual level load
+          handleLevelCompleteTransition(store as any)
+        }
+        return
+      } else {
+        // Fizz in progress
+        const fizzFrame = transitionState.fizzTransition.nextFrame()
+        bitmap.data.set(fizzFrame.data)
+        
+        // Update status bar
+        const statusBarTemplate = spriteService.getStatusBarTemplate()
+        let renderedBitmap = sbarClear({ statusBarTemplate })(bitmap)  
         const statusData = {
           fuel: finalState.ship.fuel,
           lives: finalState.ship.lives,
@@ -1077,6 +1180,24 @@ export const createGameRenderer =
 
     // Copy rendered bitmap data back to original
     bitmap.data.set(renderedBitmap.data)
+    
+    // If we just initialized the transition, capture the rendered frame and create fizz
+    if (transitionState.active && !transitionState.fizzTransition && transitionState.fromBitmap) {
+      // Capture the current rendered frame
+      transitionState.fromBitmap = new Uint8Array(bitmap.data)
+      
+      // Create the fizz transition
+      const fromBitmap = cloneBitmap(bitmap)
+      fromBitmap.data = transitionState.fromBitmap
+      const toBitmap = cloneBitmap(bitmap) 
+      toBitmap.data = transitionState.toBitmap!
+      
+      transitionState.fizzTransition = createFizzTransition({
+        from: fromBitmap,
+        to: toBitmap,
+        durationFrames: FIZZ_DURATION
+      })
+    }
   }
 
 // Export store and galaxy header for level jumping

@@ -48,8 +48,27 @@ export const shipSlice = createSlice({
         globaly?: number
       }>
     ) => {
+      // Reset position to new level's start position
       state.shipx = action.payload.x
       state.shipy = action.payload.y
+      
+      // Reset velocity to zero for new level
+      state.dx = 0
+      state.dy = 0
+      state.xslow = 0
+      state.yslow = 0
+      
+      // Reset rotation to north
+      state.shiprot = 0
+      
+      // Reset activity states
+      state.flaming = false
+      state.flameBlink = 0
+      state.thrusting = false
+      state.firing = false
+      state.bouncing = false
+      state.shielding = false
+      
       // If global coordinates provided, initialize unbounce position and global position
       if (
         action.payload.globalx !== undefined &&
@@ -63,21 +82,23 @@ export const shipSlice = createSlice({
     },
     updatePosition: (
       state,
-      action: PayloadAction<{ 
-        x: number; 
-        y: number; 
-        dx?: number; 
-        dy?: number;
-        globalx?: number;
-        globaly?: number;
+      action: PayloadAction<{
+        x: number
+        y: number
+        dx?: number
+        dy?: number
+        globalx?: number
+        globaly?: number
       }>
     ) => {
       state.shipx = action.payload.x
       state.shipy = action.payload.y
       if (action.payload.dx !== undefined) state.dx = action.payload.dx
       if (action.payload.dy !== undefined) state.dy = action.payload.dy
-      if (action.payload.globalx !== undefined) state.globalx = action.payload.globalx
-      if (action.payload.globaly !== undefined) state.globaly = action.payload.globaly
+      if (action.payload.globalx !== undefined)
+        state.globalx = action.payload.globalx
+      if (action.payload.globaly !== undefined)
+        state.globaly = action.payload.globaly
     },
     shipControlMovement: (state, action: PayloadAction<ControlAction>) => {
       const { controlsPressed, gravity } = action.payload
@@ -134,42 +155,6 @@ export const shipSlice = createSlice({
       state.yslow &= 255
     },
 
-    resetShip: (
-      state,
-      action: PayloadAction<{
-        x: number
-        y: number
-        globalx?: number
-        globaly?: number
-      }>
-    ) => {
-      // Reset position
-      state.shipx = action.payload.x
-      state.shipy = action.payload.y
-      // Reset velocity
-      state.dx = 0
-      state.dy = 0
-      state.xslow = 0
-      state.yslow = 0
-      // Reset rotation
-      state.shiprot = 0
-      // Reset states
-      state.flaming = false
-      state.flameBlink = 0
-      state.thrusting = false
-      state.firing = false
-      state.bouncing = false
-      state.shielding = false
-      // Reset unbounce position if global coords provided
-      if (
-        action.payload.globalx !== undefined &&
-        action.payload.globaly !== undefined
-      ) {
-        state.unbouncex = action.payload.globalx
-        state.unbouncey = action.payload.globaly
-      }
-      // Keep fuel as is
-    },
 
     bounceShip: (
       state,
@@ -280,15 +265,15 @@ export const shipSlice = createSlice({
     },
 
     /**
-     * Reset the ship's velocity and rotation
-     * Used when transitioning between levels to prevent velocity/rotation carryover
+     * Stop the ship's velocity but keep rotation
+     * Used when level completes to freeze ship in place during transition
      */
-    resetShip: state => {
+    stopShipMovement: state => {
       state.dx = 0
       state.dy = 0
       state.xslow = 0
       state.yslow = 0
-      state.shiprot = 0  // Reset to north
+      // Keep rotation as-is (ship should still face same direction)
     },
 
     /**
