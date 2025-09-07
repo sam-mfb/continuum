@@ -2,95 +2,43 @@
 
 This document outlines the specific discrepancies between the original C code and the TypeScript port that cause bunkers to disappear and wall collisions to fail when the player's viewport wraps around the world map.
 
-The root cause is two distinct bugs in the culling logic, where the TypeScript implementation fails to correctly replicate the original game's world-wrapping strategy.
-
 ---
 
-## Discrepancy 1: Bunker Culling (`doBunks`)
+## Discrepancy 1: Bunker Culling (`doBunks`) - RESOLVED
 
-The TypeScript implementation is missing a crucial second rendering pass that the original game used to handle wrapped bunker drawing.
+The TypeScript implementation was missing a crucial second rendering pass that the original game used to handle wrapped bunker drawing.
 
-### Original C Implementation (`Bunkers.c`)
-
-The original code uses a controller function that calls a drawing function twice when the viewport is near the world's edge.
-
-```c
-do_bunkers()
-{
-	// ... (bunker animation logic) ...
-	
-    // Call 1: Draw for the primary screen position
-	do_bunks(screenx, screeny);
-
-    // Call 2: If near the edge, draw AGAIN for the wrapped position
-	if (on_right_side)
-		do_bunks(screenx-worldwidth, screeny);
-}
-
-// Helper drawing function
-do_bunks(scrnx, scrny)
-{
-	left = scrnx - 48;
-	right = scrnx + SCRWTH + 48;
-	for (bp=bunkers; bp->rot >= 0; bp++)
-		if (bp->alive && bp->x > left && bp->x < right)
-        {
-            // ... draw bunker ...
-        }
-}
-```
-
-This two-call strategy is simple and effective. The second call, with an offset `screenx`, handles drawing any bunkers from the far-left of the map that should be visible on the right side of the wrapped viewport.
-
-### TypeScript Discrepancy (`doBunks`)
-
-The TypeScript port only implemented the logic of the helper drawing function. It is missing the controller logic that makes the second call.
-
-```typescript
-// src/core/planet/render/bunker.ts
-export function doBunks(...) {
-  return screen => {
-    const left = scrnx - 48
-    const right = scrnx + SCRWTH + 48
-    for (const bp of bunkrec) {
-      if (bp->alive && bp.x > left && bp.x < right) {
-        // ... draw bunker ...
-      }
-    }
-    // NO SECOND CALL FOR WRAPPING
-    return newScreen
-  }
-}
-```
-
-**Result:** Because the second call is missing, bunkers that are on the other side of the wrap boundary are never checked and are therefore never drawn, causing them to "disappear."
+**Update:** This issue has been resolved by adding the second rendering pass for bunkers, and they now draw correctly.
 
 ---
 
 ## Discrepancy 2: Wall Collision Culling (`blackTerrain`)
 
-The TypeScript implementation of the second pass for drawing collidable wall surfaces contains a flawed loop termination condition that is not present in the original.
+The issue is that bounce walls lose their collision when the viewport is wrapped. The walls are drawn correctly visually, but the ship passes through them. This indicates that the function responsible for drawing the *invisible collision surfaces* is failing, even though the visual rendering is working.
 
-### Original C Implementation (`Terrain.c`)
+The function `blackTerrain` is used for this collision rendering. The discrepancy lies in how the second, world-wrapping pass of this function is implemented.
 
-The original code uses a `for` loop where the continuation condition correctly handles the wrapped coordinates.
+### Original C Implementation (`Terrain.c`, lines 77-82)
+
+The original code uses a `for` loop for its second pass. The loop's continuation condition correctly handles the wrapped coordinates.
 
 ```c
-// Second pass for wrapping
-right -= worldwidth;
+// `right` has been updated to a wrapped coordinate (e.g., a negative number)
+// The loop starts from the beginning of the wall list (`p = kindptrs[thekind]`)
+// It continues as long as the wall's start coordinate is less than the wrapped boundary
 for(p = kindptrs[thekind]; p && p->startx < right; p = p->next)
     if (/* visibility check */)
         BLACK_LINE_Q(p, screenx-worldwidth, screeny);
 ```
 
-The loop correctly iterates through all lines, and the `p->startx < right` condition ensures it only stops after checking all potentially visible wrapped lines.
+The key is the condition `p->startx < right`. When the screen is wrapped, `right` is a negative number (e.g., `-938`). The loop correctly processes all walls with negative coordinates, but stops as soon as it encounters a wall with a positive coordinate (e.g., `100`), because `100 < -938` is false.
 
-### TypeScript Discrepancy (`blackTerrain`)
+### TypeScript Discrepancy (`blackTerrain.ts`, lines 77-88)
 
-The TypeScript port uses a `while` loop but adds an incorrect `break` condition that prematurely terminates the loop.
+The TypeScript port attempts to replicate this logic with a `while` loop and an `if...break` statement.
 
 ```typescript
-// src/core/walls/render/blackTerrain.ts
+// `wrappedRight` is the equivalent of the C code's updated `right`
 const wrappedRight = right - worldwidth
 let lineId: string | null = firstLineId
 
@@ -99,7 +47,8 @@ while (lineId !== null) {
   if (!line) break
   
   // THIS IS THE BUG:
-  if (line.startx >= wrappedRight) break // This terminates the whole loop
+  // This condition prematurely terminates the loop.
+  if (line.startx >= wrappedRight) break 
 
   if (/* visibility check */) {
       // ... draw wrapped line ...
@@ -108,4 +57,59 @@ while (lineId !== null) {
 }
 ```
 
-**Result:** When the viewport wraps, `wrappedRight` becomes a negative number. The very first line in the level data typically has a small positive `startx`. The condition `line.startx >= wrappedRight` (e.g., `100 >= -938`) evaluates to `true`, and the `break` statement is executed immediately. This prevents the second pass from drawing *any* of the collidable wall surfaces, causing collision detection to fail.
+While `line.startx >= wrappedRight` is logically the inverse of `p->startx < right`, this implementation is failing in practice. When the screen wraps, `wrappedRight` becomes a negative number. The loop starts from the beginning of the wall list, which typically contains walls with small, positive `startx` coordinates. The condition `line.startx >= wrappedRight` (e.g., `100 >= -938`) evaluates to `true` on the very first wall, causing the `break` statement to execute immediately.
+
+**Result:** The second pass, which is supposed to draw the collision surfaces for the wrapped part of the screen, does nothing. This is why you can see the walls (drawn by a different, correct function) but pass through them (because this function failed to draw their collision surfaces).
+
+### Proposed Fix
+
+The fix is to restructure the second pass to more faithfully match the logic and intent of the original C code's `for` loop. The loop should iterate through the walls from the beginning and only draw the ones that meet the criteria, without breaking prematurely.
+
+```typescript
+// in src/core/walls/render/blackTerrain.ts
+
+// ... (end of the first pass) ...
+
+// World wrapping - second pass with adjusted coordinates
+// This pass is to draw the far-left side of the world when the
+// viewport is on the far-right.
+const wrappedRight = viewport.r - worldwidth
+const wrappedScrx = viewport.x - worldwidth
+
+// Re-initialize lineId to the start of the list for the second pass,
+// matching the `p = kindptrs[thekind]` initialization in the C `for` loop.
+let lineId: string | null = firstLineId
+
+while (lineId !== null) {
+  const line: LineRec | undefined = organizedWalls[lineId]
+  if (!line) break
+
+  // This is the continuation condition from the C `for` loop: `p->startx < right`.
+  // If a line's start is beyond the wrapped right boundary, we can stop.
+  if (line.startx >= wrappedRight) {
+    break
+  }
+
+  // This is the visibility check from the C `if` statement.
+  if (
+    (line.starty >= top || line.endy >= top) &&
+    (line.starty < bot || line.endy < bot)
+  ) {
+    // This corresponds to the `BLACK_LINE_Q` macro call.
+    const drawFunc = blackRoutines[line.newtype]
+    if (drawFunc) {
+      newScreen = drawFunc({
+        line,
+        scrx: wrappedScrx, // Use the wrapped screen coordinate
+        scry: viewport.y
+      })(newScreen)
+    }
+  }
+
+  lineId = line.nextId
+}
+
+return newScreen
+```
+
+This revised structure correctly separates the loop's continuation condition (`line.startx < wrappedRight`) from the per-line visibility check, exactly as the original C code does. This will ensure the collision surfaces for wrapped walls are drawn correctly.
