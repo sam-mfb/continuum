@@ -1,7 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { ShipState } from './types'
 import { ShipControl } from './types'
-import { SHIP, DEAD_TIME, FUELSTART, FUELGAIN } from './constants'
+import { SHIP, DEAD_TIME, FUELSTART, FUELGAIN, FUELBURN } from './constants'
 
 const initialState: ShipState = {
   shiprot: 0,
@@ -125,8 +125,9 @@ export const shipSlice = createSlice({
         } else {
           state.flameBlink = 4
         }
-        state.thrusting = false
-        // fuel_minus(FUELBURN);
+        state.thrusting = true
+        // Consume fuel for thrusting (Play.c:490)
+        state.fuel = Math.max(0, state.fuel - FUELBURN)
         // start_sound(THRU_SOUND);
       } else state.thrusting = false
 
