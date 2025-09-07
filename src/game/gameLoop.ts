@@ -61,6 +61,7 @@ import { SKILLBRADIUS } from '@core/ship'
 import { xyindist } from '@core/shots'
 import { legalAngle } from '@core/planet'
 import { getGalaxyService } from '@core/galaxy'
+import { containShip } from '@core/shared/containShip'
 
 // Game-specific imports
 import gameReducer, {
@@ -220,8 +221,13 @@ export const createGameRenderer =
     }
 
     // Process ship controls and movement only if alive
+    let globalx: number
+    let globaly: number
+    let on_right_side: boolean
+    
     if (state.ship.deadCount === 0) {
       // Only handle controls and move ship if alive
+      // shipControl will read globalx/globaly from ship state (set by previous frame's containShip)
       store.dispatch(
         shipControl({
           controlsPressed: getPressedControls(frame.keysDown),
@@ -229,14 +235,64 @@ export const createGameRenderer =
         })
       )
 
-      // Move ship - containment middleware will automatically apply
+      // Move ship (Play.c:216 - move_ship())
       store.dispatch(shipSlice.actions.moveShip())
+      
+      // Apply containment after movement (Play.c:394-457 - contain_ship())
+      // This handles screen wrapping and calculates global position correctly
+      const currentState = store.getState()
+      const contained = containShip(
+        currentState.ship,
+        currentState.screen,
+        currentState.planet
+      )
+      
+      // Update ship position if changed by containment
+      // Also always update global position for next frame's shipControl
+      if (
+        contained.shipx !== currentState.ship.shipx ||
+        contained.shipy !== currentState.ship.shipy ||
+        contained.dx !== currentState.ship.dx ||
+        contained.dy !== currentState.ship.dy ||
+        contained.globalx !== currentState.ship.globalx ||
+        contained.globaly !== currentState.ship.globaly
+      ) {
+        store.dispatch(
+          shipSlice.actions.updatePosition({
+            x: contained.shipx,
+            y: contained.shipy,
+            dx: contained.dx,
+            dy: contained.dy,
+            globalx: contained.globalx,
+            globaly: contained.globaly
+          })
+        )
+      }
+      
+      // Update screen position if changed by containment (includes wrapping)
+      if (
+        contained.screenx !== currentState.screen.screenx ||
+        contained.screeny !== currentState.screen.screeny
+      ) {
+        store.dispatch(
+          screenSlice.actions.updatePosition({
+            x: contained.screenx,
+            y: contained.screeny
+          })
+        )
+      }
+      
+      // Use the global position calculated from wrapped screen coordinates
+      // This is the critical fix - globalx/globaly are calculated AFTER screen wrapping
+      globalx = contained.globalx
+      globaly = contained.globaly
+      on_right_side = contained.on_right_side
+    } else {
+      // Ship is dead, still need to calculate position for other systems
+      globalx = state.screen.screenx + state.ship.shipx
+      globaly = state.screen.screeny + state.ship.shipy
+      on_right_side = state.screen.screenx > state.planet.worldwidth - SCRWTH
     }
-
-    // Move all bullets with collision detection
-    // Calculate global ship position (screen + ship relative position)
-    const globalx = state.screen.screenx + state.ship.shipx
-    const globaly = state.screen.screeny + state.ship.shipy
 
     // Update bunker rotations for animated bunkers (GROUND, FOLLOW, GENERATOR)
     store.dispatch(updateBunkerRotations({ globalx, globaly }))
@@ -411,8 +467,9 @@ export const createGameRenderer =
 
     // Draw craters (from Play.c:222 - draw_craters())
     // Craters are drawn early, after screen clear but before walls
-    // Calculate on_right_side flag (Play.c:443)
-    const on_right_side =
+    // Recalculate on_right_side flag for drawing (may have changed since earlier)
+    // (Play.c:443 - on_right_side = screenx > worldwidth - SCRWTH)
+    on_right_side =
       finalState.screen.screenx > finalState.planet.worldwidth - SCRWTH
 
     // Get crater images using existing getCraterSprite method

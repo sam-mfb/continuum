@@ -25,11 +25,11 @@ export const shipControl =
 
     // Get updated state after movement
     const state = getState()
-    const { ship, screen, walls, planet } = state
-
-    // Calculate global position
-    const globalx = screen.screenx + ship.shipx
-    const globaly = screen.screeny + ship.shipy
+    const { ship, walls, planet } = state
+    
+    // Use global position from ship state (set by previous frame's containShip)
+    // This matches the original game where ship_control uses globals set by previous frame
+    const { globalx, globaly } = ship
 
     // Get walls as array for collision detection
     const wallsArray = Object.values(

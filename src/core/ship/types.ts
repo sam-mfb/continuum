@@ -38,4 +38,8 @@ export type ShipState = {
   // Respawn position
   startx: number
   starty: number
+  // Global position (calculated by containShip after screen wrapping)
+  // Used by next frame's shipControl (matches original game's frame delay)
+  globalx: number
+  globaly: number
 }

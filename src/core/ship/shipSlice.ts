@@ -25,7 +25,9 @@ const initialState: ShipState = {
   unbouncey: 0,
   deadCount: 0,
   startx: 0,
-  starty: 0
+  starty: 0,
+  globalx: 0,
+  globaly: 0
 }
 
 type ControlAction = {
@@ -48,23 +50,34 @@ export const shipSlice = createSlice({
     ) => {
       state.shipx = action.payload.x
       state.shipy = action.payload.y
-      // If global coordinates provided, initialize unbounce position
+      // If global coordinates provided, initialize unbounce position and global position
       if (
         action.payload.globalx !== undefined &&
         action.payload.globaly !== undefined
       ) {
         state.unbouncex = action.payload.globalx
         state.unbouncey = action.payload.globaly
+        state.globalx = action.payload.globalx
+        state.globaly = action.payload.globaly
       }
     },
     updatePosition: (
       state,
-      action: PayloadAction<{ x: number; y: number; dx?: number; dy?: number }>
+      action: PayloadAction<{ 
+        x: number; 
+        y: number; 
+        dx?: number; 
+        dy?: number;
+        globalx?: number;
+        globaly?: number;
+      }>
     ) => {
       state.shipx = action.payload.x
       state.shipy = action.payload.y
       if (action.payload.dx !== undefined) state.dx = action.payload.dx
       if (action.payload.dy !== undefined) state.dy = action.payload.dy
+      if (action.payload.globalx !== undefined) state.globalx = action.payload.globalx
+      if (action.payload.globaly !== undefined) state.globaly = action.payload.globaly
     },
     shipControlMovement: (state, action: PayloadAction<ControlAction>) => {
       const { controlsPressed, gravity } = action.payload
