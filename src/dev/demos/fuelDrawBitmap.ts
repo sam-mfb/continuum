@@ -83,7 +83,8 @@ const createInitialPlanetState = (): PlanetState => {
     lines: [],
     bunkers: [],
     fuels,
-    craters: []
+    craters: [],
+    wallsSorted: false
   }
 }
 

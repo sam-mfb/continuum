@@ -130,7 +130,9 @@ export function createGalaxyService(): GalaxyService {
       const walls = planet.lines
       let isSorted = true
       for (let i = 1; i < walls.length; i++) {
-        if (walls[i].startx < walls[i - 1].startx) {
+        const current = walls[i]
+        const previous = walls[i - 1]
+        if (current && previous && current.startx < previous.startx) {
           isSorted = false
           break
         }

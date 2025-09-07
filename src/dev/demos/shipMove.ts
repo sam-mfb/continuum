@@ -32,7 +32,8 @@ const initializeGame = (): void => {
       lines: [],
       bunkers: [],
       fuels: [],
-      craters: []
+      craters: [],
+      wallsSorted: false
     })
   )
 

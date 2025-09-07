@@ -25,7 +25,8 @@ const initialState: PlanetState = {
   lines: [],
   bunkers: [],
   fuels: [],
-  craters: []
+  craters: [],
+  wallsSorted: false
 }
 
 export const planetSlice = createSlice({
