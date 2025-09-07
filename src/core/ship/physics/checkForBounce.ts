@@ -15,7 +15,6 @@ import { LINE_KIND } from '@core/shared'
 import { pt2line } from '@core/shared/pt2line'
 import { getstrafedir } from '@core/shared/getstrafedir'
 
-
 export type CheckForBounceData = {
   kindPointers: Record<number, string | null>
   organizedWalls: Record<string, LineRec>
@@ -41,9 +40,7 @@ export function checkForBounce(deps: CheckForBounceDeps): MonochromeBitmap {
   const { screen, store, shipDef, wallData, viewport, worldwidth } = deps
   const shipState = store.getState().ship
 
-  // Calculate global ship position (Play.c:302-303)
-  const globalx = viewport.x + shipState.shipx
-  const globaly = viewport.y + shipState.shipy
+  const { globalx, globaly } = shipState
 
   // Step 1: Check if there's already a collision before adding bounce walls
   // This would be a collision with ghost walls or other non-bounce elements
@@ -173,4 +170,3 @@ function findClosestBounceWall(
 
   return { norm }
 }
-
