@@ -999,3 +999,10 @@ export const createGameRenderer =
     // Copy rendered bitmap data back to original
     bitmap.data.set(renderedBitmap.data)
   }
+
+// Export store and galaxy header for level jumping
+export const getGameStore = () => store
+export const getGalaxyHeader = () => {
+  const state = store.getState() as ExtendedGameState
+  return state.game.galaxyHeader
+}

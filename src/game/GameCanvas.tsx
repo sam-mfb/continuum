@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react'
-import type { BitmapRenderer, MonochromeBitmap } from '@lib/bitmap'
-import { createMonochromeBitmap, clearBitmap, bitmapToCanvas } from '@lib/bitmap'
+import React, { useEffect, useRef, useState } from 'react'
+import type { BitmapRenderer } from '@lib/bitmap'
+import { createMonochromeBitmap, clearBitmap } from '@lib/bitmap'
 
 interface GameCanvasProps {
   renderer: BitmapRenderer
@@ -8,6 +8,8 @@ interface GameCanvasProps {
   height?: number
   scale?: number
   fps?: number
+  totalLevels?: number
+  onLevelSelect?: (level: number) => void
 }
 
 /**
@@ -19,10 +21,13 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
   width = 512,
   height = 342,
   scale = 2,
-  fps = 20
+  fps = 20,
+  totalLevels = 30,
+  onLevelSelect
 }) => {
+  const [selectedLevel, setSelectedLevel] = useState<string>('1')
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const animationRef = useRef<number>()
+  const animationRef = useRef<number>(0)
   const lastFrameTimeRef = useRef<number>(0)
   const frameIntervalMs = 1000 / fps
   const keysDownRef = useRef<Set<string>>(new Set())
@@ -65,14 +70,14 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
           keysDown: keysDownRef.current,
           keysPressed: new Set(),
           keysReleased: new Set(),
-          frameNumber: 0,
-          timeMs: currentTime,
-          deltaMs: deltaTime
+          frameCount: 0,
+          deltaTime: deltaTime,
+          totalTime: currentTime,
+          targetDelta: frameIntervalMs
         }, {
-          fps,
-          targetFps: fps,
-          canvasWidth: width * scale,
-          canvasHeight: height * scale
+          width,
+          height,
+          fps
         })
 
         // Create offscreen canvas at native resolution
@@ -127,20 +132,60 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     }
   }, [renderer, width, height, scale, fps, frameIntervalMs])
 
+  const handleLevelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const level = e.target.value
+    setSelectedLevel(level)
+    if (onLevelSelect) {
+      onLevelSelect(parseInt(level, 10))
+    }
+  }
+
   return (
-    <canvas
-      ref={canvasRef}
-      width={width * scale}
-      height={height * scale}
-      style={{
-        imageRendering: 'pixelated',
-        // @ts-ignore - vendor prefixes
-        WebkitImageRendering: 'pixelated',
-        MozImageRendering: 'crisp-edges',
-        border: '2px solid #666',
-        display: 'block'
-      }}
-    />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
+      {onLevelSelect && (
+        <div style={{
+          display: 'flex',
+          gap: '10px',
+          alignItems: 'center',
+          padding: '10px',
+          backgroundColor: '#222',
+          borderRadius: '5px'
+        }}>
+          <label style={{ color: 'white', fontFamily: 'monospace' }}>Jump to Level:</label>
+          <select
+            value={selectedLevel}
+            onChange={handleLevelChange}
+            style={{
+              padding: '5px',
+              fontFamily: 'monospace',
+              backgroundColor: '#333',
+              color: 'white',
+              border: '1px solid #666',
+              borderRadius: '3px'
+            }}
+          >
+            {Array.from({ length: totalLevels }, (_, i) => i + 1).map(level => (
+              <option key={level} value={level}>
+                Level {level}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      <canvas
+        ref={canvasRef}
+        width={width * scale}
+        height={height * scale}
+        style={{
+          imageRendering: 'pixelated',
+          // @ts-ignore - vendor prefixes
+          WebkitImageRendering: 'pixelated',
+          MozImageRendering: 'crisp-edges',
+          border: '2px solid #666',
+          display: 'block'
+        }}
+      />
+    </div>
   )
 }
 

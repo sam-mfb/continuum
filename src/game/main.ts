@@ -7,7 +7,8 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import GameCanvas from './GameCanvas'
 import { createSpriteServiceV2 } from '@core/sprites'
-import { createGameRenderer } from './gameLoop'
+import { createGameRenderer, getGameStore, getGalaxyHeader } from './gameLoop'
+import { loadLevel } from './levelManager'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 const root = createRoot(app)
@@ -16,16 +17,31 @@ const root = createRoot(app)
 createSpriteServiceV2().then(spriteService => {
   console.log('Sprite service initialized')
   
-  // Render the game canvas
-  root.render(
-    React.createElement(GameCanvas, {
-      renderer: createGameRenderer(spriteService),
-      width: 512,
-      height: 342,
-      scale: 2,  // Pixel-doubled like the demos
-      fps: 20   // Original Continuum runs at 20 FPS
-    })
-  )
+  const renderer = createGameRenderer(spriteService)
+  
+  // Wait a bit for the game to initialize and load galaxy data
+  setTimeout(() => {
+    const galaxyHeader = getGalaxyHeader()
+    const totalLevels = galaxyHeader?.planets || 30
+    
+    // Render the game canvas with level selector
+    root.render(
+      React.createElement(GameCanvas, {
+        renderer,
+        width: 512,
+        height: 342,
+        scale: 2,  // Pixel-doubled like the demos
+        fps: 20,   // Original Continuum runs at 20 FPS
+        totalLevels,
+        onLevelSelect: (level: number) => {
+          const store = getGameStore()
+          if (store) {
+            loadLevel(store as any, level)
+          }
+        }
+      })
+    )
+  }, 100)
   
   console.log('Game started!')
 }).catch(error => {
