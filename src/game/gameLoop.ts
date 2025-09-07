@@ -81,7 +81,7 @@ import {
   handleGameOverTransition,
   type ExtendedGameState
 } from './levelManager'
-import { INITIAL_LIVES } from './constants'
+import { SHIPSTART } from './constants'
 
 // Configure store with game slice
 const store = buildGameStore({
@@ -131,7 +131,7 @@ const initializeGame = async (): Promise<void> => {
     store.dispatch(loadGalaxyHeader(galaxyHeader))
 
     // Initialize lives
-    store.dispatch(shipSlice.actions.setLives(INITIAL_LIVES))
+    store.dispatch(shipSlice.actions.setLives(SHIPSTART))
     
     // Initialize status (score, bonus, etc.)
     store.dispatch(statusSlice.actions.initStatus())
@@ -251,6 +251,10 @@ export const createGameRenderer =
         store.dispatch(statusSlice.actions.addScore(bonusPoints))
         console.log(`Awarded ${bonusPoints} bonus points`)
       }
+      
+      // Award extra life for completing level (Main.c:683 - numships++)
+      store.dispatch(shipSlice.actions.extraLife())
+      console.log('Awarded extra life for level completion')
       
       store.dispatch(markLevelComplete())
       // Don't stop ship yet - it keeps moving during the countdown!

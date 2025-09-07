@@ -4,4 +4,4 @@
 
 export { createGameRenderer } from './gameLoop'
 export type { GameState } from './gameSlice'
-export { INITIAL_LIVES, STARTING_LEVEL } from './constants'
+export { SHIPSTART, STARTING_LEVEL } from './constants'

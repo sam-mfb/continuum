@@ -25,7 +25,7 @@ import {
   resetGame,
   endTransition
 } from './gameSlice'
-import { INITIAL_LIVES, LEVEL_COMPLETE_DELAY, GAME_OVER_DELAY } from './constants'
+import { SHIPSTART, LEVEL_COMPLETE_DELAY, GAME_OVER_DELAY } from './constants'
 import type { GameState } from './gameSlice'
 
 // Extended state that includes game slice
@@ -174,7 +174,7 @@ export function resetToLevelOne(store: Store<ExtendedGameState>): void {
   store.dispatch(resetGame())
   
   // Reset lives
-  store.dispatch(shipSlice.actions.setLives(INITIAL_LIVES))
+  store.dispatch(shipSlice.actions.setLives(SHIPSTART))
   
   // Reset score and status
   store.dispatch(statusSlice.actions.initStatus())

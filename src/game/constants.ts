@@ -3,7 +3,7 @@
  */
 
 // Game progression
-export const INITIAL_LIVES = 3
+export const SHIPSTART = 2  // Number of spare ships to start with (GW.h:135)
 export const STARTING_LEVEL = 1
 
 // Level transition timing (in frames)

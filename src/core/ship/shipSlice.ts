@@ -2,11 +2,12 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { ShipState } from './types'
 import { ShipControl } from './types'
 import { SHIP, DEAD_TIME, FUELSTART, FUELGAIN, FUELBURN } from './constants'
+import { SHIPSTART } from '../../game/constants'
 
 const initialState: ShipState = {
   shiprot: 0,
   fuel: FUELSTART,
-  lives: 3,
+  lives: SHIPSTART,
   flaming: false,
   flameBlink: 0,
   thrusting: false,
@@ -370,7 +371,7 @@ export const shipSlice = createSlice({
      * Reset lives for new game
      */
     resetLives: state => {
-      state.lives = 3
+      state.lives = SHIPSTART
     }
   }
 })
