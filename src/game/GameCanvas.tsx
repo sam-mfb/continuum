@@ -31,6 +31,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
   const lastFrameTimeRef = useRef<number>(0)
   const frameIntervalMs = 1000 / fps
   const keysDownRef = useRef<Set<string>>(new Set())
+  const frameCountRef = useRef<number>(0)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -78,7 +79,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
           keysDown: keysDownRef.current,
           keysPressed: new Set(),
           keysReleased: new Set(),
-          frameCount: 0,
+          frameCount: frameCountRef.current,
           deltaTime: deltaTime,
           totalTime: currentTime,
           targetDelta: frameIntervalMs
@@ -123,6 +124,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
         ctx.drawImage(offscreen, 0, 0, bitmap.width * scale, bitmap.height * scale)
 
         lastFrameTimeRef.current = currentTime
+        frameCountRef.current++
       }
 
       animationRef.current = requestAnimationFrame(gameLoop)

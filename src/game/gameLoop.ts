@@ -132,6 +132,9 @@ const initializeGame = async (): Promise<void> => {
 
     // Initialize lives
     store.dispatch(shipSlice.actions.setLives(INITIAL_LIVES))
+    
+    // Initialize status (score, bonus, etc.)
+    store.dispatch(statusSlice.actions.initStatus())
 
     // Load level 1 using the level manager
     loadLevel(store as Store<ExtendedGameState>, 1)
@@ -215,7 +218,8 @@ export const createGameRenderer =
     const state = store.getState() as ExtendedGameState
 
     // Decrement bonus countdown every 10 frames (Play.c:197-201)
-    // Only countdown if not transitioning and ship is playing
+    // Original: bonuscount decrements each frame from 10 to 0
+    // When it hits 0 (after 10 frames), planetbonus -= 10 and bonuscount resets
     if (!state.game.transitioning && !transitionState.active) {
       if (frame.frameCount % 10 === 0) {
         store.dispatch(statusSlice.actions.decrementBonus())

@@ -29,6 +29,7 @@ export const statusSlice = createSlice({
   initialState,
   reducers: {
     // Decrement bonus countdown - called every 10 frames (Play.c:197-201)
+    // In original: bonuscount goes 10->0 over 10 frames, then planetbonus -= 10
     decrementBonus: state => {
       if (state.planetbonus > 0) {
         state.planetbonus -= 10

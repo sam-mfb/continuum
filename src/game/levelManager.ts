@@ -103,8 +103,7 @@ export function loadLevel(
   store.dispatch(initializeBunkers())
   store.dispatch(initializeFuels())
 
-  // Initialize status
-  store.dispatch(statusSlice.actions.initStatus())
+  // Set planet bonus for this level (don't reset score!)
   store.dispatch(statusSlice.actions.setPlanetBonus(planet.planetbonus))
   // Level is shown from game state now, not status slice
 
@@ -176,6 +175,9 @@ export function resetToLevelOne(store: Store<ExtendedGameState>): void {
   
   // Reset lives
   store.dispatch(shipSlice.actions.setLives(INITIAL_LIVES))
+  
+  // Reset score and status
+  store.dispatch(statusSlice.actions.initStatus())
   
   // Load level 1
   loadLevel(store, 1)
