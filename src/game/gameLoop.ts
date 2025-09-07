@@ -375,19 +375,17 @@ export const createGameRenderer =
     }
 
     // Move bunker shots with shield protection check
-    // Calculate ship's global position for shield protection
+    // Re-read state to get current values after previous dispatches
     const currentState = store.getState()
-    const shipGlobalX = currentState.screen.screenx + currentState.ship.shipx
-    const shipGlobalY = currentState.screen.screeny + currentState.ship.shipy
 
     store.dispatch(
       moveBullets({
-        worldwidth: state.planet.worldwidth,
-        worldwrap: state.planet.worldwrap,
-        walls: state.planet.lines,
+        worldwidth: currentState.planet.worldwidth,
+        worldwrap: currentState.planet.worldwrap,
+        walls: currentState.planet.lines,
         // Include ship data for shield protection
-        shipGlobalX,
-        shipGlobalY,
+        shipGlobalX: currentState.ship.globalx,
+        shipGlobalY: currentState.ship.globaly,
         shielding: currentState.ship.shielding
       })
     )
