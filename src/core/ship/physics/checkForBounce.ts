@@ -6,11 +6,13 @@
 import type { Store } from '@reduxjs/toolkit'
 import type { MonochromeBitmap, LineRec } from '@core/walls'
 import type { ShipState } from '@core/ship'
+import type { Point } from '@core/shared/pt2xy'
 import { blackTerrain } from '@core/walls/render/blackTerrain'
 import { checkFigure } from '@core/ship'
 import { eraseFigure } from '@core/ship'
 import { SCENTER } from '@core/figs/types'
 import { LINE_KIND } from '@core/shared'
+import { pt2line } from '@core/shared/pt2line'
 
 // Bounce direction tables from Terrain.c:234-240
 // First index: 0 = below wall, 1 = above wall
@@ -140,13 +142,16 @@ function findClosestBounceWall(
   unbouncex: number,
   unbouncey: number,
   wallData: CheckForBounceData,
-  worldwidth: number
+  _worldwidth: number
 ): { norm: number } | null {
   const firstBounceId = wallData.kindPointers[LINE_KIND.BOUNCE]
   if (!firstBounceId) return null
 
   let closestWall: LineRec | null = null
-  let minDistance = 1000 // Start with large distance like original (Play.c:304)
+  let minDistance = 1000 // Start with large squared distance like original (Play.c:304)
+
+  // Create Point object for ship position (Play.c:302-303)
+  const shipPoint: Point = { h: globalx, v: globaly }
 
   // Check all bounce walls (Play.c:305-310)
   let lineId: string | null = firstBounceId
@@ -154,21 +159,11 @@ function findClosestBounceWall(
     const line: LineRec | undefined = wallData.organizedWalls[lineId]
     if (!line) break
 
-    // Calculate distance from ship to line using pt2line approximation
-    // For simplicity, using distance to line midpoint
-    const midX = (line.startx + line.endx) / 2
-    const midY = (line.starty + line.endy) / 2
+    // Calculate actual distance from ship to line segment using pt2line
+    // This matches the original pt2line() call at Play.c:306
+    const distance = pt2line(shipPoint, line)
 
-    let dx = globalx - midX
-    let dy = globaly - midY
-
-    // Handle world wrapping
-    if (Math.abs(dx) > worldwidth / 2) {
-      dx = dx > 0 ? dx - worldwidth : dx + worldwidth
-    }
-
-    const distance = Math.sqrt(dx * dx + dy * dy)
-
+    // Compare squared distances (pt2line returns squared distance)
     if (distance < minDistance) {
       minDistance = distance
       closestWall = line

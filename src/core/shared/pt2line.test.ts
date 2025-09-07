@@ -13,7 +13,7 @@ import { LINE_TYPE, LINE_KIND, LINE_DIR, NEW_TYPE } from './types/line'
  * Helper to create a line record for testing
  */
 function createLine(partial: Partial<LineRec>): LineRec {
-  return {
+  const base: LineRec = {
     id: 'test-line',
     startx: 100,
     starty: 100,
@@ -25,8 +25,9 @@ function createLine(partial: Partial<LineRec>): LineRec {
     up_down: LINE_DIR.DN,
     newtype: NEW_TYPE.E,
     nextId: null,
-    ...partial
+    nextwhId: null
   }
+  return { ...base, ...partial } as LineRec
 }
 
 describe('pt2line', () => {
