@@ -1,7 +1,7 @@
 import type { ShotRec } from './types'
 import type { LineRec } from '@core/shared'
 import { LINE_TYPE, LINE_KIND } from '@core/shared'
-import { getstrafedir } from './getstrafedir'
+import { getstrafedir } from '@core/shared/getstrafedir'
 import { idiv, imul } from '@lib/integer-math'
 
 /**

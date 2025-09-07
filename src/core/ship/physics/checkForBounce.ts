@@ -13,15 +13,8 @@ import { eraseFigure } from '@core/ship'
 import { SCENTER } from '@core/figs/types'
 import { LINE_KIND } from '@core/shared'
 import { pt2line } from '@core/shared/pt2line'
+import { getstrafedir } from '@core/shared/getstrafedir'
 
-// Bounce direction tables from Terrain.c:234-240
-// First index: 0 = below wall, 1 = above wall
-// Second index: 5 + (line.type * line.up_down)
-// For line types 1-5 with up_down = -1 or 1
-const bounceDirTable: number[][] = [
-  [8, 7, 6, 5, -1, -1, -1, 11, 10, 9, 8], // Below wall
-  [0, 15, 14, 13, -1, -1, -1, 3, 2, 1, 0] // Above wall
-]
 
 export type CheckForBounceData = {
   kindPointers: Record<number, string | null>
@@ -174,64 +167,10 @@ function findClosestBounceWall(
 
   if (!closestWall) return null
 
-  // Calculate norm using simplified getstrafedir logic (Play.c:313)
+  // Calculate norm using getstrafedir (Play.c:313)
   // The norm should point away from the wall toward unbouncex/unbouncey
-  const norm = getStradeDir(closestWall, unbouncex, unbouncey)
+  const norm = getstrafedir(closestWall, unbouncex, unbouncey)
 
   return { norm }
 }
 
-/**
- * Implementation of getstrafedir from Terrain.c:242-263
- * Returns a direction (0-15) that points away from the wall
- */
-function getStradeDir(line: LineRec, targetX: number, targetY: number): number {
-  // For vertical walls (type === LINE_N which is 1)
-  if (line.type === 1) {
-    // LINE_N = 1
-    // Terrain.c:248-254
-    if (targetX > line.startx) {
-      return 4 // East direction (Terrain.c:250)
-    } else if (line.kind === LINE_KIND.BOUNCE) {
-      return 12 // West direction for bounce walls (Terrain.c:252)
-    } else {
-      return -1 // No strafe for non-bounce vertical walls (Terrain.c:254)
-    }
-  }
-
-  // For diagonal walls, use slope to determine position relative to wall
-  // Terrain.c:256-261
-
-  // Slope tables for different line types (simplified)
-  // In the original, slopes2[type] gives the slope * 2
-  const slopes2: Record<number, number> = {
-    2: 2, // LINE_NNE: slope = 1
-    3: 1, // LINE_NE: slope = 0.5
-    4: 0, // LINE_ENE: slope ≈ 0 (very shallow)
-    5: 0 // LINE_E: horizontal
-  }
-
-  const m2 = line.up_down * (slopes2[line.type] ?? 1)
-
-  // Calculate expected y position on the line at targetX
-  const y0 = line.starty + ((m2 * (targetX - line.startx)) >> 1)
-
-  // Determine if target is above or below the line
-  const above = targetY < y0 ? 1 : 0
-
-  // Calculate table index: 5 + (type * up_down)
-  // This maps line type and direction to table column
-  const tableIndex = 5 + line.type * line.up_down
-
-  // Bounds check for table access
-  if (tableIndex < 0 || tableIndex >= bounceDirTable[0]!.length) {
-    // Fallback for out of bounds
-    return above ? 0 : 8 // North or South
-  }
-
-  // Return direction from bounce table (Terrain.c:260-261)
-  const direction = bounceDirTable[above]![tableIndex]!
-
-  // -1 means no valid bounce direction for this configuration
-  return direction >= 0 ? direction : 0
-}
