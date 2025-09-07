@@ -1,13 +1,79 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Continuum</title>
+    <title>Continuum - Full Game</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        background: #222;
+        color: #fff;
+        font-family: monospace;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      #app {
+        border: 2px solid #666;
+        margin: 20px 0;
+      }
+      .controls {
+        margin-top: 20px;
+        padding: 20px;
+        border: 1px solid #666;
+        background: #333;
+        border-radius: 4px;
+      }
+      .controls h3 {
+        margin-top: 0;
+        color: #0f8;
+      }
+      .control-group {
+        margin: 10px 0;
+      }
+      .key {
+        display: inline-block;
+        padding: 2px 6px;
+        background: #555;
+        border: 1px solid #888;
+        border-radius: 3px;
+        margin: 0 4px;
+      }
+      .description {
+        display: inline-block;
+        margin-left: 10px;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/main.tsx"></script>
+    <h1>Continuum - Full Game</h1>
+    <div id="app"></div>
+    <div class="controls">
+      <h3>Game Controls</h3>
+      <div class="control-group">
+        <span class="key">Z</span> <span class="description">Rotate Left</span>
+      </div>
+      <div class="control-group">
+        <span class="key">X</span> <span class="description">Rotate Right</span>
+      </div>
+      <div class="control-group">
+        <span class="key">.</span> <span class="description">Thrust</span>
+      </div>
+      <div class="control-group">
+        <span class="key">/</span> <span class="description">Fire</span>
+      </div>
+      <div class="control-group">
+        <span class="key">Space</span> <span class="description">Shield</span>
+      </div>
+      <hr style="border-color: #666; margin: 15px 0;">
+      <p style="color: #aaa;">
+        <strong>Objective:</strong> Clear all levels by destroying all bunkers or collecting all fuel cells.<br>
+        You have 3 lives. Complete all levels to win!
+      </p>
+    </div>
+    <script type="module" src="./main.ts"></script>
   </body>
 </html>
