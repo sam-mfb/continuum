@@ -53,4 +53,3 @@ createSpriteServiceV2()
     console.error('Failed to initialize game:', error)
     app.innerHTML = `<div style="color: red; padding: 20px;">Failed to initialize game: ${error}</div>`
   })
-

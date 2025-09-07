@@ -146,8 +146,8 @@ export function createAlignmentSystem(): {
         // Global position - mode-dependent calculation
         if (mode === 'screen-fixed') {
           // Screen-fixed: pattern stays fixed relative to screen
-          // Only use screen coordinates, ignore world position
-          return ((pos.screenX + pos.screenY) & 1) as Alignment
+          // Always return 0 so pattern doesn't change as viewport moves
+          return 0 as Alignment
         } else {
           // World-fixed: pattern stays fixed relative to world (default)
           // Use world coordinates, creating stable alignment for objects

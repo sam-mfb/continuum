@@ -40,11 +40,13 @@ export function viewClear(deps: {
     // This creates the diagonal checkerboard effect
     // Lines 1429-1440 in Draw.c
     // Use getAlignment to support both world-fixed and screen-fixed modes
+    // In world-fixed mode, we want the pattern to change based on viewport position
+    // In screen-fixed mode, we want a constant pattern
     const screenAlignment = getAlignment({
+      x: screenX,  // Use viewport position as world coordinates
+      y: screenY,
       screenX,
-      screenY,
-      objectX: 0,
-      objectY: 0
+      screenY
     })
 
     // Get the two background patterns
@@ -110,10 +112,10 @@ export function viewClearOptimized(deps: {
 
     // Calculate pattern alignment using getAlignment for mode support
     const screenAlignment = getAlignment({
+      x: screenX,  // Use viewport position as world coordinates
+      y: screenY,
       screenX,
-      screenY,
-      objectX: 0,
-      objectY: 0
+      screenY
     })
     const bgr1 = getBackgroundPattern(screenAlignment)
     const bgr2 = getBackgroundPattern((screenAlignment ^ 1) as 0 | 1)
