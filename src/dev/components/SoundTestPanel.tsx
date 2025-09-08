@@ -251,7 +251,7 @@ export const SoundTestPanel: React.FC = () => {
 
       {/* Assembly Implementation Sounds */}
       <div style={styles.section}>
-        <h3>Assembly Implementations (Experimental)</h3>
+        <h3>Assembly Implementations (More Accurate)</h3>
         <div style={styles.soundGrid}>
           <button
             onClick={() => soundService?.playSound('fireAsm')}
@@ -259,6 +259,41 @@ export const SoundTestPanel: React.FC = () => {
             disabled={!soundService}
           >
             Fire (ASM)
+          </button>
+          <button
+            onClick={() => soundService?.playSound('thrusterAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Thruster (ASM)
+          </button>
+          <button
+            onClick={() => soundService?.playSound('shieldAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Shield (ASM)
+          </button>
+          <button
+            onClick={() => soundService?.playSound('explosionBunkerAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Bunker Explosion (ASM)
+          </button>
+          <button
+            onClick={() => soundService?.playSound('explosionShipAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Ship Explosion (ASM)
+          </button>
+          <button
+            onClick={() => soundService?.playSound('explosionAlienAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Alien Explosion (ASM)
           </button>
         </div>
       </div>

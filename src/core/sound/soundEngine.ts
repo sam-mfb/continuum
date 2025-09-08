@@ -10,6 +10,9 @@ import { createTestSounds } from './generators/testSounds'
 import { createGameSounds } from './generators/gameSounds'
 import type { SampleGenerator } from './sampleGenerator'
 import { createFireGenerator as createFireGeneratorAsm } from './generators-asm/fireGenerator'
+import { createExplosionGenerator as createExplosionGeneratorAsm, ExplosionType } from './generators-asm/explosionGenerator'
+import { createThrusterGenerator as createThrusterGeneratorAsm } from './generators-asm/thrusterGenerator'
+import { createShieldGenerator as createShieldGeneratorAsm } from './generators-asm/shieldGenerator'
 
 /**
  * Factory function for creating the sound engine
@@ -22,7 +25,12 @@ export const createSoundEngine = (): SoundEngine => {
 
   // Add assembly implementations for testing
   const asmGenerators = {
-    fireAsm: createFireGeneratorAsm()
+    fireAsm: createFireGeneratorAsm(),
+    thrusterAsm: createThrusterGeneratorAsm(),
+    shieldAsm: createShieldGeneratorAsm(),
+    explosionBunkerAsm: createExplosionGeneratorAsm(ExplosionType.BUNKER),
+    explosionShipAsm: createExplosionGeneratorAsm(ExplosionType.SHIP),
+    explosionAlienAsm: createExplosionGeneratorAsm(ExplosionType.ALIEN)
   }
 
   // Combine all generators for easy access
