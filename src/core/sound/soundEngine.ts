@@ -14,6 +14,7 @@ import { createExplosionGenerator as createExplosionGeneratorAsm, ExplosionType 
 import { createThrusterGenerator as createThrusterGeneratorAsm } from './generators-asm/thrusterGenerator'
 import { createShieldGenerator as createShieldGeneratorAsm } from './generators-asm/shieldGenerator'
 import { createBunkerGenerator as createBunkerGeneratorAsm } from './generators-asm/bunkerGenerator'
+import { createSoftGenerator as createSoftGeneratorAsm } from './generators-asm/softGenerator'
 import { createFuelGenerator as createFuelGeneratorAsm } from './generators-asm/fuelGenerator'
 import { createCrackGenerator as createCrackGeneratorAsm } from './generators-asm/crackGenerator'
 import { createFizzGenerator as createFizzGeneratorAsm } from './generators-asm/fizzGenerator'
@@ -37,6 +38,7 @@ export const createSoundEngine = (): SoundEngine => {
     explosionShipAsm: createExplosionGeneratorAsm(ExplosionType.SHIP),
     explosionAlienAsm: createExplosionGeneratorAsm(ExplosionType.ALIEN),
     bunkerAsm: createBunkerGeneratorAsm(),
+    softAsm: createSoftGeneratorAsm(),
     fuelAsm: createFuelGeneratorAsm(),
     crackAsm: createCrackGeneratorAsm(),
     fizzAsm: createFizzGeneratorAsm(),

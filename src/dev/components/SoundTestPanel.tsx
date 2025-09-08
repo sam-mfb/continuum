@@ -303,6 +303,13 @@ export const SoundTestPanel: React.FC = () => {
             Bunker (ASM)
           </button>
           <button
+            onClick={() => soundService?.playSound('softAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Soft (ASM)
+          </button>
+          <button
             onClick={() => soundService?.playSound('fuelAsm')}
             style={styles.soundButton}
             disabled={!soundService}
