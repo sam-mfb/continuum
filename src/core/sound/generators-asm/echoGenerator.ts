@@ -31,7 +31,7 @@ import { build68kArch } from '@lib/asm/emulator'
 
 // Constants from original
 const SNDBUFLEN = 370
-const ECHO_COUNT_START = 120  // 6 stages * 20 steps per stage
+const ECHO_COUNT_START = 20 * 6 - 1  // From Sound.c:521 = 119
 
 // Echo strength values for each stage
 const ECHOSTRS = [1, 2, 5, 9, 19, 37]

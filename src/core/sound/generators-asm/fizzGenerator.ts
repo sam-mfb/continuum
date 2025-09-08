@@ -31,7 +31,7 @@ import { build68kArch } from '@lib/asm/emulator'
 
 // Constants from original
 const SNDBUFLEN = 370
-const FIZZ_COUNT_START = 30  // Duration of fizz sound
+const FIZZ_COUNT_START = 80  // From Sound.c:517
 
 export const createFizzGenerator = (): SampleGenerator => {
   // Create 68K emulator context
@@ -81,8 +81,10 @@ export const createFizzGenerator = (): SampleGenerator => {
       asm.D1 = Math.floor(SNDBUFLEN / 2) - 1  // 184
       
       // move.w amp(A6), D0
-      // ror.w #8, D0 - rotate right by 8 bits
-      // This puts the amp value in the high byte
+      // ror.w #8, D0 - rotate right by 8 bits (swaps bytes)
+      // amp is likely a small value (< 256), so after rotation:
+      // high byte = original low byte (amp value)
+      // low byte = original high byte (0)
       asm.D0 = ((amp & 0xff) << 8) | ((amp & 0xff00) >> 8)
       
       // Main loop - continues until D1 goes negative

@@ -31,7 +31,7 @@ import { build68kArch } from '@lib/asm/emulator'
 
 // Constants from original
 const SNDBUFLEN = 370
-const CRACK_COUNT_START = 8  // Number of buffers to generate
+const CRACK_COUNT_START = 6  // From Sound.c:514
 
 export const createCrackGenerator = (): SampleGenerator => {
   // Create 68K emulator context
