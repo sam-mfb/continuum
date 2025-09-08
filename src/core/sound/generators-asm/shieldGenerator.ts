@@ -57,21 +57,27 @@ export const createShieldGenerator = (): SampleGenerator => {
     // move.w vol(A6), D0
     asm.D0 = vol & 0xffff
     
-    // Main loop
-    while (true) {
-      // @biglp neg.b D0 (negate the low byte)
+    let bytesWritten = 0
+    
+    // Main loop - continues until all samples written
+    while ((asm.D2 & 0xffff) < 0x8000) { // While D2 >= 0
+      // @biglp neg.b D0 (negate the low byte to flip between 96 and 160)
       const lowByte = asm.D0 & 0xff
       const negated = (~lowByte + 1) & 0xff
       asm.D0 = (asm.D0 & 0xff00) | negated
+      const currentValue = asm.D0 & 0xff
       
       // move.w freq(A6), D1
       asm.D1 = freq & 0xffff
       
-      // Inner loop @loop
-      do {
+      // Inner loop @loop - writes the same value multiple times
+      // The loop continues for freq+1 iterations OR until D2 goes negative
+      let innerCount = 0
+      while (true) {
         // move.b D0, (A0)
         if (asm.A0 < soundbuffer.length) {
-          soundbuffer[asm.A0] = asm.D0 & 0xff
+          soundbuffer[asm.A0] = currentValue
+          bytesWritten++
         }
         
         // addq.w #2, A0 (skip every other byte for stereo)
@@ -79,24 +85,28 @@ export const createShieldGenerator = (): SampleGenerator => {
         
         // subq.w #1, D2
         asm.D2 = (asm.D2 - 1) & 0xffff
+        innerCount++
         
-        // dblt D1, @loop
-        // This decrements D1 and loops if D2 < 0
-        if (asm.D2 & 0x8000) { // Check if D2 is negative
-          asm.D1 = (asm.D1 - 1) & 0xffff
-          if ((asm.D1 & 0xffff) !== 0xffff) {
-            continue
-          }
+        // Check if D2 went negative
+        if (asm.D2 & 0x8000) {
+          // D2 is negative, we're done with the entire buffer
+          break
         }
-        break
-      } while (asm.D1 >= 0 && !(asm.D2 & 0x8000))
-      
-      // bge.s @biglp - branch if D2 >= 0
-      if (!(asm.D2 & 0x8000)) {
-        continue
+        
+        // dbf D1, @loop (decrement D1 and loop unless it becomes -1)
+        asm.D1 = (asm.D1 - 1) & 0xffff
+        if ((asm.D1 & 0xffff) === 0xffff) {
+          // D1 underflowed, exit inner loop
+          break
+        }
       }
-      break
+      
+      // Check if we're done (D2 negative)
+      if (asm.D2 & 0x8000) {
+        break
+      }
     }
+    
   }
 
   const generateChunk = (): Uint8Array => {
@@ -136,14 +146,14 @@ export const createShieldGenerator = (): SampleGenerator => {
     // Keep shielding active for continuous sound
     // In the real game, this would be controlled by player input
     
-    // Convert buffer to mono output, centering around 128
+    // Convert buffer to mono output
+    // The buffer already contains unsigned values (96 and 160 alternating)
     for (let i = 0; i < CHUNK_SIZE; i++) {
       const srcIndex = i * 2
       if (srcIndex < soundbuffer.length) {
         const value = soundbuffer[srcIndex]
-        // Convert from signed to unsigned centered at 128
-        const centered = ((value as number) + 128) & 0xff
-        output[i] = centered
+        // Use the value directly - it's already in the right range
+        output[i] = value || CENTER_VALUE
       } else {
         output[i] = CENTER_VALUE
       }

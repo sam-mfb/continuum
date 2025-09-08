@@ -117,11 +117,12 @@ export const createExplosionGenerator = (type: ExplosionType): SampleGenerator =
     // move.w #SNDBUFLEN/2-1, D1
     asm.D1 = Math.floor(SNDBUFLEN / 2) - 1  // 184
     
-    // move.b amp+1(A5), D0
-    // asl.w #8, D0
+    // move.b amp+1(A5), D0 - loads amp into D0's low byte
+    // Note: amp+1 in big-endian means the low byte of the amp word
+    // asl.w #8, D0 - shifts left by 8 to move amp to high byte
     asm.D0 = (amp & 0xff) << 8
     
-    // Main loop
+    // Main loop - continues until D1 goes negative
     while (true) {
       // @biglp eor.w #0xFF00, D0
       asm.D0 = (asm.D0 ^ 0xFF00) & 0xffff
@@ -131,19 +132,21 @@ export const createExplosionGenerator = (type: ExplosionType): SampleGenerator =
       asm.D2 = expl_rands[pers & 63]!
       pers = (pers + 1) & 63
       
-      // asr.w #1, D2
+      // asr.w #1, D2 - arithmetic shift right (divide by 2)
       asm.D2 = asm.D2 >> 1
       
-      // Inner loop @loop
-      do {
-        // move.w D0, (A0)+
+      // Inner loop @loop - the loop runs for D2+1 iterations maximum
+      // but can exit early if D1 goes negative
+      innerLoop: do {
+        // move.w D0, (A0)+ - write word to buffer
         if (asm.A0 < soundbuffer.length - 1) {
-          soundbuffer[asm.A0] = (asm.D0 >> 8) & 0xff
-          soundbuffer[asm.A0 + 1] = asm.D0 & 0xff
+          // Big-endian word write
+          soundbuffer[asm.A0] = (asm.D0 >> 8) & 0xff  // High byte (the amplitude value)
+          soundbuffer[asm.A0 + 1] = asm.D0 & 0xff     // Low byte (0)
         }
         asm.A0 += 2
         
-        // move.w D0, (A0)+
+        // move.w D0, (A0)+ - second word write
         if (asm.A0 < soundbuffer.length - 1) {
           soundbuffer[asm.A0] = (asm.D0 >> 8) & 0xff
           soundbuffer[asm.A0 + 1] = asm.D0 & 0xff
@@ -154,23 +157,28 @@ export const createExplosionGenerator = (type: ExplosionType): SampleGenerator =
         asm.D1 = (asm.D1 - 1) & 0xffff
         
         // dblt D2, @loop
-        // dblt: decrement D2 and branch if previous comparison was "less than"
-        // The comparison is based on D1 from "subq.w #1, D1"
-        // If D1 < 0 (after the subtraction), decrement D2 and loop if D2 != -1
-        if ((asm.D1 & 0x8000)) { // D1 is negative
+        // dbcc variant: "decrement and branch on condition clear"
+        // For dblt (less than), the condition is the N flag (negative)
+        // If N flag is CLEAR (D1 >= 0), decrement D2 and branch if D2 != -1
+        // If N flag is SET (D1 < 0), fall through without decrementing
+        
+        // Check if D1 is still non-negative
+        if (!(asm.D1 & 0x8000)) { // D1 >= 0
+          // Condition is false (not less than), so decrement D2 and branch
           asm.D2 = (asm.D2 - 1) & 0xffff
           if ((asm.D2 & 0xffff) !== 0xffff) {
-            continue // Continue looping
+            continue innerLoop
           }
         }
+        // Either D1 went negative or D2 became -1, exit inner loop
         break
       } while (true)
       
-      // bge.s @biglp - branch if D1 >= 0
+      // bge.s @biglp - branch if D1 >= 0 (not negative)
       if (!(asm.D1 & 0x8000)) {
-        continue
+        continue // D1 still positive, continue outer loop
       }
-      break
+      break // D1 is negative, we're done
     }
     
     // C code after assembly
@@ -181,19 +189,20 @@ export const createExplosionGenerator = (type: ExplosionType): SampleGenerator =
     
     // Increase amplitude and check if done
     amp += ampchange
-    console.log(`Explosion ${ExplosionType[type]}: amp=${amp}, ampchange=${ampchange}`)
     if (amp > 127) {
-      console.log(`Explosion ${ExplosionType[type]} ending: amp > 127`)
       isActive = false
     }
     
-    // Convert buffer to mono output, centering around 128
+    // Convert buffer to mono output
+    // The explosion alternates between amp and ~amp values
+    // Take every other byte (the left channel)
     for (let i = 0; i < CHUNK_SIZE; i++) {
       const srcIndex = i * 2
       if (srcIndex < soundbuffer.length) {
-        // Take high byte and center it
         const value = soundbuffer[srcIndex]
-        output[i] = value || CENTER_VALUE
+        // The explosion creates noise by alternating between amp and inverted amp
+        // Values should already be in the right range
+        output[i] = value
       } else {
         output[i] = CENTER_VALUE
       }
