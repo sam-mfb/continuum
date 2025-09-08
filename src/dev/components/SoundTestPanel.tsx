@@ -249,6 +249,20 @@ export const SoundTestPanel: React.FC = () => {
         </div>
       </div>
 
+      {/* Assembly Implementation Sounds */}
+      <div style={styles.section}>
+        <h3>Assembly Implementations (Experimental)</h3>
+        <div style={styles.soundGrid}>
+          <button
+            onClick={() => soundService?.playSound('fireAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Fire (ASM)
+          </button>
+        </div>
+      </div>
+
 
 
       {/* Instructions */}

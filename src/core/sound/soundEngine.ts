@@ -9,6 +9,7 @@ import { createAudioOutput } from './audioOutput'
 import { createTestSounds } from './generators/testSounds'
 import { createGameSounds } from './generators/gameSounds'
 import type { SampleGenerator } from './sampleGenerator'
+import { createFireGenerator as createFireGeneratorAsm } from './generators-asm/fireGenerator'
 
 /**
  * Factory function for creating the sound engine
@@ -19,8 +20,13 @@ export const createSoundEngine = (): SoundEngine => {
   const testSounds = createTestSounds()
   const gameSounds = createGameSounds()
 
+  // Add assembly implementations for testing
+  const asmGenerators = {
+    fireAsm: createFireGeneratorAsm()
+  }
+
   // Combine all generators for easy access
-  const allGenerators = { ...testSounds, ...gameSounds }
+  const allGenerators = { ...testSounds, ...gameSounds, ...asmGenerators }
 
   // Initialize buffer manager with silence
   const bufferManager = createBufferManager(testSounds.silence)
