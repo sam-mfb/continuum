@@ -88,16 +88,24 @@ export const createBunkerGenerator = (): SampleGenerator => {
     // move.w #SNDBUFLEN/5, D2
     asm.D2 = Math.floor(SNDBUFLEN / 5)  // 74
     
-    // Outer loop controlled by D3
+    // Main loop - emulating the exact flow including the dbra D3,@loop at line 227
+    let jumpToLoop = false
+    
+    // Outer loop controlled by D3 (runs 5 times)
     outerLoop: do {
-      // @biglp move.w period(A5), D1
-      asm.D1 = period & 0xffff
+      // @biglp - only execute if not jumping directly to @loop
+      if (!jumpToLoop) {
+        // move.w period(A5), D1
+        asm.D1 = period & 0xffff
+        
+        // asr.w #1, D1 - arithmetic shift right (divide by 2)
+        asm.D1 = asm.D1 >> 1
+        
+        // eor.w #0xFF00, D0
+        asm.D0 = (asm.D0 ^ 0xFF00) & 0xffff
+      }
       
-      // asr.w #1, D1 - arithmetic shift right (divide by 2)
-      asm.D1 = asm.D1 >> 1
-      
-      // eor.w #0xFF00, D0
-      asm.D0 = (asm.D0 ^ 0xFF00) & 0xffff
+      jumpToLoop = false // Reset flag
       
       // Inner loop @loop
       innerLoop: do {
@@ -147,9 +155,11 @@ export const createBunkerGenerator = (): SampleGenerator => {
       // addq.w #1, period(A5)
       period = (period + 1) & 0xffff
       
-      // dbra D3, @biglp (the original says @loop but that's likely a typo)
+      // dbra D3, @loop - NOTE: This jumps to @loop, not @biglp!
+      // This means we skip the period/D1 reload and D0 flip
       asm.D3 = (asm.D3 - 1) & 0xffff
       if ((asm.D3 & 0xffff) !== 0xffff) {
+        jumpToLoop = true  // Set flag to skip @biglp setup
         continue outerLoop
       }
       break
