@@ -14,7 +14,7 @@ import { build68kArch } from '@lib/asm/emulator'
 
 // Constants from original
 const SNDBUFLEN = 370
-const FUELBEEPFREQ = 15  // From constants
+const FUELBEEPFREQ = 26  // From Sound.c:33
 const FUELBEEPS = 3  // Number of beeps
 const FUEL_COUNT_START = (FUELBEEPS * 2) << 2  // 3 * 2 * 4 = 24
 
