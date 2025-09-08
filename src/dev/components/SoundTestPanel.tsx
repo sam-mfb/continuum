@@ -295,6 +295,41 @@ export const SoundTestPanel: React.FC = () => {
           >
             Alien Explosion (ASM)
           </button>
+          <button
+            onClick={() => soundService?.playSound('bunkerAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Bunker (ASM)
+          </button>
+          <button
+            onClick={() => soundService?.playSound('fuelAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Fuel (ASM)
+          </button>
+          <button
+            onClick={() => soundService?.playSound('crackAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Crack (ASM)
+          </button>
+          <button
+            onClick={() => soundService?.playSound('fizzAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Fizz (ASM)
+          </button>
+          <button
+            onClick={() => soundService?.playSound('echoAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Echo (ASM)
+          </button>
         </div>
       </div>
 

@@ -72,9 +72,7 @@ export const createExplosionGenerator = (type: ExplosionType): SampleGenerator =
   // State variables (simulating A5-relative storage)
   let amp = 0          // Amplitude tracker
   let ampchange = 0    // Rate of amplitude change
-  let priority = 0
   let isActive = false
-  const currentsound = type // Track current sound type
   
   // Simulated memory for sound buffer
   const soundbuffer = new Uint8Array(SNDBUFLEN * 2) // Stereo buffer
@@ -87,7 +85,7 @@ export const createExplosionGenerator = (type: ExplosionType): SampleGenerator =
   }
   
   // Auto-start on creation for testing
-  let autoStart = true
+  let autoStart = false
 
   const generateChunk = (): Uint8Array => {
     const output = new Uint8Array(CHUNK_SIZE)
@@ -183,9 +181,9 @@ export const createExplosionGenerator = (type: ExplosionType): SampleGenerator =
     
     // C code after assembly
     // Don't decrease priority for ship explosion
-    if (currentsound !== ExplosionType.SHIP) {
-      priority -= ampchange
-    }
+    // if (currentsound !== ExplosionType.SHIP) {
+    //   priority -= ampchange
+    // }
     
     // Increase amplitude and check if done
     amp += ampchange
@@ -202,7 +200,7 @@ export const createExplosionGenerator = (type: ExplosionType): SampleGenerator =
         const value = soundbuffer[srcIndex]
         // The explosion creates noise by alternating between amp and inverted amp
         // Values should already be in the right range
-        output[i] = value
+        output[i] = value || CENTER_VALUE
       } else {
         output[i] = CENTER_VALUE
       }
@@ -214,13 +212,15 @@ export const createExplosionGenerator = (type: ExplosionType): SampleGenerator =
   const reset = (): void => {
     amp = params.initialAmp
     ampchange = params.ampChange
-    priority = params.priority
     isActive = true
     autoStart = false
   }
 
   const start = (): void => {
-    reset()
+    // Only reset if not currently active (don't restart if already playing)
+    if (!isActive) {
+      reset()
+    }
   }
 
   const stop = (): void => {

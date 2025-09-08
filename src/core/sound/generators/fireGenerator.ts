@@ -28,7 +28,6 @@ import { SINE_TABLE } from './sineTableData'
 const START_FREQ = 27 // Starting frequency parameter
 const MIN_FREQ = 5 // Stop when frequency drops below this
 const CHUNKS_PER_BUFFER = 5 // Original divides into 5 chunks (SNDBUFLEN/5 = 74 samples each)
-const ITERATIONS = 6 // Loop runs 6 times (D3=5 with dbf)
 
 export const createFireGenerator = (): SampleGenerator => {
   // State variables (matching original)

@@ -28,14 +28,12 @@ import { build68kArch } from '@lib/asm/emulator'
 // Constants from original
 const SNDBUFLEN = 370
 const SHLD_FREQ = 50  // Base frequency of shield sound
-const SHLD_PRIOR = 70
 
 export const createShieldGenerator = (): SampleGenerator => {
   // Create 68K emulator context
   const asm = build68kArch()
   
   // State variables
-  let priority = SHLD_PRIOR
   let isActive = false
   let shielding = false // Flag to track if still shielding
   let hi = false // Alternating flag for frequency modulation
@@ -43,7 +41,7 @@ export const createShieldGenerator = (): SampleGenerator => {
   // Simulated memory for sound buffer
   const soundbuffer = new Uint8Array(SNDBUFLEN * 2) // Stereo buffer
   
-  // Auto-start on creation for testing
+  // Auto-start on creation for testing (shield should repeat while held)
   let autoStart = true
 
   // Implementation of unclear_tone
@@ -57,7 +55,6 @@ export const createShieldGenerator = (): SampleGenerator => {
     // move.w vol(A6), D0
     asm.D0 = vol & 0xffff
     
-    let bytesWritten = 0
     
     // Main loop - continues until all samples written
     while ((asm.D2 & 0xffff) < 0x8000) { // While D2 >= 0
@@ -72,12 +69,10 @@ export const createShieldGenerator = (): SampleGenerator => {
       
       // Inner loop @loop - writes the same value multiple times
       // The loop continues for freq+1 iterations OR until D2 goes negative
-      let innerCount = 0
       while (true) {
         // move.b D0, (A0)
         if (asm.A0 < soundbuffer.length) {
           soundbuffer[asm.A0] = currentValue
-          bytesWritten++
         }
         
         // addq.w #2, A0 (skip every other byte for stereo)
@@ -85,7 +80,6 @@ export const createShieldGenerator = (): SampleGenerator => {
         
         // subq.w #1, D2
         asm.D2 = (asm.D2 - 1) & 0xffff
-        innerCount++
         
         // Check if D2 went negative
         if (asm.D2 & 0x8000) {
@@ -163,7 +157,6 @@ export const createShieldGenerator = (): SampleGenerator => {
   }
 
   const reset = (): void => {
-    priority = SHLD_PRIOR
     isActive = true
     shielding = true
     hi = false

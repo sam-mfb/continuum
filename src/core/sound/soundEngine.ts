@@ -13,6 +13,11 @@ import { createFireGenerator as createFireGeneratorAsm } from './generators-asm/
 import { createExplosionGenerator as createExplosionGeneratorAsm, ExplosionType } from './generators-asm/explosionGenerator'
 import { createThrusterGenerator as createThrusterGeneratorAsm } from './generators-asm/thrusterGenerator'
 import { createShieldGenerator as createShieldGeneratorAsm } from './generators-asm/shieldGenerator'
+import { createBunkerGenerator as createBunkerGeneratorAsm } from './generators-asm/bunkerGenerator'
+import { createFuelGenerator as createFuelGeneratorAsm } from './generators-asm/fuelGenerator'
+import { createCrackGenerator as createCrackGeneratorAsm } from './generators-asm/crackGenerator'
+import { createFizzGenerator as createFizzGeneratorAsm } from './generators-asm/fizzGenerator'
+import { createEchoGenerator as createEchoGeneratorAsm } from './generators-asm/echoGenerator'
 
 /**
  * Factory function for creating the sound engine
@@ -30,7 +35,12 @@ export const createSoundEngine = (): SoundEngine => {
     shieldAsm: createShieldGeneratorAsm(),
     explosionBunkerAsm: createExplosionGeneratorAsm(ExplosionType.BUNKER),
     explosionShipAsm: createExplosionGeneratorAsm(ExplosionType.SHIP),
-    explosionAlienAsm: createExplosionGeneratorAsm(ExplosionType.ALIEN)
+    explosionAlienAsm: createExplosionGeneratorAsm(ExplosionType.ALIEN),
+    bunkerAsm: createBunkerGeneratorAsm(),
+    fuelAsm: createFuelGeneratorAsm(),
+    crackAsm: createCrackGeneratorAsm(),
+    fizzAsm: createFizzGeneratorAsm(),
+    echoAsm: createEchoGeneratorAsm()
   }
 
   // Combine all generators for easy access

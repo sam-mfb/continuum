@@ -35,14 +35,12 @@ import { build68kArch } from '@lib/asm/emulator'
 const SNDBUFLEN = 370
 const THRU_LO_AMP = 64
 const THRU_ADD_AMP = 128
-const THRU_PRIOR = 35
 
 export const createThrusterGenerator = (): SampleGenerator => {
   // Create 68K emulator context
   const asm = build68kArch()
   
   // State variables
-  let priority = THRU_PRIOR
   let isActive = false
   let thrusting = false // Flag to track if still thrusting
   
@@ -56,7 +54,7 @@ export const createThrusterGenerator = (): SampleGenerator => {
     thru_rands[i] = THRU_LO_AMP + Math.floor(Math.random() * THRU_ADD_AMP)
   }
   
-  // Auto-start on creation for testing
+  // Auto-start on creation for testing (thruster should repeat while held)
   let autoStart = true
 
   const generateChunk = (): Uint8Array => {
@@ -172,7 +170,7 @@ export const createThrusterGenerator = (): SampleGenerator => {
         const value = soundbuffer[srcIndex]
         // The thruster creates values centered around the byte from the random table
         // which was shifted to create the audio pattern
-        output[i] = value !== 0 ? value : CENTER_VALUE
+        output[i] = value || CENTER_VALUE
       } else {
         output[i] = CENTER_VALUE
       }
@@ -182,7 +180,6 @@ export const createThrusterGenerator = (): SampleGenerator => {
   }
 
   const reset = (): void => {
-    priority = THRU_PRIOR
     isActive = true
     thrusting = true
     autoStart = false

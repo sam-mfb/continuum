@@ -32,7 +32,6 @@ import { build68kArch } from '@lib/asm/emulator'
 const START_FREQ = 27
 const MIN_FREQ = 5
 const SNDBUFLEN = 370
-const FIRE_PRIOR = 70
 
 export const createFireGenerator = (): SampleGenerator => {
   // Create 68K emulator context
@@ -41,14 +40,13 @@ export const createFireGenerator = (): SampleGenerator => {
   // State variables (simulating A5-relative storage)
   let freq = 0         // freq(A5)
   let phase = 0        // phase variable in original
-  let priority = 0     // priority(A5)
   let isActive = false
   
   // Simulated memory for sound buffer
   const soundbuffer = new Uint8Array(SNDBUFLEN * 2) // Stereo buffer
   
   // Auto-start on creation for testing
-  let autoStart = true
+  let autoStart = false
 
   const generateChunk = (): Uint8Array => {
     const output = new Uint8Array(CHUNK_SIZE)
@@ -130,8 +128,7 @@ export const createFireGenerator = (): SampleGenerator => {
     // Save phase for next call
     phase = pos
     
-    // priority -= 5 (from C code after asm block)
-    priority -= 5
+    // priority -= 5 (from C code after asm block) - removed since priority not used
     
     // if (freq < 5) clear_sound() (from C code)
     if (freq < MIN_FREQ) {
@@ -143,7 +140,7 @@ export const createFireGenerator = (): SampleGenerator => {
     for (let i = 0; i < CHUNK_SIZE; i++) {
       const srcIndex = i * 2
       if (srcIndex < soundbuffer.length) {
-        output[i] = soundbuffer[srcIndex]
+        output[i] = soundbuffer[srcIndex] || CENTER_VALUE
       } else {
         output[i] = CENTER_VALUE
       }
@@ -155,13 +152,15 @@ export const createFireGenerator = (): SampleGenerator => {
   const reset = (): void => {
     freq = START_FREQ
     phase = 0
-    priority = FIRE_PRIOR
     isActive = true
     autoStart = false
   }
 
   const start = (): void => {
-    reset()
+    // Only reset if not currently active (don't restart if already playing)
+    if (!isActive) {
+      reset()
+    }
   }
 
   const stop = (): void => {
