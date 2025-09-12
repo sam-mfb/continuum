@@ -272,12 +272,6 @@ export const createGameRenderer =
       store.dispatch(triggerGameOver())
     }
 
-    // Get gravity from planet
-    const gravity = {
-      x: state.planet.gravx,
-      y: state.planet.gravy
-    }
-
     // Process ship controls and movement only if alive
     let globalx: number
     let globaly: number
@@ -288,8 +282,7 @@ export const createGameRenderer =
       // shipControl will read globalx/globaly from ship state (set by previous frame's containShip)
       store.dispatch(
         shipControl({
-          controlsPressed: getPressedControls(frame.keysDown),
-          gravity
+          controlsPressed: getPressedControls(frame.keysDown)
         })
       )
 

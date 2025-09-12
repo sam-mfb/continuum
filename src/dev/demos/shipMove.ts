@@ -33,6 +33,7 @@ const initializeGame = (): void => {
       bunkers: [],
       fuels: [],
       craters: [],
+      gravityPoints: [],
       wallsSorted: false
     })
   )
@@ -54,12 +55,6 @@ initializeGame()
 export const shipMoveGameLoop: GameLoopFunction = (ctx, frame, _env) => {
   const state = store.getState()
 
-  // Get gravity from planet
-  const gravity = {
-    x: state.planet.gravx,
-    y: state.planet.gravy
-  }
-
   const getPressedControls = (keysDown: Set<string>): ShipControl[] => {
     const controls: ShipControl[] = []
 
@@ -72,11 +67,10 @@ export const shipMoveGameLoop: GameLoopFunction = (ctx, frame, _env) => {
     return controls
   }
 
-  // Handle controls
+  // Handle controls - gravity is now calculated internally from generators
   store.dispatch(
     shipControl({
-      controlsPressed: getPressedControls(frame.keysDown),
-      gravity
+      controlsPressed: getPressedControls(frame.keysDown)
     })
   )
 

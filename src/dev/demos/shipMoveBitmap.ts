@@ -263,12 +263,6 @@ export const createShipMoveBitmapRenderer =
       // Continue with normal rendering after reset
     }
 
-    // Get gravity from planet
-    const gravity = {
-      x: state.planet.gravx,
-      y: state.planet.gravy
-    }
-
     // Process ship controls and movement only if alive
     let globalx: number
     let globaly: number
@@ -276,10 +270,10 @@ export const createShipMoveBitmapRenderer =
     if (state.ship.deadCount === 0) {
       // Only handle controls and move ship if alive
       // shipControl will read globalx/globaly from ship state (set by previous frame's containShip)
+      // and calculate gravity from generators
       store.dispatch(
         shipControl({
-          controlsPressed: getPressedControls(frame.keysDown),
-          gravity
+          controlsPressed: getPressedControls(frame.keysDown)
         })
       )
 

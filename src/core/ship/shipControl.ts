@@ -7,17 +7,36 @@ import { statusSlice } from '@core/status'
 import { ShipControl } from '@core/ship'
 import { FUELSHIELD, FRADIUS } from '@core/ship'
 import { xyindist } from '@core/shots'
+import { gravityVector } from '@core/shared/gravityVector'
 
 type ControlAction = {
   controlsPressed: ShipControl[]
-  gravity: { x: number; y: number }
 }
 
 export const shipControl =
   (action: ControlAction): ThunkAction<void, GameState, unknown, Action> =>
   (dispatch, getState) => {
-    const { controlsPressed, gravity } = action
+    const { controlsPressed } = action
     const pressed = new Set(controlsPressed)
+    
+    // Get current state to calculate gravity
+    const state = getState()
+    const { ship, planet } = state
+    
+    // Calculate gravity at ship's current position using gravityVector
+    // Based on gravity_vector() call in Play.c:502
+    const gravityResult = gravityVector({
+      x: ship.globalx,
+      y: ship.globaly,
+      gravx: planet.gravx,
+      gravy: planet.gravy,
+      gravityPoints: planet.gravityPoints || [],
+      worldwidth: planet.worldwidth,
+      worldwrap: planet.worldwrap
+    })
+    
+    // Convert from xg/yg to x/y for shipControlMovement
+    const gravity = { x: gravityResult.xg, y: gravityResult.yg }
 
     // First dispatch movement control
     dispatch(
@@ -25,12 +44,14 @@ export const shipControl =
     )
 
     // Get updated state after movement
-    const state = getState()
-    const { ship, walls, planet } = state
+    const updatedState = getState()
+    const { walls } = updatedState
+    const updatedShip = updatedState.ship
+    const updatedPlanet = updatedState.planet
     
-    // Use global position from ship state (set by previous frame's containShip)
+    // Use global position from updated ship state (set by previous frame's containShip)
     // This matches the original game where ship_control uses globals set by previous frame
-    const { globalx, globaly } = ship
+    const { globalx, globaly } = updatedShip
 
     // Get walls as array for collision detection
     const wallsArray = Object.values(
@@ -38,7 +59,7 @@ export const shipControl =
     )
 
     // Handle shield activation - from Play.c:507-527
-    if (pressed.has(ShipControl.SHIELD) && ship.fuel > 0) {
+    if (pressed.has(ShipControl.SHIELD) && updatedShip.fuel > 0) {
       // Activate shield (also stops refueling)
       dispatch(shipSlice.actions.shieldActivate())
       // Consume fuel for shielding
@@ -47,7 +68,7 @@ export const shipControl =
       // Collect fuel cells immediately when shield activates (Play.c:512-524)
       const collectedFuels: number[] = []
 
-      planet.fuels.forEach((fuel, index) => {
+      updatedPlanet.fuels.forEach((fuel, index) => {
         if (fuel.alive) {
           const xdif = globalx - fuel.x
           const ydif = globaly - fuel.y
@@ -79,19 +100,19 @@ export const shipControl =
     // Handle firing logic - from original shipControl lines 107-132
     /* check for fire */
     if (pressed.has(ShipControl.FIRE)) {
-      if (!ship.firing) {
+      if (!updatedShip.firing) {
         dispatch(shipSlice.actions.setFiring(true))
         dispatch(
           shotsSlice.actions.initShipshot({
-            shielding: ship.shielding,
-            shiprot: ship.shiprot,
-            dx: ship.dx,
-            dy: ship.dy,
+            shielding: updatedShip.shielding,
+            shiprot: updatedShip.shiprot,
+            dx: updatedShip.dx,
+            dy: updatedShip.dy,
             globalx,
             globaly,
             walls: wallsArray,
-            worldwidth: planet.worldwidth,
-            worldwrap: planet.worldwrap
+            worldwidth: updatedPlanet.worldwidth,
+            worldwrap: updatedPlanet.worldwrap
           })
         )
       }

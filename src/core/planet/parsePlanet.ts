@@ -221,6 +221,7 @@ export function parsePlanet(
     bunkers,
     fuels,
     craters,
+    gravityPoints: [], // Will be populated by initializeBunkers
     wallsSorted: false // Walls are in file order, not sorted by startx
   }
 }
