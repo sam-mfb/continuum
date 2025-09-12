@@ -39,19 +39,19 @@ describe('pt2line', () => {
         endx: 200,
         endy: 100
       })
-      
+
       // Point far to the left
       const farLeft: Point = { h: 0, v: 100 }
       expect(pt2line(farLeft, line)).toBe(10000)
-      
+
       // Point far to the right
       const farRight: Point = { h: 300, v: 100 }
       expect(pt2line(farRight, line)).toBe(10000)
-      
+
       // Point far above
       const farAbove: Point = { h: 150, v: 0 }
       expect(pt2line(farAbove, line)).toBe(10000)
-      
+
       // Point far below
       const farBelow: Point = { h: 150, v: 200 }
       expect(pt2line(farBelow, line)).toBe(10000)
@@ -64,7 +64,7 @@ describe('pt2line', () => {
         endx: 200,
         endy: 100
       })
-      
+
       // Just within bounds
       const nearPoint: Point = { h: 55, v: 100 }
       expect(pt2line(nearPoint, line)).not.toBe(10000)
@@ -164,11 +164,11 @@ describe('pt2line', () => {
         // Result = dx^2 + dy^2 = 64 + 256 = 320
         const testPoint: Point = { h: 150, v: 125 }
         expect(pt2line(testPoint, neLine)).toBe(320)
-        
+
         // Start point should return exactly 0
         const startPoint: Point = { h: 100, v: 100 }
         expect(pt2line(startPoint, neLine)).toBe(0)
-        
+
         // Point slightly off the line
         // With integer math, different result due to truncation
         const offPoint: Point = { h: 150, v: 130 }
@@ -230,7 +230,7 @@ describe('pt2line', () => {
         endy: 100,
         length: 0
       })
-      
+
       const testPoint: Point = { h: 103, v: 104 }
       // Should be distance to (100,100)
       // dx = 3, dy = 4, distance^2 = 9 + 16 = 25
@@ -249,7 +249,7 @@ describe('pt2line', () => {
         length: 100,
         up_down: LINE_DIR.UP
       })
-      
+
       const testPoint: Point = { h: 150, v: 125 }
       const distance = pt2line(testPoint, upLine)
       expect(distance).toBeLessThan(10000)
@@ -265,7 +265,7 @@ describe('pt2line', () => {
         length: 100,
         up_down: LINE_DIR.DN
       })
-      
+
       const testPoint: Point = { h: 150, v: 125 }
       const distance = pt2line(testPoint, downLine)
       expect(distance).toBeLessThan(10000)
@@ -281,7 +281,7 @@ describe('pt2line', () => {
         endy: 0,
         type: LINE_TYPE.E
       })
-      
+
       const testPoint: Point = { h: 50, v: 10 }
       expect(pt2line(testPoint, originLine)).toBe(100) // 10^2
     })
@@ -294,7 +294,7 @@ describe('pt2line', () => {
         endy: -100,
         type: LINE_TYPE.E
       })
-      
+
       const testPoint: Point = { h: -75, v: -95 }
       expect(pt2line(testPoint, negativeLine)).toBe(25) // 5^2
     })
@@ -307,15 +307,15 @@ describe('pt2line', () => {
         endy: 100,
         type: LINE_TYPE.E
       })
-      
+
       // Point exactly at start but slightly off
       const atStart: Point = { h: 100, v: 103 }
       const distToStart = pt2line(atStart, line)
-      
+
       // Point before start should add 10
       const beforeStart: Point = { h: 99, v: 103 }
       const distBeforeStart = pt2line(beforeStart, line)
-      
+
       // Distance before start should be distance to start + 10
       expect(distBeforeStart).toBeGreaterThan(distToStart)
     })

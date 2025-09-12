@@ -18,11 +18,11 @@ export const shipControl =
   (dispatch, getState) => {
     const { controlsPressed } = action
     const pressed = new Set(controlsPressed)
-    
+
     // Get current state to calculate gravity
     const state = getState()
     const { ship, planet } = state
-    
+
     // Calculate gravity at ship's current position using gravityVector
     // Based on gravity_vector() call in Play.c:502
     const gravityResult = gravityVector({
@@ -34,7 +34,7 @@ export const shipControl =
       worldwidth: planet.worldwidth,
       worldwrap: planet.worldwrap
     })
-    
+
     // Convert from xg/yg to x/y for shipControlMovement
     const gravity = { x: gravityResult.xg, y: gravityResult.yg }
 
@@ -48,7 +48,7 @@ export const shipControl =
     const { walls } = updatedState
     const updatedShip = updatedState.ship
     const updatedPlanet = updatedState.planet
-    
+
     // Use global position from updated ship state (set by previous frame's containShip)
     // This matches the original game where ship_control uses globals set by previous frame
     const { globalx, globaly } = updatedShip

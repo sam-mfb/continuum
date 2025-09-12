@@ -9,9 +9,9 @@ import { createSlice } from '@reduxjs/toolkit'
 import { SoundType } from './constants'
 
 export type SoundUIState = {
-  enabled: boolean    // Sound on/off
-  volume: number      // Master volume 0-1
-  currentSound: SoundType  // For UI display only
+  enabled: boolean // Sound on/off
+  volume: number // Master volume 0-1
+  currentSound: SoundType // For UI display only
 }
 
 const initialState: SoundUIState = {

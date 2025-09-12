@@ -10,8 +10,8 @@ export * from './constants'
 export { Galaxy } from './methods'
 
 // Galaxy service
-export { 
-  createGalaxyService, 
+export {
+  createGalaxyService,
   getGalaxyService,
-  type GalaxyService 
+  type GalaxyService
 } from './service'

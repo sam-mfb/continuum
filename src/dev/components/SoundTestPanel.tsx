@@ -23,15 +23,17 @@ export const SoundTestPanel: React.FC = () => {
   useEffect(() => {
     // Initialize sound service on mount
     if (!isInitialized) {
-      initializeSoundService().then(service => {
-        setSoundService(service)
-        // Sync initial state with Redux
-        service.setVolume(masterVolume)
-        service.setMuted(!enabled)  // enabled=true means not muted
-        setIsInitialized(true)
-      }).catch(error => {
-        console.error('Failed to initialize sound service:', error)
-      })
+      initializeSoundService()
+        .then(service => {
+          setSoundService(service)
+          // Sync initial state with Redux
+          service.setVolume(masterVolume)
+          service.setMuted(!enabled) // enabled=true means not muted
+          setIsInitialized(true)
+        })
+        .catch(error => {
+          console.error('Failed to initialize sound service:', error)
+        })
     }
   }, [isInitialized, masterVolume, enabled])
 
@@ -44,7 +46,7 @@ export const SoundTestPanel: React.FC = () => {
   }
 
   const handleMuteToggle = (): void => {
-    const newEnabled = !enabled  // Calculate the new state
+    const newEnabled = !enabled // Calculate the new state
     dispatch(toggleSound())
     if (soundService) {
       // If sound is enabled (newEnabled = true), then muted = false
@@ -52,7 +54,6 @@ export const SoundTestPanel: React.FC = () => {
       soundService.setMuted(!newEnabled)
     }
   }
-
 
   return (
     <div style={styles.container}>
@@ -340,16 +341,19 @@ export const SoundTestPanel: React.FC = () => {
         </div>
       </div>
 
-
-
       {/* Instructions */}
       <div style={styles.section}>
         <h3>Sound Service API Test Panel</h3>
         <ul style={styles.instructions}>
-          <li>Click any button to play the corresponding sound through the service API</li>
+          <li>
+            Click any button to play the corresponding sound through the service
+            API
+          </li>
           <li>Use the volume slider to adjust the master volume</li>
           <li>Check the mute checkbox to disable all sounds</li>
-          <li>All sounds are triggered through the centralized sound service</li>
+          <li>
+            All sounds are triggered through the centralized sound service
+          </li>
         </ul>
       </div>
     </div>

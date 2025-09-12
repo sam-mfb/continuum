@@ -26,10 +26,10 @@ export const loadGalaxyFile = createAsyncThunk(
   'galaxy/loadFile',
   async (fileName: 'continuum_galaxy.bin' | 'release_galaxy.bin') => {
     const galaxyService = getGalaxyService()
-    
+
     // Load galaxy using the service
     const galaxyHeader = await galaxyService.loadGalaxy(`/art/${fileName}`)
-    
+
     // Get all planets for dev display
     const planets = galaxyService.getAllPlanets()
 

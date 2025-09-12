@@ -52,16 +52,16 @@ export const shipSlice = createSlice({
       // Reset position to new level's start position
       state.shipx = action.payload.x
       state.shipy = action.payload.y
-      
+
       // Reset velocity to zero for new level
       state.dx = 0
       state.dy = 0
       state.xslow = 0
       state.yslow = 0
-      
+
       // Reset rotation to north
       state.shiprot = 0
-      
+
       // Reset activity states
       state.flaming = false
       state.flameBlink = 0
@@ -69,7 +69,7 @@ export const shipSlice = createSlice({
       state.firing = false
       state.bouncing = false
       state.shielding = false
-      
+
       // If global coordinates provided, initialize unbounce position and global position
       if (
         action.payload.globalx !== undefined &&
@@ -156,7 +156,6 @@ export const shipSlice = createSlice({
       state.shipy += state.yslow >> 8
       state.yslow &= 255
     },
-
 
     bounceShip: (
       state,

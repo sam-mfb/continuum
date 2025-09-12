@@ -11,20 +11,10 @@ import { screenSlice } from '@core/screen'
 import { wallsSlice } from '@core/walls'
 import { statusSlice } from '@core/status'
 import { clearAllShots } from '@core/shots'
-import { 
-  resetSparksAlive, 
-  clearShards 
-} from '@core/explosions'
-import {
-  initializeBunkers,
-  initializeFuels
-} from '@core/planet'
+import { resetSparksAlive, clearShards } from '@core/explosions'
+import { initializeBunkers, initializeFuels } from '@core/planet'
 import { SCRWTH, TOPMARG, BOTMARG } from '@core/screen'
-import { 
-  nextLevel, 
-  resetGame,
-  endTransition
-} from './gameSlice'
+import { nextLevel, resetGame, endTransition } from './gameSlice'
 import { SHIPSTART, LEVEL_COMPLETE_DELAY, GAME_OVER_DELAY } from './constants'
 import type { GameState } from './gameSlice'
 
@@ -47,8 +37,8 @@ export function checkLevelComplete(state: ExtendedGameState): boolean {
   const { bunkers, fuels } = state.planet
 
   // Check if all bunkers are destroyed
-  const allBunkersDestroyed = bunkers.every(bunker => 
-    bunker.rot < 0 || !bunker.alive // rot < 0 is sentinel, !alive means destroyed
+  const allBunkersDestroyed = bunkers.every(
+    bunker => bunker.rot < 0 || !bunker.alive // rot < 0 is sentinel, !alive means destroyed
   )
 
   // Check if all fuel cells are collected
@@ -57,7 +47,7 @@ export function checkLevelComplete(state: ExtendedGameState): boolean {
   // Level is complete if all bunkers destroyed
   // For levels with no bunkers, check if all fuel is collected
   const hasBunkers = bunkers.some(b => b.rot >= 0)
-  
+
   if (hasBunkers) {
     return allBunkersDestroyed
   } else {
@@ -75,7 +65,7 @@ export function loadLevel(
 ): void {
   const state = store.getState()
   const galaxyService = getGalaxyService()
-  
+
   if (!state.game.galaxyHeader || !galaxyService.isLoaded()) {
     console.error('Galaxy data not loaded')
     return
@@ -147,10 +137,12 @@ export function loadLevel(
  */
 export function transitionToNextLevel(store: Store<ExtendedGameState>): void {
   const state = store.getState()
-  
+
   // Check if we've completed all levels
-  if (state.game.galaxyHeader && 
-      state.game.currentLevel >= state.game.galaxyHeader.planets) {
+  if (
+    state.game.galaxyHeader &&
+    state.game.currentLevel >= state.game.galaxyHeader.planets
+  ) {
     // Game won! For now, just loop back to level 1
     console.log('Game completed! Restarting from level 1')
     store.dispatch(resetGame())
@@ -161,7 +153,7 @@ export function transitionToNextLevel(store: Store<ExtendedGameState>): void {
     const newLevel = store.getState().game.currentLevel
     loadLevel(store, newLevel)
   }
-  
+
   // End transition
   store.dispatch(endTransition())
 }
@@ -172,16 +164,16 @@ export function transitionToNextLevel(store: Store<ExtendedGameState>): void {
 export function resetToLevelOne(store: Store<ExtendedGameState>): void {
   // Reset game state
   store.dispatch(resetGame())
-  
+
   // Reset lives
   store.dispatch(shipSlice.actions.setLives(SHIPSTART))
-  
+
   // Reset score and status
   store.dispatch(statusSlice.actions.initStatus())
-  
+
   // Load level 1
   loadLevel(store, 1)
-  
+
   // End transition
   store.dispatch(endTransition())
 }
@@ -193,7 +185,7 @@ export function handleLevelCompleteTransition(
   store: Store<ExtendedGameState>
 ): void {
   const state = store.getState()
-  
+
   if (state.game.transitionFrame >= LEVEL_COMPLETE_DELAY) {
     transitionToNextLevel(store)
   }
@@ -206,7 +198,7 @@ export function handleGameOverTransition(
   store: Store<ExtendedGameState>
 ): void {
   const state = store.getState()
-  
+
   if (state.game.transitionFrame >= GAME_OVER_DELAY) {
     resetToLevelOne(store)
   }

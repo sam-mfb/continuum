@@ -1,6 +1,6 @@
 /**
  * @fileoverview Sound service with singleton pattern
- * 
+ *
  * Provides a clean, synchronous API for playing game sounds.
  * Handles sound engine initialization and automatic sound cancellation.
  * Follows the same pattern as the sprites service.
@@ -21,26 +21,26 @@ export type SoundService = {
   playShipThrust(): void
   playShipShield(): void
   playShipExplosion(): void
-  
+
   // Bunker sounds
   playBunkerShoot(): void
   playBunkerExplosion(): void
-  playBunkerSoft(): void  // Soft bunker collision
-  
+  playBunkerSoft(): void // Soft bunker collision
+
   // Pickup sounds
   playFuelCollect(): void
-  
+
   // Level sounds
-  playLevelComplete(): void  // Crack sound
-  playLevelTransition(): void  // Fizz sound
-  playEcho(): void  // Echo sound for transitions
-  
+  playLevelComplete(): void // Crack sound
+  playLevelTransition(): void // Fizz sound
+  playEcho(): void // Echo sound for transitions
+
   // Alien sounds
   playAlienExplosion(): void
-  
+
   // Direct generator access for all sounds
   playSound(generatorName: string): void
-  
+
   // Test sounds
   playSilence(): void
   playSine440(): void
@@ -49,16 +49,16 @@ export type SoundService = {
   playWhiteNoise(): void
   playMajorChord(): void
   playOctaves(): void
-  
+
   // Control methods
   stopAll(): void
   setVolume(volume: number): void
   setMuted(muted: boolean): void
-  
+
   // Status methods
   isPlaying(): boolean
   getCurrentSound(): SoundType | null
-  
+
   // Engine access for test panel
   getEngine(): SoundEngine | null
 }
@@ -96,21 +96,21 @@ const soundTypeToGenerator: Partial<Record<SoundType, string>> = {
  */
 function playSoundByGenerator(generatorName: string): void {
   if (!soundEngine) return
-  
+
   // Check if muted BEFORE doing anything
   if (isMuted) {
     console.log(`Sound muted, not playing: ${generatorName}`)
     return
   }
-  
+
   console.log(`Playing sound generator: ${generatorName}`)
-  
+
   // Start the engine first if not already playing
   if (!isPlaying) {
     soundEngine.start()
     isPlaying = true
   }
-  
+
   // Then play the sound using the engine's playTestSound method
   const engineWithTestMethod = soundEngine as any
   if (engineWithTestMethod.playTestSound) {
@@ -119,13 +119,13 @@ function playSoundByGenerator(generatorName: string): void {
     console.error('Engine does not have playTestSound method')
     return
   }
-  
+
   // Clear current sound type since this is a direct generator call
   currentSound = null
-  
+
   // Update Redux state for UI
   store.dispatch({
-    type: 'sound/stopSound'  // Clear the sound type display
+    type: 'sound/stopSound' // Clear the sound type display
   })
 }
 
@@ -134,28 +134,28 @@ function playSoundByGenerator(generatorName: string): void {
  */
 function playSound(soundType: SoundType): void {
   if (!soundEngine) return
-  
+
   // Check if muted BEFORE doing anything
   if (isMuted) {
     console.log(`Sound muted, not playing: ${SoundType[soundType]}`)
     return
   }
-  
+
   // Get the generator name for this sound type
   const generatorName = soundTypeToGenerator[soundType]
   if (!generatorName) {
     console.warn(`No generator for sound type: ${soundType}`)
     return
   }
-  
+
   console.log(`Playing sound: ${SoundType[soundType]} -> ${generatorName}`)
-  
+
   // Start the engine first if not already playing
   if (!isPlaying) {
     soundEngine.start()
     isPlaying = true
   }
-  
+
   // Then play the sound using the engine's playTestSound method
   const engineWithTestMethod = soundEngine as any
   if (engineWithTestMethod.playTestSound) {
@@ -164,13 +164,13 @@ function playSound(soundType: SoundType): void {
     console.error('Engine does not have playTestSound method')
     return
   }
-  
+
   // Update current sound in Redux for UI
   store.dispatch({
     type: 'sound/startSound',
     payload: soundType
   })
-  
+
   // Update our local tracking
   currentSound = soundType
 }
@@ -180,11 +180,11 @@ function playSound(soundType: SoundType): void {
  */
 function stopAllSounds(): void {
   if (!soundEngine || !isPlaying) return
-  
+
   soundEngine.stop()
   isPlaying = false
   currentSound = null
-  
+
   // Update Redux state
   store.dispatch({
     type: 'sound/stopSound'
@@ -199,21 +199,21 @@ export async function initializeSoundService(): Promise<SoundService> {
   if (serviceInstance) {
     return serviceInstance
   }
-  
+
   try {
     // Create and initialize the sound engine
     soundEngine = createSoundEngine()
-    
+
     // Get initial settings from Redux
     const soundState = store.getState().sound
     currentVolume = soundState.volume ?? 1.0
     isMuted = !soundState.enabled
-    
+
     // Apply initial volume
     if (soundEngine) {
       soundEngine.setVolume(currentVolume)
     }
-    
+
     // Create the service instance
     serviceInstance = {
       // Ship sounds
@@ -221,26 +221,26 @@ export async function initializeSoundService(): Promise<SoundService> {
       playShipThrust: () => playSound(SoundType.THRU_SOUND),
       playShipShield: () => playSound(SoundType.SHLD_SOUND),
       playShipExplosion: () => playSound(SoundType.EXP2_SOUND),
-      
+
       // Bunker sounds
       playBunkerShoot: () => playSound(SoundType.BUNK_SOUND),
       playBunkerExplosion: () => playSound(SoundType.EXP1_SOUND),
       playBunkerSoft: () => playSound(SoundType.SOFT_SOUND),
-      
+
       // Pickup sounds
       playFuelCollect: () => playSound(SoundType.FUEL_SOUND),
-      
+
       // Level sounds
       playLevelComplete: () => playSound(SoundType.CRACK_SOUND),
       playLevelTransition: () => playSound(SoundType.FIZZ_SOUND),
       playEcho: () => playSound(SoundType.ECHO_SOUND),
-      
+
       // Alien sounds
       playAlienExplosion: () => playSound(SoundType.EXP3_SOUND),
-      
+
       // Direct generator access
       playSound: (generatorName: string) => playSoundByGenerator(generatorName),
-      
+
       // Test sounds
       playSilence: () => playSoundByGenerator('silence'),
       playSine440: () => playSoundByGenerator('sine440'),
@@ -249,34 +249,33 @@ export async function initializeSoundService(): Promise<SoundService> {
       playWhiteNoise: () => playSoundByGenerator('whiteNoise'),
       playMajorChord: () => playSoundByGenerator('majorChord'),
       playOctaves: () => playSoundByGenerator('octaves'),
-      
+
       // Control methods
       stopAll: () => stopAllSounds(),
-      
+
       setVolume: (volume: number) => {
         currentVolume = Math.max(0, Math.min(1, volume))
         if (soundEngine) {
           soundEngine.setVolume(currentVolume)
         }
       },
-      
+
       setMuted: (muted: boolean) => {
         isMuted = muted
         if (muted && isPlaying) {
           stopAllSounds()
         }
       },
-      
+
       // Status methods
       isPlaying: () => isPlaying,
       getCurrentSound: () => currentSound,
-      
+
       // Engine access for test panel
       getEngine: () => soundEngine
     }
-    
+
     return serviceInstance
-    
   } catch (error) {
     console.error('Failed to initialize sound service:', error)
     throw error
@@ -289,7 +288,9 @@ export async function initializeSoundService(): Promise<SoundService> {
  */
 export function getSoundService(): SoundService {
   if (!serviceInstance) {
-    throw new Error('Sound service not initialized. Call initializeSoundService() first.')
+    throw new Error(
+      'Sound service not initialized. Call initializeSoundService() first.'
+    )
   }
   return serviceInstance
 }
@@ -305,7 +306,7 @@ export function cleanupSoundService(): void {
     }
     soundEngine = null
   }
-  
+
   serviceInstance = null
   currentSound = null
   isPlaying = false

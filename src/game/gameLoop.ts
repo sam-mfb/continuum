@@ -41,7 +41,10 @@ import { shiftFigure } from '@core/ship'
 import { whiteTerrain, blackTerrain } from '@core/walls'
 import { viewClear, viewWhite } from '@core/screen'
 import { starBackground } from '@core/screen/render/starBackground'
-import { createFizzTransition, type FizzTransition } from '@core/screen/render/fizz'
+import {
+  createFizzTransition,
+  type FizzTransition
+} from '@core/screen/render/fizz'
 import { cloneBitmap } from '@lib/bitmap'
 import { LINE_KIND } from '@core/walls'
 import { updateSbar, sbarClear, statusSlice } from '@core/status'
@@ -95,7 +98,7 @@ let initializationError: Error | null = null
 // Track fizz transition state
 type TransitionState = {
   active: boolean
-  preDelayFrames: number  // Countdown before transition starts
+  preDelayFrames: number // Countdown before transition starts
   fizzTransition: FizzTransition | null
   fromBitmap: Uint8Array | null
   toBitmap: Uint8Array | null
@@ -132,7 +135,7 @@ const initializeGame = async (): Promise<void> => {
 
     // Initialize lives
     store.dispatch(shipSlice.actions.setLives(SHIPSTART))
-    
+
     // Initialize status (score, bonus, etc.)
     store.dispatch(statusSlice.actions.initStatus())
 
@@ -229,12 +232,12 @@ export const createGameRenderer =
     // Handle game state transitions
     if (state.game.transitioning) {
       store.dispatch(updateTransition())
-      
+
       // Handle level complete transition
       if (state.game.levelComplete) {
         handleLevelCompleteTransition(store as Store<ExtendedGameState>)
       }
-      
+
       // Handle game over transition
       if (state.game.gameOver) {
         handleGameOverTransition(store as Store<ExtendedGameState>)
@@ -242,24 +245,28 @@ export const createGameRenderer =
     }
 
     // Check for level completion (only if not already transitioning)
-    if (!state.game.transitioning && !transitionState.active && checkLevelComplete(state)) {
+    if (
+      !state.game.transitioning &&
+      !transitionState.active &&
+      checkLevelComplete(state)
+    ) {
       console.log(`Level ${state.game.currentLevel} complete!`)
-      
+
       // Award bonus points (Play.c:107 - score_plus(planetbonus))
       const bonusPoints = state.status.planetbonus
       if (bonusPoints > 0) {
         store.dispatch(statusSlice.actions.addScore(bonusPoints))
         console.log(`Awarded ${bonusPoints} bonus points`)
       }
-      
+
       // Award extra life for completing level (Main.c:683 - numships++)
       store.dispatch(shipSlice.actions.extraLife())
       console.log('Awarded extra life for level completion')
-      
+
       store.dispatch(markLevelComplete())
       // Don't stop ship yet - it keeps moving during the countdown!
       // Ship can even die during this period (Play.c:109-113)
-      
+
       // Start countdown to transition (micocycles from Play.c)
       transitionState.active = true
       transitionState.preDelayFrames = MICO_DELAY_FRAMES
@@ -267,7 +274,11 @@ export const createGameRenderer =
     }
 
     // Check for game over (all lives lost)
-    if (!state.game.gameOver && state.ship.lives <= 0 && state.ship.deadCount === 0) {
+    if (
+      !state.game.gameOver &&
+      state.ship.lives <= 0 &&
+      state.ship.deadCount === 0
+    ) {
       console.log('Game Over - All lives lost')
       store.dispatch(triggerGameOver())
     }
@@ -276,7 +287,7 @@ export const createGameRenderer =
     let globalx: number
     let globaly: number
     let on_right_side: boolean
-    
+
     if (state.ship.deadCount === 0) {
       // Only handle controls and move ship if alive
       // shipControl will read globalx/globaly from ship state (set by previous frame's containShip)
@@ -288,7 +299,7 @@ export const createGameRenderer =
 
       // Move ship (Play.c:216 - move_ship())
       store.dispatch(shipSlice.actions.moveShip())
-      
+
       // Apply containment after movement (Play.c:394-457 - contain_ship())
       // This handles screen wrapping and calculates global position correctly
       const currentState = store.getState()
@@ -297,7 +308,7 @@ export const createGameRenderer =
         currentState.screen,
         currentState.planet
       )
-      
+
       // Update ship position if changed by containment
       // Also always update global position for next frame's shipControl
       if (
@@ -319,7 +330,7 @@ export const createGameRenderer =
           })
         )
       }
-      
+
       // Update screen position if changed by containment (includes wrapping)
       if (
         contained.screenx !== currentState.screen.screenx ||
@@ -332,7 +343,7 @@ export const createGameRenderer =
           })
         )
       }
-      
+
       // Use the global position calculated from wrapped screen coordinates
       // This is the critical fix - globalx/globaly are calculated AFTER screen wrapping
       globalx = contained.globalx
@@ -409,7 +420,7 @@ export const createGameRenderer =
                 rot: bunker.rot
               })
             )
-            
+
             store.dispatch(
               startExplosion({
                 x: bunker.x,
@@ -472,12 +483,12 @@ export const createGameRenderer =
       // Handle pre-transition delay (micocycles countdown)
       if (transitionState.preDelayFrames > 0) {
         transitionState.preDelayFrames--
-        
+
         // When countdown reaches zero, stop the ship
         if (transitionState.preDelayFrames === 0) {
           store.dispatch(shipSlice.actions.stopShipMovement())
         }
-        
+
         // Continue rendering the game normally during pre-delay
         // Fall through to normal rendering
       } else if (!transitionState.fizzTransition) {
@@ -486,29 +497,40 @@ export const createGameRenderer =
         const fromBitmap = cloneBitmap(bitmap)
         // Render the current game state (will be done below)
         // We'll capture it after normal rendering
-        
+
         // Create the "to" bitmap - star background with ship if alive
         const toBitmap = cloneBitmap(bitmap)
-        const shipSprite = finalState.ship.deadCount === 0 ? 
-          spriteService.getShipSprite(finalState.ship.shiprot, { variant: 'def' }) : null
-        const shipMaskSprite = finalState.ship.deadCount === 0 ?
-          spriteService.getShipSprite(finalState.ship.shiprot, { variant: 'mask' }) : null
-        
+        const shipSprite =
+          finalState.ship.deadCount === 0
+            ? spriteService.getShipSprite(finalState.ship.shiprot, {
+                variant: 'def'
+              })
+            : null
+        const shipMaskSprite =
+          finalState.ship.deadCount === 0
+            ? spriteService.getShipSprite(finalState.ship.shiprot, {
+                variant: 'mask'
+              })
+            : null
+
         const starBg = starBackground({
           starCount: 150,
-          additionalRender: finalState.ship.deadCount === 0 ? screen =>
-            fullFigure({
-              x: finalState.ship.shipx - SCENTER,
-              y: finalState.ship.shipy - SCENTER,
-              def: shipSprite!.bitmap,
-              mask: shipMaskSprite!.bitmap
-            })(screen) : undefined
+          additionalRender:
+            finalState.ship.deadCount === 0
+              ? screen =>
+                  fullFigure({
+                    x: finalState.ship.shipx - SCENTER,
+                    y: finalState.ship.shipy - SCENTER,
+                    def: shipSprite!.bitmap,
+                    mask: shipMaskSprite!.bitmap
+                  })(screen)
+              : undefined
         })(toBitmap)
-        
+
         // Store bitmaps
         transitionState.fromBitmap = new Uint8Array(fromBitmap.data)
         transitionState.toBitmap = new Uint8Array(starBg.data)
-        
+
         // We'll create the actual fizz transition after rendering the current frame
         // Fall through to render the current game state first
       } else if (transitionState.fizzTransition.isComplete) {
@@ -516,7 +538,7 @@ export const createGameRenderer =
         if (transitionState.toBitmap) {
           bitmap.data.set(transitionState.toBitmap)
         }
-        
+
         // Update status bar
         const statusBarTemplate = spriteService.getStatusBarTemplate()
         let renderedBitmap = sbarClear({ statusBarTemplate })(bitmap)
@@ -531,9 +553,9 @@ export const createGameRenderer =
         }
         renderedBitmap = updateSbar(statusData)(renderedBitmap)
         bitmap.data.set(renderedBitmap.data)
-        
+
         transitionState.delayFrames++
-        
+
         // After delay, proceed with level transition
         if (transitionState.delayFrames >= TRANSITION_DELAY_FRAMES) {
           // Clean up transition state
@@ -543,7 +565,7 @@ export const createGameRenderer =
           transitionState.fromBitmap = null
           transitionState.toBitmap = null
           transitionState.delayFrames = 0
-          
+
           // Trigger the actual level load
           handleLevelCompleteTransition(store as Store<ExtendedGameState>)
         }
@@ -552,10 +574,10 @@ export const createGameRenderer =
         // Fizz in progress
         const fizzFrame = transitionState.fizzTransition.nextFrame()
         bitmap.data.set(fizzFrame.data)
-        
+
         // Update status bar
         const statusBarTemplate = spriteService.getStatusBarTemplate()
-        let renderedBitmap = sbarClear({ statusBarTemplate })(bitmap)  
+        let renderedBitmap = sbarClear({ statusBarTemplate })(bitmap)
         const statusData = {
           fuel: finalState.ship.fuel,
           lives: finalState.ship.lives,
@@ -983,7 +1005,7 @@ export const createGameRenderer =
               )) // Directional need angle check
           ) {
             store.dispatch(killBunker({ index }))
-            
+
             // Check if bunker was actually destroyed (difficult bunkers might survive)
             const updatedBunker = store.getState().planet.bunkers[index]
             if (!updatedBunker || !updatedBunker.alive) {
@@ -1216,18 +1238,22 @@ export const createGameRenderer =
 
     // Copy rendered bitmap data back to original
     bitmap.data.set(renderedBitmap.data)
-    
+
     // If we just initialized the transition, capture the rendered frame and create fizz
-    if (transitionState.active && !transitionState.fizzTransition && transitionState.fromBitmap) {
+    if (
+      transitionState.active &&
+      !transitionState.fizzTransition &&
+      transitionState.fromBitmap
+    ) {
       // Capture the current rendered frame
       transitionState.fromBitmap = new Uint8Array(bitmap.data)
-      
+
       // Create the fizz transition
       const fromBitmap = cloneBitmap(bitmap)
       fromBitmap.data = transitionState.fromBitmap
-      const toBitmap = cloneBitmap(bitmap) 
+      const toBitmap = cloneBitmap(bitmap)
       toBitmap.data = transitionState.toBitmap!
-      
+
       transitionState.fizzTransition = createFizzTransition({
         from: fromBitmap,
         to: toBitmap,

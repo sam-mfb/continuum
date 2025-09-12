@@ -50,11 +50,14 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       keysDownRef.current.add(e.code)
       // Prevent default browser behavior for game control keys
-      if (e.code === 'Space' || // Shield
-          e.code === 'KeyZ' ||  // Left
-          e.code === 'KeyX' ||  // Right
-          e.code === 'Period' || // Thrust
-          e.code === 'Slash') {  // Fire
+      if (
+        e.code === 'Space' || // Shield
+        e.code === 'KeyZ' || // Left
+        e.code === 'KeyX' || // Right
+        e.code === 'Period' || // Thrust
+        e.code === 'Slash'
+      ) {
+        // Fire
         e.preventDefault()
       }
     }
@@ -75,53 +78,63 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
         clearBitmap(bitmap)
 
         // Render game
-        renderer(bitmap, {
-          keysDown: keysDownRef.current,
-          keysPressed: new Set(),
-          keysReleased: new Set(),
-          frameCount: frameCountRef.current,
-          deltaTime: deltaTime,
-          totalTime: currentTime,
-          targetDelta: frameIntervalMs
-        }, {
-          width,
-          height,
-          fps
-        })
+        renderer(
+          bitmap,
+          {
+            keysDown: keysDownRef.current,
+            keysPressed: new Set(),
+            keysReleased: new Set(),
+            frameCount: frameCountRef.current,
+            deltaTime: deltaTime,
+            totalTime: currentTime,
+            targetDelta: frameIntervalMs
+          },
+          {
+            width,
+            height,
+            fps
+          }
+        )
 
         // Create offscreen canvas at native resolution
         const offscreen = document.createElement('canvas')
         offscreen.width = bitmap.width
         offscreen.height = bitmap.height
         const offCtx = offscreen.getContext('2d')!
-        
+
         // Convert bitmap to ImageData
         const imageData = new ImageData(bitmap.width, bitmap.height)
         const pixels = imageData.data
-        
+
         // Convert monochrome bitmap to RGBA
         for (let y = 0; y < bitmap.height; y++) {
           for (let x = 0; x < bitmap.width; x++) {
             const byteIndex = y * bitmap.rowBytes + Math.floor(x / 8)
-            const bitMask = 0x80 >> (x % 8)
+            const bitMask = 0x80 >> x % 8
             const isSet = (bitmap.data[byteIndex]! & bitMask) !== 0
-            
+
             const pixelIndex = (y * bitmap.width + x) * 4
-            const value = isSet ? 0 : 255  // Black on white
-            
-            pixels[pixelIndex] = value      // R
-            pixels[pixelIndex + 1] = value  // G
-            pixels[pixelIndex + 2] = value  // B
-            pixels[pixelIndex + 3] = 255    // A
+            const value = isSet ? 0 : 255 // Black on white
+
+            pixels[pixelIndex] = value // R
+            pixels[pixelIndex + 1] = value // G
+            pixels[pixelIndex + 2] = value // B
+            pixels[pixelIndex + 3] = 255 // A
           }
         }
-        
+
         // Draw to offscreen canvas
         offCtx.putImageData(imageData, 0, 0)
-        
+
         // Draw scaled to main canvas
         ctx.imageSmoothingEnabled = false
-        ctx.drawImage(offscreen, 0, 0, bitmap.width * scale, bitmap.height * scale)
+        ctx.drawImage(
+          offscreen,
+          0,
+          0,
+          bitmap.width * scale,
+          bitmap.height * scale
+        )
 
         lastFrameTimeRef.current = currentTime
         frameCountRef.current++
@@ -151,17 +164,28 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+        alignItems: 'center'
+      }}
+    >
       {onLevelSelect && (
-        <div style={{
-          display: 'flex',
-          gap: '10px',
-          alignItems: 'center',
-          padding: '10px',
-          backgroundColor: '#222',
-          borderRadius: '5px'
-        }}>
-          <label style={{ color: 'white', fontFamily: 'monospace' }}>Jump to Level:</label>
+        <div
+          style={{
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'center',
+            padding: '10px',
+            backgroundColor: '#222',
+            borderRadius: '5px'
+          }}
+        >
+          <label style={{ color: 'white', fontFamily: 'monospace' }}>
+            Jump to Level:
+          </label>
           <select
             value={selectedLevel}
             onChange={handleLevelChange}

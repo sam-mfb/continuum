@@ -39,12 +39,14 @@ describe('Alignment Mode Switching', () => {
       alignmentSystem.setMode('screen-fixed')
 
       const pos = { x: 100, y: 101, screenX: 50, screenY: 51 }
-      // (50 + 51) & 1 = 101 & 1 = 1
-      expect(alignmentSystem.getAlignment(pos)).toBe(1)
+      // Screen position = world - viewport = (100-50) + (101-51) = 50 + 50 = 100
+      // 100 & 1 = 0
+      expect(alignmentSystem.getAlignment(pos)).toBe(0)
 
       const pos2 = { x: 100, y: 101, screenX: 50, screenY: 50 }
-      // (50 + 50) & 1 = 100 & 1 = 0
-      expect(alignmentSystem.getAlignment(pos2)).toBe(0)
+      // Screen position = world - viewport = (100-50) + (101-50) = 50 + 51 = 101
+      // 101 & 1 = 1
+      expect(alignmentSystem.getAlignment(pos2)).toBe(1)
     })
 
     it('ignores world coordinates in screen-fixed mode', () => {
@@ -110,9 +112,12 @@ describe('Alignment Mode Switching', () => {
       expect(system2.getMode()).toBe('world-fixed')
 
       // Test that they calculate differently
-      const pos = { x: 100, y: 101, screenX: 50, screenY: 50 }
-      expect(system1.getAlignment(pos)).toBe(0) // screen-fixed: (50 + 50) & 1 = 0
-      expect(system2.getAlignment(pos)).toBe(1) // world-fixed: (100 + 101) & 1 = 1
+      // Use a position where screen-fixed and world-fixed give different results
+      const pos = { x: 51, y: 50, screenX: 50, screenY: 51 }
+      // screen-fixed: screen pos = (51-50) + (50-51) = 1 + (-1) = 0, 0 & 1 = 0
+      expect(system1.getAlignment(pos)).toBe(0)
+      // world-fixed: (51 + 50) & 1 = 101 & 1 = 1
+      expect(system2.getAlignment(pos)).toBe(1)
     })
   })
 })

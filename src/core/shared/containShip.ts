@@ -1,7 +1,7 @@
 /**
  * Ship containment logic
  * Based on contain_ship() from orig/Sources/Play.c:394-457
- * 
+ *
  * This function handles:
  * 1. Keeping ship within screen margins
  * 2. Scrolling the screen when ship moves to edges
@@ -25,9 +25,9 @@ export type ContainmentResult = {
   screeny: number
   dx: number
   dy: number
-  globalx: number  // Added: global position calculated from wrapped screen
-  globaly: number  // Added: matching Play.c:438-441
-  on_right_side: boolean  // Added: matching Play.c:443
+  globalx: number // Added: global position calculated from wrapped screen
+  globaly: number // Added: matching Play.c:438-441
+  on_right_side: boolean // Added: matching Play.c:443
 }
 
 type ShipInput = {
@@ -114,7 +114,7 @@ export function containShip(
     globalx -= worldwidth
   }
   const globaly = screeny + shipy
-  
+
   // Calculate on_right_side flag (Play.c:443)
   // on_right_side = screenx > worldwidth - SCRWTH;
   const on_right_side = screenx > worldwidth - SCRWTH

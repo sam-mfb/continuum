@@ -146,14 +146,14 @@ export const planetSlice = createSlice({
           bunk.rotcount = 3
         }
       }
-      
+
       // Initialize gravity points from generator bunkers
       // Based on init_gravity() from Play.c:568-583
       state.gravityPoints = []
       for (const bunk of state.bunkers) {
         // Check for end marker
         if (bunk.rot < 0) break
-        
+
         if (bunk.alive && bunk.kind === BunkerKind.GENERATOR) {
           state.gravityPoints.push({
             x: bunk.x,
@@ -278,7 +278,7 @@ export const planetSlice = createSlice({
         for (const bunk of state.bunkers) {
           // Check for end marker
           if (bunk.rot < 0) break
-          
+
           if (bunk.alive && bunk.kind === BunkerKind.GENERATOR) {
             state.gravityPoints.push({
               x: bunk.x,

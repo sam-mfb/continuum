@@ -88,8 +88,8 @@ export const createFireGenerator = (): SampleGenerator => {
     // Update the stored frequency
     // Original loops 6 times with decrement, then adds 1 back
     // But we only loop 5 times, so decrement once more to match
-    currentFreq--  // 6th decrement that happens in original
-    freq = currentFreq + 1  // Add 1 back like original
+    currentFreq-- // 6th decrement that happens in original
+    freq = currentFreq + 1 // Add 1 back like original
     priority -= 5
 
     // Debug log

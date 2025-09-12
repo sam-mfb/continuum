@@ -58,7 +58,7 @@ export function getstrafedir(line: LineRec, x1: number, y1: number): number {
   // Slopes of lines * 2 (from Play.c:43)
   const slopes2 = [0, 0, 4, 2, 1, 0]
   const m2 = line.up_down * slopes2[line.type]!
-  
+
   // Use integer division (right shift) to match original C code
   const y0 = line.starty + ((m2 * (x1 - line.startx)) >> 1)
 

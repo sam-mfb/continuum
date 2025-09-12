@@ -45,7 +45,10 @@ export const statusSlice = createSlice({
     },
 
     // Score for destroying a bunker (Play.c:365-366)
-    scoreBunker: (state, action: PayloadAction<{ kind: BunkerKind; rot: number }>) => {
+    scoreBunker: (
+      state,
+      action: PayloadAction<{ kind: BunkerKind; rot: number }>
+    ) => {
       const points = getBunkerScore(action.payload.kind, action.payload.rot)
       state.score += points
     },

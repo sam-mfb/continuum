@@ -43,7 +43,7 @@ export function viewClear(deps: {
     // In world-fixed mode, we want the pattern to change based on viewport position
     // In screen-fixed mode, we want a constant pattern
     const screenAlignment = getAlignment({
-      x: screenX,  // Use viewport position as world coordinates
+      x: screenX, // Use viewport position as world coordinates
       y: screenY,
       screenX,
       screenY
@@ -112,7 +112,7 @@ export function viewClearOptimized(deps: {
 
     // Calculate pattern alignment using getAlignment for mode support
     const screenAlignment = getAlignment({
-      x: screenX,  // Use viewport position as world coordinates
+      x: screenX, // Use viewport position as world coordinates
       y: screenY,
       screenX,
       screenY

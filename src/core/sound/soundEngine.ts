@@ -10,7 +10,10 @@ import { createTestSounds } from './generators/testSounds'
 import { createGameSounds } from './generators/gameSounds'
 import type { SampleGenerator } from './sampleGenerator'
 import { createFireGenerator as createFireGeneratorAsm } from './generators-asm/fireGenerator'
-import { createExplosionGenerator as createExplosionGeneratorAsm, ExplosionType } from './generators-asm/explosionGenerator'
+import {
+  createExplosionGenerator as createExplosionGeneratorAsm,
+  ExplosionType
+} from './generators-asm/explosionGenerator'
 import { createThrusterGenerator as createThrusterGeneratorAsm } from './generators-asm/thrusterGenerator'
 import { createShieldGenerator as createShieldGeneratorAsm } from './generators-asm/shieldGenerator'
 import { createBunkerGenerator as createBunkerGeneratorAsm } from './generators-asm/bunkerGenerator'
@@ -121,16 +124,19 @@ export const createSoundEngine = (): SoundEngine => {
       playFizzEchoSequence()
     } else {
       const generator = allGenerators[soundType]
-      
+
       // Reset/restart the generator if it has a start or reset method
       if (generator) {
         if ('start' in generator && typeof generator.start === 'function') {
           generator.start()
-        } else if ('reset' in generator && typeof generator.reset === 'function') {
+        } else if (
+          'reset' in generator &&
+          typeof generator.reset === 'function'
+        ) {
           generator.reset()
         }
       }
-      
+
       currentGenerator = generator
       bufferManager.setGenerator(currentGenerator)
     }

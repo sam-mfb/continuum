@@ -266,7 +266,7 @@ export const createShipMoveBitmapRenderer =
     // Process ship controls and movement only if alive
     let globalx: number
     let globaly: number
-    
+
     if (state.ship.deadCount === 0) {
       // Only handle controls and move ship if alive
       // shipControl will read globalx/globaly from ship state (set by previous frame's containShip)
@@ -279,7 +279,7 @@ export const createShipMoveBitmapRenderer =
 
       // Move ship (Play.c:216 - move_ship())
       store.dispatch(shipSlice.actions.moveShip())
-      
+
       // Apply containment after movement (Play.c:394-457 - contain_ship())
       // This handles screen wrapping and calculates global position correctly
       const currentState = store.getState()
@@ -288,7 +288,7 @@ export const createShipMoveBitmapRenderer =
         currentState.screen,
         currentState.planet
       )
-      
+
       // Update ship position if changed by containment
       // Also always update global position for next frame's shipControl
       if (
@@ -310,7 +310,7 @@ export const createShipMoveBitmapRenderer =
           })
         )
       }
-      
+
       // Update screen position if changed by containment (includes wrapping)
       if (
         contained.screenx !== currentState.screen.screenx ||
@@ -323,7 +323,7 @@ export const createShipMoveBitmapRenderer =
           })
         )
       }
-      
+
       // Use the global position calculated from wrapped screen coordinates
       globalx = contained.globalx
       globaly = contained.globaly

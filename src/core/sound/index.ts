@@ -10,11 +10,11 @@ export * from './constants'
 export * from './types'
 
 // Sound Service - Primary API for game code
-export { 
-  initializeSoundService, 
-  getSoundService, 
+export {
+  initializeSoundService,
+  getSoundService,
   cleanupSoundService,
-  type SoundService 
+  type SoundService
 } from './service'
 
 // Redux slice - For UI settings only

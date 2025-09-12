@@ -24,8 +24,7 @@ export function buildGameStore<
       explosions: explosionsSlice.reducer,
       ...additionalReducers
     },
-    middleware: getDefaultMiddleware =>
-      getDefaultMiddleware()
+    middleware: getDefaultMiddleware => getDefaultMiddleware()
   })
 }
 
