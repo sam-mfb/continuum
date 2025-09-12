@@ -442,7 +442,8 @@ export const createShipMoveBitmapRenderer =
         worldwidth: state.planet.worldwidth,
         worldwrap: state.planet.worldwrap,
         gravx: state.planet.gravx,
-        gravy: state.planet.gravy
+        gravy: state.planet.gravy,
+        gravityPoints: state.planet.gravityPoints
       })
     )
 

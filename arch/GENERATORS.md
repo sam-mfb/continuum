@@ -202,10 +202,10 @@ interface GravityRec {
 }
 ```
 
-This function would be called:
+This function is called:
 
-1. Every frame for ship movement in `shipControlMovement`
-2. For each explosion shard/debris particle to create realistic arcing trajectories
+1. Every frame for ship movement in `shipControl` (via `shipControlMovement`)
+2. For each explosion shard in `updateExplosions` to create realistic arcing debris trajectories
 
 ## Performance Considerations
 

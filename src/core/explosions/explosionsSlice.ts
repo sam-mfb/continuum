@@ -1,5 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { ExplosionsState, ShardRec, SparkRec } from './types'
+import type { GravityPoint } from '@core/shared/gravityVector'
+import { gravityVector } from '@core/shared/gravityVector'
 import {
   NUMSHARDS,
   NUMSPARKS,
@@ -332,10 +334,12 @@ export const explosionsSlice = createSlice({
         worldwrap: boolean
         gravx: number
         gravy: number
+        gravityPoints?: GravityPoint[]
       }>
     ) => {
-      const { worldwidth, gravx, gravy } = action.payload
+      const { worldwidth, gravx, gravy, gravityPoints = [] } = action.payload
       const worldwth8 = worldwidth << 3
+      const worldwrap = action.payload.worldwrap
 
       // Update shards (Terrain.c:456-478)
       for (let i = 0; i < NUMSHARDS; i++) {
@@ -349,9 +353,19 @@ export const explosionsSlice = createSlice({
           shard.v -= shard.v >> SH_SLOW
 
           // Apply gravity (Terrain.c:461-463)
-          // For now, using constant gravity - can be extended for position-dependent gravity later
-          shard.h += gravx << 2
-          shard.v += gravy << 2
+          // Calculate gravity at shard position using gravityVector
+          const gravity = gravityVector({
+            x: shard.x,
+            y: shard.y,
+            gravx,
+            gravy,
+            gravityPoints,
+            worldwidth,
+            worldwrap
+          })
+          // Multiply by 4 for stronger effect on debris (Terrain.c:462-463)
+          shard.h += gravity.xg << 2
+          shard.v += gravity.yg << 2
 
           // Update position (Terrain.c:464-465)
           shard.x += shard.h >> 8
