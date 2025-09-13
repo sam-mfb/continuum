@@ -15,7 +15,7 @@ import { resetSparksAlive, clearShards } from '@core/explosions'
 import { initializeBunkers, initializeFuels } from '@core/planet'
 import { BunkerKind } from '@core/figs/types'
 import { SCRWTH, TOPMARG, BOTMARG } from '@core/screen'
-import { nextLevel, resetGame } from './gameSlice'
+import { resetGame, setCurrentLevel } from './gameSlice'
 import type { GameState } from './gameSlice'
 
 // Extended state that includes game slice
@@ -86,6 +86,9 @@ export function loadLevel(
     console.error('Galaxy data not loaded')
     return
   }
+
+  // Update the current level in game state to match what we're loading
+  store.dispatch(setCurrentLevel(levelNum))
 
   // Get the planet data for this level from the service
   const planet = galaxyService.getPlanet(levelNum)
@@ -165,8 +168,7 @@ export function transitionToNextLevel(store: Store<ExtendedGameState>): void {
     loadLevel(store, 1)
   } else {
     // Load next level
-    store.dispatch(nextLevel())
-    const newLevel = store.getState().game.currentLevel
-    loadLevel(store, newLevel)
+    const nextLevelNum = state.game.currentLevel + 1
+    loadLevel(store, nextLevelNum)
   }
 }

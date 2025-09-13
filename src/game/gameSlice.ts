@@ -55,17 +55,6 @@ export const gameSlice = createSlice({
       state.statusMessage = LEVEL_COMPLETE_MESSAGE
     },
 
-    nextLevel: state => {
-      if (
-        state.galaxyHeader &&
-        state.currentLevel < state.galaxyHeader.planets
-      ) {
-        state.currentLevel++
-        state.levelComplete = false
-        state.statusMessage = ''
-      }
-    },
-
     // Game over handling
     triggerGameOver: state => {
       state.gameOver = true
@@ -95,7 +84,6 @@ export const {
   loadGalaxyHeader,
   setCurrentLevel,
   markLevelComplete,
-  nextLevel,
   triggerGameOver,
   resetGame,
   setStatusMessage,
