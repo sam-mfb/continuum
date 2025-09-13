@@ -2,7 +2,7 @@
  * @fileoverview Game state management slice
  */
 
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { GalaxyHeader } from '@core/galaxy'
 import {
   STARTING_LEVEL,
@@ -10,7 +10,7 @@ import {
   LEVEL_COMPLETE_MESSAGE
 } from './constants'
 
-export interface GameState {
+export type GameState = {
   // Level progression
   currentLevel: number
   galaxyHeader: GalaxyHeader | null
@@ -19,8 +19,6 @@ export interface GameState {
   // Game status
   gameOver: boolean
   levelComplete: boolean
-  transitioning: boolean
-  transitionFrame: number // Counter for transition animations
 
   // Messages
   statusMessage: string
@@ -32,8 +30,6 @@ const initialState: GameState = {
   galaxyLoaded: false,
   gameOver: false,
   levelComplete: false,
-  transitioning: false,
-  transitionFrame: 0,
   statusMessage: ''
 }
 
@@ -56,8 +52,6 @@ export const gameSlice = createSlice({
 
     markLevelComplete: state => {
       state.levelComplete = true
-      state.transitioning = true
-      state.transitionFrame = 0
       state.statusMessage = LEVEL_COMPLETE_MESSAGE
     },
 
@@ -68,8 +62,6 @@ export const gameSlice = createSlice({
       ) {
         state.currentLevel++
         state.levelComplete = false
-        state.transitioning = false
-        state.transitionFrame = 0
         state.statusMessage = ''
       }
     },
@@ -77,8 +69,6 @@ export const gameSlice = createSlice({
     // Game over handling
     triggerGameOver: state => {
       state.gameOver = true
-      state.transitioning = true
-      state.transitionFrame = 0
       state.statusMessage = GAME_OVER_MESSAGE
     },
 
@@ -86,26 +76,9 @@ export const gameSlice = createSlice({
       state.currentLevel = STARTING_LEVEL
       state.gameOver = false
       state.levelComplete = false
-      state.transitioning = false
-      state.transitionFrame = 0
       state.statusMessage = ''
     },
 
-    // Transition animation
-    updateTransition: state => {
-      if (state.transitioning) {
-        state.transitionFrame++
-      }
-    },
-
-    endTransition: state => {
-      state.transitioning = false
-      state.transitionFrame = 0
-      // Clear level complete message but keep game over message
-      if (state.levelComplete) {
-        state.statusMessage = ''
-      }
-    },
 
     // Status message
     setStatusMessage: (state, action: PayloadAction<string>) => {
@@ -125,8 +98,6 @@ export const {
   nextLevel,
   triggerGameOver,
   resetGame,
-  updateTransition,
-  endTransition,
   setStatusMessage,
   clearStatusMessage
 } = gameSlice.actions

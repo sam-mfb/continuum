@@ -3,7 +3,7 @@
  * Calculates the squared distance between a point and a specific x,y coordinate
  */
 
-export interface Point {
+export type Point = {
   h: number // horizontal position (x)
   v: number // vertical position (y)
 }

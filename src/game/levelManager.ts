@@ -15,8 +15,7 @@ import { resetSparksAlive, clearShards } from '@core/explosions'
 import { initializeBunkers, initializeFuels } from '@core/planet'
 import { BunkerKind } from '@core/figs/types'
 import { SCRWTH, TOPMARG, BOTMARG } from '@core/screen'
-import { nextLevel, resetGame, endTransition } from './gameSlice'
-import { SHIPSTART, LEVEL_COMPLETE_DELAY, GAME_OVER_DELAY } from './constants'
+import { nextLevel, resetGame } from './gameSlice'
 import type { GameState } from './gameSlice'
 
 // Extended state that includes game slice
@@ -41,8 +40,8 @@ export type ExtendedGameState = CoreGameState & {
  * For levels with no bunkers, check if all fuel cells are collected.
  */
 export function checkLevelComplete(state: ExtendedGameState): boolean {
-  // Don't check if already transitioning
-  if (state.game.levelComplete || state.game.transitioning) {
+  // Don't check if already complete
+  if (state.game.levelComplete) {
     return false
   }
 
@@ -169,54 +168,5 @@ export function transitionToNextLevel(store: Store<ExtendedGameState>): void {
     store.dispatch(nextLevel())
     const newLevel = store.getState().game.currentLevel
     loadLevel(store, newLevel)
-  }
-
-  // End transition
-  store.dispatch(endTransition())
-}
-
-/**
- * Reset the game to level 1 with initial lives
- */
-export function resetToLevelOne(store: Store<ExtendedGameState>): void {
-  // Reset game state
-  store.dispatch(resetGame())
-
-  // Reset lives
-  store.dispatch(shipSlice.actions.setLives(SHIPSTART))
-
-  // Reset score and status
-  store.dispatch(statusSlice.actions.initStatus())
-
-  // Load level 1
-  loadLevel(store, 1)
-
-  // End transition
-  store.dispatch(endTransition())
-}
-
-/**
- * Handle level complete transition timing
- */
-export function handleLevelCompleteTransition(
-  store: Store<ExtendedGameState>
-): void {
-  const state = store.getState()
-
-  if (state.game.transitionFrame >= LEVEL_COMPLETE_DELAY) {
-    transitionToNextLevel(store)
-  }
-}
-
-/**
- * Handle game over transition timing
- */
-export function handleGameOverTransition(
-  store: Store<ExtendedGameState>
-): void {
-  const state = store.getState()
-
-  if (state.game.transitionFrame >= GAME_OVER_DELAY) {
-    resetToLevelOne(store)
   }
 }

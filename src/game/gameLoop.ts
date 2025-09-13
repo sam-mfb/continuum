@@ -75,13 +75,12 @@ import gameReducer, {
   loadGalaxyHeader,
   markLevelComplete,
   triggerGameOver,
-  updateTransition
+  resetGame
 } from './gameSlice'
 import {
   checkLevelComplete,
   loadLevel,
-  handleLevelCompleteTransition,
-  handleGameOverTransition,
+  transitionToNextLevel,
   type ExtendedGameState
 } from './levelManager'
 import { SHIPSTART } from './constants'
@@ -223,30 +222,17 @@ export const createGameRenderer =
     // Decrement bonus countdown every 10 frames (Play.c:197-201)
     // Original: bonuscount decrements each frame from 10 to 0
     // When it hits 0 (after 10 frames), planetbonus -= 10 and bonuscount resets
-    if (!state.game.transitioning && !transitionState.active) {
+    if (!transitionState.active) {
       if (frame.frameCount % 10 === 0) {
         store.dispatch(statusSlice.actions.decrementBonus())
       }
     }
 
-    // Handle game state transitions
-    if (state.game.transitioning) {
-      store.dispatch(updateTransition())
-
-      // Handle level complete transition
-      if (state.game.levelComplete) {
-        handleLevelCompleteTransition(store as Store<ExtendedGameState>)
-      }
-
-      // Handle game over transition
-      if (state.game.gameOver) {
-        handleGameOverTransition(store as Store<ExtendedGameState>)
-      }
-    }
+    // Note: Level transitions are now handled by the fizz effect completion
+    // Game over transitions still need handling (TODO: implement game over fizz)
 
     // Check for level completion (only if not already transitioning)
     if (
-      !state.game.transitioning &&
       !transitionState.active &&
       checkLevelComplete(state)
     ) {
@@ -281,6 +267,12 @@ export const createGameRenderer =
     ) {
       console.log('Game Over - All lives lost')
       store.dispatch(triggerGameOver())
+      
+      // Reset everything for a new game
+      store.dispatch(resetGame())
+      store.dispatch(shipSlice.actions.setLives(SHIPSTART))
+      store.dispatch(statusSlice.actions.initStatus())
+      loadLevel(store as Store<ExtendedGameState>, 1)
     }
 
     // Process ship controls and movement only if alive
@@ -568,7 +560,7 @@ export const createGameRenderer =
           transitionState.delayFrames = 0
 
           // Trigger the actual level load
-          handleLevelCompleteTransition(store as Store<ExtendedGameState>)
+          transitionToNextLevel(store as Store<ExtendedGameState>)
         }
         return
       } else {

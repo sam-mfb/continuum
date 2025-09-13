@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import type { BitmapRenderer } from '@lib/bitmap'
 import { createMonochromeBitmap, clearBitmap } from '@lib/bitmap'
 
-interface GameCanvasProps {
+type GameCanvasProps = {
   renderer: BitmapRenderer
   width?: number
   height?: number
