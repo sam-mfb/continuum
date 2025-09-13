@@ -96,9 +96,16 @@ function playSoundByType(soundType: GameSoundType, options?: { highPriority?: bo
 
   // Check if high-priority sound is blocking
   // High-priority sounds block ALL other sounds (including other high-priority)
-  if (highPriorityPlaying) {
+  // Exception: 'silence' is always allowed (used to stop sounds)
+  if (highPriorityPlaying && soundType !== 'silence') {
     console.log(`[BLOCKED] High-priority sound is active, blocking: ${soundType}`)
     return
+  }
+
+  // If playing silence, clear the high-priority flag since we're stopping whatever was playing
+  if (soundType === 'silence' && highPriorityPlaying) {
+    highPriorityPlaying = false
+    console.log('[HP STATE] Playing silence, clearing highPriorityPlaying flag')
   }
 
   console.log(`[PLAYING] ${soundType}${options?.highPriority ? ' (HIGH PRIORITY)' : ''} | HP Active: ${highPriorityPlaying}`)
