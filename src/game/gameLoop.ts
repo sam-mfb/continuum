@@ -73,7 +73,12 @@ import { legalAngle } from '@core/planet'
 import { getGalaxyService } from '@core/galaxy'
 import type { GalaxyHeader } from '@core/galaxy'
 import { containShip } from '@core/shared/containShip'
-import soundReducer, { resetFrame, playDiscrete } from '@core/sound/soundSlice'
+import soundReducer, {
+  resetFrame,
+  playDiscrete,
+  setThrusting,
+  setShielding
+} from '@core/sound/soundSlice'
 import { playSounds } from '@core/sound/soundPlayer'
 import type { SoundUIState } from '@core/sound/soundSlice'
 import { SoundType } from '@core/sound/constants'
@@ -1145,6 +1150,10 @@ export const createGameRenderer =
 
         // (d) Play ship explosion sound (high priority) - Terrain.c:414
         store.dispatch(playDiscrete(SoundType.EXP2_SOUND))
+
+        // (e) Stop any continuous sounds when ship dies
+        store.dispatch(setThrusting(false))
+        store.dispatch(setShielding(false))
       }
     }
 

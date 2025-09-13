@@ -5,7 +5,6 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createSoundEngine } from '../soundEngine'
-import type { SoundEngine } from '../types'
 
 // Mock AudioContext for Node.js test environment
 global.AudioContext = vi.fn().mockImplementation(() => ({
@@ -26,24 +25,7 @@ global.AudioContext = vi.fn().mockImplementation(() => ({
   suspend: vi.fn(),
   close: vi.fn(),
   baseLatency: 0.01
-})) as any
-
-// Type for the extended sound engine with test methods
-type TestSoundEngine = SoundEngine & {
-  playTestSound: (soundType: string) => void
-  getTestSounds: () => string[]
-  getStats: () => {
-    underruns: number
-    totalCallbacks: number
-    averageLatency: number
-    bufferState: {
-      writePosition: number
-      readPosition: number
-      available: number
-    }
-  }
-  isPlaying: () => boolean
-}
+}))
 
 // Mock the audio modules
 vi.mock('../bufferManager', () => ({

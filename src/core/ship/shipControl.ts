@@ -55,10 +55,10 @@ export const shipControl =
     const updatedShip = updatedState.ship
     const updatedPlanet = updatedState.planet
 
-    // Handle thrust sound - Play.c:491
-    // Set thrusting state based on whether THRUST is pressed and fuel > 0
+    // Determine which continuous sounds should be playing
+    // Priority: Shield takes precedence over thrust when both are pressed
     const isThrusting = pressed.has(ShipControl.THRUST) && updatedShip.fuel > 0
-    dispatch(setThrusting(isThrusting))
+    const isShielding = pressed.has(ShipControl.SHIELD) && updatedShip.fuel > 0
 
     // Use global position from updated ship state (set by previous frame's containShip)
     // This matches the original game where ship_control uses globals set by previous frame
@@ -70,7 +70,7 @@ export const shipControl =
     )
 
     // Handle shield activation - from Play.c:507-527
-    if (pressed.has(ShipControl.SHIELD) && updatedShip.fuel > 0) {
+    if (isShielding) {
       // Activate shield (also stops refueling)
       dispatch(shipSlice.actions.shieldActivate())
       // Consume fuel for shielding
@@ -102,12 +102,21 @@ export const shipControl =
         // Play FUEL_SOUND (Play.c:522)
         dispatch(playDiscrete(SoundType.FUEL_SOUND))
       }
-
-      // Shield sound is continuous - Play.c:509
-      dispatch(setShielding(true))
     } else {
       // Deactivate shield when key released or out of fuel
       dispatch(shipSlice.actions.shieldDeactivate())
+    }
+
+    // Update continuous sound states
+    // Shield has priority over thrust - if both are active, only shield sound plays
+    if (isShielding) {
+      dispatch(setShielding(true))
+      dispatch(setThrusting(false))
+    } else if (isThrusting) {
+      dispatch(setThrusting(true))
+      dispatch(setShielding(false))
+    } else {
+      dispatch(setThrusting(false))
       dispatch(setShielding(false))
     }
 
