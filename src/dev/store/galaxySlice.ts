@@ -1,8 +1,7 @@
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import type { GalaxyHeader } from '@core/galaxy'
-import { Galaxy } from '@core/galaxy'
-import { parsePlanet } from '@core/planet'
+import { getGalaxyService } from '@core/galaxy'
 import type { PlanetState } from '@core/planet'
 
 type GalaxyState = {
@@ -26,20 +25,13 @@ const initialState: GalaxyState = {
 export const loadGalaxyFile = createAsyncThunk(
   'galaxy/loadFile',
   async (fileName: 'continuum_galaxy.bin' | 'release_galaxy.bin') => {
-    const response = await fetch(`/art/${fileName}`)
-    if (!response.ok) {
-      throw new Error(`Failed to load galaxy file: ${fileName}`)
-    }
+    const galaxyService = getGalaxyService()
 
-    const arrayBuffer = await response.arrayBuffer()
-    const { headerBuffer, planetsBuffer } = Galaxy.splitBuffer(arrayBuffer)
-    const galaxyHeader = Galaxy.parseHeader(headerBuffer)
+    // Load galaxy using the service
+    const galaxyHeader = await galaxyService.loadGalaxy(`/art/${fileName}`)
 
-    const planets: PlanetState[] = []
-    for (let i = 0; i < galaxyHeader.planets; i++) {
-      const planet = parsePlanet(planetsBuffer, galaxyHeader.indexes, i + 1)
-      planets.push(planet)
-    }
+    // Get all planets for dev display
+    const planets = galaxyService.getAllPlanets()
 
     return { galaxyHeader, planets }
   }

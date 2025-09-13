@@ -93,26 +93,37 @@ export const blackTerrain =
       }
     }
 
-    // World wrapping - second pass with adjusted coordinates (lines 77-82)
-    const wrappedRight = right - worldwidth
+    // World wrapping - second pass with adjusted coordinates
+    // This pass is to draw the far-left side of the world when the
+    // viewport is on the far-right.
+    const wrappedRight = viewport.r - worldwidth
+    const wrappedScrx = viewport.x - worldwidth
+
+    // Re-initialize lineId to the start of the list for the second pass,
+    // matching the `p = kindptrs[thekind]` initialization in the C `for` loop.
     let lineId: string | null = firstLineId
 
     while (lineId !== null) {
       const line: LineRec | undefined = organizedWalls[lineId]
       if (!line) break
-      if (line.startx >= wrappedRight) break
 
-      // Visibility check for wrapped lines (lines 79-80)
+      // This is the continuation condition from the C `for` loop: `p->startx < right`.
+      // If a line's start is beyond the wrapped right boundary, we can stop.
+      if (line.startx >= wrappedRight) {
+        break
+      }
+
+      // This is the visibility check from the C `if` statement.
       if (
         (line.starty >= top || line.endy >= top) &&
         (line.starty < bot || line.endy < bot)
       ) {
-        // BLACK_LINE_Q macro with wrapped coordinates
+        // This corresponds to the `BLACK_LINE_Q` macro call.
         const drawFunc = blackRoutines[line.newtype]
         if (drawFunc) {
           newScreen = drawFunc({
             line,
-            scrx: viewport.x - worldwidth,
+            scrx: wrappedScrx, // Use the wrapped screen coordinate
             scry: viewport.y
           })(newScreen)
         }

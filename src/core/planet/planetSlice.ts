@@ -25,7 +25,9 @@ const initialState: PlanetState = {
   lines: [],
   bunkers: [],
   fuels: [],
-  craters: []
+  craters: [],
+  gravityPoints: [],
+  wallsSorted: false
 }
 
 export const planetSlice = createSlice({
@@ -37,6 +39,10 @@ export const planetSlice = createSlice({
       const newState = action.payload
       if (!newState.fuels) {
         newState.fuels = []
+      }
+      // Ensure gravityPoints array exists
+      if (!newState.gravityPoints) {
+        newState.gravityPoints = []
       }
       return newState
     },
@@ -140,6 +146,22 @@ export const planetSlice = createSlice({
           bunk.rotcount = 3
         }
       }
+
+      // Initialize gravity points from generator bunkers
+      // Based on init_gravity() from Play.c:568-583
+      state.gravityPoints = []
+      for (const bunk of state.bunkers) {
+        // Check for end marker
+        if (bunk.rot < 0) break
+
+        if (bunk.alive && bunk.kind === BunkerKind.GENERATOR) {
+          state.gravityPoints.push({
+            x: bunk.x,
+            y: bunk.y,
+            str: -(bunk.ranges[0]?.low ?? 0) // Negated strength from ranges[0].low
+          })
+        }
+      }
     },
 
     /**
@@ -192,7 +214,8 @@ export const planetSlice = createSlice({
       // Check if fuels array exists and has elements
       if (!state.fuels || state.fuels.length === 0) return
 
-      for (const fp of state.fuels) {
+      for (let i = 0; i < state.fuels.length; i++) {
+        const fp = state.fuels[i]
         // Skip undefined or null elements
         if (!fp) continue
 
@@ -247,10 +270,24 @@ export const planetSlice = createSlice({
         state.numcraters++
       }
 
-      // TODO: Reset gravity if generator destroyed (Play.c:363-364)
-      // if (bunker.kind === BunkerKind.GENERATOR) {
-      //   init_gravity()
-      // }
+      // Reset gravity if generator destroyed (Play.c:363-364)
+      if (bunker.kind === BunkerKind.GENERATOR) {
+        // Recalculate gravity points from remaining alive generators
+        // Based on init_gravity() from Play.c:568-583
+        state.gravityPoints = []
+        for (const bunk of state.bunkers) {
+          // Check for end marker
+          if (bunk.rot < 0) break
+
+          if (bunk.alive && bunk.kind === BunkerKind.GENERATOR) {
+            state.gravityPoints.push({
+              x: bunk.x,
+              y: bunk.y,
+              str: -(bunk.ranges[0]?.low ?? 0) // Negated strength from ranges[0].low
+            })
+          }
+        }
+      }
 
       // Note: Explosion and score handled separately from game loop
     },

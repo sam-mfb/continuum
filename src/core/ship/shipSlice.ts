@@ -1,12 +1,13 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { ShipState } from './types'
 import { ShipControl } from './types'
-import { SHIP, DEAD_TIME, FUELSTART, FUELGAIN } from './constants'
+import { SHIP, DEAD_TIME, FUELSTART, FUELGAIN, FUELBURN } from './constants'
+import { SHIPSTART } from '../../game/constants'
 
 const initialState: ShipState = {
   shiprot: 0,
   fuel: FUELSTART,
-  lives: 3,
+  lives: SHIPSTART,
   flaming: false,
   flameBlink: 0,
   thrusting: false,
@@ -25,7 +26,9 @@ const initialState: ShipState = {
   unbouncey: 0,
   deadCount: 0,
   startx: 0,
-  starty: 0
+  starty: 0,
+  globalx: 0,
+  globaly: 0
 }
 
 type ControlAction = {
@@ -46,25 +49,57 @@ export const shipSlice = createSlice({
         globaly?: number
       }>
     ) => {
+      // Reset position to new level's start position
       state.shipx = action.payload.x
       state.shipy = action.payload.y
-      // If global coordinates provided, initialize unbounce position
+
+      // Reset velocity to zero for new level
+      state.dx = 0
+      state.dy = 0
+      state.xslow = 0
+      state.yslow = 0
+
+      // Reset rotation to north
+      state.shiprot = 0
+
+      // Reset activity states
+      state.flaming = false
+      state.flameBlink = 0
+      state.thrusting = false
+      state.firing = false
+      state.bouncing = false
+      state.shielding = false
+
+      // If global coordinates provided, initialize unbounce position and global position
       if (
         action.payload.globalx !== undefined &&
         action.payload.globaly !== undefined
       ) {
         state.unbouncex = action.payload.globalx
         state.unbouncey = action.payload.globaly
+        state.globalx = action.payload.globalx
+        state.globaly = action.payload.globaly
       }
     },
     updatePosition: (
       state,
-      action: PayloadAction<{ x: number; y: number; dx?: number; dy?: number }>
+      action: PayloadAction<{
+        x: number
+        y: number
+        dx?: number
+        dy?: number
+        globalx?: number
+        globaly?: number
+      }>
     ) => {
       state.shipx = action.payload.x
       state.shipy = action.payload.y
       if (action.payload.dx !== undefined) state.dx = action.payload.dx
       if (action.payload.dy !== undefined) state.dy = action.payload.dy
+      if (action.payload.globalx !== undefined)
+        state.globalx = action.payload.globalx
+      if (action.payload.globaly !== undefined)
+        state.globaly = action.payload.globaly
     },
     shipControlMovement: (state, action: PayloadAction<ControlAction>) => {
       const { controlsPressed, gravity } = action.payload
@@ -91,8 +126,9 @@ export const shipSlice = createSlice({
         } else {
           state.flameBlink = 4
         }
-        state.thrusting = false
-        // fuel_minus(FUELBURN);
+        state.thrusting = true
+        // Consume fuel for thrusting (Play.c:490)
+        state.fuel = Math.max(0, state.fuel - FUELBURN)
         // start_sound(THRU_SOUND);
       } else state.thrusting = false
 
@@ -119,43 +155,6 @@ export const shipSlice = createSlice({
       state.yslow += state.dy
       state.shipy += state.yslow >> 8
       state.yslow &= 255
-    },
-
-    resetShip: (
-      state,
-      action: PayloadAction<{
-        x: number
-        y: number
-        globalx?: number
-        globaly?: number
-      }>
-    ) => {
-      // Reset position
-      state.shipx = action.payload.x
-      state.shipy = action.payload.y
-      // Reset velocity
-      state.dx = 0
-      state.dy = 0
-      state.xslow = 0
-      state.yslow = 0
-      // Reset rotation
-      state.shiprot = 0
-      // Reset states
-      state.flaming = false
-      state.flameBlink = 0
-      state.thrusting = false
-      state.firing = false
-      state.bouncing = false
-      state.shielding = false
-      // Reset unbounce position if global coords provided
-      if (
-        action.payload.globalx !== undefined &&
-        action.payload.globaly !== undefined
-      ) {
-        state.unbouncex = action.payload.globalx
-        state.unbouncey = action.payload.globaly
-      }
-      // Keep fuel as is
     },
 
     bounceShip: (
@@ -267,6 +266,18 @@ export const shipSlice = createSlice({
     },
 
     /**
+     * Stop the ship's velocity but keep rotation
+     * Used when level completes to freeze ship in place during transition
+     */
+    stopShipMovement: state => {
+      state.dx = 0
+      state.dy = 0
+      state.xslow = 0
+      state.yslow = 0
+      // Keep rotation as-is (ship should still face same direction)
+    },
+
+    /**
      * Set the ship's start/respawn position
      */
     setStartPosition: (
@@ -359,7 +370,7 @@ export const shipSlice = createSlice({
      * Reset lives for new game
      */
     resetLives: state => {
-      state.lives = 3
+      state.lives = SHIPSTART
     }
   }
 })

@@ -1,50 +1,29 @@
 /**
- * Redux slice for sound state management
- * Manages the current sound, priority, and playback state
+ * Redux slice for sound UI settings
+ * Only manages UI-related settings like volume and mute
+ * Actual sound playback is handled by the sound service
  */
 
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { createSlice } from '@reduxjs/toolkit'
-import type { SoundState } from './types'
-import { SoundType, SOUND_PRIORITIES } from './constants'
+import { SoundType } from './constants'
 
-const initialState: SoundState = {
-  currentSound: SoundType.NO_SOUND,
-  priority: 0,
+export type SoundUIState = {
+  enabled: boolean // Sound on/off
+  volume: number // Master volume 0-1
+  currentSound: SoundType // For UI display only
+}
+
+const initialState: SoundUIState = {
   enabled: true,
   volume: 0.5,
-  activeSource: null
+  currentSound: SoundType.NO_SOUND
 }
 
 const soundSlice = createSlice({
   name: 'sound',
   initialState,
   reducers: {
-    /**
-     * Start a sound if its priority is higher than current
-     * Mirrors the priority check in start_sound() (Sound.c:465)
-     */
-    startSound: (state, action: PayloadAction<SoundType>) => {
-      const newSound = action.payload
-      const newPriority = SOUND_PRIORITIES[newSound]
-
-      // Original: if (priorities[whichsound] > priority) (Sound.c:465)
-      if (newPriority > state.priority) {
-        state.currentSound = newSound
-        state.priority = newPriority
-      }
-    },
-
-    /**
-     * Stop the current sound
-     * Equivalent to clear_sound() (Sound.c:573-580)
-     */
-    stopSound: state => {
-      state.currentSound = SoundType.NO_SOUND
-      state.priority = 0
-      state.activeSource = null
-    },
-
     /**
      * Set the master volume
      */
@@ -59,30 +38,47 @@ const soundSlice = createSlice({
       state.enabled = !state.enabled
       if (!state.enabled) {
         state.currentSound = SoundType.NO_SOUND
-        state.priority = 0
-        state.activeSource = null
       }
     },
 
     /**
-     * Store reference to active audio source for cleanup
+     * Enable/disable sound
      */
-    setActiveSource: (
-      state,
-      action: PayloadAction<AudioBufferSourceNode | null>
-    ) => {
-      // Note: We can't actually store AudioBufferSourceNode in Redux
-      // This is just for type definition - actual management happens outside Redux
-      state.activeSource = action.payload
+    setEnabled: (state, action: PayloadAction<boolean>) => {
+      state.enabled = action.payload
+      if (!state.enabled) {
+        state.currentSound = SoundType.NO_SOUND
+      }
+    },
+
+    /**
+     * Update current sound for UI display
+     * This is called by the service to keep UI in sync
+     */
+    setCurrentSound: (state, action: PayloadAction<SoundType>) => {
+      state.currentSound = action.payload
+    },
+
+    /**
+     * These actions are for backwards compatibility with the service
+     * The service dispatches these to keep the UI in sync
+     */
+    startSound: (state, action: PayloadAction<SoundType>) => {
+      state.currentSound = action.payload
+    },
+
+    stopSound: state => {
+      state.currentSound = SoundType.NO_SOUND
     }
   }
 })
 
 export const {
-  startSound,
-  stopSound,
   setVolume,
   toggleSound,
-  setActiveSource
+  setEnabled,
+  setCurrentSound,
+  startSound,
+  stopSound
 } = soundSlice.actions
 export default soundSlice.reducer

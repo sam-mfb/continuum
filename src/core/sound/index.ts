@@ -9,15 +9,23 @@ export * from './constants'
 // Types
 export * from './types'
 
-// Sound engine
-export * from './soundEngine'
+// Sound Service - Primary API for game code
+export {
+  initializeSoundService,
+  getSoundService,
+  cleanupSoundService,
+  type SoundService
+} from './service'
 
-// Sound manager
-export * from './soundManager'
-
-// Redux slice
+// Redux slice - For UI settings only
 export { default as soundReducer } from './soundSlice'
 export * from './soundSlice'
+
+// Sound engine - Internal, exposed for test panel
+export * from './soundEngine'
+
+// Legacy sound manager - Keep for backwards compatibility
+export * from './soundManager'
 
 // Audio output (Phase 6)
 export * from './audioOutput'

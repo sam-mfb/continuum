@@ -9,6 +9,19 @@ import { createAudioOutput } from './audioOutput'
 import { createTestSounds } from './generators/testSounds'
 import { createGameSounds } from './generators/gameSounds'
 import type { SampleGenerator } from './sampleGenerator'
+import { createFireGenerator as createFireGeneratorAsm } from './generators-asm/fireGenerator'
+import {
+  createExplosionGenerator as createExplosionGeneratorAsm,
+  ExplosionType
+} from './generators-asm/explosionGenerator'
+import { createThrusterGenerator as createThrusterGeneratorAsm } from './generators-asm/thrusterGenerator'
+import { createShieldGenerator as createShieldGeneratorAsm } from './generators-asm/shieldGenerator'
+import { createBunkerGenerator as createBunkerGeneratorAsm } from './generators-asm/bunkerGenerator'
+import { createSoftGenerator as createSoftGeneratorAsm } from './generators-asm/softGenerator'
+import { createFuelGenerator as createFuelGeneratorAsm } from './generators-asm/fuelGenerator'
+import { createCrackGenerator as createCrackGeneratorAsm } from './generators-asm/crackGenerator'
+import { createFizzGenerator as createFizzGeneratorAsm } from './generators-asm/fizzGenerator'
+import { createEchoGenerator as createEchoGeneratorAsm } from './generators-asm/echoGenerator'
 
 /**
  * Factory function for creating the sound engine
@@ -19,8 +32,24 @@ export const createSoundEngine = (): SoundEngine => {
   const testSounds = createTestSounds()
   const gameSounds = createGameSounds()
 
+  // Add assembly implementations for testing
+  const asmGenerators = {
+    fireAsm: createFireGeneratorAsm(),
+    thrusterAsm: createThrusterGeneratorAsm(),
+    shieldAsm: createShieldGeneratorAsm(),
+    explosionBunkerAsm: createExplosionGeneratorAsm(ExplosionType.BUNKER),
+    explosionShipAsm: createExplosionGeneratorAsm(ExplosionType.SHIP),
+    explosionAlienAsm: createExplosionGeneratorAsm(ExplosionType.ALIEN),
+    bunkerAsm: createBunkerGeneratorAsm(),
+    softAsm: createSoftGeneratorAsm(),
+    fuelAsm: createFuelGeneratorAsm(),
+    crackAsm: createCrackGeneratorAsm(),
+    fizzAsm: createFizzGeneratorAsm(),
+    echoAsm: createEchoGeneratorAsm()
+  }
+
   // Combine all generators for easy access
-  const allGenerators = { ...testSounds, ...gameSounds }
+  const allGenerators = { ...testSounds, ...gameSounds, ...asmGenerators }
 
   // Initialize buffer manager with silence
   const bufferManager = createBufferManager(testSounds.silence)
@@ -51,12 +80,11 @@ export const createSoundEngine = (): SoundEngine => {
   }
 
   /**
-   * Set the master volume (placeholder for now)
+   * Set the master volume
    * @param volume - Volume level from 0 to 1
    */
   const setVolume = (volume: number): void => {
-    // TODO: Implement volume control in the generator/buffer system
-    console.log('setVolume:', volume)
+    bufferManager.setVolume(volume)
   }
 
   /**
@@ -95,7 +123,21 @@ export const createSoundEngine = (): SoundEngine => {
       // Special case: play fizz sound followed by echo
       playFizzEchoSequence()
     } else {
-      currentGenerator = allGenerators[soundType]
+      const generator = allGenerators[soundType]
+
+      // Reset/restart the generator if it has a start or reset method
+      if (generator) {
+        if ('start' in generator && typeof generator.start === 'function') {
+          generator.start()
+        } else if (
+          'reset' in generator &&
+          typeof generator.reset === 'function'
+        ) {
+          generator.reset()
+        }
+      }
+
+      currentGenerator = generator
       bufferManager.setGenerator(currentGenerator)
     }
   }

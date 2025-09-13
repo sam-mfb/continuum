@@ -5,6 +5,9 @@
 // Constants
 export * from './constants'
 
+// Scoring
+export * from './scoring'
+
 // State management
 export { statusSlice } from './statusSlice'
 

@@ -5,6 +5,7 @@ export const SCOREBUNK = 50 // Points for destroying bunker
 export const FUELSTART = 10000 // Starting amount of fuel (GW.h:136)
 
 // Shield-related constants from GW.h
+export const FUELBURN = 16 // Fuel consumed per frame while thrusting (GW.h:138)
 export const FUELSHIELD = 83 // Fuel consumed per frame while shielding (GW.h:139)
 export const SHRADIUS = 12 // Shield protection radius in pixels (GW.h:77)
 

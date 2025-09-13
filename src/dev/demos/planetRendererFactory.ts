@@ -188,7 +188,7 @@ export const createPlanetRenderer: PlanetRendererFactory = (
       // Get updated planet state with rotated bunkers
       const planetState = bunkerStore.getState().planet
 
-      // Draw bunkers at normal position
+      // Draw bunkers at normal position (Bunkers.c:46 - "do_bunks(screenx, screeny);")
       let bunkerBitmap = doBunks({
         bunkrec: planetState.bunkers,
         scrnx: currentScreen.screenx,
@@ -217,7 +217,8 @@ export const createPlanetRenderer: PlanetRendererFactory = (
         }
       })(bitmap)
 
-      // If wrapping world and near right edge, draw wrapped bunkers
+      // Second pass - wrapped position (Bunkers.c:47-48)
+      // "if (on_right_side) do_bunks(screenx-worldwidth, screeny);"
       const onRightSide = isOnRightSide(
         currentScreen.screenx,
         bitmap.width,

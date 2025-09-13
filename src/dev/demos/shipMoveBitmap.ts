@@ -32,6 +32,7 @@ import {
 import { ShipControl } from '@core/ship'
 import { shipControl } from '@core/ship'
 import { buildGameStore } from '@dev/store'
+import { containShip } from '@core/shared/containShip'
 import { SCRWTH, VIEWHT, TOPMARG, BOTMARG } from '@core/screen'
 import type { SpriteServiceV2 } from '@core/sprites'
 import { SCENTER, type BunkerKind } from '@core/figs/types'
@@ -171,7 +172,7 @@ const resetGame = (): void => {
   const shipScreenY = Math.floor((TOPMARG + BOTMARG) / 2) // 159
 
   store.dispatch(
-    shipSlice.actions.resetShip({
+    shipSlice.actions.initShip({
       x: shipScreenX,
       y: shipScreenY,
       globalx: state.planet.xstart, // Reset to starting global position
@@ -262,30 +263,75 @@ export const createShipMoveBitmapRenderer =
       // Continue with normal rendering after reset
     }
 
-    // Get gravity from planet
-    const gravity = {
-      x: state.planet.gravx,
-      y: state.planet.gravy
-    }
-
     // Process ship controls and movement only if alive
+    let globalx: number
+    let globaly: number
+
     if (state.ship.deadCount === 0) {
       // Only handle controls and move ship if alive
+      // shipControl will read globalx/globaly from ship state (set by previous frame's containShip)
+      // and calculate gravity from generators
       store.dispatch(
         shipControl({
-          controlsPressed: getPressedControls(frame.keysDown),
-          gravity
+          controlsPressed: getPressedControls(frame.keysDown)
         })
       )
 
-      // Move ship - containment middleware will automatically apply
+      // Move ship (Play.c:216 - move_ship())
       store.dispatch(shipSlice.actions.moveShip())
-    }
 
-    // Move all bullets with collision detection
-    // Calculate global ship position (screen + ship relative position)
-    const globalx = state.screen.screenx + state.ship.shipx
-    const globaly = state.screen.screeny + state.ship.shipy
+      // Apply containment after movement (Play.c:394-457 - contain_ship())
+      // This handles screen wrapping and calculates global position correctly
+      const currentState = store.getState()
+      const contained = containShip(
+        currentState.ship,
+        currentState.screen,
+        currentState.planet
+      )
+
+      // Update ship position if changed by containment
+      // Also always update global position for next frame's shipControl
+      if (
+        contained.shipx !== currentState.ship.shipx ||
+        contained.shipy !== currentState.ship.shipy ||
+        contained.dx !== currentState.ship.dx ||
+        contained.dy !== currentState.ship.dy ||
+        contained.globalx !== currentState.ship.globalx ||
+        contained.globaly !== currentState.ship.globaly
+      ) {
+        store.dispatch(
+          shipSlice.actions.updatePosition({
+            x: contained.shipx,
+            y: contained.shipy,
+            dx: contained.dx,
+            dy: contained.dy,
+            globalx: contained.globalx,
+            globaly: contained.globaly
+          })
+        )
+      }
+
+      // Update screen position if changed by containment (includes wrapping)
+      if (
+        contained.screenx !== currentState.screen.screenx ||
+        contained.screeny !== currentState.screen.screeny
+      ) {
+        store.dispatch(
+          screenSlice.actions.updatePosition({
+            x: contained.screenx,
+            y: contained.screeny
+          })
+        )
+      }
+
+      // Use the global position calculated from wrapped screen coordinates
+      globalx = contained.globalx
+      globaly = contained.globaly
+    } else {
+      // Ship is dead, still need to calculate position for other systems
+      globalx = state.screen.screenx + state.ship.shipx
+      globaly = state.screen.screeny + state.ship.shipy
+    }
 
     // Update bunker rotations for animated bunkers (GROUND, FOLLOW, GENERATOR)
     store.dispatch(updateBunkerRotations({ globalx, globaly }))
@@ -396,7 +442,8 @@ export const createShipMoveBitmapRenderer =
         worldwidth: state.planet.worldwidth,
         worldwrap: state.planet.worldwrap,
         gravx: state.planet.gravx,
-        gravy: state.planet.gravy
+        gravy: state.planet.gravy,
+        gravityPoints: state.planet.gravityPoints
       })
     )
 
@@ -647,6 +694,7 @@ export const createShipMoveBitmapRenderer =
     })(renderedBitmap)
 
     // 7. do_bunkers - render all bunkers
+    // First pass - normal position (Bunkers.c:46 - "do_bunks(screenx, screeny);")
     renderedBitmap = doBunks({
       bunkrec: finalState.planet.bunkers,
       scrnx: finalState.screen.screenx,
@@ -676,6 +724,40 @@ export const createShipMoveBitmapRenderer =
         }
       }
     })(renderedBitmap)
+
+    // Second pass - wrapped position (Bunkers.c:47-48)
+    // "if (on_right_side) do_bunks(screenx-worldwidth, screeny);"
+    if (on_right_side && finalState.planet.worldwrap) {
+      renderedBitmap = doBunks({
+        bunkrec: finalState.planet.bunkers,
+        scrnx: finalState.screen.screenx - finalState.planet.worldwidth,
+        scrny: finalState.screen.screeny,
+        getSprite: (kind: BunkerKind, rotation: number) => {
+          // Get sprites with proper variants
+          const defSprite = spriteService.getBunkerSprite(kind, rotation, {
+            variant: 'def'
+          })
+          const maskSprite = spriteService.getBunkerSprite(kind, rotation, {
+            variant: 'mask'
+          })
+          const bg1Sprite = spriteService.getBunkerSprite(kind, rotation, {
+            variant: 'background1'
+          })
+          const bg2Sprite = spriteService.getBunkerSprite(kind, rotation, {
+            variant: 'background2'
+          })
+
+          return {
+            def: defSprite.uint8,
+            mask: maskSprite.uint8,
+            images: {
+              background1: bg1Sprite.uint8,
+              background2: bg2Sprite.uint8
+            }
+          }
+        }
+      })(renderedBitmap)
+    }
 
     // 8. move_bullets - Draw bunker shots BEFORE collision check (Play.c:238-239)
     // This must happen before check_figure() so shots can kill the ship via pixel collision

@@ -138,16 +138,26 @@ export function createAlignmentSystem(): {
      */
     getAlignment(pos: GlobalPosition | ScreenRelativePosition): Alignment {
       if ('objectX' in pos) {
-        // Screen-relative position (for walls) - unchanged
-        // This combines screen alignment with object alignment in one calculation
-        return ((pos.screenX + pos.screenY + pos.objectX + pos.objectY) &
-          1) as Alignment
+        // Screen-relative position (for walls)
+        if (mode === 'screen-fixed') {
+          // In screen-fixed mode, only use object position (screen-relative coordinates)
+          // This keeps the pattern fixed to the screen
+          return ((pos.objectX + pos.objectY) & 1) as Alignment
+        } else {
+          // In world-fixed mode, combine screen and object positions
+          // This creates stable alignment in world space
+          return ((pos.screenX + pos.screenY + pos.objectX + pos.objectY) &
+            1) as Alignment
+        }
       } else {
         // Global position - mode-dependent calculation
         if (mode === 'screen-fixed') {
           // Screen-fixed: pattern stays fixed relative to screen
-          // Only use screen coordinates, ignore world position
-          return ((pos.screenX + pos.screenY) & 1) as Alignment
+          // Calculate based on sprite's screen position to match background
+          // Screen position = world position - viewport position
+          const screenPosX = pos.x - pos.screenX
+          const screenPosY = pos.y - pos.screenY
+          return ((screenPosX + screenPosY) & 1) as Alignment
         } else {
           // World-fixed: pattern stays fixed relative to world (default)
           // Use world coordinates, creating stable alignment for objects

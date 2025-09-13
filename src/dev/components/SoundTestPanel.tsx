@@ -9,100 +9,50 @@ import React, { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { RootState } from '@dev/store'
 import { setVolume, toggleSound } from '@core/sound/soundSlice'
-import { soundManager } from '@core/sound'
-import { createTestSounds } from '@core/sound/generators/testSounds'
-import { createGameSounds } from '@core/sound/generators/gameSounds'
-
-// Extended sound engine interface for testing
-type TestSoundEngine = {
-  playTestSound: (soundType: string) => void
-  getTestSounds: () => string[]
-  getStats: () => {
-    underruns: number
-    totalCallbacks: number
-    averageLatency: number
-    bufferState: {
-      writePosition: number
-      readPosition: number
-      available: number
-    }
-  }
-  isPlaying: () => boolean
-}
+import { initializeSoundService } from '@core/sound/service'
+import type { SoundService } from '@core/sound/service'
 
 export const SoundTestPanel: React.FC = () => {
   const dispatch = useDispatch()
   const { volume: masterVolume, enabled } = useSelector(
     (state: RootState) => state.sound
   )
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [currentSound, setCurrentSound] = useState<string>('silence')
-  const [stats, setStats] = useState<ReturnType<
-    TestSoundEngine['getStats']
-  > | null>(null)
-  const [testSoundNames, setTestSoundNames] = useState<string[]>([])
-  const [gameSoundNames, setGameSoundNames] = useState<string[]>([])
+  const [soundService, setSoundService] = useState<SoundService | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
 
-  // Get the sound engine with test methods
-  const engine = soundManager.getEngine() as unknown as TestSoundEngine
-
   useEffect(() => {
-    // Initialize sound manager on mount
+    // Initialize sound service on mount
     if (!isInitialized) {
-      soundManager.initialize()
-      setIsInitialized(true)
+      initializeSoundService()
+        .then(service => {
+          setSoundService(service)
+          // Sync initial state with Redux
+          service.setVolume(masterVolume)
+          service.setMuted(!enabled) // enabled=true means not muted
+          setIsInitialized(true)
+        })
+        .catch(error => {
+          console.error('Failed to initialize sound service:', error)
+        })
     }
-
-    // Get the sound names from the generators
-    const testSounds = Object.keys(createTestSounds())
-    const gameSounds = Object.keys(createGameSounds())
-
-    setTestSoundNames(testSounds)
-    setGameSoundNames(gameSounds)
-  }, [isInitialized])
-
-  useEffect(() => {
-    // Update stats every 100ms when playing
-    if (!isPlaying) return
-
-    const interval = setInterval(() => {
-      if (engine && engine.getStats) {
-        setStats(engine.getStats())
-      }
-    }, 100)
-
-    return (): void => clearInterval(interval)
-  }, [isPlaying, engine])
-
-  const handleStart = (): void => {
-    soundManager.start()
-    setIsPlaying(true)
-  }
-
-  const handleStop = (): void => {
-    soundManager.stop()
-    setIsPlaying(false)
-  }
-
-  const handleSoundChange = (soundType: string): void => {
-    setCurrentSound(soundType)
-    if (engine && engine.playTestSound) {
-      engine.playTestSound(soundType)
-    }
-  }
+  }, [isInitialized, masterVolume, enabled])
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const volume = parseFloat(e.target.value)
     dispatch(setVolume(volume))
+    if (soundService) {
+      soundService.setVolume(volume)
+    }
   }
 
   const handleMuteToggle = (): void => {
+    const newEnabled = !enabled // Calculate the new state
     dispatch(toggleSound())
-  }
-
-  const formatLatency = (ms: number): string => {
-    return ms < 1 ? `${(ms * 1000).toFixed(1)}μs` : `${ms.toFixed(2)}ms`
+    if (soundService) {
+      // If sound is enabled (newEnabled = true), then muted = false
+      // If sound is disabled (newEnabled = false), then muted = true
+      soundService.setMuted(!newEnabled)
+    }
   }
 
   return (
@@ -113,16 +63,6 @@ export const SoundTestPanel: React.FC = () => {
       <div style={styles.section}>
         <h3>Audio Control</h3>
         <div style={styles.controls}>
-          <button
-            onClick={isPlaying ? handleStop : handleStart}
-            style={{
-              ...styles.button,
-              backgroundColor: isPlaying ? '#ff4444' : '#44ff44'
-            }}
-          >
-            {isPlaying ? 'Stop Audio' : 'Start Audio'}
-          </button>
-
           <label style={styles.label}>
             <input
               type="checkbox"
@@ -149,146 +89,271 @@ export const SoundTestPanel: React.FC = () => {
         </div>
       </div>
 
-      {/* Test Sounds */}
+      {/* Game Sound Service API - Ship */}
       <div style={styles.section}>
-        <h3>Test Sounds</h3>
-        <div style={styles.soundGrid}>
-          {testSoundNames.map(sound => (
-            <button
-              key={sound}
-              onClick={() => handleSoundChange(sound)}
-              style={{
-                ...styles.soundButton,
-                backgroundColor: currentSound === sound ? '#4488ff' : '#f0f0f0',
-                color: currentSound === sound ? 'white' : 'black'
-              }}
-              disabled={!isPlaying}
-            >
-              {sound}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Game Sounds */}
-      <div style={styles.section}>
-        <h3>Game Sounds (from Original Continuum)</h3>
-        <div style={styles.soundGrid}>
-          {gameSoundNames.map(sound => (
-            <button
-              key={sound}
-              onClick={() => handleSoundChange(sound)}
-              style={{
-                ...styles.soundButton,
-                backgroundColor: currentSound === sound ? '#44ff44' : '#f0f0f0',
-                color: currentSound === sound ? 'white' : 'black'
-              }}
-              disabled={!isPlaying}
-            >
-              {sound}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Special Sound Sequences */}
-      <div style={styles.section}>
-        <h3>Sound Sequences</h3>
+        <h3>Service API - Ship Sounds</h3>
         <div style={styles.soundGrid}>
           <button
-            onClick={() => handleSoundChange('fizzEcho')}
-            style={{
-              ...styles.soundButton,
-              backgroundColor:
-                currentSound === 'fizzEcho' ? '#ff44ff' : '#f0f0f0',
-              color: currentSound === 'fizzEcho' ? 'white' : 'black'
-            }}
-            disabled={!isPlaying}
+            onClick={() => soundService?.playShipFire()}
+            style={styles.soundButton}
+            disabled={!soundService}
           >
-            Fizz + Echo (Planet Complete)
+            Ship Fire
+          </button>
+          <button
+            onClick={() => soundService?.playShipThrust()}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Ship Thrust
+          </button>
+          <button
+            onClick={() => soundService?.playShipShield()}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Ship Shield
+          </button>
+          <button
+            onClick={() => soundService?.playShipExplosion()}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Ship Explode
           </button>
         </div>
       </div>
 
-      {/* Performance Stats */}
-      {stats && (
-        <div style={styles.section}>
-          <h3>Performance Statistics</h3>
-          <div style={styles.stats}>
-            <div>Audio Callbacks: {stats.totalCallbacks}</div>
-            <div>
-              Glitches (slow callbacks):{' '}
-              <span style={{ color: stats.underruns > 0 ? 'red' : 'green' }}>
-                {stats.underruns}
-              </span>
-            </div>
-            <div>Average Latency: {formatLatency(stats.averageLatency)}</div>
-            <div>Buffer Fill: {stats.bufferState.available} / 8192 samples</div>
-            <div>
-              Buffer Usage:{' '}
-              {((stats.bufferState.available / 8192) * 100).toFixed(1)}%
-            </div>
-          </div>
+      {/* Game Sound Service API - Bunkers */}
+      <div style={styles.section}>
+        <h3>Service API - Bunker Sounds</h3>
+        <div style={styles.soundGrid}>
+          <button
+            onClick={() => soundService?.playBunkerShoot()}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Bunker Shoot
+          </button>
+          <button
+            onClick={() => soundService?.playBunkerExplosion()}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Bunker Explode
+          </button>
+          <button
+            onClick={() => soundService?.playBunkerSoft()}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Bunker Soft
+          </button>
         </div>
-      )}
+      </div>
+
+      {/* Game Sound Service API - Other Game Sounds */}
+      <div style={styles.section}>
+        <h3>Service API - Other Game Sounds</h3>
+        <div style={styles.soundGrid}>
+          <button
+            onClick={() => soundService?.playFuelCollect()}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Fuel Collect
+          </button>
+          <button
+            onClick={() => soundService?.playAlienExplosion()}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Alien Explode
+          </button>
+          <button
+            onClick={() => soundService?.playLevelComplete()}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Level Complete (Crack)
+          </button>
+          <button
+            onClick={() => soundService?.playLevelTransition()}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Level Transition (Fizz)
+          </button>
+          <button
+            onClick={() => soundService?.playEcho()}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Echo
+          </button>
+        </div>
+      </div>
+
+      {/* Test Sound Service API */}
+      <div style={styles.section}>
+        <h3>Service API - Test Sounds</h3>
+        <div style={styles.soundGrid}>
+          <button
+            onClick={() => soundService?.playSilence()}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Silence
+          </button>
+          <button
+            onClick={() => soundService?.playSine440()}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Sine 440Hz
+          </button>
+          <button
+            onClick={() => soundService?.playSine880()}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Sine 880Hz
+          </button>
+          <button
+            onClick={() => soundService?.playSine220()}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Sine 220Hz
+          </button>
+          <button
+            onClick={() => soundService?.playWhiteNoise()}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            White Noise
+          </button>
+          <button
+            onClick={() => soundService?.playMajorChord()}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Major Chord
+          </button>
+          <button
+            onClick={() => soundService?.playOctaves()}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Octaves
+          </button>
+        </div>
+      </div>
+
+      {/* Assembly Implementation Sounds */}
+      <div style={styles.section}>
+        <h3>Assembly Implementations (More Accurate)</h3>
+        <div style={styles.soundGrid}>
+          <button
+            onClick={() => soundService?.playSound('fireAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Fire (ASM)
+          </button>
+          <button
+            onClick={() => soundService?.playSound('thrusterAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Thruster (ASM)
+          </button>
+          <button
+            onClick={() => soundService?.playSound('shieldAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Shield (ASM)
+          </button>
+          <button
+            onClick={() => soundService?.playSound('explosionBunkerAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Bunker Explosion (ASM)
+          </button>
+          <button
+            onClick={() => soundService?.playSound('explosionShipAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Ship Explosion (ASM)
+          </button>
+          <button
+            onClick={() => soundService?.playSound('explosionAlienAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Alien Explosion (ASM)
+          </button>
+          <button
+            onClick={() => soundService?.playSound('bunkerAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Bunker (ASM)
+          </button>
+          <button
+            onClick={() => soundService?.playSound('softAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Soft (ASM)
+          </button>
+          <button
+            onClick={() => soundService?.playSound('fuelAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Fuel (ASM)
+          </button>
+          <button
+            onClick={() => soundService?.playSound('crackAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Crack (ASM)
+          </button>
+          <button
+            onClick={() => soundService?.playSound('fizzAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Fizz (ASM)
+          </button>
+          <button
+            onClick={() => soundService?.playSound('echoAsm')}
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Echo (ASM)
+          </button>
+        </div>
+      </div>
 
       {/* Instructions */}
       <div style={styles.section}>
-        <h3>Testing Instructions</h3>
+        <h3>Sound Service API Test Panel</h3>
         <ul style={styles.instructions}>
-          <li>Click "Start Audio" to begin playback</li>
           <li>
-            <strong>Test Sounds</strong> - Simple waveforms for testing:
-            <ul>
-              <li>
-                <strong>silence</strong>: Should produce no sound
-              </li>
-              <li>
-                <strong>sine440</strong>: A4 note (440Hz) - concert pitch
-              </li>
-              <li>
-                <strong>sine880</strong>: A5 note (880Hz) - one octave up
-              </li>
-              <li>
-                <strong>sine220</strong>: A3 note (220Hz) - one octave down
-              </li>
-              <li>
-                <strong>whiteNoise</strong>: Random static sound
-              </li>
-              <li>
-                <strong>majorChord</strong>: C-E-G chord
-              </li>
-              <li>
-                <strong>octaves</strong>: Alternating A3-A4-A5
-              </li>
-            </ul>
+            Click any button to play the corresponding sound through the service
+            API
           </li>
+          <li>Use the volume slider to adjust the master volume</li>
+          <li>Check the mute checkbox to disable all sounds</li>
           <li>
-            <strong>Game Sounds</strong> - Original Continuum sounds:
-            <ul>
-              <li>
-                <strong>thruster</strong>: Ship thruster noise (random pulses)
-              </li>
-              <li>
-                <strong>shield</strong>: Shield activation (alternating square
-                wave)
-              </li>
-              <li>
-                <strong>explosionBunker</strong>: Bunker explosion (medium
-                intensity)
-              </li>
-              <li>
-                <strong>explosionShip</strong>: Ship explosion (slow fade,
-                highest priority)
-              </li>
-              <li>
-                <strong>explosionAlien</strong>: Alien explosion (loud start,
-                fast fade)
-              </li>
-            </ul>
+            All sounds are triggered through the centralized sound service
           </li>
-          <li>Monitor performance stats - glitches should stay at 0</li>
-          <li>Test volume control and mute functionality</li>
         </ul>
       </div>
     </div>

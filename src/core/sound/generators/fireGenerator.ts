@@ -5,18 +5,19 @@
  * Based on do_fire_sound() in Sound.c:124-151
  *
  * The original implementation:
- * - Divides each 370-sample buffer into 6 chunks
- * - Decreases frequency by 1 for each chunk (creating steps)
- * - Each chunk has ~62 samples at a constant frequency
+ * - Divides each 370-sample buffer into 5 chunks of 74 samples each
+ * - Loops 6 times, decreasing frequency by 1 after each chunk
+ * - Only fills 370 samples (5 full chunks), 6th iteration starts but buffer is full
  * - Creates a stepped descending "pew" laser sound effect
  * - Uses sine wave lookup table for tone generation
  * - Stops when frequency drops below 5
  *
  * Technical details:
- * - Buffer is divided: 6 chunks × ~62 samples = 370 total
- * - Frequency decreases in steps, not continuously
+ * - Buffer division: SNDBUFLEN/5 = 370/5 = 74 samples per chunk
+ * - Frequency decreases after each chunk is generated
+ * - Net frequency decrease: -5 per buffer (6 decrements, then +1)
  * - Phase accumulates across chunks for smooth waveform
- * - Original wrote to every other byte (stereo format)
+ * - Original wrote to stereo buffer (every other byte), we use mono
  */
 
 import type { SampleGenerator } from '../sampleGenerator'
@@ -26,7 +27,7 @@ import { SINE_TABLE } from './sineTableData'
 // Constants from original
 const START_FREQ = 27 // Starting frequency parameter
 const MIN_FREQ = 5 // Stop when frequency drops below this
-const CHUNKS_PER_BUFFER = 6 // Divide buffer into 6 chunks (from asm: D3=5, loops 6 times)
+const CHUNKS_PER_BUFFER = 5 // Original divides into 5 chunks (SNDBUFLEN/5 = 74 samples each)
 
 export const createFireGenerator = (): SampleGenerator => {
   // State variables (matching original)
@@ -53,17 +54,15 @@ export const createFireGenerator = (): SampleGenerator => {
       return buffer
     }
 
-    // Divide buffer into chunks like the original
+    // Divide buffer into 5 chunks like the original (SNDBUFLEN/5 = 74 samples)
     const samplesPerChunk = Math.floor(CHUNK_SIZE / CHUNKS_PER_BUFFER)
     let bufferIndex = 0
+    let currentFreq = freq
 
-    // Process each chunk with decreasing frequency
+    // Process 5 chunks that actually fit in the buffer
     for (let chunk = 0; chunk < CHUNKS_PER_BUFFER; chunk++) {
-      // Use current frequency for this chunk
-      const chunkFreq = freq - chunk
-
       // Don't generate if frequency too low
-      if (chunkFreq < MIN_FREQ) {
+      if (currentFreq < MIN_FREQ) {
         // Fill rest with silence
         while (bufferIndex < CHUNK_SIZE) {
           buffer[bufferIndex++] = CENTER_VALUE
@@ -71,7 +70,7 @@ export const createFireGenerator = (): SampleGenerator => {
         break
       }
 
-      // Fill this chunk with constant frequency
+      // Fill this chunk with current frequency
       const chunkEnd = Math.min(bufferIndex + samplesPerChunk, CHUNK_SIZE)
       while (bufferIndex < chunkEnd) {
         // Use sine table lookup
@@ -79,12 +78,18 @@ export const createFireGenerator = (): SampleGenerator => {
         buffer[bufferIndex++] = SINE_TABLE[tableIndex]!
 
         // Advance phase by frequency
-        phase = (phase + chunkFreq) & 0xff
+        phase = (phase + currentFreq) & 0xff
       }
+
+      // Decrement frequency after each chunk (like original: subq.w #1, freq(A5))
+      currentFreq--
     }
 
-    // After filling buffer, decrease base frequency and priority
-    freq -= CHUNKS_PER_BUFFER - 1 // Net decrease of 5 per buffer
+    // Update the stored frequency
+    // Original loops 6 times with decrement, then adds 1 back
+    // But we only loop 5 times, so decrement once more to match
+    currentFreq-- // 6th decrement that happens in original
+    freq = currentFreq + 1 // Add 1 back like original
     priority -= 5
 
     // Debug log

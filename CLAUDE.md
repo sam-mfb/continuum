@@ -45,6 +45,7 @@ The port makes several adaptations to modern javascript/coding practices:
 
 - Typecheck, lint, and format after you finish editing a file
 - Commit changes to version control when you finish a task
+- Only run a background server or other background task if EXPLICITLY asked to by the user
 
 ## Typescript
 

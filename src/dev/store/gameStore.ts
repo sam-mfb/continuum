@@ -6,7 +6,6 @@ import { wallsSlice } from '@core/walls'
 import { spritesSlice } from './spritesSlice'
 import { statusSlice } from '@core/status'
 import { configureStore, type Reducer } from '@reduxjs/toolkit'
-import { containmentMiddleware } from './containmentMiddleware'
 import { explosionsSlice } from '@core/explosions'
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -25,8 +24,7 @@ export function buildGameStore<
       explosions: explosionsSlice.reducer,
       ...additionalReducers
     },
-    middleware: getDefaultMiddleware =>
-      getDefaultMiddleware().concat(containmentMiddleware)
+    middleware: getDefaultMiddleware => getDefaultMiddleware()
   })
 }
 

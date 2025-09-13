@@ -1,4 +1,5 @@
 import type { LineRec } from '../shared/types/line'
+import type { GravityPoint } from '../shared/gravityVector'
 
 export type PlanetState = {
   worldwidth: number
@@ -15,6 +16,8 @@ export type PlanetState = {
   bunkers: Bunker[]
   fuels: Fuel[]
   craters: Crater[]
+  gravityPoints: GravityPoint[] // Array of active generator gravity points
+  wallsSorted: boolean // Debug flag: true if walls were sorted by startx after loading
 }
 
 export type Bunker = {

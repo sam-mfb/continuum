@@ -1,4 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
+import { type BunkerKind } from '@core/figs/types'
+import { getBunkerScore, SCORE_FUEL } from './scoring'
 
 // All possible status messages from Play.c
 export type StatusMessage =
@@ -26,19 +28,34 @@ export const statusSlice = createSlice({
   name: 'status',
   initialState,
   reducers: {
-    // Play.c: score_plus() - adds to score
-    scorePlus: (state, action: PayloadAction<number>) => {
-      state.score += action.payload
-    },
-
-    // Play.c: write_bonus() - decrements bonus (called each frame)
-    writeBonus: state => {
+    // Decrement bonus countdown - called every 10 frames (Play.c:197-201)
+    // In original: bonuscount goes 10->0 over 10 frames, then planetbonus -= 10
+    decrementBonus: state => {
       if (state.planetbonus > 0) {
         state.planetbonus -= 10
         if (state.planetbonus < 0) {
           state.planetbonus = 0
         }
       }
+    },
+
+    // Add score - alias for scorePlus for clarity
+    addScore: (state, action: PayloadAction<number>) => {
+      state.score += action.payload
+    },
+
+    // Score for destroying a bunker (Play.c:365-366)
+    scoreBunker: (
+      state,
+      action: PayloadAction<{ kind: BunkerKind; rot: number }>
+    ) => {
+      const points = getBunkerScore(action.payload.kind, action.payload.rot)
+      state.score += points
+    },
+
+    // Score for collecting fuel (Play.c:521)
+    scoreFuel: state => {
+      state.score += SCORE_FUEL
     },
 
     // Play.c: set current message (curmessage = ...)
@@ -66,13 +83,7 @@ export const statusSlice = createSlice({
   }
 })
 
-export const {
-  scorePlus,
-  writeBonus,
-  setMessage,
-  setPlanetBonus,
-  nextLevel,
-  initStatus
-} = statusSlice.actions
+export const { setMessage, setPlanetBonus, nextLevel, initStatus } =
+  statusSlice.actions
 
 export const statusReducer = statusSlice.reducer
