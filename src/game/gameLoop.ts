@@ -77,6 +77,7 @@ import soundReducer, { resetFrame, playDiscrete } from '@core/sound/soundSlice'
 import { playSounds } from '@core/sound/soundPlayer'
 import type { SoundUIState } from '@core/sound/soundSlice'
 import { SoundType } from '@core/sound/constants'
+import { initializeSoundService } from '@core/sound/service'
 
 // Game-specific imports
 import gameReducer, {
@@ -140,6 +141,16 @@ const FIZZ_DURATION = 26 // Based on measurements of fizz time on a Mac Plus
 const initializeGame = async (): Promise<void> => {
   try {
     console.log('Starting game initialization...')
+
+    // Initialize sound service
+    console.log('Initializing sound service...')
+    try {
+      await initializeSoundService()
+      console.log('Sound service initialized successfully')
+    } catch (soundError) {
+      console.warn('Failed to initialize sound service:', soundError)
+      // Continue without sound - game is still playable
+    }
 
     // Load the release galaxy file using the service
     console.log('Loading galaxy file...')
