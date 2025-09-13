@@ -87,7 +87,7 @@ export function playSounds(soundState: SoundUIState): void {
       soundState.lastContinuous.thrusting
     ) {
       // Stop thrust
-      soundService.playSound('silence')
+      soundService.stopThrust()
     }
 
     // Shield sound
@@ -102,7 +102,7 @@ export function playSounds(soundState: SoundUIState): void {
       soundState.lastContinuous.shielding
     ) {
       // Stop shield
-      soundService.playSound('silence')
+      soundService.stopShield()
     }
   } catch (error) {
     // Silently fail if sound service is not initialized

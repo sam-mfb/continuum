@@ -44,6 +44,8 @@ export type SoundService = {
 
   // Control methods
   stopAll(): void
+  stopThrust(): void
+  stopShield(): void
   setVolume(volume: number): void
   setMuted(muted: boolean): void
 
@@ -64,6 +66,10 @@ let isPlaying = false
 let isMuted = false
 let currentVolume = 1.0
 let highPriorityPlaying = false
+
+// Track continuous sounds for resumption after interruption
+type ContinuousSound = 'thruster' | 'shield' | 'none'
+let currentContinuous: ContinuousSound = 'none'
 
 /**
  * Map SoundType enum to engine sound types
@@ -111,6 +117,15 @@ function playSoundByType(
     return
   }
 
+  // Update continuous sound state
+  if (soundType === 'thruster') {
+    currentContinuous = 'thruster'
+  } else if (soundType === 'shield') {
+    currentContinuous = 'shield'
+  } else if (soundType === 'silence') {
+    currentContinuous = 'none'
+  }
+
   // Check if high-priority sound is blocking
   // High-priority sounds block ALL other sounds (including other high-priority)
   // Exception: 'silence' is always allowed (used to stop sounds)
@@ -128,7 +143,7 @@ function playSoundByType(
   }
 
   console.log(
-    `[PLAYING] ${soundType}${options?.highPriority ? ' (HIGH PRIORITY)' : ''} | HP Active: ${highPriorityPlaying}`
+    `[PLAYING] ${soundType}${options?.highPriority ? ' (HIGH PRIORITY)' : ''} | HP Active: ${highPriorityPlaying} | Continuous: ${currentContinuous}`
   )
 
   // Start the engine first if not already playing
@@ -136,6 +151,10 @@ function playSoundByType(
     soundEngine.start()
     isPlaying = true
   }
+
+  // Determine if this is a discrete (interrupting) sound
+  const isContinuous = soundType === 'thruster' || soundType === 'shield'
+  const isDiscrete = !isContinuous && soundType !== 'silence'
 
   // Play the sound with appropriate callback
   if (options?.highPriority) {
@@ -146,8 +165,23 @@ function playSoundByType(
       console.log(
         '[HP STATE] High-priority sound completed, setting highPriorityPlaying = false'
       )
+      // After high-priority discrete sound completes, resume continuous if needed
+      if (isDiscrete && currentContinuous !== 'none' && soundEngine?.play) {
+        console.log(`[RESUME] Resuming continuous sound: ${currentContinuous}`)
+        soundEngine.play(currentContinuous)
+      }
+    })
+  } else if (isDiscrete) {
+    // For non-high-priority discrete sounds, add callback to resume continuous
+    soundEngine.play(soundType, () => {
+      // After discrete sound completes, resume whatever continuous should be playing
+      if (currentContinuous !== 'none' && soundEngine?.play) {
+        console.log(`[RESUME] Resuming continuous sound: ${currentContinuous}`)
+        soundEngine.play(currentContinuous)
+      }
     })
   } else {
+    // Continuous sounds and silence don't need callbacks
     soundEngine.play(soundType)
   }
 }
@@ -181,6 +215,7 @@ function stopAllSounds(): void {
   isPlaying = false
   currentSound = null
   highPriorityPlaying = false
+  currentContinuous = 'none'
 }
 
 /**
@@ -250,6 +285,24 @@ export async function initializeSoundService(initialSettings?: {
 
       // Control methods
       stopAll: (): void => stopAllSounds(),
+
+      stopThrust: (): void => {
+        if (currentContinuous === 'thruster') {
+          currentContinuous = 'none'
+          if (!highPriorityPlaying) {
+            playSoundByType('silence')
+          }
+        }
+      },
+
+      stopShield: (): void => {
+        if (currentContinuous === 'shield') {
+          currentContinuous = 'none'
+          if (!highPriorityPlaying) {
+            playSoundByType('silence')
+          }
+        }
+      },
 
       setVolume: (volume: number): void => {
         currentVolume = Math.max(0, Math.min(1, volume))
