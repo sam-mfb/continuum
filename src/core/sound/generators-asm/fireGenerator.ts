@@ -25,7 +25,7 @@
 
 import type { SampleGenerator } from '../sampleGenerator'
 import { CHUNK_SIZE, CENTER_VALUE } from '../sampleGenerator'
-import { SINE_TABLE } from '../generators/sineTableData'
+import { SINE_TABLE } from './sineTableData'
 import { build68kArch } from '@lib/asm/emulator'
 
 // Constants from original
@@ -169,9 +169,15 @@ export const createFireGenerator = (): SampleGenerator => {
     phase = 0
   }
 
+  const hasEnded = (): boolean => {
+    // Fire sound has ended when it's no longer active
+    return !isActive
+  }
+
   return {
     generateChunk,
     reset,
+    hasEnded,
     start,
     stop
   } as SampleGenerator & { start: () => void; stop: () => void }

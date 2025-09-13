@@ -194,9 +194,15 @@ export const createThrusterGenerator = (): SampleGenerator => {
     thrusting = false
   }
 
+  const hasEnded = (): boolean => {
+    // Thruster is a continuous sound, never ends while active
+    return false
+  }
+
   return {
     generateChunk,
     reset,
+    hasEnded,
     start,
     stop
   } as SampleGenerator & { start: () => void; stop: () => void }

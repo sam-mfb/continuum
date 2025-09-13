@@ -26,7 +26,7 @@
 
 import type { SampleGenerator } from '../sampleGenerator'
 import { CHUNK_SIZE, CENTER_VALUE } from '../sampleGenerator'
-import { HISS_RANDS } from '../generators/hissRandsData'
+import { HISS_RANDS } from './hissRandsData'
 import { build68kArch } from '@lib/asm/emulator'
 
 // Constants from original
@@ -172,9 +172,15 @@ export const createCrackGenerator = (): SampleGenerator => {
     crackcount = 0
   }
 
+  const hasEnded = (): boolean => {
+    // Crack sound has ended when it's no longer active
+    return !isActive
+  }
+
   return {
     generateChunk,
     reset,
+    hasEnded,
     start,
     stop
   } as SampleGenerator & { start: () => void; stop: () => void }

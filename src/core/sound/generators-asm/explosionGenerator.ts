@@ -231,9 +231,15 @@ export const createExplosionGenerator = (
     amp = 0
   }
 
+  const hasEnded = (): boolean => {
+    // Explosion has ended when it's no longer active
+    return !isActive
+  }
+
   return {
     generateChunk,
     reset,
+    hasEnded,
     start,
     stop
   } as SampleGenerator & { start: () => void; stop: () => void }

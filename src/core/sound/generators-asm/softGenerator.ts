@@ -196,9 +196,15 @@ export const createSoftGenerator = (): SampleGenerator => {
     period = 0
   }
 
+  const hasEnded = (): boolean => {
+    // Soft sound has ended when it's no longer active
+    return !isActive
+  }
+
   return {
     generateChunk,
     reset,
+    hasEnded,
     start,
     stop
   } as SampleGenerator & { start: () => void; stop: () => void }
