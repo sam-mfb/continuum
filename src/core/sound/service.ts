@@ -112,9 +112,8 @@ function playSoundByGenerator(generatorName: string): void {
   }
 
   // Then play the sound using the engine's playTestSound method
-  const engineWithTestMethod = soundEngine as any
-  if (engineWithTestMethod.playTestSound) {
-    engineWithTestMethod.playTestSound(generatorName)
+  if (soundEngine.playTestSound) {
+    soundEngine.playTestSound(generatorName)
   } else {
     console.error('Engine does not have playTestSound method')
     return
@@ -157,9 +156,8 @@ function playSound(soundType: SoundType): void {
   }
 
   // Then play the sound using the engine's playTestSound method
-  const engineWithTestMethod = soundEngine as any
-  if (engineWithTestMethod.playTestSound) {
-    engineWithTestMethod.playTestSound(generatorName)
+  if (soundEngine.playTestSound) {
+    soundEngine.playTestSound(generatorName)
   } else {
     console.error('Engine does not have playTestSound method')
     return
@@ -217,50 +215,50 @@ export async function initializeSoundService(): Promise<SoundService> {
     // Create the service instance
     serviceInstance = {
       // Ship sounds
-      playShipFire: () => playSound(SoundType.FIRE_SOUND),
-      playShipThrust: () => playSound(SoundType.THRU_SOUND),
-      playShipShield: () => playSound(SoundType.SHLD_SOUND),
-      playShipExplosion: () => playSound(SoundType.EXP2_SOUND),
+      playShipFire: (): void => playSound(SoundType.FIRE_SOUND),
+      playShipThrust: (): void => playSound(SoundType.THRU_SOUND),
+      playShipShield: (): void => playSound(SoundType.SHLD_SOUND),
+      playShipExplosion: (): void => playSound(SoundType.EXP2_SOUND),
 
       // Bunker sounds
-      playBunkerShoot: () => playSound(SoundType.BUNK_SOUND),
-      playBunkerExplosion: () => playSound(SoundType.EXP1_SOUND),
-      playBunkerSoft: () => playSound(SoundType.SOFT_SOUND),
+      playBunkerShoot: (): void => playSound(SoundType.BUNK_SOUND),
+      playBunkerExplosion: (): void => playSound(SoundType.EXP1_SOUND),
+      playBunkerSoft: (): void => playSound(SoundType.SOFT_SOUND),
 
       // Pickup sounds
-      playFuelCollect: () => playSound(SoundType.FUEL_SOUND),
+      playFuelCollect: (): void => playSound(SoundType.FUEL_SOUND),
 
       // Level sounds
-      playLevelComplete: () => playSound(SoundType.CRACK_SOUND),
-      playLevelTransition: () => playSound(SoundType.FIZZ_SOUND),
-      playEcho: () => playSound(SoundType.ECHO_SOUND),
+      playLevelComplete: (): void => playSound(SoundType.CRACK_SOUND),
+      playLevelTransition: (): void => playSound(SoundType.FIZZ_SOUND),
+      playEcho: (): void => playSound(SoundType.ECHO_SOUND),
 
       // Alien sounds
-      playAlienExplosion: () => playSound(SoundType.EXP3_SOUND),
+      playAlienExplosion: (): void => playSound(SoundType.EXP3_SOUND),
 
       // Direct generator access
-      playSound: (generatorName: string) => playSoundByGenerator(generatorName),
+      playSound: (generatorName: string): void => playSoundByGenerator(generatorName),
 
       // Test sounds
-      playSilence: () => playSoundByGenerator('silence'),
-      playSine440: () => playSoundByGenerator('sine440'),
-      playSine880: () => playSoundByGenerator('sine880'),
-      playSine220: () => playSoundByGenerator('sine220'),
-      playWhiteNoise: () => playSoundByGenerator('whiteNoise'),
-      playMajorChord: () => playSoundByGenerator('majorChord'),
-      playOctaves: () => playSoundByGenerator('octaves'),
+      playSilence: (): void => playSoundByGenerator('silence'),
+      playSine440: (): void => playSoundByGenerator('sine440'),
+      playSine880: (): void => playSoundByGenerator('sine880'),
+      playSine220: (): void => playSoundByGenerator('sine220'),
+      playWhiteNoise: (): void => playSoundByGenerator('whiteNoise'),
+      playMajorChord: (): void => playSoundByGenerator('majorChord'),
+      playOctaves: (): void => playSoundByGenerator('octaves'),
 
       // Control methods
-      stopAll: () => stopAllSounds(),
+      stopAll: (): void => stopAllSounds(),
 
-      setVolume: (volume: number) => {
+      setVolume: (volume: number): void => {
         currentVolume = Math.max(0, Math.min(1, volume))
         if (soundEngine) {
           soundEngine.setVolume(currentVolume)
         }
       },
 
-      setMuted: (muted: boolean) => {
+      setMuted: (muted: boolean): void => {
         isMuted = muted
         if (muted && isPlaying) {
           stopAllSounds()
@@ -268,11 +266,11 @@ export async function initializeSoundService(): Promise<SoundService> {
       },
 
       // Status methods
-      isPlaying: () => isPlaying,
-      getCurrentSound: () => currentSound,
+      isPlaying: (): boolean => isPlaying,
+      getCurrentSound: (): SoundType | null => currentSound,
 
       // Engine access for test panel
-      getEngine: () => soundEngine
+      getEngine: (): SoundEngine | null => soundEngine
     }
 
     return serviceInstance

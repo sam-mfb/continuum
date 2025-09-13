@@ -40,7 +40,7 @@ createSpriteServiceV2()
           onLevelSelect: (level: number) => {
             const store = getGameStore()
             if (store) {
-              loadLevel(store as any, level)
+              loadLevel(store, level)
             }
           }
         })

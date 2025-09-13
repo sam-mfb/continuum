@@ -47,7 +47,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     const bitmap = createMonochromeBitmap(width, height)
 
     // Keyboard handlers
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
       keysDownRef.current.add(e.code)
       // Prevent default browser behavior for game control keys
       if (
@@ -62,7 +62,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
       }
     }
 
-    const handleKeyUp = (e: KeyboardEvent) => {
+    const handleKeyUp = (e: KeyboardEvent): void => {
       keysDownRef.current.delete(e.code)
     }
 
@@ -70,7 +70,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     window.addEventListener('keyup', handleKeyUp)
 
     // Game loop
-    const gameLoop = (currentTime: number) => {
+    const gameLoop = (currentTime: number): void => {
       const deltaTime = currentTime - lastFrameTimeRef.current
 
       if (deltaTime >= frameIntervalMs) {
@@ -146,7 +146,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     animationRef.current = requestAnimationFrame(gameLoop)
 
     // Cleanup
-    return () => {
+    return (): void => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current)
       }
@@ -155,7 +155,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     }
   }, [renderer, width, height, scale, fps, frameIntervalMs])
 
-  const handleLevelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleLevelChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
     const level = e.target.value
     setSelectedLevel(level)
     if (onLevelSelect) {

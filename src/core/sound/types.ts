@@ -27,4 +27,5 @@ export type SoundEngine = {
   setVolume: (volume: number) => void // Set master volume
   start: () => void // Start method (shell)
   stop: () => void // Stop method (shell)
+  playTestSound?: (soundType: string) => void // Play test sound by name
 }

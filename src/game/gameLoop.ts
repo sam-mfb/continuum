@@ -7,7 +7,7 @@
  */
 
 import type { Store } from '@reduxjs/toolkit'
-import type { BitmapRenderer } from '@lib/bitmap'
+import type { BitmapRenderer, MonochromeBitmap } from '@lib/bitmap'
 import { fullFigure } from '@core/ship'
 import { drawShipShot } from '@core/shots'
 import { drawStrafe } from '@core/shots'
@@ -68,6 +68,7 @@ import { SKILLBRADIUS } from '@core/ship'
 import { xyindist } from '@core/shots'
 import { legalAngle } from '@core/planet'
 import { getGalaxyService } from '@core/galaxy'
+import type { GalaxyHeader } from '@core/galaxy'
 import { containShip } from '@core/shared/containShip'
 
 // Game-specific imports
@@ -510,7 +511,7 @@ export const createGameRenderer =
           starCount: 150,
           additionalRender:
             finalState.ship.deadCount === 0
-              ? screen =>
+              ? (screen: MonochromeBitmap): MonochromeBitmap =>
                   fullFigure({
                     x: finalState.ship.shipx - SCENTER,
                     y: finalState.ship.shipy - SCENTER,
@@ -1256,8 +1257,8 @@ export const createGameRenderer =
   }
 
 // Export store and galaxy header for level jumping
-export const getGameStore = () => store
-export const getGalaxyHeader = () => {
+export const getGameStore = (): typeof store => store
+export const getGalaxyHeader = (): GalaxyHeader | null => {
   const state = store.getState() as ExtendedGameState
   return state.game.galaxyHeader
 }
