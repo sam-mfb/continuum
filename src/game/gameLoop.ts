@@ -552,6 +552,9 @@ export const createGameRenderer =
         // Fall through to normal rendering
       } else if (!transitionState.fizzTransition) {
         // Pre-delay complete, initialize the fizz transition on first frame
+        // Play fizz start sound - Play.c:1248
+        store.dispatch(playDiscrete(SoundType.FIZZ_SOUND))
+        
         // Create the "from" bitmap - current game state
         const fromBitmap = cloneBitmap(bitmap)
         // Render the current game state (will be done below)
@@ -593,6 +596,12 @@ export const createGameRenderer =
         // We'll create the actual fizz transition after rendering the current frame
         // Fall through to render the current game state first
       } else if (transitionState.fizzTransition.isComplete) {
+        // Check if this is the first frame after completion
+        if (transitionState.delayFrames === 0) {
+          // Play echo sound when fizz completes - Play.c:1250
+          store.dispatch(playDiscrete(SoundType.ECHO_SOUND))
+        }
+        
         // Fizz complete, show star background during delay
         if (transitionState.toBitmap) {
           bitmap.data.set(transitionState.toBitmap)
