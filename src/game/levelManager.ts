@@ -4,6 +4,7 @@
 
 import type { Store } from '@reduxjs/toolkit'
 import type { GameState as CoreGameState } from '@dev/store'
+import type { SoundUIState } from '@core/sound/soundSlice'
 import { getGalaxyService } from '@core/galaxy'
 import { planetSlice } from '@core/planet'
 import { shipSlice } from '@core/ship'
@@ -18,9 +19,10 @@ import { SCRWTH, TOPMARG, BOTMARG } from '@core/screen'
 import { resetGame, setCurrentLevel } from './gameSlice'
 import type { GameState } from './gameSlice'
 
-// Extended state that includes game slice
+// Extended state that includes game slice and sound
 export type ExtendedGameState = CoreGameState & {
   game: GameState
+  sound: SoundUIState
 }
 
 /**

@@ -73,6 +73,9 @@ import { legalAngle } from '@core/planet'
 import { getGalaxyService } from '@core/galaxy'
 import type { GalaxyHeader } from '@core/galaxy'
 import { containShip } from '@core/shared/containShip'
+import soundReducer, { resetFrame } from '@core/sound/soundSlice'
+import { playSounds } from '@core/sound/soundPlayer'
+import type { SoundUIState } from '@core/sound/soundSlice'
 
 // Game-specific imports
 import gameReducer, {
@@ -100,7 +103,8 @@ const store = configureStore({
     sprites: spritesSlice.reducer,
     status: statusSlice.reducer,
     explosions: explosionsSlice.reducer,
-    game: gameReducer
+    game: gameReducer,
+    sound: soundReducer
   }
 })
 
@@ -232,6 +236,9 @@ export const createGameRenderer =
 
     // NOW get the state for this frame - after any respawn updates
     const state = store.getState() as ExtendedGameState
+
+    // Reset sound accumulator for new frame
+    store.dispatch(resetFrame())
 
     // Decrement bonus countdown every 10 frames (Play.c:197-201)
     // Original: bonuscount decrements each frame from 10 to 0
@@ -1242,6 +1249,10 @@ export const createGameRenderer =
         shardImages
       })(renderedBitmap)
     }
+
+    // Play all accumulated sounds for this frame
+    const soundState = store.getState().sound as SoundUIState
+    playSounds(soundState)
 
     // Copy rendered bitmap data back to original
     bitmap.data.set(renderedBitmap.data)
