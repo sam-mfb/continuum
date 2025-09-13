@@ -323,16 +323,18 @@ export const createGameRenderer =
     let on_right_side: boolean
 
     if (state.ship.deadCount === 0) {
-      // Only handle controls and move ship if alive
-      // shipControl will read globalx/globaly from ship state (set by previous frame's containShip)
-      store.dispatch(
-        shipControl({
-          controlsPressed: getPressedControls(frame.keysDown)
-        })
-      )
+      // Only handle controls if not in fizz transition (but allow during pre-delay)
+      if (!transitionState.active || transitionState.preDelayFrames > 0) {
+        // shipControl will read globalx/globaly from ship state (set by previous frame's containShip)
+        store.dispatch(
+          shipControl({
+            controlsPressed: getPressedControls(frame.keysDown)
+          })
+        )
 
-      // Move ship (Play.c:216 - move_ship())
-      store.dispatch(shipSlice.actions.moveShip())
+        // Move ship (Play.c:216 - move_ship())
+        store.dispatch(shipSlice.actions.moveShip())
+      }
 
       // Apply containment after movement (Play.c:394-457 - contain_ship())
       // This handles screen wrapping and calculates global position correctly
@@ -580,6 +582,10 @@ export const createGameRenderer =
         // Play fizz start sound - Play.c:1248
         store.dispatch(playDiscrete(SoundType.FIZZ_SOUND))
 
+        // Stop any continuous sounds when level ends
+        store.dispatch(setThrusting(false))
+        store.dispatch(setShielding(false))
+
         // Create the "from" bitmap - current game state
         const fromBitmap = cloneBitmap(bitmap)
         // Render the current game state (will be done below)
@@ -663,11 +669,11 @@ export const createGameRenderer =
           transitionState.fizzJustFinished = false
 
           // Trigger the actual level load
-          transitionToNextLevel(store as Store<ExtendedGameState>)
+          transitionToNextLevel(store)
         }
 
         // Play all accumulated sounds before returning
-        const soundState = store.getState().sound as SoundUIState
+        const soundState = store.getState().sound
         playSounds(soundState)
 
         return
@@ -697,7 +703,7 @@ export const createGameRenderer =
         bitmap.data.set(renderedBitmap.data)
 
         // Play all accumulated sounds before returning
-        const fizzSoundState = store.getState().sound as SoundUIState
+        const fizzSoundState = store.getState().sound
         playSounds(fizzSoundState)
 
         return
@@ -1355,7 +1361,7 @@ export const createGameRenderer =
     }
 
     // Play all accumulated sounds for this frame
-    const soundState = store.getState().sound as SoundUIState
+    const soundState = store.getState().sound
     playSounds(soundState)
 
     // Copy rendered bitmap data back to original
