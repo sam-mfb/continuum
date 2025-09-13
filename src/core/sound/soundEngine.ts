@@ -167,19 +167,26 @@ export const createSoundEngine = (): SoundEngine => {
     return currentSoundType
   }
 
+  /**
+   * Resume audio context if suspended
+   */
+  const resumeContext = async (): Promise<void> => {
+    await audioOutput.resumeContext()
+  }
+
   // Return public interface
-  return {
-    audioContext: getAudioContext() as AudioContext,
-    masterGain: createMasterGain() as GainNode,
+  const ctx = getAudioContext()
+  const engine: SoundEngine = {
+    audioContext: ctx || new AudioContext(),
+    masterGain: createMasterGain() || (ctx ? ctx.createGain() : new AudioContext().createGain()),
     setVolume,
     start,
     stop,
     play,
     getCurrentSoundType,
-    isPlaying: audioOutput.isPlaying
-  } as SoundEngine & {
-    play: (soundType: GameSoundType, onEnded?: () => void) => void
-    getCurrentSoundType: () => GameSoundType
-    isPlaying: () => boolean
+    isPlaying: audioOutput.isPlaying,
+    resumeContext
   }
+  
+  return engine
 }

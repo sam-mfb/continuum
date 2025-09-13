@@ -25,6 +25,11 @@ export type AudioOutput = {
    * Check if audio is currently playing
    */
   isPlaying(): boolean
+  
+  /**
+   * Resume suspended audio context
+   */
+  resumeContext(): Promise<void>
 
   /**
    * Get the audio context (for debugging/monitoring)
@@ -122,8 +127,9 @@ export const createAudioOutput = (
       }
 
       // Resume if suspended (required by some browsers)
+      // This will be handled by user interaction in the service
       if (audioContext.state === 'suspended') {
-        audioContext.resume()
+        console.log('AudioContext is suspended, will resume on user interaction')
       }
 
       // Pre-fill the buffer to avoid initial underruns
@@ -192,6 +198,20 @@ export const createAudioOutput = (
   }
 
   /**
+   * Resume audio context if suspended (requires user gesture)
+   */
+  const resumeContext = async (): Promise<void> => {
+    if (audioContext && audioContext.state === 'suspended') {
+      try {
+        await audioContext.resume()
+        console.log('AudioContext resumed successfully')
+      } catch (error) {
+        console.error('Failed to resume AudioContext:', error)
+      }
+    }
+  }
+
+  /**
    * Get performance statistics
    */
   const getStats = (): {
@@ -212,6 +232,7 @@ export const createAudioOutput = (
     stop,
     isPlaying: getIsPlaying,
     getContext,
+    resumeContext,
     getStats
   }
 }

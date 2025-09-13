@@ -83,10 +83,22 @@ const soundTypeToEngine: Partial<Record<SoundType, GameSoundType>> = {
 }
 
 /**
+ * Resume audio context on user interaction
+ */
+async function resumeAudioContext(): Promise<void> {
+  if (soundEngine?.resumeContext) {
+    await soundEngine.resumeContext()
+  }
+}
+
+/**
  * Internal helper to play a sound by engine type
  */
 function playSoundByType(soundType: GameSoundType, options?: { highPriority?: boolean }): void {
   if (!soundEngine || !soundEngine.play) return
+
+  // Try to resume audio context on any play attempt (in case it's suspended)
+  resumeAudioContext()
 
   // Check if muted
   if (isMuted) {
