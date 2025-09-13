@@ -113,7 +113,6 @@ function playSoundByType(
 
   // Check if muted
   if (isMuted) {
-    console.log(`Sound muted, not playing: ${soundType}`)
     return
   }
 
@@ -127,24 +126,17 @@ function playSoundByType(
   }
 
   // Check if high-priority sound is blocking
-  // High-priority sounds block ALL other sounds (including other high-priority)
+  // High-priority sounds block normal sounds but can be interrupted by other high-priority sounds
   // Exception: 'silence' is always allowed (used to stop sounds)
-  if (highPriorityPlaying && soundType !== 'silence') {
-    console.log(
-      `[BLOCKED] High-priority sound is active, blocking: ${soundType}`
-    )
+  if (highPriorityPlaying && soundType !== 'silence' && !options?.highPriority) {
     return
   }
 
   // If playing silence, clear the high-priority flag since we're stopping whatever was playing
   if (soundType === 'silence' && highPriorityPlaying) {
     highPriorityPlaying = false
-    console.log('[HP STATE] Playing silence, clearing highPriorityPlaying flag')
   }
 
-  console.log(
-    `[PLAYING] ${soundType}${options?.highPriority ? ' (HIGH PRIORITY)' : ''} | HP Active: ${highPriorityPlaying} | Continuous: ${currentContinuous}`
-  )
 
   // Start the engine first if not already playing
   if (!isPlaying) {
@@ -158,16 +150,13 @@ function playSoundByType(
 
   // Play the sound with appropriate callback
   if (options?.highPriority) {
+    // If interrupting another high-priority sound, the old one won't get its callback
+    // so we manage the flag here
     highPriorityPlaying = true
-    console.log(`[HP STATE] Setting highPriorityPlaying = true`)
     soundEngine.play(soundType, () => {
       highPriorityPlaying = false
-      console.log(
-        '[HP STATE] High-priority sound completed, setting highPriorityPlaying = false'
-      )
       // After high-priority discrete sound completes, resume continuous if needed
       if (isDiscrete && currentContinuous !== 'none' && soundEngine?.play) {
-        console.log(`[RESUME] Resuming continuous sound: ${currentContinuous}`)
         soundEngine.play(currentContinuous)
       }
     })
@@ -176,7 +165,6 @@ function playSoundByType(
     soundEngine.play(soundType, () => {
       // After discrete sound completes, resume whatever continuous should be playing
       if (currentContinuous !== 'none' && soundEngine?.play) {
-        console.log(`[RESUME] Resuming continuous sound: ${currentContinuous}`)
         soundEngine.play(currentContinuous)
       }
     })
@@ -195,7 +183,6 @@ function playSound(
 ): void {
   const engineType = soundTypeToEngine[soundType]
   if (!engineType) {
-    console.warn(`No engine mapping for sound type: ${SoundType[soundType]}`)
     return
   }
 
