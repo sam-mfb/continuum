@@ -383,6 +383,9 @@ export const createGameRenderer =
       // Calculate screen boundaries for shot eligibility
       const screenr = state.screen.screenx + SCRWTH
       const screenb = state.screen.screeny + VIEWHT
+      
+      // Store current shot count to detect if a bunker fired
+      const prevShotCount = state.shots.bunkshots.filter(s => s.lifecount > 0).length
 
       store.dispatch(
         bunkShoot({
@@ -398,6 +401,44 @@ export const createGameRenderer =
           globaly: globaly
         })
       )
+      
+      // Check if a bunker actually fired by comparing shot counts
+      const newState = store.getState()
+      const newShotCount = newState.shots.bunkshots.filter(s => s.lifecount > 0).length
+      
+      if (newShotCount > prevShotCount) {
+        // A bunker fired - determine proximity for sound
+        // Check bunkers near the screen to guess which one fired
+        const SOFTBORDER = 200 // From GW.h
+        let bunkerProximity: 'visible' | 'nearby' | 'distant' = 'distant'
+        
+        for (const bunker of state.planet.bunkers) {
+          if (!bunker.alive) continue
+          
+          // Check if bunker is visible on screen
+          if (bunker.x > state.screen.screenx && bunker.x < screenr && 
+              bunker.y > state.screen.screeny && bunker.y < screenb) {
+            bunkerProximity = 'visible'
+            break // Visible bunker takes priority
+          }
+          // Check if bunker is within SOFTBORDER of screen  
+          else if (bunker.x > state.screen.screenx - SOFTBORDER && 
+                   bunker.x < screenr + SOFTBORDER &&
+                   bunker.y > state.screen.screeny - SOFTBORDER && 
+                   bunker.y < screenb + SOFTBORDER) {
+            bunkerProximity = 'nearby'
+            // Don't break - keep looking for visible bunkers
+          }
+        }
+        
+        // Play appropriate sound based on proximity - Bunkers.c:185-188
+        if (bunkerProximity === 'visible') {
+          store.dispatch(playDiscrete(SoundType.BUNK_SOUND))
+        } else if (bunkerProximity === 'nearby') {
+          store.dispatch(playDiscrete(SoundType.SOFT_SOUND))
+        }
+        // 'distant' bunkers make no sound
+      }
     }
 
     store.dispatch(
@@ -427,6 +468,9 @@ export const createGameRenderer =
           // Note: killBunker returns early for difficult bunkers that survive
           const updatedBunker = store.getState().planet.bunkers[bunkerIndex]
           if (updatedBunker && !updatedBunker.alive) {
+            // Play bunker explosion sound - Play.c:368
+            store.dispatch(playDiscrete(SoundType.EXP1_SOUND))
+            
             // Award score for bunker destruction (Play.c:365-366)
             store.dispatch(
               statusSlice.actions.scoreBunker({
@@ -1024,6 +1068,9 @@ export const createGameRenderer =
             // Check if bunker was actually destroyed (difficult bunkers might survive)
             const updatedBunker = store.getState().planet.bunkers[index]
             if (!updatedBunker || !updatedBunker.alive) {
+              // Play bunker explosion sound - Play.c:368
+              store.dispatch(playDiscrete(SoundType.EXP1_SOUND))
+              
               // Award score for bunker destruction (Play.c:365-366)
               store.dispatch(
                 statusSlice.actions.scoreBunker({
@@ -1049,8 +1096,8 @@ export const createGameRenderer =
         // (c) Start ship explosion
         store.dispatch(startShipDeath({ x: deathGlobalX, y: deathGlobalY }))
 
-        // (d) TODO: Play death sound when sound system is implemented
-        // playSound(DEATH_SOUND)
+        // (d) Play ship explosion sound (high priority) - Terrain.c:414
+        store.dispatch(playDiscrete(SoundType.EXP2_SOUND))
       }
     }
 
