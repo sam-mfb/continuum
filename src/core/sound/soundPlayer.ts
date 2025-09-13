@@ -100,6 +100,9 @@ export function playSounds(soundState: SoundUIState): void {
           soundService.playShipShield({ highPriority: isHighPriority })
           break
       }
+      // no handling a continuos sound if a discrete one is queued
+      // it will get picked up in the next frame
+      return
     }
 
     // Handle continuous sound transitions
@@ -108,9 +111,7 @@ export function playSounds(soundState: SoundUIState): void {
     // Thrust sound
     if (
       soundState.continuous.thrusting &&
-      !soundState.lastContinuous.thrusting &&
-      // no starting a continuos sound if another one is queued
-      !soundToPlay
+      !soundState.lastContinuous.thrusting
     ) {
       // Start thrust
       soundService.playShipThrust()
@@ -125,9 +126,7 @@ export function playSounds(soundState: SoundUIState): void {
     // Shield sound
     if (
       soundState.continuous.shielding &&
-      !soundState.lastContinuous.shielding &&
-      // no starting a continuos sound if another one is queued
-      !soundToPlay
+      !soundState.lastContinuous.shielding
     ) {
       // Start shield
       soundService.playShipShield()
