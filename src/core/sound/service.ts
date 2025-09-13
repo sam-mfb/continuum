@@ -2,11 +2,10 @@
  * @fileoverview Sound service with singleton pattern
  *
  * Provides a clean, synchronous API for playing game sounds.
- * Handles sound engine initialization and automatic sound cancellation.
- * Follows the same pattern as the sprites service.
+ * Handles sound engine initialization and high-priority sound blocking.
  */
 
-import { createSoundEngine } from './soundEngine'
+import { createSoundEngine, type GameSoundType } from './soundEngine'
 import { SoundType } from './constants'
 import type { SoundEngine } from './types'
 import { store } from '@dev/store'
@@ -17,38 +16,29 @@ import { store } from '@dev/store'
  */
 export type SoundService = {
   // Ship sounds
-  playShipFire(): void
-  playShipThrust(): void
-  playShipShield(): void
-  playShipExplosion(): void
+  playShipFire(options?: { highPriority?: boolean }): void
+  playShipThrust(options?: { highPriority?: boolean }): void
+  playShipShield(options?: { highPriority?: boolean }): void
+  playShipExplosion(options?: { highPriority?: boolean }): void
 
   // Bunker sounds
-  playBunkerShoot(): void
-  playBunkerExplosion(): void
-  playBunkerSoft(): void // Soft bunker collision
+  playBunkerShoot(options?: { highPriority?: boolean }): void
+  playBunkerExplosion(options?: { highPriority?: boolean }): void
+  playBunkerSoft(options?: { highPriority?: boolean }): void
 
   // Pickup sounds
-  playFuelCollect(): void
+  playFuelCollect(options?: { highPriority?: boolean }): void
 
   // Level sounds
-  playLevelComplete(): void // Crack sound
-  playLevelTransition(): void // Fizz sound
-  playEcho(): void // Echo sound for transitions
+  playLevelComplete(options?: { highPriority?: boolean }): void // Crack sound
+  playLevelTransition(options?: { highPriority?: boolean }): void // Fizz sound
+  playEcho(options?: { highPriority?: boolean }): void
 
   // Alien sounds
-  playAlienExplosion(): void
+  playAlienExplosion(options?: { highPriority?: boolean }): void
 
   // Direct generator access for all sounds
-  playSound(generatorName: string): void
-
-  // Test sounds
-  playSilence(): void
-  playSine440(): void
-  playSine880(): void
-  playSine220(): void
-  playWhiteNoise(): void
-  playMajorChord(): void
-  playOctaves(): void
+  playSound(soundType: GameSoundType, options?: { highPriority?: boolean }): void
 
   // Control methods
   stopAll(): void
@@ -58,6 +48,7 @@ export type SoundService = {
   // Status methods
   isPlaying(): boolean
   getCurrentSound(): SoundType | null
+  isHighPriorityPlaying(): boolean
 
   // Engine access for test panel
   getEngine(): SoundEngine | null
@@ -70,18 +61,18 @@ let currentSound: SoundType | null = null
 let isPlaying = false
 let isMuted = false
 let currentVolume = 1.0
+let highPriorityPlaying = false
 
 /**
- * Map SoundType enum to generator names
- * Note: 'silence' is from testSounds, all others from gameSounds
+ * Map SoundType enum to engine sound types
  */
-const soundTypeToGenerator: Partial<Record<SoundType, string>> = {
+const soundTypeToEngine: Partial<Record<SoundType, GameSoundType>> = {
   [SoundType.NO_SOUND]: 'silence',
   [SoundType.FIRE_SOUND]: 'fire',
   [SoundType.EXP1_SOUND]: 'explosionBunker',
   [SoundType.THRU_SOUND]: 'thruster',
-  [SoundType.BUNK_SOUND]: 'bunkerNormal',
-  [SoundType.SOFT_SOUND]: 'bunkerSoft',
+  [SoundType.BUNK_SOUND]: 'bunker',
+  [SoundType.SOFT_SOUND]: 'soft',
   [SoundType.SHLD_SOUND]: 'shield',
   [SoundType.FUEL_SOUND]: 'fuel',
   [SoundType.EXP2_SOUND]: 'explosionShip',
@@ -92,18 +83,25 @@ const soundTypeToGenerator: Partial<Record<SoundType, string>> = {
 }
 
 /**
- * Internal helper to play a sound by generator name
+ * Internal helper to play a sound by engine type
  */
-function playSoundByGenerator(generatorName: string): void {
-  if (!soundEngine) return
+function playSoundByType(soundType: GameSoundType, options?: { highPriority?: boolean }): void {
+  if (!soundEngine || !soundEngine.play) return
 
-  // Check if muted BEFORE doing anything
+  // Check if muted
   if (isMuted) {
-    console.log(`Sound muted, not playing: ${generatorName}`)
+    console.log(`Sound muted, not playing: ${soundType}`)
     return
   }
 
-  console.log(`Playing sound generator: ${generatorName}`)
+  // Check if high-priority sound is blocking
+  // High-priority sounds block ALL other sounds (including other high-priority)
+  if (highPriorityPlaying) {
+    console.log(`[BLOCKED] High-priority sound is active, blocking: ${soundType}`)
+    return
+  }
+
+  console.log(`[PLAYING] ${soundType}${options?.highPriority ? ' (HIGH PRIORITY)' : ''} | HP Active: ${highPriorityPlaying}`)
 
   // Start the engine first if not already playing
   if (!isPlaying) {
@@ -111,66 +109,38 @@ function playSoundByGenerator(generatorName: string): void {
     isPlaying = true
   }
 
-  // Then play the sound using the engine's playTestSound method
-  if (soundEngine.playTestSound) {
-    soundEngine.playTestSound(generatorName)
+  // Play the sound with appropriate callback
+  if (options?.highPriority) {
+    highPriorityPlaying = true
+    console.log(`[HP STATE] Setting highPriorityPlaying = true`)
+    soundEngine.play(soundType, () => {
+      highPriorityPlaying = false
+      console.log('[HP STATE] High-priority sound completed, setting highPriorityPlaying = false')
+    })
   } else {
-    console.error('Engine does not have playTestSound method')
-    return
+    soundEngine.play(soundType)
   }
-
-  // Clear current sound type since this is a direct generator call
-  currentSound = null
-
-  // Update Redux state for UI
-  store.dispatch({
-    type: 'sound/stopSound' // Clear the sound type display
-  })
 }
 
 /**
- * Internal helper to play a sound by SoundType
+ * Internal helper to play a sound by SoundType enum
  */
-function playSound(soundType: SoundType): void {
-  if (!soundEngine) return
-
-  // Check if muted BEFORE doing anything
-  if (isMuted) {
-    console.log(`Sound muted, not playing: ${SoundType[soundType]}`)
+function playSound(soundType: SoundType, options?: { highPriority?: boolean }): void {
+  const engineType = soundTypeToEngine[soundType]
+  if (!engineType) {
+    console.warn(`No engine mapping for sound type: ${SoundType[soundType]}`)
     return
   }
 
-  // Get the generator name for this sound type
-  const generatorName = soundTypeToGenerator[soundType]
-  if (!generatorName) {
-    console.warn(`No generator for sound type: ${soundType}`)
-    return
-  }
-
-  console.log(`Playing sound: ${SoundType[soundType]} -> ${generatorName}`)
-
-  // Start the engine first if not already playing
-  if (!isPlaying) {
-    soundEngine.start()
-    isPlaying = true
-  }
-
-  // Then play the sound using the engine's playTestSound method
-  if (soundEngine.playTestSound) {
-    soundEngine.playTestSound(generatorName)
-  } else {
-    console.error('Engine does not have playTestSound method')
-    return
-  }
-
-  // Update current sound in Redux for UI
+  playSoundByType(engineType, options)
+  
+  // Update Redux state for UI
+  // Always update when a sound successfully plays
+  currentSound = soundType
   store.dispatch({
     type: 'sound/startSound',
     payload: soundType
   })
-
-  // Update our local tracking
-  currentSound = soundType
 }
 
 /**
@@ -182,6 +152,7 @@ function stopAllSounds(): void {
   soundEngine.stop()
   isPlaying = false
   currentSound = null
+  highPriorityPlaying = false
 
   // Update Redux state
   store.dispatch({
@@ -215,38 +186,29 @@ export async function initializeSoundService(): Promise<SoundService> {
     // Create the service instance
     serviceInstance = {
       // Ship sounds
-      playShipFire: (): void => playSound(SoundType.FIRE_SOUND),
-      playShipThrust: (): void => playSound(SoundType.THRU_SOUND),
-      playShipShield: (): void => playSound(SoundType.SHLD_SOUND),
-      playShipExplosion: (): void => playSound(SoundType.EXP2_SOUND),
+      playShipFire: (options?): void => playSound(SoundType.FIRE_SOUND, options),
+      playShipThrust: (options?): void => playSound(SoundType.THRU_SOUND, options),
+      playShipShield: (options?): void => playSound(SoundType.SHLD_SOUND, options),
+      playShipExplosion: (options?): void => playSound(SoundType.EXP2_SOUND, options),
 
       // Bunker sounds
-      playBunkerShoot: (): void => playSound(SoundType.BUNK_SOUND),
-      playBunkerExplosion: (): void => playSound(SoundType.EXP1_SOUND),
-      playBunkerSoft: (): void => playSound(SoundType.SOFT_SOUND),
+      playBunkerShoot: (options?): void => playSound(SoundType.BUNK_SOUND, options),
+      playBunkerExplosion: (options?): void => playSound(SoundType.EXP1_SOUND, options),
+      playBunkerSoft: (options?): void => playSound(SoundType.SOFT_SOUND, options),
 
       // Pickup sounds
-      playFuelCollect: (): void => playSound(SoundType.FUEL_SOUND),
+      playFuelCollect: (options?): void => playSound(SoundType.FUEL_SOUND, options),
 
       // Level sounds
-      playLevelComplete: (): void => playSound(SoundType.CRACK_SOUND),
-      playLevelTransition: (): void => playSound(SoundType.FIZZ_SOUND),
-      playEcho: (): void => playSound(SoundType.ECHO_SOUND),
+      playLevelComplete: (options?): void => playSound(SoundType.CRACK_SOUND, options),
+      playLevelTransition: (options?): void => playSound(SoundType.FIZZ_SOUND, options),
+      playEcho: (options?): void => playSound(SoundType.ECHO_SOUND, options),
 
       // Alien sounds
-      playAlienExplosion: (): void => playSound(SoundType.EXP3_SOUND),
+      playAlienExplosion: (options?): void => playSound(SoundType.EXP3_SOUND, options),
 
-      // Direct generator access
-      playSound: (generatorName: string): void => playSoundByGenerator(generatorName),
-
-      // Test sounds
-      playSilence: (): void => playSoundByGenerator('silence'),
-      playSine440: (): void => playSoundByGenerator('sine440'),
-      playSine880: (): void => playSoundByGenerator('sine880'),
-      playSine220: (): void => playSoundByGenerator('sine220'),
-      playWhiteNoise: (): void => playSoundByGenerator('whiteNoise'),
-      playMajorChord: (): void => playSoundByGenerator('majorChord'),
-      playOctaves: (): void => playSoundByGenerator('octaves'),
+      // Direct engine access
+      playSound: (soundType: GameSoundType, options?): void => playSoundByType(soundType, options),
 
       // Control methods
       stopAll: (): void => stopAllSounds(),
@@ -268,6 +230,7 @@ export async function initializeSoundService(): Promise<SoundService> {
       // Status methods
       isPlaying: (): boolean => isPlaying,
       getCurrentSound: (): SoundType | null => currentSound,
+      isHighPriorityPlaying: (): boolean => highPriorityPlaying,
 
       // Engine access for test panel
       getEngine: (): SoundEngine | null => soundEngine
@@ -308,4 +271,5 @@ export function cleanupSoundService(): void {
   serviceInstance = null
   currentSound = null
   isPlaying = false
+  highPriorityPlaying = false
 }
