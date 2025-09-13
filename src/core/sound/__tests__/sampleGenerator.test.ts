@@ -15,8 +15,6 @@ import {
   buildWhiteNoiseGenerator,
   buildMusicalIntervalGenerator
 } from '../sampleGenerator'
-import { createTestSounds } from '../generators/testSounds'
-
 describe('Constants', () => {
   test('chunk size is exactly 370 bytes', () => {
     expect(CHUNK_SIZE).toBe(370)
@@ -288,61 +286,9 @@ describe('buildMusicalIntervalGenerator', () => {
   })
 })
 
-describe('createTestSounds factory', () => {
-  test('creates all expected generators', () => {
-    const generators = createTestSounds()
-
-    expect(generators.silence).toBeDefined()
-    expect(generators.sine440).toBeDefined()
-    expect(generators.sine880).toBeDefined()
-    expect(generators.sine220).toBeDefined()
-    expect(generators.whiteNoise).toBeDefined()
-    expect(generators.majorChord).toBeDefined()
-    expect(generators.octaves).toBeDefined()
-
-    // Verify they have the required methods
-    for (const generator of Object.values(generators)) {
-      expect(generator.generateChunk).toBeInstanceOf(Function)
-      expect(generator.reset).toBeInstanceOf(Function)
-    }
-  })
-
-  test('all generators produce valid chunks', () => {
-    const generators = createTestSounds()
-
-    for (const generator of Object.values(generators)) {
-      const chunk = generator.generateChunk()
-      expect(chunk).toBeInstanceOf(Uint8Array)
-      expect(chunk.length).toBe(370)
-
-      // All values in valid range
-      for (let i = 0; i < chunk.length; i++) {
-        expect(chunk[i]!).toBeGreaterThanOrEqual(0)
-        expect(chunk[i]!).toBeLessThanOrEqual(255)
-      }
-    }
-  })
-})
+// Removed createTestSounds factory tests - module no longer exists
 
 describe('Performance characteristics', () => {
-  test('generators produce chunks quickly', () => {
-    const generators = createTestSounds()
-
-    for (const generator of Object.values(generators)) {
-      const start = performance.now()
-
-      // Generate 100 chunks
-      for (let i = 0; i < 100; i++) {
-        generator.generateChunk()
-      }
-
-      const elapsed = performance.now() - start
-
-      // Should generate 100 chunks in well under 300ms
-      // (target is < 3ms per chunk, so < 300ms total)
-      expect(elapsed).toBeLessThan(300)
-    }
-  })
 
   test('multiple consecutive calls maintain timing', () => {
     const generator = buildSineWaveGenerator(440)

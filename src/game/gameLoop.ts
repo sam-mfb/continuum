@@ -147,7 +147,12 @@ const initializeGame = async (): Promise<void> => {
     // Initialize sound service
     console.log('Initializing sound service...')
     try {
-      await initializeSoundService()
+      // Get initial sound settings from our store
+      const soundState = store.getState().sound as SoundUIState
+      await initializeSoundService({
+        volume: soundState.volume,
+        enabled: soundState.enabled
+      })
       console.log('Sound service initialized successfully')
     } catch (soundError) {
       console.warn('Failed to initialize sound service:', soundError)

@@ -23,6 +23,10 @@ class MockGenerator implements SampleGenerator {
   reset(): void {
     this.counter = 0
   }
+
+  hasEnded(): boolean {
+    return false
+  }
 }
 
 class SilenceGenerator implements SampleGenerator {
@@ -32,6 +36,10 @@ class SilenceGenerator implements SampleGenerator {
 
   reset(): void {
     // No state to reset
+  }
+
+  hasEnded(): boolean {
+    return false
   }
 }
 
@@ -48,6 +56,10 @@ class PatternGenerator implements SampleGenerator {
 
   reset(): void {
     // No state to reset
+  }
+
+  hasEnded(): boolean {
+    return false
   }
 }
 
@@ -323,6 +335,10 @@ describe('BufferManager', () => {
 
         reset(): void {
           // No state to reset
+        }
+
+        hasEnded(): boolean {
+          return false
         }
       }
 

@@ -7,6 +7,27 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createSoundEngine } from '../soundEngine'
 import type { SoundEngine } from '../types'
 
+// Mock AudioContext for Node.js test environment
+global.AudioContext = vi.fn().mockImplementation(() => ({
+  createGain: vi.fn(() => ({
+    gain: { value: 1 },
+    connect: vi.fn(),
+    disconnect: vi.fn()
+  })),
+  createScriptProcessor: vi.fn(() => ({
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    onaudioprocess: null
+  })),
+  destination: { channelCount: 2 },
+  sampleRate: 44100,
+  state: 'running',
+  resume: vi.fn(),
+  suspend: vi.fn(),
+  close: vi.fn(),
+  baseLatency: 0.01
+})) as any
+
 // Type for the extended sound engine with test methods
 type TestSoundEngine = SoundEngine & {
   playTestSound: (soundType: string) => void
@@ -88,30 +109,30 @@ describe('createSoundEngine', () => {
     expect(engine).toHaveProperty('setVolume')
     expect(engine).toHaveProperty('start')
     expect(engine).toHaveProperty('stop')
-    expect(engine).toHaveProperty('playTestSound')
-    expect(engine).toHaveProperty('getTestSounds')
-    expect(engine).toHaveProperty('getStats')
+    expect(engine).toHaveProperty('play')
+    expect(engine).toHaveProperty('getCurrentSoundType')
     expect(engine).toHaveProperty('isPlaying')
+    expect(engine).toHaveProperty('resumeContext')
   })
 
-  it('returns test sound names', () => {
-    const engine = createSoundEngine() as TestSoundEngine
-    const sounds = engine.getTestSounds()
+  it('can play different sound types', () => {
+    const engine = createSoundEngine()
 
-    expect(sounds).toContain('silence')
-    expect(sounds).toContain('sine440')
-    expect(sounds).toContain('whiteNoise')
-    expect(sounds).toContain('majorChord')
-    expect(sounds).toContain('thruster')
+    // Should not throw when playing valid sounds
+    expect(() => engine.play?.('fire')).not.toThrow()
+    expect(() => engine.play?.('thruster')).not.toThrow()
+    expect(() => engine.play?.('silence')).not.toThrow()
   })
 
-  it('can switch between test sounds', () => {
-    const engine = createSoundEngine() as TestSoundEngine
+  it('tracks current sound type', () => {
+    const engine = createSoundEngine()
 
-    // Should not throw
-    expect(() => engine.playTestSound('sine440')).not.toThrow()
-    expect(() => engine.playTestSound('whiteNoise')).not.toThrow()
-    expect(() => engine.playTestSound('thruster')).not.toThrow()
+    // Should start with silence
+    expect(engine.getCurrentSoundType?.()).toBe('silence')
+    
+    // After playing a sound, should return that sound type
+    engine.play?.('fire')
+    expect(engine.getCurrentSoundType?.()).toBe('fire')
   })
 
   it('has start method that can be called', () => {

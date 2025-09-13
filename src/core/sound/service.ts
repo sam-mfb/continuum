@@ -8,7 +8,6 @@
 import { createSoundEngine, type GameSoundType } from './soundEngine'
 import { SoundType } from './constants'
 import type { SoundEngine } from './types'
-import { store } from '@dev/store'
 
 /**
  * Sound service interface
@@ -153,13 +152,8 @@ function playSound(soundType: SoundType, options?: { highPriority?: boolean }): 
 
   playSoundByType(engineType, options)
   
-  // Update Redux state for UI
-  // Always update when a sound successfully plays
+  // Track current sound
   currentSound = soundType
-  store.dispatch({
-    type: 'sound/startSound',
-    payload: soundType
-  })
 }
 
 /**
@@ -172,18 +166,17 @@ function stopAllSounds(): void {
   isPlaying = false
   currentSound = null
   highPriorityPlaying = false
-
-  // Update Redux state
-  store.dispatch({
-    type: 'sound/stopSound'
-  })
 }
 
 /**
  * Initialize the sound service
  * Should be called once at game start
+ * @param initialSettings - Optional initial volume and mute settings
  */
-export async function initializeSoundService(): Promise<SoundService> {
+export async function initializeSoundService(initialSettings?: {
+  volume?: number
+  enabled?: boolean
+}): Promise<SoundService> {
   if (serviceInstance) {
     return serviceInstance
   }
@@ -192,10 +185,9 @@ export async function initializeSoundService(): Promise<SoundService> {
     // Create and initialize the sound engine
     soundEngine = createSoundEngine()
 
-    // Get initial settings from Redux
-    const soundState = store.getState().sound
-    currentVolume = soundState.volume ?? 1.0
-    isMuted = !soundState.enabled
+    // Apply initial settings (defaults if not provided)
+    currentVolume = initialSettings?.volume ?? 1.0
+    isMuted = !(initialSettings?.enabled ?? true)
 
     // Apply initial volume
     if (soundEngine) {
