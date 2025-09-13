@@ -95,7 +95,8 @@ function initializeShot(deps: {
       y: y8 >> 3,
       lifecount,
       btime: 0,
-      hitlineId: ''
+      hitlineId: '',
+      origin: { x: bp.x, y: bp.y }
     }
   }
 }

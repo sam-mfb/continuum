@@ -418,35 +418,27 @@ export const createGameRenderer =
       const newShotCount = newState.shots.bunkshots.filter(s => s.lifecount > 0).length
       
       if (newShotCount > prevShotCount) {
-        // A bunker fired - determine proximity for sound
-        // Check bunkers near the screen to guess which one fired
-        const SOFTBORDER = 200 // From GW.h
-        let bunkerProximity: 'visible' | 'nearby' | 'distant' = 'distant'
+        // A bunker fired - find the new shot and use its origin for proximity
+        const newShot = newState.shots.bunkshots.find((s, i) => 
+          s.lifecount > 0 && (!state.shots.bunkshots[i] || state.shots.bunkshots[i]!.lifecount === 0)
+        )
         
-        for (const bunker of state.planet.bunkers) {
-          if (!bunker.alive) continue
+        if (newShot && newShot.origin) {
+          const SOFTBORDER = 200 // From GW.h
+          const { x: bunkx, y: bunky } = newShot.origin
           
           // Check if bunker is visible on screen
-          if (bunker.x > state.screen.screenx && bunker.x < screenr && 
-              bunker.y > state.screen.screeny && bunker.y < screenb) {
-            bunkerProximity = 'visible'
-            break // Visible bunker takes priority
+          if (bunkx > state.screen.screenx && bunkx < screenr && 
+              bunky > state.screen.screeny && bunky < screenb) {
+            store.dispatch(playDiscrete(SoundType.BUNK_SOUND))
           }
           // Check if bunker is within SOFTBORDER of screen  
-          else if (bunker.x > state.screen.screenx - SOFTBORDER && 
-                   bunker.x < screenr + SOFTBORDER &&
-                   bunker.y > state.screen.screeny - SOFTBORDER && 
-                   bunker.y < screenb + SOFTBORDER) {
-            bunkerProximity = 'nearby'
-            // Don't break - keep looking for visible bunkers
+          else if (bunkx > state.screen.screenx - SOFTBORDER && 
+                   bunkx < screenr + SOFTBORDER &&
+                   bunky > state.screen.screeny - SOFTBORDER && 
+                   bunky < screenb + SOFTBORDER) {
+            store.dispatch(playDiscrete(SoundType.SOFT_SOUND))
           }
-        }
-        
-        // Play appropriate sound based on proximity - Bunkers.c:185-188
-        if (bunkerProximity === 'visible') {
-          store.dispatch(playDiscrete(SoundType.BUNK_SOUND))
-        } else if (bunkerProximity === 'nearby') {
-          store.dispatch(playDiscrete(SoundType.SOFT_SOUND))
         }
         // 'distant' bunkers make no sound
       }

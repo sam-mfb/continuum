@@ -29,6 +29,7 @@ function createShot(
     btime: 0,
     hitlineId: '',
     justDied: false,
+    origin: { x: 0, y: 0 },
     ...overrides
   }
 }
