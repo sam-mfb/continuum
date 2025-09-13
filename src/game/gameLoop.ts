@@ -12,13 +12,11 @@ import { fullFigure } from '@core/ship'
 import { drawShipShot } from '@core/shots'
 import { drawStrafe } from '@core/shots'
 import { drawDotSafe } from '@core/shots'
-import { shipSlice } from '@core/ship'
 import {
   updateBunkerRotations,
   updateFuelAnimations,
   killBunker
 } from '@core/planet'
-import { screenSlice } from '@core/screen'
 import {
   shotsSlice,
   doStrafes,
@@ -26,9 +24,14 @@ import {
   moveBullets,
   clearBunkShots
 } from '@core/shots'
-import { ShipControl } from '@core/ship'
-import { shipControl } from '@core/ship'
-import { buildGameStore } from '@dev/store'
+import { ShipControl, shipControl, shipSlice } from '@core/ship'
+import { configureStore } from '@reduxjs/toolkit'
+import { planetSlice } from '@core/planet'
+import { screenSlice } from '@core/screen'
+import { wallsSlice } from '@core/walls'
+import { spritesSlice } from '@dev/store/spritesSlice'
+import { statusSlice } from '@core/status'
+import { explosionsSlice } from '@core/explosions'
 import { SCRWTH, VIEWHT } from '@core/screen'
 import type { SpriteServiceV2 } from '@core/sprites'
 import { SCENTER, type BunkerKind } from '@core/figs/types'
@@ -47,7 +50,7 @@ import {
 } from '@core/screen/render/fizz'
 import { cloneBitmap } from '@lib/bitmap'
 import { LINE_KIND } from '@core/walls'
-import { updateSbar, sbarClear, statusSlice } from '@core/status'
+import { updateSbar, sbarClear } from '@core/status'
 import { checkFigure } from '@core/ship'
 import { checkForBounce } from '@core/ship'
 import { doBunks } from '@core/planet'
@@ -86,9 +89,19 @@ import {
 } from './levelManager'
 import { SHIPSTART } from './constants'
 
-// Configure store with game slice
-const store = buildGameStore({
-  game: gameReducer
+// Configure store with all slices including game
+const store = configureStore({
+  reducer: {
+    ship: shipSlice.reducer,
+    planet: planetSlice.reducer,
+    screen: screenSlice.reducer,
+    shots: shotsSlice.reducer,
+    walls: wallsSlice.reducer,
+    sprites: spritesSlice.reducer,
+    status: statusSlice.reducer,
+    explosions: explosionsSlice.reducer,
+    game: gameReducer
+  }
 })
 
 // Track initialization state
