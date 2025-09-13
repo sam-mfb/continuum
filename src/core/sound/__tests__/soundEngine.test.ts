@@ -129,7 +129,7 @@ describe('createSoundEngine', () => {
 
     // Should start with silence
     expect(engine.getCurrentSoundType?.()).toBe('silence')
-    
+
     // After playing a sound, should return that sound type
     engine.play?.('fire')
     expect(engine.getCurrentSoundType?.()).toBe('fire')

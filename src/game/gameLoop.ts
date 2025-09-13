@@ -272,10 +272,7 @@ export const createGameRenderer =
     // Game over transitions still need handling (TODO: implement game over fizz)
 
     // Check for level completion (only if not already transitioning)
-    if (
-      !transitionState.active &&
-      checkLevelComplete(state)
-    ) {
+    if (!transitionState.active && checkLevelComplete(state)) {
       console.log(`Level ${state.game.currentLevel} complete!`)
 
       // Award bonus points (Play.c:107 - score_plus(planetbonus))
@@ -307,7 +304,7 @@ export const createGameRenderer =
     ) {
       console.log('Game Over - All lives lost')
       store.dispatch(triggerGameOver())
-      
+
       // Reset everything for a new game
       store.dispatch(resetGame())
       store.dispatch(shipSlice.actions.setLives(SHIPSTART))
@@ -401,9 +398,11 @@ export const createGameRenderer =
       // Calculate screen boundaries for shot eligibility
       const screenr = state.screen.screenx + SCRWTH
       const screenb = state.screen.screeny + VIEWHT
-      
+
       // Store current shot count to detect if a bunker fired
-      const prevShotCount = state.shots.bunkshots.filter(s => s.lifecount > 0).length
+      const prevShotCount = state.shots.bunkshots.filter(
+        s => s.lifecount > 0
+      ).length
 
       store.dispatch(
         bunkShoot({
@@ -419,31 +418,42 @@ export const createGameRenderer =
           globaly: globaly
         })
       )
-      
+
       // Check if a bunker actually fired by comparing shot counts
       const newState = store.getState()
-      const newShotCount = newState.shots.bunkshots.filter(s => s.lifecount > 0).length
-      
+      const newShotCount = newState.shots.bunkshots.filter(
+        s => s.lifecount > 0
+      ).length
+
       if (newShotCount > prevShotCount) {
         // A bunker fired - find the new shot and use its origin for proximity
-        const newShot = newState.shots.bunkshots.find((s, i) => 
-          s.lifecount > 0 && (!state.shots.bunkshots[i] || state.shots.bunkshots[i]!.lifecount === 0)
+        const newShot = newState.shots.bunkshots.find(
+          (s, i) =>
+            s.lifecount > 0 &&
+            (!state.shots.bunkshots[i] ||
+              state.shots.bunkshots[i]!.lifecount === 0)
         )
-        
+
         if (newShot && newShot.origin) {
           const SOFTBORDER = 200 // From GW.h
           const { x: bunkx, y: bunky } = newShot.origin
-          
+
           // Check if bunker is visible on screen
-          if (bunkx > state.screen.screenx && bunkx < screenr && 
-              bunky > state.screen.screeny && bunky < screenb) {
+          if (
+            bunkx > state.screen.screenx &&
+            bunkx < screenr &&
+            bunky > state.screen.screeny &&
+            bunky < screenb
+          ) {
             store.dispatch(playDiscrete(SoundType.BUNK_SOUND))
           }
-          // Check if bunker is within SOFTBORDER of screen  
-          else if (bunkx > state.screen.screenx - SOFTBORDER && 
-                   bunkx < screenr + SOFTBORDER &&
-                   bunky > state.screen.screeny - SOFTBORDER && 
-                   bunky < screenb + SOFTBORDER) {
+          // Check if bunker is within SOFTBORDER of screen
+          else if (
+            bunkx > state.screen.screenx - SOFTBORDER &&
+            bunkx < screenr + SOFTBORDER &&
+            bunky > state.screen.screeny - SOFTBORDER &&
+            bunky < screenb + SOFTBORDER
+          ) {
             store.dispatch(playDiscrete(SoundType.SOFT_SOUND))
           }
         }
@@ -480,7 +490,7 @@ export const createGameRenderer =
           if (updatedBunker && !updatedBunker.alive) {
             // Play bunker explosion sound - Play.c:368
             store.dispatch(playDiscrete(SoundType.EXP1_SOUND))
-            
+
             // Award score for bunker destruction (Play.c:365-366)
             store.dispatch(
               statusSlice.actions.scoreBunker({
@@ -564,7 +574,7 @@ export const createGameRenderer =
         // Pre-delay complete, initialize the fizz transition on first frame
         // Play fizz start sound - Play.c:1248
         store.dispatch(playDiscrete(SoundType.FIZZ_SOUND))
-        
+
         // Create the "from" bitmap - current game state
         const fromBitmap = cloneBitmap(bitmap)
         // Render the current game state (will be done below)
@@ -613,7 +623,7 @@ export const createGameRenderer =
           // Reset the flag
           transitionState.fizzJustFinished = false
         }
-        
+
         // Fizz complete, show star background during delay
         if (transitionState.toBitmap) {
           bitmap.data.set(transitionState.toBitmap)
@@ -650,17 +660,17 @@ export const createGameRenderer =
           // Trigger the actual level load
           transitionToNextLevel(store as Store<ExtendedGameState>)
         }
-        
+
         // Play all accumulated sounds before returning
         const soundState = store.getState().sound as SoundUIState
         playSounds(soundState)
-        
+
         return
       } else {
         // Fizz in progress
         const fizzFrame = transitionState.fizzTransition.nextFrame()
         bitmap.data.set(fizzFrame.data)
-        
+
         // Check if fizz just completed
         if (transitionState.fizzTransition.isComplete) {
           transitionState.fizzJustFinished = true
@@ -680,11 +690,11 @@ export const createGameRenderer =
         }
         renderedBitmap = updateSbar(statusData)(renderedBitmap)
         bitmap.data.set(renderedBitmap.data)
-        
+
         // Play all accumulated sounds before returning
         const fizzSoundState = store.getState().sound as SoundUIState
         playSounds(fizzSoundState)
-        
+
         return
       }
     }
@@ -1107,7 +1117,7 @@ export const createGameRenderer =
             if (!updatedBunker || !updatedBunker.alive) {
               // Play bunker explosion sound - Play.c:368
               store.dispatch(playDiscrete(SoundType.EXP1_SOUND))
-              
+
               // Award score for bunker destruction (Play.c:365-366)
               store.dispatch(
                 statusSlice.actions.scoreBunker({

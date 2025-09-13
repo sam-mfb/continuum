@@ -43,11 +43,11 @@ export const SoundTestPanel: React.FC = () => {
   // Poll for high-priority state
   useEffect(() => {
     if (!soundService) return
-    
+
     const interval = setInterval(() => {
       setIsHighPriorityActive(soundService.isHighPriorityPlaying())
     }, 100)
-    
+
     return (): void => clearInterval(interval)
   }, [soundService])
 
@@ -73,7 +73,9 @@ export const SoundTestPanel: React.FC = () => {
   const playDiscreteSound = (playFunc: () => void): void => {
     // Don't clear toggle states if high-priority is blocking
     if (isHighPriorityActive) {
-      console.log('[BLOCKED] Cannot play discrete sound while high-priority is active')
+      console.log(
+        '[BLOCKED] Cannot play discrete sound while high-priority is active'
+      )
       playFunc() // Still attempt to play (will be blocked by service)
       return
     }
@@ -84,7 +86,7 @@ export const SoundTestPanel: React.FC = () => {
 
   const handleThrustToggle = (): void => {
     if (!soundService) return
-    
+
     if (isThrustActive) {
       // Stop thrust by playing silence
       soundService.playSound('silence')
@@ -92,7 +94,9 @@ export const SoundTestPanel: React.FC = () => {
     } else {
       // Don't start if high-priority is blocking
       if (isHighPriorityActive) {
-        console.log('[BLOCKED] Cannot start thrust while high-priority sound is playing')
+        console.log(
+          '[BLOCKED] Cannot start thrust while high-priority sound is playing'
+        )
         return
       }
       soundService.playShipThrust({ highPriority: useHighPriority })
@@ -103,7 +107,7 @@ export const SoundTestPanel: React.FC = () => {
 
   const handleShieldToggle = (): void => {
     if (!soundService) return
-    
+
     if (isShieldActive) {
       // Stop shield by playing silence
       soundService.playSound('silence')
@@ -111,7 +115,9 @@ export const SoundTestPanel: React.FC = () => {
     } else {
       // Don't start if high-priority is blocking
       if (isHighPriorityActive) {
-        console.log('[BLOCKED] Cannot start shield while high-priority sound is playing')
+        console.log(
+          '[BLOCKED] Cannot start shield while high-priority sound is playing'
+        )
         return
       }
       soundService.playShipShield({ highPriority: useHighPriority })
@@ -140,7 +146,9 @@ export const SoundTestPanel: React.FC = () => {
             <input
               type="checkbox"
               checked={useHighPriority}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>): void => setUseHighPriority(e.target.checked)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>): void =>
+                setUseHighPriority(e.target.checked)
+              }
             />
             High Priority Mode
           </label>
@@ -172,7 +180,11 @@ export const SoundTestPanel: React.FC = () => {
         <h3>Ship Sounds</h3>
         <div style={styles.soundGrid}>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playShipFire({ highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playShipFire({ highPriority: useHighPriority })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
@@ -199,7 +211,13 @@ export const SoundTestPanel: React.FC = () => {
             Shield {isShieldActive ? '(ON)' : ''}
           </button>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playShipExplosion({ highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playShipExplosion({
+                  highPriority: useHighPriority
+                })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
@@ -213,21 +231,35 @@ export const SoundTestPanel: React.FC = () => {
         <h3>Bunker Sounds</h3>
         <div style={styles.soundGrid}>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playBunkerShoot({ highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playBunkerShoot({ highPriority: useHighPriority })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
             Bunker Shoot
           </button>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playBunkerExplosion({ highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playBunkerExplosion({
+                  highPriority: useHighPriority
+                })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
             Bunker Explosion
           </button>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playBunkerSoft({ highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playBunkerSoft({ highPriority: useHighPriority })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
@@ -241,35 +273,61 @@ export const SoundTestPanel: React.FC = () => {
         <h3>Other Game Sounds</h3>
         <div style={styles.soundGrid}>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playFuelCollect({ highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playFuelCollect({ highPriority: useHighPriority })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
             Fuel Collect
           </button>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playAlienExplosion({ highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playAlienExplosion({
+                  highPriority: useHighPriority
+                })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
             Alien Explosion
           </button>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playLevelComplete({ highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playLevelComplete({
+                  highPriority: useHighPriority
+                })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
             Level Complete (Crack)
           </button>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playLevelTransition({ highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playLevelTransition({
+                  highPriority: useHighPriority
+                })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
             Level Transition (Fizz)
           </button>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playEcho({ highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playEcho({ highPriority: useHighPriority })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
@@ -283,84 +341,156 @@ export const SoundTestPanel: React.FC = () => {
         <h3>Direct Engine Access</h3>
         <div style={styles.soundGrid}>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playSound('fire', { highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playSound('fire', {
+                  highPriority: useHighPriority
+                })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
             fire
           </button>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playSound('thruster', { highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playSound('thruster', {
+                  highPriority: useHighPriority
+                })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
             thruster
           </button>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playSound('shield', { highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playSound('shield', {
+                  highPriority: useHighPriority
+                })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
             shield
           </button>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playSound('explosionShip', { highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playSound('explosionShip', {
+                  highPriority: useHighPriority
+                })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
             explosionShip
           </button>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playSound('explosionBunker', { highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playSound('explosionBunker', {
+                  highPriority: useHighPriority
+                })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
             explosionBunker
           </button>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playSound('explosionAlien', { highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playSound('explosionAlien', {
+                  highPriority: useHighPriority
+                })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
             explosionAlien
           </button>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playSound('bunker', { highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playSound('bunker', {
+                  highPriority: useHighPriority
+                })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
             bunker
           </button>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playSound('soft', { highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playSound('soft', {
+                  highPriority: useHighPriority
+                })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
             soft
           </button>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playSound('fuel', { highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playSound('fuel', {
+                  highPriority: useHighPriority
+                })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
             fuel
           </button>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playSound('crack', { highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playSound('crack', {
+                  highPriority: useHighPriority
+                })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
             crack
           </button>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playSound('fizz', { highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playSound('fizz', {
+                  highPriority: useHighPriority
+                })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
             fizz
           </button>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playSound('echo', { highPriority: useHighPriority }))}
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playSound('echo', {
+                  highPriority: useHighPriority
+                })
+              )
+            }
             style={styles.soundButton}
             disabled={!soundService}
           >
@@ -373,22 +503,22 @@ export const SoundTestPanel: React.FC = () => {
       <div style={styles.section}>
         <h3>Usage Instructions</h3>
         <ul style={styles.instructions}>
-          <li>
-            Click any button to play the corresponding game sound
-          </li>
+          <li>Click any button to play the corresponding game sound</li>
           <li>Use the volume slider to adjust the master volume</li>
           <li>Check the mute checkbox to disable all sounds</li>
           <li>
-            <strong>High Priority Mode:</strong> When enabled, sounds will be marked as high-priority.
-            High-priority sounds block other sounds until they complete.
+            <strong>High Priority Mode:</strong> When enabled, sounds will be
+            marked as high-priority. High-priority sounds block other sounds
+            until they complete.
           </li>
           <li>
-            <strong>Blocking Indicator:</strong> When a high-priority sound is playing,
-            the 🔒 indicator shows that other sounds are being blocked.
+            <strong>Blocking Indicator:</strong> When a high-priority sound is
+            playing, the 🔒 indicator shows that other sounds are being blocked.
           </li>
           <li>
-            <strong>Testing High-Priority:</strong> Enable high-priority mode, play a long sound
-            (like an explosion), then try playing other sounds while it's active.
+            <strong>Testing High-Priority:</strong> Enable high-priority mode,
+            play a long sound (like an explosion), then try playing other sounds
+            while it's active.
           </li>
         </ul>
       </div>

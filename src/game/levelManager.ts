@@ -28,17 +28,17 @@ export type ExtendedGameState = CoreGameState & {
 /**
  * Check if the current level is complete
  * Based on kill_bunk() from orig/Sources/Play.c:369-377
- * 
+ *
  * A level is complete when all non-generator bunkers are destroyed.
  * Generator bunkers (GENERATORBUNK) do not need to be destroyed for mission completion.
  * This allows level designers to create "blocked" indestructible generators.
- * 
+ *
  * From Play.c:369-372:
  *   missioncomplete = TRUE;
  *   for(bp=bunkers; bp->rot >= 0; bp++)
  *       if (bp->alive && bp->kind != GENERATORBUNK)
  *           missioncomplete = FALSE;
- * 
+ *
  * For levels with no bunkers, check if all fuel cells are collected.
  */
 export function checkLevelComplete(state: ExtendedGameState): boolean {
@@ -52,9 +52,9 @@ export function checkLevelComplete(state: ExtendedGameState): boolean {
   // Implement mission completion logic from Play.c:369-372
   // Check if all non-generator bunkers are destroyed
   const allNonGeneratorBunkersDestroyed = bunkers.every(
-    bunker => 
+    bunker =>
       bunker.rot < 0 || // rot < 0 is sentinel marker
-      !bunker.alive ||  // bunker is destroyed
+      !bunker.alive || // bunker is destroyed
       bunker.kind === BunkerKind.GENERATOR // Play.c:371 - generators don't count
   )
 

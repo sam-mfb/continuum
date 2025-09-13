@@ -37,7 +37,10 @@ export type SoundService = {
   playAlienExplosion(options?: { highPriority?: boolean }): void
 
   // Direct generator access for all sounds
-  playSound(soundType: GameSoundType, options?: { highPriority?: boolean }): void
+  playSound(
+    soundType: GameSoundType,
+    options?: { highPriority?: boolean }
+  ): void
 
   // Control methods
   stopAll(): void
@@ -93,7 +96,10 @@ async function resumeAudioContext(): Promise<void> {
 /**
  * Internal helper to play a sound by engine type
  */
-function playSoundByType(soundType: GameSoundType, options?: { highPriority?: boolean }): void {
+function playSoundByType(
+  soundType: GameSoundType,
+  options?: { highPriority?: boolean }
+): void {
   if (!soundEngine || !soundEngine.play) return
 
   // Try to resume audio context on any play attempt (in case it's suspended)
@@ -109,7 +115,9 @@ function playSoundByType(soundType: GameSoundType, options?: { highPriority?: bo
   // High-priority sounds block ALL other sounds (including other high-priority)
   // Exception: 'silence' is always allowed (used to stop sounds)
   if (highPriorityPlaying && soundType !== 'silence') {
-    console.log(`[BLOCKED] High-priority sound is active, blocking: ${soundType}`)
+    console.log(
+      `[BLOCKED] High-priority sound is active, blocking: ${soundType}`
+    )
     return
   }
 
@@ -119,7 +127,9 @@ function playSoundByType(soundType: GameSoundType, options?: { highPriority?: bo
     console.log('[HP STATE] Playing silence, clearing highPriorityPlaying flag')
   }
 
-  console.log(`[PLAYING] ${soundType}${options?.highPriority ? ' (HIGH PRIORITY)' : ''} | HP Active: ${highPriorityPlaying}`)
+  console.log(
+    `[PLAYING] ${soundType}${options?.highPriority ? ' (HIGH PRIORITY)' : ''} | HP Active: ${highPriorityPlaying}`
+  )
 
   // Start the engine first if not already playing
   if (!isPlaying) {
@@ -133,7 +143,9 @@ function playSoundByType(soundType: GameSoundType, options?: { highPriority?: bo
     console.log(`[HP STATE] Setting highPriorityPlaying = true`)
     soundEngine.play(soundType, () => {
       highPriorityPlaying = false
-      console.log('[HP STATE] High-priority sound completed, setting highPriorityPlaying = false')
+      console.log(
+        '[HP STATE] High-priority sound completed, setting highPriorityPlaying = false'
+      )
     })
   } else {
     soundEngine.play(soundType)
@@ -143,7 +155,10 @@ function playSoundByType(soundType: GameSoundType, options?: { highPriority?: bo
 /**
  * Internal helper to play a sound by SoundType enum
  */
-function playSound(soundType: SoundType, options?: { highPriority?: boolean }): void {
+function playSound(
+  soundType: SoundType,
+  options?: { highPriority?: boolean }
+): void {
   const engineType = soundTypeToEngine[soundType]
   if (!engineType) {
     console.warn(`No engine mapping for sound type: ${SoundType[soundType]}`)
@@ -151,7 +166,7 @@ function playSound(soundType: SoundType, options?: { highPriority?: boolean }): 
   }
 
   playSoundByType(engineType, options)
-  
+
   // Track current sound
   currentSound = soundType
 }
@@ -197,29 +212,41 @@ export async function initializeSoundService(initialSettings?: {
     // Create the service instance
     serviceInstance = {
       // Ship sounds
-      playShipFire: (options?): void => playSound(SoundType.FIRE_SOUND, options),
-      playShipThrust: (options?): void => playSound(SoundType.THRU_SOUND, options),
-      playShipShield: (options?): void => playSound(SoundType.SHLD_SOUND, options),
-      playShipExplosion: (options?): void => playSound(SoundType.EXP2_SOUND, options),
+      playShipFire: (options?): void =>
+        playSound(SoundType.FIRE_SOUND, options),
+      playShipThrust: (options?): void =>
+        playSound(SoundType.THRU_SOUND, options),
+      playShipShield: (options?): void =>
+        playSound(SoundType.SHLD_SOUND, options),
+      playShipExplosion: (options?): void =>
+        playSound(SoundType.EXP2_SOUND, options),
 
       // Bunker sounds
-      playBunkerShoot: (options?): void => playSound(SoundType.BUNK_SOUND, options),
-      playBunkerExplosion: (options?): void => playSound(SoundType.EXP1_SOUND, options),
-      playBunkerSoft: (options?): void => playSound(SoundType.SOFT_SOUND, options),
+      playBunkerShoot: (options?): void =>
+        playSound(SoundType.BUNK_SOUND, options),
+      playBunkerExplosion: (options?): void =>
+        playSound(SoundType.EXP1_SOUND, options),
+      playBunkerSoft: (options?): void =>
+        playSound(SoundType.SOFT_SOUND, options),
 
       // Pickup sounds
-      playFuelCollect: (options?): void => playSound(SoundType.FUEL_SOUND, options),
+      playFuelCollect: (options?): void =>
+        playSound(SoundType.FUEL_SOUND, options),
 
       // Level sounds
-      playLevelComplete: (options?): void => playSound(SoundType.CRACK_SOUND, options),
-      playLevelTransition: (options?): void => playSound(SoundType.FIZZ_SOUND, options),
+      playLevelComplete: (options?): void =>
+        playSound(SoundType.CRACK_SOUND, options),
+      playLevelTransition: (options?): void =>
+        playSound(SoundType.FIZZ_SOUND, options),
       playEcho: (options?): void => playSound(SoundType.ECHO_SOUND, options),
 
       // Alien sounds
-      playAlienExplosion: (options?): void => playSound(SoundType.EXP3_SOUND, options),
+      playAlienExplosion: (options?): void =>
+        playSound(SoundType.EXP3_SOUND, options),
 
       // Direct engine access
-      playSound: (soundType: GameSoundType, options?): void => playSoundByType(soundType, options),
+      playSound: (soundType: GameSoundType, options?): void =>
+        playSoundByType(soundType, options),
 
       // Control methods
       stopAll: (): void => stopAllSounds(),

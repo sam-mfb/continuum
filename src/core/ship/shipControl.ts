@@ -8,7 +8,11 @@ import { ShipControl } from '@core/ship'
 import { FUELSHIELD, FRADIUS } from '@core/ship'
 import { xyindist } from '@core/shots'
 import { gravityVector } from '@core/shared/gravityVector'
-import { playDiscrete, setThrusting, setShielding } from '@core/sound/soundSlice'
+import {
+  playDiscrete,
+  setThrusting,
+  setShielding
+} from '@core/sound/soundSlice'
 import { SoundType } from '@core/sound/constants'
 
 type ControlAction = {

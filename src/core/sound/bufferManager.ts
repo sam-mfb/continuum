@@ -62,7 +62,7 @@ export type BufferManager = {
    *
    * @param generator The new generator to use
    * @param onSoundEnded Optional callback to fire when the sound ends
-   * 
+   *
    * Note: Existing buffered data remains unchanged. Only affects
    * future generation when more samples are needed.
    */
@@ -135,7 +135,7 @@ export const createBufferManager = (
    */
   const generateChunk = (): void => {
     const chunk = currentGenerator.generateChunk()
-    
+
     // Check if the sound has ended (for discrete sounds)
     if (!hasReportedEnded && currentGenerator.hasEnded?.()) {
       hasReportedEnded = true
@@ -212,7 +212,10 @@ export const createBufferManager = (
   /**
    * Switch to a different sample generator
    */
-  const setGenerator = (generator: SampleGenerator, onEnded?: () => void): void => {
+  const setGenerator = (
+    generator: SampleGenerator,
+    onEnded?: () => void
+  ): void => {
     currentGenerator = generator
     onSoundEnded = onEnded
     hasReportedEnded = false

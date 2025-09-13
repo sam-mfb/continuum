@@ -25,7 +25,7 @@ export type AudioOutput = {
    * Check if audio is currently playing
    */
   isPlaying(): boolean
-  
+
   /**
    * Resume suspended audio context
    */
@@ -129,7 +129,9 @@ export const createAudioOutput = (
       // Resume if suspended (required by some browsers)
       // This will be handled by user interaction in the service
       if (audioContext.state === 'suspended') {
-        console.log('AudioContext is suspended, will resume on user interaction')
+        console.log(
+          'AudioContext is suspended, will resume on user interaction'
+        )
       }
 
       // Pre-fill the buffer to avoid initial underruns

@@ -1,6 +1,6 @@
 /**
  * Redux slice for managing sound state
- * 
+ *
  * Accumulates sound events during each game loop frame,
  * then plays all sounds at once at the end of the frame
  */
@@ -16,11 +16,12 @@ export type SoundUIState = {
     thrusting: boolean
     shielding: boolean
   }
-  lastContinuous: {  // Track what was playing last frame
+  lastContinuous: {
+    // Track what was playing last frame
     thrusting: boolean
     shielding: boolean
   }
-  
+
   // Audio settings
   enabled: boolean // Sound on/off
   volume: number // Master volume 0-1
@@ -49,10 +50,10 @@ const soundSlice = createSlice({
     /**
      * Reset frame - clear discrete sounds and update lastContinuous
      */
-    resetFrame: (state) => {
+    resetFrame: state => {
       // Clear discrete sounds for new frame
       state.discrete = []
-      
+
       // Copy current continuous state to last
       state.lastContinuous = {
         thrusting: state.continuous.thrusting,
@@ -78,7 +79,7 @@ const soundSlice = createSlice({
     },
 
     /**
-     * Set shielding state (continuous sound)  
+     * Set shielding state (continuous sound)
      */
     setShielding: (state, action: PayloadAction<boolean>) => {
       state.continuous.shielding = action.payload

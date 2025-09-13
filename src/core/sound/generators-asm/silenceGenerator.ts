@@ -1,6 +1,6 @@
 /**
  * Silence Generator
- * 
+ *
  * Simple generator that outputs silence (center value)
  * Used when no sound is playing
  */

@@ -24,19 +24,19 @@ import { createEchoGenerator } from './generators-asm/echoGenerator'
 /**
  * Sound types available in the engine
  */
-export type GameSoundType = 
+export type GameSoundType =
   | 'silence'
-  | 'fire' 
-  | 'thruster' 
-  | 'shield' 
-  | 'explosionBunker' 
-  | 'explosionShip' 
+  | 'fire'
+  | 'thruster'
+  | 'shield'
+  | 'explosionBunker'
+  | 'explosionShip'
   | 'explosionAlien'
-  | 'bunker' 
-  | 'soft' 
-  | 'fuel' 
-  | 'crack' 
-  | 'fizz' 
+  | 'bunker'
+  | 'soft'
+  | 'fuel'
+  | 'crack'
+  | 'fizz'
   | 'echo'
 
 /**
@@ -44,7 +44,10 @@ export type GameSoundType =
  */
 export const createSoundEngine = (): SoundEngine => {
   // Initialize all generators
-  const generators: Record<GameSoundType, SampleGenerator & { start?: () => void; stop?: () => void }> = {
+  const generators: Record<
+    GameSoundType,
+    SampleGenerator & { start?: () => void; stop?: () => void }
+  > = {
     silence: createSilenceGenerator(),
     fire: createFireGenerator(),
     thruster: createThrusterGenerator(),
@@ -67,7 +70,10 @@ export const createSoundEngine = (): SoundEngine => {
   const audioOutput = createAudioOutput(bufferManager)
 
   // Keep track of current generator
-  let currentGenerator: SampleGenerator & { start?: () => void; stop?: () => void } = generators.silence
+  let currentGenerator: SampleGenerator & {
+    start?: () => void
+    stop?: () => void
+  } = generators.silence
   let currentSoundType: GameSoundType = 'silence'
 
   /**
@@ -127,12 +133,9 @@ export const createSoundEngine = (): SoundEngine => {
    * @param soundType - Name of the sound to play
    * @param onEnded - Optional callback when the sound ends (for discrete sounds)
    */
-  const play = (
-    soundType: GameSoundType,
-    onEnded?: () => void
-  ): void => {
+  const play = (soundType: GameSoundType, onEnded?: () => void): void => {
     const generator = generators[soundType]
-    
+
     if (!generator) {
       console.warn(`Unknown sound type: ${soundType}`)
       return
@@ -141,9 +144,15 @@ export const createSoundEngine = (): SoundEngine => {
     // Reset the previous generator when switching to a new sound
     // This ensures interrupted sounds start from the beginning next time
     if (currentGenerator && currentGenerator !== generator) {
-      if ('stop' in currentGenerator && typeof currentGenerator.stop === 'function') {
+      if (
+        'stop' in currentGenerator &&
+        typeof currentGenerator.stop === 'function'
+      ) {
         currentGenerator.stop()
-      } else if ('reset' in currentGenerator && typeof currentGenerator.reset === 'function') {
+      } else if (
+        'reset' in currentGenerator &&
+        typeof currentGenerator.reset === 'function'
+      ) {
         currentGenerator.reset()
       }
     }
@@ -178,7 +187,9 @@ export const createSoundEngine = (): SoundEngine => {
   const ctx = getAudioContext()
   const engine: SoundEngine = {
     audioContext: ctx || new AudioContext(),
-    masterGain: createMasterGain() || (ctx ? ctx.createGain() : new AudioContext().createGain()),
+    masterGain:
+      createMasterGain() ||
+      (ctx ? ctx.createGain() : new AudioContext().createGain()),
     setVolume,
     start,
     stop,
@@ -187,6 +198,6 @@ export const createSoundEngine = (): SoundEngine => {
     isPlaying: audioOutput.isPlaying,
     resumeContext
   }
-  
+
   return engine
 }

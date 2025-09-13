@@ -289,7 +289,6 @@ describe('buildMusicalIntervalGenerator', () => {
 // Removed createTestSounds factory tests - module no longer exists
 
 describe('Performance characteristics', () => {
-
   test('multiple consecutive calls maintain timing', () => {
     const generator = buildSineWaveGenerator(440)
     const timings = []
