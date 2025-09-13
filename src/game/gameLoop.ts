@@ -122,6 +122,7 @@ type TransitionState = {
   fromBitmap: Uint8Array | null
   toBitmap: Uint8Array | null
   delayFrames: number
+  fizzJustFinished: boolean // True for one frame when fizz animation completes
 }
 
 const transitionState: TransitionState = {
@@ -130,7 +131,8 @@ const transitionState: TransitionState = {
   fizzTransition: null,
   fromBitmap: null,
   toBitmap: null,
-  delayFrames: 0
+  delayFrames: 0,
+  fizzJustFinished: false
 }
 
 const MICO_DELAY_FRAMES = 45 // Delay before transition starts (MICODELAY from GW.h)
@@ -600,9 +602,11 @@ export const createGameRenderer =
         // Fall through to render the current game state first
       } else if (transitionState.fizzTransition.isComplete) {
         // Check if this is the first frame after completion
-        if (transitionState.delayFrames === 0) {
+        if (transitionState.fizzJustFinished) {
           // Play echo sound when fizz completes - Play.c:1250
           store.dispatch(playDiscrete(SoundType.ECHO_SOUND))
+          // Reset the flag
+          transitionState.fizzJustFinished = false
         }
         
         // Fizz complete, show star background during delay
@@ -636,15 +640,26 @@ export const createGameRenderer =
           transitionState.fromBitmap = null
           transitionState.toBitmap = null
           transitionState.delayFrames = 0
+          transitionState.fizzJustFinished = false
 
           // Trigger the actual level load
           transitionToNextLevel(store as Store<ExtendedGameState>)
         }
+        
+        // Play all accumulated sounds before returning
+        const soundState = store.getState().sound as SoundUIState
+        playSounds(soundState)
+        
         return
       } else {
         // Fizz in progress
         const fizzFrame = transitionState.fizzTransition.nextFrame()
         bitmap.data.set(fizzFrame.data)
+        
+        // Check if fizz just completed
+        if (transitionState.fizzTransition.isComplete) {
+          transitionState.fizzJustFinished = true
+        }
 
         // Update status bar
         const statusBarTemplate = spriteService.getStatusBarTemplate()
@@ -660,6 +675,11 @@ export const createGameRenderer =
         }
         renderedBitmap = updateSbar(statusData)(renderedBitmap)
         bitmap.data.set(renderedBitmap.data)
+        
+        // Play all accumulated sounds before returning
+        const fizzSoundState = store.getState().sound as SoundUIState
+        playSounds(fizzSoundState)
+        
         return
       }
     }

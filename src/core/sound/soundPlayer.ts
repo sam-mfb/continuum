@@ -1,6 +1,6 @@
 /**
  * Sound playback function for end-of-frame sound processing
- * 
+ *
  * Takes accumulated sound state from Redux and plays all sounds
  * through the sound service at the end of each game loop frame
  */
@@ -14,7 +14,7 @@ const HIGH_PRIORITY_SOUNDS = new Set([SoundType.EXP2_SOUND])
 
 /**
  * Play all accumulated sounds for the current frame
- * 
+ *
  * @param soundState - Current sound state from Redux
  */
 export function playSounds(soundState: SoundUIState): void {
@@ -25,14 +25,14 @@ export function playSounds(soundState: SoundUIState): void {
 
   try {
     const soundService = getSoundService()
-    
+
     // Play discrete sounds - just pass them all to the service
     // The service will internally drop sounds if a high-priority sound is playing
     const discreteSounds = soundState.discrete
-    
+
     for (const sound of discreteSounds) {
       const isHighPriority = HIGH_PRIORITY_SOUNDS.has(sound)
-      
+
       // Map SoundType to the service methods
       switch (sound) {
         case SoundType.FIRE_SOUND:
@@ -71,24 +71,36 @@ export function playSounds(soundState: SoundUIState): void {
           break
       }
     }
-    
+
     // Handle continuous sound transitions
     // These also just get sent - service will drop them if high-priority is playing
-    
+
     // Thrust sound
-    if (soundState.continuous.thrusting && !soundState.lastContinuous.thrusting) {
+    if (
+      soundState.continuous.thrusting &&
+      !soundState.lastContinuous.thrusting
+    ) {
       // Start thrust
       soundService.playShipThrust()
-    } else if (!soundState.continuous.thrusting && soundState.lastContinuous.thrusting) {
+    } else if (
+      !soundState.continuous.thrusting &&
+      soundState.lastContinuous.thrusting
+    ) {
       // Stop thrust
       soundService.playSound('silence')
     }
-    
+
     // Shield sound
-    if (soundState.continuous.shielding && !soundState.lastContinuous.shielding) {
+    if (
+      soundState.continuous.shielding &&
+      !soundState.lastContinuous.shielding
+    ) {
       // Start shield
       soundService.playShipShield()
-    } else if (!soundState.continuous.shielding && soundState.lastContinuous.shielding) {
+    } else if (
+      !soundState.continuous.shielding &&
+      soundState.lastContinuous.shielding
+    ) {
       // Stop shield
       soundService.playSound('silence')
     }
