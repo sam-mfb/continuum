@@ -8,6 +8,8 @@ import { ShipControl } from '@core/ship'
 import { FUELSHIELD, FRADIUS } from '@core/ship'
 import { xyindist } from '@core/shots'
 import { gravityVector } from '@core/shared/gravityVector'
+import { playDiscrete, setThrusting, setShielding } from '@core/sound/soundSlice'
+import { SoundType } from '@core/sound/constants'
 
 type ControlAction = {
   controlsPressed: ShipControl[]
@@ -49,6 +51,11 @@ export const shipControl =
     const updatedShip = updatedState.ship
     const updatedPlanet = updatedState.planet
 
+    // Handle thrust sound - Play.c:491
+    // Set thrusting state based on whether THRUST is pressed and fuel > 0
+    const isThrusting = pressed.has(ShipControl.THRUST) && updatedShip.fuel > 0
+    dispatch(setThrusting(isThrusting))
+
     // Use global position from updated ship state (set by previous frame's containShip)
     // This matches the original game where ship_control uses globals set by previous frame
     const { globalx, globaly } = updatedShip
@@ -88,13 +95,16 @@ export const shipControl =
         for (let i = 0; i < collectedFuels.length; i++) {
           dispatch(statusSlice.actions.scoreFuel())
         }
-        // TODO: Play FUEL_SOUND (Play.c:522)
+        // Play FUEL_SOUND (Play.c:522)
+        dispatch(playDiscrete(SoundType.FUEL_SOUND))
       }
 
-      // TODO: start_sound(SHLD_SOUND)
+      // Shield sound is continuous - Play.c:509
+      dispatch(setShielding(true))
     } else {
       // Deactivate shield when key released or out of fuel
       dispatch(shipSlice.actions.shieldDeactivate())
+      dispatch(setShielding(false))
     }
 
     // Handle firing logic - from original shipControl lines 107-132
@@ -115,6 +125,8 @@ export const shipControl =
             worldwrap: updatedPlanet.worldwrap
           })
         )
+        // Play fire sound - Play.c:551
+        dispatch(playDiscrete(SoundType.FIRE_SOUND))
       }
     } else {
       dispatch(shipSlice.actions.setFiring(false))

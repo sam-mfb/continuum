@@ -73,9 +73,10 @@ import { legalAngle } from '@core/planet'
 import { getGalaxyService } from '@core/galaxy'
 import type { GalaxyHeader } from '@core/galaxy'
 import { containShip } from '@core/shared/containShip'
-import soundReducer, { resetFrame } from '@core/sound/soundSlice'
+import soundReducer, { resetFrame, playDiscrete } from '@core/sound/soundSlice'
 import { playSounds } from '@core/sound/soundPlayer'
 import type { SoundUIState } from '@core/sound/soundSlice'
+import { SoundType } from '@core/sound/constants'
 
 // Game-specific imports
 import gameReducer, {
@@ -453,8 +454,8 @@ export const createGameRenderer =
       store.dispatch(shipSlice.actions.activateShieldFeedback())
       // Note: Shield will deactivate next frame unless SPACE key is held
 
-      // TODO: Play sound (Play.c:791)
-      // playSound(SHLD_SOUND)
+      // Play shield sound as discrete (not continuous) - Play.c:791
+      store.dispatch(playDiscrete(SoundType.SHLD_SOUND))
     }
 
     // Move bunker shots with shield protection check
