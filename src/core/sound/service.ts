@@ -54,6 +54,7 @@ export type SoundService = {
   isPlaying(): boolean
   getCurrentSound(): SoundType | null
   isHighPriorityPlaying(): boolean
+  getCurrentContinuous(): ContinuousSound
 
   // Engine access for test panel
   getEngine(): SoundEngine | null
@@ -69,7 +70,7 @@ let currentVolume = 1.0
 let highPriorityPlaying = false
 
 // Track continuous sounds for resumption after interruption
-type ContinuousSound = 'thruster' | 'shield' | 'none'
+export type ContinuousSound = 'thruster' | 'shield' | 'none'
 let currentContinuous: ContinuousSound = 'none'
 
 /**
@@ -341,6 +342,7 @@ export async function initializeSoundService(initialSettings?: {
       isPlaying: (): boolean => isPlaying,
       getCurrentSound: (): SoundType | null => currentSound,
       isHighPriorityPlaying: (): boolean => highPriorityPlaying,
+      getCurrentContinuous: (): ContinuousSound => currentContinuous,
 
       // Engine access for test panel
       getEngine: (): SoundEngine | null => soundEngine

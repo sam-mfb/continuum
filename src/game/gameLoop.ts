@@ -80,9 +80,9 @@ import soundReducer, {
   setShielding
 } from '@core/sound/soundSlice'
 import { playSounds } from '@core/sound/soundPlayer'
+import { initializeSoundService } from '@core/sound/service'
 import type { SoundUIState } from '@core/sound/soundSlice'
 import { SoundType } from '@core/sound/constants'
-import { initializeSoundService } from '@core/sound/service'
 
 // Game-specific imports
 import gameReducer, {
@@ -674,7 +674,10 @@ export const createGameRenderer =
 
         // Play all accumulated sounds before returning
         const soundState = store.getState().sound
-        playSounds(soundState)
+        playSounds(soundState, {
+          shipDeadCount: finalState.ship.deadCount,
+          transitionActive: transitionState.active
+        })
 
         return
       } else {
@@ -704,7 +707,10 @@ export const createGameRenderer =
 
         // Play all accumulated sounds before returning
         const fizzSoundState = store.getState().sound
-        playSounds(fizzSoundState)
+        playSounds(fizzSoundState, {
+          shipDeadCount: finalState.ship.deadCount,
+          transitionActive: transitionState.active
+        })
 
         return
       }
@@ -1362,7 +1368,10 @@ export const createGameRenderer =
 
     // Play all accumulated sounds for this frame
     const soundState = store.getState().sound
-    playSounds(soundState)
+    playSounds(soundState, {
+      shipDeadCount: finalState.ship.deadCount,
+      transitionActive: transitionState.active
+    })
 
     // Copy rendered bitmap data back to original
     bitmap.data.set(renderedBitmap.data)
