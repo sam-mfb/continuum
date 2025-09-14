@@ -110,7 +110,7 @@ export function playSounds(
           soundService.playShipShieldDiscrete({ highPriority: isHighPriority })
           break
       }
-      // no handling a continuos sound if a discrete one is queued
+      // no handling a continuous sound if a discrete one is queued
       // it will get picked up in the next frame
       return
     }
