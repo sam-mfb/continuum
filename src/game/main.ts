@@ -5,12 +5,13 @@
 import './style.css'
 import React from 'react'
 import { createRoot } from 'react-dom/client'
+import { Provider } from 'react-redux'
 import GameCanvas from './GameCanvas'
 import { createSpriteServiceV2 } from '@core/sprites'
-import { createGameRenderer, getGameStore, getGalaxyHeader } from './gameLoop'
+import { createGameRenderer, getGalaxyHeader } from './gameLoop'
 import { loadLevel } from './levelManager'
 import { setAlignmentMode } from '@/core/shared/alignment'
-import { toggleAlignmentMode } from './gameSlice'
+import { store } from './store'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 const root = createRoot(app)
@@ -22,7 +23,6 @@ async function initGame(): Promise<void> {
     console.log('Sprite service initialized')
 
     const renderer = createGameRenderer(spriteService)
-    const store = getGameStore()
     const galaxyHeader = getGalaxyHeader()
     const totalLevels = galaxyHeader?.planets || 30
 
@@ -37,21 +37,21 @@ async function initGame(): Promise<void> {
       setAlignmentMode(state.game.alignmentMode)
     })
 
-    // Render the game canvas with level selector
+    // Render the game canvas with level selector wrapped in Redux Provider
     root.render(
-      React.createElement(GameCanvas, {
-        renderer,
-        width: 512,
-        height: 342,
-        scale: 2, // Pixel-doubled like the demos
-        fps: 20, // Original Continuum runs at 20 FPS
-        totalLevels,
-        onLevelSelect: (level: number) => {
-          loadLevel(store, level)
-        },
-        onAlignmentToggle: () => {
-          store.dispatch(toggleAlignmentMode())
-        }
+      React.createElement(Provider, {
+        store,
+        children: React.createElement(GameCanvas, {
+          renderer,
+          width: 512,
+          height: 342,
+          scale: 2, // Pixel-doubled like the demos
+          fps: 20, // Original Continuum runs at 20 FPS
+          totalLevels,
+          onLevelSelect: (level: number) => {
+            loadLevel(store, level)
+          }
+        })
       })
     )
 

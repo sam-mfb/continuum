@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
 import type { BitmapRenderer } from '@lib/bitmap'
 import { createMonochromeBitmap, clearBitmap } from '@lib/bitmap'
-import { getAlignmentMode } from '@/core/shared/alignment'
+import { toggleAlignmentMode } from './gameSlice'
+import type { RootState } from './store'
 
 type GameCanvasProps = {
   renderer: BitmapRenderer
@@ -11,7 +13,6 @@ type GameCanvasProps = {
   fps?: number
   totalLevels?: number
   onLevelSelect?: (level: number) => void
-  onAlignmentToggle?: () => void
 }
 
 /**
@@ -25,13 +26,11 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
   scale = 2,
   fps = 20,
   totalLevels = 30,
-  onLevelSelect,
-  onAlignmentToggle
+  onLevelSelect
 }) => {
+  const dispatch = useDispatch()
+  const alignmentMode = useSelector((state: RootState) => state.game.alignmentMode)
   const [selectedLevel, setSelectedLevel] = useState<string>('1')
-  const [isOriginalBackground, setIsOriginalBackground] = useState<boolean>(
-    getAlignmentMode() === 'world-fixed'
-  )
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number>(0)
   const lastFrameTimeRef = useRef<number>(0)
@@ -169,14 +168,8 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     }
   }
 
-  const handleAlignmentToggle = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ): void => {
-    const checked = e.target.checked
-    setIsOriginalBackground(checked)
-    if (onAlignmentToggle) {
-      onAlignmentToggle()
-    }
+  const handleAlignmentToggle = (): void => {
+    dispatch(toggleAlignmentMode())
   }
 
   return (
@@ -228,7 +221,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
             <input
               type="checkbox"
               id="originalBackground"
-              checked={isOriginalBackground}
+              checked={alignmentMode === 'world-fixed'}
               onChange={handleAlignmentToggle}
               style={{
                 cursor: 'pointer'
