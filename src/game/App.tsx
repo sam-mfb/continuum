@@ -1,11 +1,30 @@
 import React from 'react'
+import { Provider } from 'react-redux'
+import GameCanvas from './GameCanvas'
+import { store } from './store'
+import { loadLevel } from './levelManager'
+import type { BitmapRenderer } from '@lib/bitmap'
 
-function App(): React.JSX.Element {
+type AppProps = {
+  renderer: BitmapRenderer
+  totalLevels: number
+}
+
+const App: React.FC<AppProps> = ({ renderer, totalLevels }) => {
   return (
-    <div>
-      <h1>Continuum Game</h1>
-      <p>Production game app - to be implemented</p>
-    </div>
+    <Provider store={store}>
+      <GameCanvas
+        renderer={renderer}
+        width={512}
+        height={342}
+        scale={2} // Pixel-doubled like the demos
+        fps={20} // Original Continuum runs at 20 FPS
+        totalLevels={totalLevels}
+        onLevelSelect={(level: number) => {
+          loadLevel(store, level)
+        }}
+      />
+    </Provider>
   )
 }
 

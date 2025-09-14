@@ -29,7 +29,9 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
   onLevelSelect
 }) => {
   const dispatch = useDispatch()
-  const alignmentMode = useSelector((state: RootState) => state.game.alignmentMode)
+  const alignmentMode = useSelector(
+    (state: RootState) => state.game.alignmentMode
+  )
   const [selectedLevel, setSelectedLevel] = useState<string>('1')
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number>(0)
