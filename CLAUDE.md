@@ -33,7 +33,9 @@ The port makes several adaptations to modern javascript/coding practices:
 ## Development Commands
 
 - `npm run dev`: Start development server
-- `npm run build`: Build for production
+- `npm run game`: Start game dev server
+- `npm run build:dev`: Build dev for production
+- `npm run build:game`: Build game for production
 - `npm run test`: Run tests once
 - `npm run test:watch`: Run tests in watch mode
 - `npm run lint`: Check code style
