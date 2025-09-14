@@ -196,6 +196,26 @@ export const SoundTestPanel: React.FC = () => {
           </button>
           <button
             onClick={() =>
+              playDiscreteSound(() => soundService?.playShipShieldDiscrete())
+            }
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Shield (Discrete)
+          </button>
+          <button
+            onClick={() =>
+              playDiscreteSound(() =>
+                soundService?.playShipShieldDiscrete({ highPriority: true })
+              )
+            }
+            style={styles.highPriorityButton}
+            disabled={!soundService}
+          >
+            Shield Discrete (HP)
+          </button>
+          <button
+            onClick={() =>
               playDiscreteSound(() => soundService?.playShipExplosion())
             }
             style={styles.soundButton}

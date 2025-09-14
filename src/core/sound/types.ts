@@ -28,7 +28,7 @@ export type SoundEngine = {
   setVolume: (volume: number) => void // Set master volume
   start: () => void // Start audio playback
   stop: () => void // Stop audio playback
-  play?: (soundType: GameSoundType, onEnded?: () => void) => void // Play a sound
+  play: (soundType: GameSoundType, onEnded?: () => void) => void // Play a sound
   playTestSound?: (soundType: string) => void // Legacy method for compatibility
   getCurrentSoundType?: () => GameSoundType // Get current sound type
   isPlaying?: () => boolean // Check if playing

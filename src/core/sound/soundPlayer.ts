@@ -96,8 +96,8 @@ export function playSounds(soundState: SoundUIState): void {
           soundService.playEcho({ highPriority: isHighPriority })
           break
         case SoundType.SHLD_SOUND:
-          // When used as discrete (e.g., self-hit feedback)
-          soundService.playShipShield({ highPriority: isHighPriority })
+          // When used as discrete (e.g., self-hit feedback), use short version
+          soundService.playShipShieldDiscrete({ highPriority: isHighPriority })
           break
       }
       // no handling a continuos sound if a discrete one is queued

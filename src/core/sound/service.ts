@@ -18,6 +18,7 @@ export type SoundService = {
   playShipFire(options?: { highPriority?: boolean }): void
   playShipThrust(options?: { highPriority?: boolean }): void
   playShipShield(options?: { highPriority?: boolean }): void
+  playShipShieldDiscrete(options?: { highPriority?: boolean }): void // Short discrete version for auto-trigger
   playShipExplosion(options?: { highPriority?: boolean }): void
 
   // Bunker sounds
@@ -106,7 +107,7 @@ function playSoundByType(
   soundType: GameSoundType,
   options?: { highPriority?: boolean }
 ): void {
-  if (!soundEngine || !soundEngine.play) return
+  if (!soundEngine) return
 
   // Try to resume audio context on any play attempt (in case it's suspended)
   resumeAudioContext()
@@ -156,7 +157,7 @@ function playSoundByType(
     soundEngine.play(soundType, () => {
       highPriorityPlaying = false
       // After high-priority discrete sound completes, resume continuous if needed
-      if (isDiscrete && currentContinuous !== 'none' && soundEngine?.play) {
+      if (isDiscrete && currentContinuous !== 'none' && soundEngine) {
         soundEngine.play(currentContinuous)
       }
     })
@@ -164,7 +165,7 @@ function playSoundByType(
     // For non-high-priority discrete sounds, add callback to resume continuous
     soundEngine.play(soundType, () => {
       // After discrete sound completes, resume whatever continuous should be playing
-      if (currentContinuous !== 'none' && soundEngine?.play) {
+      if (currentContinuous !== 'none' && soundEngine) {
         soundEngine.play(currentContinuous)
       }
     })
@@ -240,6 +241,37 @@ export async function initializeSoundService(initialSettings?: {
         playSound(SoundType.THRU_SOUND, options),
       playShipShield: (options?): void =>
         playSound(SoundType.SHLD_SOUND, options),
+      playShipShieldDiscrete: (options?): void => {
+        // Play shield sound but for a very short duration (30ms)
+        // Used for auto-triggered shield (like self-hit feedback)
+        if (!soundEngine) return
+
+        // Save the current continuous state
+        const savedContinuous = currentContinuous
+
+        // Play shield as a "continuous" sound using existing logic
+        playSoundByType('shield', options)
+
+        // Stop it after 30ms and restore previous continuous state
+        setTimeout(() => {
+          if (soundEngine) {
+            // If this was high-priority, clear the flag since we're ending it early
+            if (options?.highPriority) {
+              highPriorityPlaying = false
+            }
+
+            // Restore the previous continuous state
+            currentContinuous = savedContinuous
+            if (savedContinuous !== 'none') {
+              // Resume the previous continuous sound
+              soundEngine.play(savedContinuous)
+            } else {
+              // Stop playing
+              soundEngine.play('silence')
+            }
+          }
+        }, 30)
+      },
       playShipExplosion: (options?): void =>
         playSound(SoundType.EXP2_SOUND, options),
 
