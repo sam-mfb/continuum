@@ -138,8 +138,10 @@ export const shipControl =
             worldwrap: updatedPlanet.worldwrap
           })
         )
-        // Play fire sound - Play.c:551
-        dispatch(playDiscrete(SoundType.FIRE_SOUND))
+        // Play fire sound only if not shielding - Play.c:551
+        if (!updatedShip.shielding) {
+          dispatch(playDiscrete(SoundType.FIRE_SOUND))
+        }
       }
     } else {
       dispatch(shipSlice.actions.setFiring(false))
