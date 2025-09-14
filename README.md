@@ -2,17 +2,31 @@
 
 ## Overview
 
-This project is an attempt to make a fairly exact copy of the 68000 Mac game Continuum for the web.
-
-The idea is to not only make the game playable in a browser, but to use the original assets and the core original game play logic. The final should have the same look and feel as the original.
+This is a browser port of the classic Macintosh game Continuum.
 
 It is based on the original source code and related files released publicly by the original developers [here](https://www.ski-epic.com/continuum_downloads/).
 
-All of the files are in the `orig` folder in this repository.
+All of the original developers files are in the `orig` folder in this repository.
 
-## Status
+You can try it out live at [continuumjs.com](https://continuumjs.com).
 
-There is a wrapper React app that essentially shows/tests the various pieces that are working so far. To see it, clone the repo and run `npm install && npm run dev`
+## Project Origin
+
+Continuum was one of my favorite games on my first computer -- a Macintosh Plus. A smooth-scrolling, physics-based "asteroids in a maze" type of game, I spent hours playing the game, trying to beat my high score, defining levels, etc. It was also one of my first, if nnot my actual first, experiences with a high quality shareware (ok, "beerware") games.
+
+In more recent years I've tried to play it on an emulator, like Basilisk II or vMac, and it works, mostly. (One of the easiest ways to try that experience is using the MACE project which as self-contained emulator package of the game [here](https://mace.home.blog/files/).) There are some minor glitches, but the biggest annoyance with emulation is that the gray cross-hatch background looks terrible when it scrolls on a modern LCD screen.
+
+About five years ago, I learned that the original developers, Brian and Randy Wilson, had released the source code into the public domain. I was just getting back into javascript programming at the time and I thought it would be fun to see if I could port it. After a few days, I was able to build a decoder for the galaxy files and use that to display basic maps of the game levels. But when I started to dig into the actual game play and rendering, I realized there was a lot of 68k assembly that was going to be a bear to port. That, and I was getting pretty busy caused me to shelve the project.
+
+Fast-forward to 2025 and I'm a better javascript/typescript programmer but, more importantly, we have LLM-assisted coding. On a whim, I wondered what would happen if I tried to get Claude Code to help me with the project, and, well, here we are. This isn't a "vibe-coded" project, but it was _heavily_ AI-assisted -- especially the ports of the 68k assembler parts.
+
+## Motivation and Goals
+
+I wanted to make a port that moved the game onto a modern browser, but also maintained the overall structure, logic, and "feel" of the original game's code. I actually learned to program on Think C on a 68K Mac, and so diving back into bit-packing, off-screen graphics worlds, and bitwise operations was a bit of a nostalgia trip. More than that, it's just amazing to realize what developers at the time--and this game's developer in particular--had to do to get an optimized, compact game to run on sub-10mhz hardware. So, I've tried to make it so that reading the modern game's code gives you a fairly accurate sense of what the original code was like.
+
+That said, I have some ambition of some day maybe expanding the game, modernizing the sound/graphics etc., and so I wanted to follow some modern development practices that would make the game easier to maintain. In particular, I wanted to keep things modular, have good seperation of concerns, and following general functional and immutable-data paradigms.
+
+In short, the final code is _largely_ faithfuly to the original
 
 ### 1. Plant Parser
 
