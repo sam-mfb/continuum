@@ -8,6 +8,8 @@
  * - Simpler, more consistent interface
  */
 
+import { expandTitlePage } from '@dev/art/utils'
+
 import { extractAllSprites } from '@core/figs'
 import { BunkerKind } from '@core/figs/types'
 import type { AllSprites } from '@core/figs/types'
@@ -129,9 +131,6 @@ export async function createSpriteServiceV2(): Promise<SpriteServiceV2> {
   }
 
   const statusBarBuffer = await statusBarResponse.arrayBuffer()
-
-  // Import expandTitlePage for decompression
-  const { expandTitlePage } = await import('@dev/art/utils')
 
   // Decompress status bar (24 rows as per SBARHT)
   const statusBarData = expandTitlePage(statusBarBuffer, 24)

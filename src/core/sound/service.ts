@@ -130,7 +130,11 @@ function playSoundByType(
   // Check if high-priority sound is blocking
   // High-priority sounds block normal sounds but can be interrupted by other high-priority sounds
   // Exception: 'silence' is always allowed (used to stop sounds)
-  if (highPriorityPlaying && soundType !== 'silence' && !options?.highPriority) {
+  if (
+    highPriorityPlaying &&
+    soundType !== 'silence' &&
+    !options?.highPriority
+  ) {
     return
   }
 
@@ -138,7 +142,6 @@ function playSoundByType(
   if (soundType === 'silence' && highPriorityPlaying) {
     highPriorityPlaying = false
   }
-
 
   // Start the engine first if not already playing
   if (!isPlaying) {

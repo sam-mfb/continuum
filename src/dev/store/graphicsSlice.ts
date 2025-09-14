@@ -1,5 +1,11 @@
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import {
+  macPaintToImageData,
+  expandTitlePageToImageData,
+  rawBitmapToImageData
+} from '@dev/art/utils'
+import { continuumTitleToImageData as continuumTitlePictToImageData } from '@dev/art/continuumTitlePict'
 
 type GraphicsState = {
   availableFiles: string[]
@@ -48,16 +54,6 @@ export const loadGraphicsFile = createAsyncThunk(
     }
 
     const arrayBuffer = await response.arrayBuffer()
-
-    // Dynamically import the appropriate decoder
-    const {
-      macPaintToImageData,
-      expandTitlePageToImageData,
-      rawBitmapToImageData
-    } = await import('@dev/art/utils')
-
-    const { continuumTitleToImageData: continuumTitlePictToImageData } =
-      await import('@dev/art/continuumTitlePict')
 
     let imageData: ImageData
 

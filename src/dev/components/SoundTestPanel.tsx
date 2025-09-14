@@ -433,8 +433,14 @@ export const SoundTestPanel: React.FC = () => {
             <strong>Testing Scenarios:</strong>
             <ul>
               <li>Start thrust, then shield - observe switching behavior</li>
-              <li>Play a normal sound while thrust is on - thrust should resume after</li>
-              <li>Play an HP sound - it blocks normal sounds but not other HP sounds</li>
+              <li>
+                Play a normal sound while thrust is on - thrust should resume
+                after
+              </li>
+              <li>
+                Play an HP sound - it blocks normal sounds but not other HP
+                sounds
+              </li>
               <li>Test fuel collection (HP) while shield is active</li>
             </ul>
           </li>
