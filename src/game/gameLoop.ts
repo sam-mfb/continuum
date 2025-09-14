@@ -676,7 +676,7 @@ export const createGameRenderer =
         const soundState = store.getState().sound
         playSounds(soundState, {
           shipDeadCount: finalState.ship.deadCount,
-          transitionActive: transitionState.active
+          fizzActive: transitionState.active && transitionState.preDelayFrames <= 0
         })
 
         return
@@ -709,7 +709,7 @@ export const createGameRenderer =
         const fizzSoundState = store.getState().sound
         playSounds(fizzSoundState, {
           shipDeadCount: finalState.ship.deadCount,
-          transitionActive: transitionState.active
+          fizzActive: transitionState.active && transitionState.preDelayFrames <= 0
         })
 
         return
@@ -1370,7 +1370,7 @@ export const createGameRenderer =
     const soundState = store.getState().sound
     playSounds(soundState, {
       shipDeadCount: finalState.ship.deadCount,
-      transitionActive: transitionState.active
+      fizzActive: transitionState.active && transitionState.preDelayFrames <= 0
     })
 
     // Copy rendered bitmap data back to original
