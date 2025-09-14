@@ -84,6 +84,12 @@ It's a vite/React project. You can run it with:
 npm run game
 ```
 
+Or build it with
+
+```bash
+npm run build:game
+```
+
 There's also a development harness of sorts I used to test out various pieces of things as I was putting it together. You can see that by running:
 
 ```bash
