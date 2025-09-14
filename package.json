@@ -16,8 +16,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --noEmit",
-    "sound:perf": "tsx src/sound/scripts/performance-benchmark.ts"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.8.2",

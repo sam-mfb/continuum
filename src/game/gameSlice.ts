@@ -9,6 +9,7 @@ import {
   GAME_OVER_MESSAGE,
   LEVEL_COMPLETE_MESSAGE
 } from './constants'
+import type { AlignmentMode } from '@/core/shared/alignment'
 
 export type GameState = {
   // Level progression
@@ -22,6 +23,9 @@ export type GameState = {
 
   // Messages
   statusMessage: string
+
+  // Display settings
+  alignmentMode: AlignmentMode
 }
 
 const initialState: GameState = {
@@ -30,7 +34,8 @@ const initialState: GameState = {
   galaxyLoaded: false,
   gameOver: false,
   levelComplete: false,
-  statusMessage: ''
+  statusMessage: '',
+  alignmentMode: 'screen-fixed' // Default to screen-fixed (not original)
 }
 
 export const gameSlice = createSlice({
@@ -75,6 +80,16 @@ export const gameSlice = createSlice({
 
     clearStatusMessage: state => {
       state.statusMessage = ''
+    },
+
+    // Display settings
+    setAlignmentMode: (state, action: PayloadAction<AlignmentMode>) => {
+      state.alignmentMode = action.payload
+    },
+
+    toggleAlignmentMode: state => {
+      state.alignmentMode =
+        state.alignmentMode === 'world-fixed' ? 'screen-fixed' : 'world-fixed'
     }
   }
 })
@@ -86,7 +101,9 @@ export const {
   triggerGameOver,
   resetGame,
   setStatusMessage,
-  clearStatusMessage
+  clearStatusMessage,
+  setAlignmentMode,
+  toggleAlignmentMode
 } = gameSlice.actions
 
 export default gameSlice.reducer

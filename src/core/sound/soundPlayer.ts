@@ -45,7 +45,7 @@ export function playSounds(
   soundState: SoundUIState,
   syncCheckContext?: {
     shipDeadCount: number
-    transitionActive: boolean
+    fizzActive: boolean // True only during actual fizz animation, not pre-delay
   }
 ): void {
   // Don't play sounds if disabled
@@ -156,11 +156,8 @@ export function playSounds(
       // Determine what continuous sound SHOULD be playing
       let expectedContinuous: ContinuousSound = 'none'
 
-      // During death or transitions, no continuous sounds should play
-      if (
-        syncCheckContext.shipDeadCount > 0 ||
-        syncCheckContext.transitionActive
-      ) {
+      // During death or fizz animation, no continuous sounds should play
+      if (syncCheckContext.shipDeadCount > 0 || syncCheckContext.fizzActive) {
         expectedContinuous = 'none'
       } else if (soundState.continuous.shielding) {
         // Shield takes priority over thrust

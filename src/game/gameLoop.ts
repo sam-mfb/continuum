@@ -25,14 +25,8 @@ import {
   clearBunkShots
 } from '@core/shots'
 import { ShipControl, shipControl, shipSlice } from '@core/ship'
-import { configureStore } from '@reduxjs/toolkit'
-import { planetSlice } from '@core/planet'
-import { screenSlice } from '@core/screen'
-import { wallsSlice } from '@core/walls'
-import { spritesSlice } from '@dev/store/spritesSlice'
 import { statusSlice } from '@core/status'
-import { explosionsSlice } from '@core/explosions'
-import { SCRWTH, VIEWHT } from '@core/screen'
+import { SCRWTH, VIEWHT, screenSlice } from '@core/screen'
 import type { SpriteServiceV2 } from '@core/sprites'
 import { SCENTER, type BunkerKind } from '@core/figs/types'
 import { flameOn } from '@core/ship'
@@ -73,7 +67,7 @@ import { legalAngle } from '@core/planet'
 import { getGalaxyService } from '@core/galaxy'
 import type { GalaxyHeader } from '@core/galaxy'
 import { containShip } from '@core/shared/containShip'
-import soundReducer, {
+import {
   resetFrame,
   playDiscrete,
   setThrusting,
@@ -85,7 +79,7 @@ import type { SoundUIState } from '@core/sound/soundSlice'
 import { SoundType } from '@core/sound/constants'
 
 // Game-specific imports
-import gameReducer, {
+import {
   loadGalaxyHeader,
   markLevelComplete,
   triggerGameOver,
@@ -98,22 +92,7 @@ import {
   type ExtendedGameState
 } from './levelManager'
 import { SHIPSTART } from './constants'
-
-// Configure store with all slices including game
-const store = configureStore({
-  reducer: {
-    ship: shipSlice.reducer,
-    planet: planetSlice.reducer,
-    screen: screenSlice.reducer,
-    shots: shotsSlice.reducer,
-    walls: wallsSlice.reducer,
-    sprites: spritesSlice.reducer,
-    status: statusSlice.reducer,
-    explosions: explosionsSlice.reducer,
-    game: gameReducer,
-    sound: soundReducer
-  }
-})
+import { store } from './store'
 
 // Track initialization state
 let initializationComplete = false
@@ -676,7 +655,8 @@ export const createGameRenderer =
         const soundState = store.getState().sound
         playSounds(soundState, {
           shipDeadCount: finalState.ship.deadCount,
-          transitionActive: transitionState.active
+          fizzActive:
+            transitionState.active && transitionState.preDelayFrames <= 0
         })
 
         return
@@ -709,7 +689,8 @@ export const createGameRenderer =
         const fizzSoundState = store.getState().sound
         playSounds(fizzSoundState, {
           shipDeadCount: finalState.ship.deadCount,
-          transitionActive: transitionState.active
+          fizzActive:
+            transitionState.active && transitionState.preDelayFrames <= 0
         })
 
         return
@@ -1370,7 +1351,7 @@ export const createGameRenderer =
     const soundState = store.getState().sound
     playSounds(soundState, {
       shipDeadCount: finalState.ship.deadCount,
-      transitionActive: transitionState.active
+      fizzActive: transitionState.active && transitionState.preDelayFrames <= 0
     })
 
     // Copy rendered bitmap data back to original
@@ -1399,8 +1380,8 @@ export const createGameRenderer =
     }
   }
 
-// Export store and galaxy header for level jumping
-export const getGameStore = (): typeof store => store
+// Export galaxy header for level jumping
+export { store as getGameStore } from './store'
 export const getGalaxyHeader = (): GalaxyHeader | null => {
   const state = store.getState() as ExtendedGameState
   return state.game.galaxyHeader
