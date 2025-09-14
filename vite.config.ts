@@ -7,8 +7,9 @@ const isGameMode = process.env.VITE_APP_MODE === 'game'
 export default defineConfig({
   plugins: [react()],
   root: isGameMode ? 'src/game' : 'src/dev',
-  // Set base path for GitHub Pages deployment
-  base: process.env.GITHUB_PAGES ? '/continuum/' : '/',
+  // Custom domain uses '/', github.io subdomain would use '/continuum/'
+  // Since we're using continuumjs.com, we always use '/'
+  base: '/',
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),

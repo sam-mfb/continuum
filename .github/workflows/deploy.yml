@@ -36,9 +36,6 @@ jobs:
 
       - name: Build game
         run: npm run build:game
-        env:
-          # Set base path for GitHub Pages (repo name)
-          GITHUB_PAGES: true
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
