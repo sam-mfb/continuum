@@ -7,7 +7,7 @@ pnpm-debug.log*
 
 # Build outputs
 dist/
-dist-dev/
+dist-*/
 build/
 
 # Environment variables
