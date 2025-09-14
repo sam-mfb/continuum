@@ -15,58 +15,53 @@ import { toggleAlignmentMode } from './gameSlice'
 const app = document.querySelector<HTMLDivElement>('#app')!
 const root = createRoot(app)
 
-// Initialize sprite service
-createSpriteServiceV2()
-  .then(spriteService => {
+async function initGame(): Promise<void> {
+  try {
+    // Initialize sprite service
+    const spriteService = await createSpriteServiceV2()
     console.log('Sprite service initialized')
 
     const renderer = createGameRenderer(spriteService)
+    const store = getGameStore()
+    const galaxyHeader = getGalaxyHeader()
+    const totalLevels = galaxyHeader?.planets || 30
 
-    // Wait a bit for the game to initialize and load galaxy data
-    setTimeout(() => {
-      const store = getGameStore()
-      const galaxyHeader = getGalaxyHeader()
-      const totalLevels = galaxyHeader?.planets || 30
+    // Set up alignment mode subscription
+    // Set initial alignment mode from Redux state
+    const initialState = store.getState()
+    setAlignmentMode(initialState.game.alignmentMode)
 
-      // Set up alignment mode subscription
-      if (store) {
-        // Set initial alignment mode from Redux state
-        const initialState = store.getState()
-        setAlignmentMode(initialState.game.alignmentMode)
+    // Subscribe to alignment mode changes
+    store.subscribe(() => {
+      const state = store.getState()
+      setAlignmentMode(state.game.alignmentMode)
+    })
 
-        // Subscribe to alignment mode changes
-        store.subscribe(() => {
-          const state = store.getState()
-          setAlignmentMode(state.game.alignmentMode)
-        })
-      }
-
-      // Render the game canvas with level selector
-      root.render(
-        React.createElement(GameCanvas, {
-          renderer,
-          width: 512,
-          height: 342,
-          scale: 2, // Pixel-doubled like the demos
-          fps: 20, // Original Continuum runs at 20 FPS
-          totalLevels,
-          onLevelSelect: (level: number) => {
-            if (store) {
-              loadLevel(store, level)
-            }
-          },
-          onAlignmentToggle: () => {
-            if (store) {
-              store.dispatch(toggleAlignmentMode())
-            }
-          }
-        })
-      )
-    }, 100)
+    // Render the game canvas with level selector
+    root.render(
+      React.createElement(GameCanvas, {
+        renderer,
+        width: 512,
+        height: 342,
+        scale: 2, // Pixel-doubled like the demos
+        fps: 20, // Original Continuum runs at 20 FPS
+        totalLevels,
+        onLevelSelect: (level: number) => {
+          loadLevel(store, level)
+        },
+        onAlignmentToggle: () => {
+          store.dispatch(toggleAlignmentMode())
+        }
+      })
+    )
 
     console.log('Game started!')
-  })
-  .catch(error => {
+  } catch (error) {
     console.error('Failed to initialize game:', error)
     app.innerHTML = `<div style="color: red; padding: 20px;">Failed to initialize game: ${error}</div>`
-  })
+  }
+}
+
+// Start the game
+initGame()
+
