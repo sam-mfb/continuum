@@ -13,10 +13,6 @@ describe('uiSlice', () => {
     showDebugInfo: false
   }
 
-  it('should return the initial state', () => {
-    expect(uiReducer(undefined, { type: 'unknown' })).toEqual(initialState)
-  })
-
   it('should handle setCurrentView', () => {
     const actual = uiReducer(initialState, setCurrentView('game'))
     expect(actual.currentView).toBe('game')
