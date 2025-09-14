@@ -157,10 +157,7 @@ export function playSounds(
       let expectedContinuous: ContinuousSound = 'none'
 
       // During death or fizz animation, no continuous sounds should play
-      if (
-        syncCheckContext.shipDeadCount > 0 ||
-        syncCheckContext.fizzActive
-      ) {
+      if (syncCheckContext.shipDeadCount > 0 || syncCheckContext.fizzActive) {
         expectedContinuous = 'none'
       } else if (soundState.continuous.shielding) {
         // Shield takes priority over thrust

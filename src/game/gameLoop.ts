@@ -676,7 +676,8 @@ export const createGameRenderer =
         const soundState = store.getState().sound
         playSounds(soundState, {
           shipDeadCount: finalState.ship.deadCount,
-          fizzActive: transitionState.active && transitionState.preDelayFrames <= 0
+          fizzActive:
+            transitionState.active && transitionState.preDelayFrames <= 0
         })
 
         return
@@ -709,7 +710,8 @@ export const createGameRenderer =
         const fizzSoundState = store.getState().sound
         playSounds(fizzSoundState, {
           shipDeadCount: finalState.ship.deadCount,
-          fizzActive: transitionState.active && transitionState.preDelayFrames <= 0
+          fizzActive:
+            transitionState.active && transitionState.preDelayFrames <= 0
         })
 
         return

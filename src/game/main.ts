@@ -10,6 +10,7 @@ import { createSpriteServiceV2 } from '@core/sprites'
 import { createGameRenderer, getGameStore, getGalaxyHeader } from './gameLoop'
 import { loadLevel } from './levelManager'
 import { setAlignmentMode } from '@/core/shared/alignment'
+import { toggleAlignmentMode } from './gameSlice'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 const root = createRoot(app)
@@ -19,14 +20,26 @@ createSpriteServiceV2()
   .then(spriteService => {
     console.log('Sprite service initialized')
 
-    setAlignmentMode('screen-fixed')
-
     const renderer = createGameRenderer(spriteService)
 
     // Wait a bit for the game to initialize and load galaxy data
     setTimeout(() => {
+      const store = getGameStore()
       const galaxyHeader = getGalaxyHeader()
       const totalLevels = galaxyHeader?.planets || 30
+
+      // Set up alignment mode subscription
+      if (store) {
+        // Set initial alignment mode from Redux state
+        const initialState = store.getState()
+        setAlignmentMode(initialState.game.alignmentMode)
+
+        // Subscribe to alignment mode changes
+        store.subscribe(() => {
+          const state = store.getState()
+          setAlignmentMode(state.game.alignmentMode)
+        })
+      }
 
       // Render the game canvas with level selector
       root.render(
@@ -38,9 +51,13 @@ createSpriteServiceV2()
           fps: 20, // Original Continuum runs at 20 FPS
           totalLevels,
           onLevelSelect: (level: number) => {
-            const store = getGameStore()
             if (store) {
               loadLevel(store, level)
+            }
+          },
+          onAlignmentToggle: () => {
+            if (store) {
+              store.dispatch(toggleAlignmentMode())
             }
           }
         })
