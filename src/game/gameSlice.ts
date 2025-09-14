@@ -68,7 +68,6 @@ export const gameSlice = createSlice({
       state.statusMessage = ''
     },
 
-
     // Status message
     setStatusMessage: (state, action: PayloadAction<string>) => {
       state.statusMessage = action.payload

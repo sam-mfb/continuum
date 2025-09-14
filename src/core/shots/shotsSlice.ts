@@ -40,7 +40,8 @@ const initializeShot = (): ShotRec => ({
   strafedir: 0,
   btime: 0,
   hitlineId: '',
-  justDied: false
+  justDied: false,
+  origin: { x: 0, y: 0 }
 })
 
 const initialState: ShotsState = {
@@ -106,7 +107,8 @@ export const shotsSlice = createSlice({
           btime: 0,
           strafedir: -1,
           hitlineId: '',
-          justDied: false
+          justDied: false,
+          origin: { x: globalx, y: globaly }
         }
 
         // Calculate collision parameters using setLife

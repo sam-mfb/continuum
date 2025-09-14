@@ -60,10 +60,13 @@ export type BufferManager = {
   /**
    * Switch to a different sample generator
    *
+   * @param generator The new generator to use
+   * @param onSoundEnded Optional callback to fire when the sound ends
+   *
    * Note: Existing buffered data remains unchanged. Only affects
    * future generation when more samples are needed.
    */
-  setGenerator(generator: SampleGenerator): void
+  setGenerator(generator: SampleGenerator, onSoundEnded?: () => void): void
 
   /**
    * Get current buffer state for debugging/testing
@@ -103,6 +106,8 @@ export const createBufferManager = (
   let readPosition = 0
   let currentGenerator = generator
   let currentVolume = 1.0 // Master volume (0.0 to 1.0)
+  let onSoundEnded: (() => void) | undefined = undefined
+  let hasReportedEnded = false
 
   /**
    * Get the number of available samples in the buffer
@@ -130,6 +135,14 @@ export const createBufferManager = (
    */
   const generateChunk = (): void => {
     const chunk = currentGenerator.generateChunk()
+
+    // Check if the sound has ended (for discrete sounds)
+    if (!hasReportedEnded && currentGenerator.hasEnded?.()) {
+      hasReportedEnded = true
+      if (onSoundEnded) {
+        onSoundEnded()
+      }
+    }
 
     if (chunk.length !== CHUNK_SIZE) {
       throw new Error(
@@ -199,8 +212,13 @@ export const createBufferManager = (
   /**
    * Switch to a different sample generator
    */
-  const setGenerator = (generator: SampleGenerator): void => {
+  const setGenerator = (
+    generator: SampleGenerator,
+    onEnded?: () => void
+  ): void => {
     currentGenerator = generator
+    onSoundEnded = onEnded
+    hasReportedEnded = false
   }
 
   /**

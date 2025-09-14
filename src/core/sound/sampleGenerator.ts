@@ -38,6 +38,12 @@ export type SampleGenerator = {
    * Reset the generator to its initial state
    */
   reset(): void
+
+  /**
+   * Check if the sound has ended (for discrete sounds)
+   * @returns true if the sound has completed its pattern, false for continuous sounds
+   */
+  hasEnded(): boolean
 }
 
 /**
@@ -58,6 +64,11 @@ export const buildSilenceGenerator: SampleGeneratorBuilder = () => {
 
     reset(): void {
       // No state to reset
+    },
+
+    hasEnded(): boolean {
+      // Silence never ends, it's continuous
+      return false
     }
   }
 }
@@ -95,6 +106,11 @@ export const buildSineWaveGenerator = (frequency: number): SampleGenerator => {
 
     reset(): void {
       phase = 0
+    },
+
+    hasEnded(): boolean {
+      // Sine wave is continuous
+      return false
     }
   }
 }
@@ -117,6 +133,11 @@ export const buildWhiteNoiseGenerator: SampleGeneratorBuilder = () => {
 
     reset(): void {
       // No state to reset (each chunk is independent)
+    },
+
+    hasEnded(): boolean {
+      // White noise is continuous
+      return false
     }
   }
 }
@@ -176,6 +197,11 @@ export const buildMusicalIntervalGenerator = (
       currentIndex = 0
       samplesGenerated = 0
       generators.forEach(gen => gen.reset())
+    },
+
+    hasEnded(): boolean {
+      // Musical intervals are continuous
+      return false
     }
   }
 }

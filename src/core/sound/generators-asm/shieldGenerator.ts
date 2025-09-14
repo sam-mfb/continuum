@@ -171,9 +171,15 @@ export const createShieldGenerator = (): SampleGenerator => {
     shielding = false
   }
 
+  const hasEnded = (): boolean => {
+    // Shield is a continuous sound, never ends while active
+    return false
+  }
+
   return {
     generateChunk,
     reset,
+    hasEnded,
     start,
     stop
   } as SampleGenerator & { start: () => void; stop: () => void }

@@ -15,7 +15,7 @@ type UIState = {
 }
 
 const initialState: UIState = {
-  currentView: 'game',
+  currentView: 'sound',
   isGamePaused: false,
   showDebugInfo: false
 }

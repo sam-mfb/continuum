@@ -73,6 +73,16 @@ import { legalAngle } from '@core/planet'
 import { getGalaxyService } from '@core/galaxy'
 import type { GalaxyHeader } from '@core/galaxy'
 import { containShip } from '@core/shared/containShip'
+import soundReducer, {
+  resetFrame,
+  playDiscrete,
+  setThrusting,
+  setShielding
+} from '@core/sound/soundSlice'
+import { playSounds } from '@core/sound/soundPlayer'
+import { initializeSoundService } from '@core/sound/service'
+import type { SoundUIState } from '@core/sound/soundSlice'
+import { SoundType } from '@core/sound/constants'
 
 // Game-specific imports
 import gameReducer, {
@@ -100,7 +110,8 @@ const store = configureStore({
     sprites: spritesSlice.reducer,
     status: statusSlice.reducer,
     explosions: explosionsSlice.reducer,
-    game: gameReducer
+    game: gameReducer,
+    sound: soundReducer
   }
 })
 
@@ -116,6 +127,7 @@ type TransitionState = {
   fromBitmap: Uint8Array | null
   toBitmap: Uint8Array | null
   delayFrames: number
+  fizzJustFinished: boolean // True for one frame when fizz animation completes
 }
 
 const transitionState: TransitionState = {
@@ -124,7 +136,8 @@ const transitionState: TransitionState = {
   fizzTransition: null,
   fromBitmap: null,
   toBitmap: null,
-  delayFrames: 0
+  delayFrames: 0,
+  fizzJustFinished: false
 }
 
 const MICO_DELAY_FRAMES = 45 // Delay before transition starts (MICODELAY from GW.h)
@@ -135,6 +148,21 @@ const FIZZ_DURATION = 26 // Based on measurements of fizz time on a Mac Plus
 const initializeGame = async (): Promise<void> => {
   try {
     console.log('Starting game initialization...')
+
+    // Initialize sound service
+    console.log('Initializing sound service...')
+    try {
+      // Get initial sound settings from our store
+      const soundState = store.getState().sound as SoundUIState
+      await initializeSoundService({
+        volume: soundState.volume,
+        enabled: soundState.enabled
+      })
+      console.log('Sound service initialized successfully')
+    } catch (soundError) {
+      console.warn('Failed to initialize sound service:', soundError)
+      // Continue without sound - game is still playable
+    }
 
     // Load the release galaxy file using the service
     console.log('Loading galaxy file...')
@@ -233,6 +261,9 @@ export const createGameRenderer =
     // NOW get the state for this frame - after any respawn updates
     const state = store.getState() as ExtendedGameState
 
+    // Reset sound accumulator for new frame
+    store.dispatch(resetFrame())
+
     // Decrement bonus countdown every 10 frames (Play.c:197-201)
     // Original: bonuscount decrements each frame from 10 to 0
     // When it hits 0 (after 10 frames), planetbonus -= 10 and bonuscount resets
@@ -246,10 +277,7 @@ export const createGameRenderer =
     // Game over transitions still need handling (TODO: implement game over fizz)
 
     // Check for level completion (only if not already transitioning)
-    if (
-      !transitionState.active &&
-      checkLevelComplete(state)
-    ) {
+    if (!transitionState.active && checkLevelComplete(state)) {
       console.log(`Level ${state.game.currentLevel} complete!`)
 
       // Award bonus points (Play.c:107 - score_plus(planetbonus))
@@ -281,7 +309,7 @@ export const createGameRenderer =
     ) {
       console.log('Game Over - All lives lost')
       store.dispatch(triggerGameOver())
-      
+
       // Reset everything for a new game
       store.dispatch(resetGame())
       store.dispatch(shipSlice.actions.setLives(SHIPSTART))
@@ -295,16 +323,18 @@ export const createGameRenderer =
     let on_right_side: boolean
 
     if (state.ship.deadCount === 0) {
-      // Only handle controls and move ship if alive
-      // shipControl will read globalx/globaly from ship state (set by previous frame's containShip)
-      store.dispatch(
-        shipControl({
-          controlsPressed: getPressedControls(frame.keysDown)
-        })
-      )
+      // Only handle controls if not in fizz transition (but allow during pre-delay)
+      if (!transitionState.active || transitionState.preDelayFrames > 0) {
+        // shipControl will read globalx/globaly from ship state (set by previous frame's containShip)
+        store.dispatch(
+          shipControl({
+            controlsPressed: getPressedControls(frame.keysDown)
+          })
+        )
 
-      // Move ship (Play.c:216 - move_ship())
-      store.dispatch(shipSlice.actions.moveShip())
+        // Move ship (Play.c:216 - move_ship())
+        store.dispatch(shipSlice.actions.moveShip())
+      }
 
       // Apply containment after movement (Play.c:394-457 - contain_ship())
       // This handles screen wrapping and calculates global position correctly
@@ -376,6 +406,11 @@ export const createGameRenderer =
       const screenr = state.screen.screenx + SCRWTH
       const screenb = state.screen.screeny + VIEWHT
 
+      // Store current shot count to detect if a bunker fired
+      const prevShotCount = state.shots.bunkshots.filter(
+        s => s.lifecount > 0
+      ).length
+
       store.dispatch(
         bunkShoot({
           screenx: state.screen.screenx,
@@ -390,6 +425,47 @@ export const createGameRenderer =
           globaly: globaly
         })
       )
+
+      // Check if a bunker actually fired by comparing shot counts
+      const newState = store.getState()
+      const newShotCount = newState.shots.bunkshots.filter(
+        s => s.lifecount > 0
+      ).length
+
+      if (newShotCount > prevShotCount) {
+        // A bunker fired - find the new shot and use its origin for proximity
+        const newShot = newState.shots.bunkshots.find(
+          (s, i) =>
+            s.lifecount > 0 &&
+            (!state.shots.bunkshots[i] ||
+              state.shots.bunkshots[i]!.lifecount === 0)
+        )
+
+        if (newShot && newShot.origin) {
+          const SOFTBORDER = 200 // From GW.h
+          const { x: bunkx, y: bunky } = newShot.origin
+
+          // Check if bunker is visible on screen
+          if (
+            bunkx > state.screen.screenx &&
+            bunkx < screenr &&
+            bunky > state.screen.screeny &&
+            bunky < screenb
+          ) {
+            store.dispatch(playDiscrete(SoundType.BUNK_SOUND))
+          }
+          // Check if bunker is within SOFTBORDER of screen
+          else if (
+            bunkx > state.screen.screenx - SOFTBORDER &&
+            bunkx < screenr + SOFTBORDER &&
+            bunky > state.screen.screeny - SOFTBORDER &&
+            bunky < screenb + SOFTBORDER
+          ) {
+            store.dispatch(playDiscrete(SoundType.SOFT_SOUND))
+          }
+        }
+        // 'distant' bunkers make no sound
+      }
     }
 
     store.dispatch(
@@ -419,6 +495,9 @@ export const createGameRenderer =
           // Note: killBunker returns early for difficult bunkers that survive
           const updatedBunker = store.getState().planet.bunkers[bunkerIndex]
           if (updatedBunker && !updatedBunker.alive) {
+            // Play bunker explosion sound - Play.c:368
+            store.dispatch(playDiscrete(SoundType.EXP1_SOUND))
+
             // Award score for bunker destruction (Play.c:365-366)
             store.dispatch(
               statusSlice.actions.scoreBunker({
@@ -446,8 +525,8 @@ export const createGameRenderer =
       store.dispatch(shipSlice.actions.activateShieldFeedback())
       // Note: Shield will deactivate next frame unless SPACE key is held
 
-      // TODO: Play sound (Play.c:791)
-      // playSound(SHLD_SOUND)
+      // Play shield sound as discrete (not continuous) - Play.c:791
+      store.dispatch(playDiscrete(SoundType.SHLD_SOUND))
     }
 
     // Move bunker shots with shield protection check
@@ -500,6 +579,13 @@ export const createGameRenderer =
         // Fall through to normal rendering
       } else if (!transitionState.fizzTransition) {
         // Pre-delay complete, initialize the fizz transition on first frame
+        // Play fizz start sound - Play.c:1248
+        store.dispatch(playDiscrete(SoundType.FIZZ_SOUND))
+
+        // Stop any continuous sounds when level ends
+        store.dispatch(setThrusting(false))
+        store.dispatch(setShielding(false))
+
         // Create the "from" bitmap - current game state
         const fromBitmap = cloneBitmap(bitmap)
         // Render the current game state (will be done below)
@@ -541,6 +627,14 @@ export const createGameRenderer =
         // We'll create the actual fizz transition after rendering the current frame
         // Fall through to render the current game state first
       } else if (transitionState.fizzTransition.isComplete) {
+        // Check if this is the first frame after completion
+        if (transitionState.fizzJustFinished) {
+          // Play echo sound when fizz completes - Play.c:1250
+          store.dispatch(playDiscrete(SoundType.ECHO_SOUND))
+          // Reset the flag
+          transitionState.fizzJustFinished = false
+        }
+
         // Fizz complete, show star background during delay
         if (transitionState.toBitmap) {
           bitmap.data.set(transitionState.toBitmap)
@@ -572,15 +666,29 @@ export const createGameRenderer =
           transitionState.fromBitmap = null
           transitionState.toBitmap = null
           transitionState.delayFrames = 0
+          transitionState.fizzJustFinished = false
 
           // Trigger the actual level load
-          transitionToNextLevel(store as Store<ExtendedGameState>)
+          transitionToNextLevel(store)
         }
+
+        // Play all accumulated sounds before returning
+        const soundState = store.getState().sound
+        playSounds(soundState, {
+          shipDeadCount: finalState.ship.deadCount,
+          transitionActive: transitionState.active
+        })
+
         return
       } else {
         // Fizz in progress
         const fizzFrame = transitionState.fizzTransition.nextFrame()
         bitmap.data.set(fizzFrame.data)
+
+        // Check if fizz just completed
+        if (transitionState.fizzTransition.isComplete) {
+          transitionState.fizzJustFinished = true
+        }
 
         // Update status bar
         const statusBarTemplate = spriteService.getStatusBarTemplate()
@@ -596,6 +704,14 @@ export const createGameRenderer =
         }
         renderedBitmap = updateSbar(statusData)(renderedBitmap)
         bitmap.data.set(renderedBitmap.data)
+
+        // Play all accumulated sounds before returning
+        const fizzSoundState = store.getState().sound
+        playSounds(fizzSoundState, {
+          shipDeadCount: finalState.ship.deadCount,
+          transitionActive: transitionState.active
+        })
+
         return
       }
     }
@@ -1016,6 +1132,9 @@ export const createGameRenderer =
             // Check if bunker was actually destroyed (difficult bunkers might survive)
             const updatedBunker = store.getState().planet.bunkers[index]
             if (!updatedBunker || !updatedBunker.alive) {
+              // Play bunker explosion sound - Play.c:368
+              store.dispatch(playDiscrete(SoundType.EXP1_SOUND))
+
               // Award score for bunker destruction (Play.c:365-366)
               store.dispatch(
                 statusSlice.actions.scoreBunker({
@@ -1041,8 +1160,12 @@ export const createGameRenderer =
         // (c) Start ship explosion
         store.dispatch(startShipDeath({ x: deathGlobalX, y: deathGlobalY }))
 
-        // (d) TODO: Play death sound when sound system is implemented
-        // playSound(DEATH_SOUND)
+        // (d) Play ship explosion sound (high priority) - Terrain.c:414
+        store.dispatch(playDiscrete(SoundType.EXP2_SOUND))
+
+        // (e) Stop any continuous sounds when ship dies
+        store.dispatch(setThrusting(false))
+        store.dispatch(setShielding(false))
       }
     }
 
@@ -1242,6 +1365,13 @@ export const createGameRenderer =
         shardImages
       })(renderedBitmap)
     }
+
+    // Play all accumulated sounds for this frame
+    const soundState = store.getState().sound
+    playSounds(soundState, {
+      shipDeadCount: finalState.ship.deadCount,
+      transitionActive: transitionState.active
+    })
 
     // Copy rendered bitmap data back to original
     bitmap.data.set(renderedBitmap.data)

@@ -39,6 +39,8 @@ export type ShotRec = {
   btime: number
   /** id of line that it hits (ref in original */
   hitlineId: string /* not in original (which used pointer) */
+  /** origin point where shot was fired from (global coordinates) */
+  origin: { x: number; y: number }
   /**
    * Flag indicating the shot just died this frame and needs final render.
    *

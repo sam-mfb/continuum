@@ -24,9 +24,6 @@ export * from './soundSlice'
 // Sound engine - Internal, exposed for test panel
 export * from './soundEngine'
 
-// Legacy sound manager - Keep for backwards compatibility
-export * from './soundManager'
-
 // Audio output (Phase 6)
 export * from './audioOutput'
 

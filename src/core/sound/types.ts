@@ -17,15 +17,20 @@ export type SoundState = {
   activeSource: AudioBufferSourceNode | null // Currently playing audio source
 }
 
+import type { GameSoundType } from './soundEngine'
+
 /**
  * The main sound engine interface
- * Phase 1: Minimal shell implementation
  */
 export type SoundEngine = {
   audioContext: AudioContext // Web Audio API context
   masterGain: GainNode // Master volume control
   setVolume: (volume: number) => void // Set master volume
-  start: () => void // Start method (shell)
-  stop: () => void // Stop method (shell)
-  playTestSound?: (soundType: string) => void // Play test sound by name
+  start: () => void // Start audio playback
+  stop: () => void // Stop audio playback
+  play: (soundType: GameSoundType, onEnded?: () => void) => void // Play a sound
+  playTestSound?: (soundType: string) => void // Legacy method for compatibility
+  getCurrentSoundType?: () => GameSoundType // Get current sound type
+  isPlaying?: () => boolean // Check if playing
+  resumeContext?: () => Promise<void> // Resume suspended audio context
 }
