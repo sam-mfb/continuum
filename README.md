@@ -76,6 +76,22 @@ We parse the original galaxy files and resources from the original game. I got t
 
 At some point I should add an interface to let you use arbitrary galaxy files.
 
+## Codebase/Compiling
+
+It's a vite/React project. You can run it with:
+
+```bash
+npm run game
+```
+
+There's also a development harness of sorts I used to test out various pieces of things as I was putting it together. You can see that by running:
+
+```bash
+npm run dev
+```
+
+There was a lot of LLM-assisted coding in this project. More than I would do--or at least allow to be unchecked--in a real production codebase. But everything is fairly organized and is well cited back to the original code. I'd like to clean it up a little more at some point...
+
 ## Still TODO
 
 - The high score table. Of course.
