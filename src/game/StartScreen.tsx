@@ -54,10 +54,12 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '684px',
-        backgroundColor: 'white',
+        width: '1024px',
+        height: '684px',
+        backgroundColor: 'black',
         fontFamily: 'monospace',
-        color: 'black'
+        color: 'white',
+        border: '2px solid #666'
       }}
     >
       <div
@@ -70,9 +72,9 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
       >
         <h1
           style={{
-            fontSize: '48px',
+            fontSize: '36px',
             margin: 0,
-            letterSpacing: '4px',
+            letterSpacing: '3px',
             fontWeight: 'bold'
           }}
         >
@@ -81,20 +83,19 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
 
         <div
           style={{
-            backgroundColor: '#f0f0f0',
-            border: '2px solid black',
-            borderRadius: '8px',
-            padding: '30px',
-            minWidth: '450px'
+            backgroundColor: 'black',
+            border: '1px solid white',
+            padding: '20px',
+            minWidth: '400px'
           }}
         >
           <h2
             style={{
-              fontSize: '24px',
-              margin: '0 0 20px 0',
+              fontSize: '20px',
+              margin: '0 0 15px 0',
               textAlign: 'center',
-              borderBottom: '2px solid black',
-              paddingBottom: '10px'
+              borderBottom: '1px solid white',
+              paddingBottom: '8px'
             }}
           >
             HIGH SCORES
@@ -118,29 +119,21 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
         <div
           style={{
             display: 'flex',
-            gap: '20px',
+            gap: '15px',
             alignItems: 'center'
           }}
         >
           <button
             onClick={onStartGame}
             style={{
-              fontSize: '24px',
-              padding: '15px 40px',
-              backgroundColor: 'black',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
+              fontSize: '20px',
+              padding: '12px 30px',
+              backgroundColor: 'white',
+              color: 'black',
+              border: '1px solid white',
               cursor: 'pointer',
               fontFamily: 'monospace',
-              letterSpacing: '2px',
-              transition: 'transform 0.2s'
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = 'scale(1.05)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = 'scale(1)'
+              letterSpacing: '2px'
             }}
           >
             START GAME
@@ -149,21 +142,13 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
           <button
             onClick={handleResetScores}
             style={{
-              fontSize: '14px',
-              padding: '10px 20px',
-              backgroundColor: showConfirm ? '#d00' : '#666',
+              fontSize: '12px',
+              padding: '8px 16px',
+              backgroundColor: 'black',
               color: 'white',
-              border: 'none',
-              borderRadius: '6px',
+              border: '1px solid white',
               cursor: 'pointer',
-              fontFamily: 'monospace',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = 'scale(1.05)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = 'scale(1)'
+              fontFamily: 'monospace'
             }}
           >
             {showConfirm ? 'Confirm Reset' : 'Reset Scores'}
@@ -172,10 +157,11 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
 
         <div
           style={{
-            fontSize: '14px',
-            color: '#666',
+            fontSize: '12px',
+            color: 'white',
             textAlign: 'center',
-            lineHeight: '1.5'
+            lineHeight: '1.5',
+            opacity: 0.8
           }}
         >
           <div>Controls:</div>

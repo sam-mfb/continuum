@@ -34,12 +34,13 @@ export function writeLives(deps: {
     let result = screen
     let pos = LIVES_START_X
 
-    // Draw ship icons for each life
+    // Draw ship icons for spare lives (not including current ship)
     // Original: for(i=0, pos=8; i < numships && pos < 150; i++, pos+=8)
     const shipSprite = spriteService.getDigitSprite('SHIP')
+    const spareLives = Math.max(0, lives - 1) // Show only spare ships, not current
 
     if (shipSprite) {
-      for (let i = 0; i < lives && pos < 150; i++, pos += LIVES_SPACING) {
+      for (let i = 0; i < spareLives && pos < 150; i++, pos += LIVES_SPACING) {
         result = drawDigit({
           x: pos,
           y: LIVES_Y,

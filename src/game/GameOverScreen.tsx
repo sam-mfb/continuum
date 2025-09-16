@@ -23,10 +23,12 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({ onContinue }): React.Re
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '684px',
-        backgroundColor: 'white',
+        width: '1024px',
+        height: '684px',
+        backgroundColor: 'black',
         fontFamily: 'monospace',
-        color: 'black'
+        color: 'white',
+        border: '2px solid #666'
       }}
     >
       <div
@@ -39,11 +41,10 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({ onContinue }): React.Re
       >
         <h1
           style={{
-            fontSize: '64px',
+            fontSize: '48px',
             margin: 0,
             letterSpacing: '4px',
-            fontWeight: 'bold',
-            animation: 'blink 1s infinite'
+            fontWeight: 'bold'
           }}
         >
           GAME OVER
@@ -51,9 +52,9 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({ onContinue }): React.Re
 
         <div
           style={{
-            fontSize: '20px',
-            color: '#666',
-            animation: 'fadeIn 2s'
+            fontSize: '16px',
+            color: 'white',
+            marginTop: '20px'
           }}
         >
           Press SPACE or ENTER to continue
@@ -62,40 +63,21 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({ onContinue }): React.Re
         <button
           onClick={onContinue}
           style={{
-            fontSize: '18px',
-            padding: '12px 30px',
-            backgroundColor: 'black',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
+            fontSize: '16px',
+            padding: '10px 24px',
+            backgroundColor: 'white',
+            color: 'black',
+            border: '1px solid white',
             cursor: 'pointer',
             fontFamily: 'monospace',
             letterSpacing: '1px',
-            animation: 'fadeIn 3s'
+            marginTop: '20px'
           }}
         >
           CONTINUE
         </button>
       </div>
 
-      <style>{`
-        @keyframes blink {
-          0%, 50%, 100% {
-            opacity: 1;
-          }
-          25%, 75% {
-            opacity: 0.5;
-          }
-        }
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-      `}</style>
     </div>
   )
 }

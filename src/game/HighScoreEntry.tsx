@@ -41,10 +41,12 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '684px',
-        backgroundColor: 'white',
+        width: '1024px',
+        height: '684px',
+        backgroundColor: 'black',
         fontFamily: 'monospace',
-        color: 'black'
+        color: 'white',
+        border: '2px solid #666'
       }}
     >
       <div
@@ -52,20 +54,18 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '30px',
-          backgroundColor: '#f0f0f0',
-          border: '3px solid black',
-          borderRadius: '12px',
-          padding: '40px',
-          animation: 'pulse 2s infinite'
+          gap: '25px',
+          backgroundColor: 'black',
+          border: '1px solid white',
+          padding: '30px'
         }}
       >
         <h1
           style={{
-            fontSize: '36px',
+            fontSize: '28px',
             margin: 0,
-            color: '#ff0000',
-            letterSpacing: '3px',
+            color: 'white',
+            letterSpacing: '2px',
             textAlign: 'center'
           }}
         >
@@ -74,9 +74,10 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
 
         <div
           style={{
-            fontSize: '24px',
+            fontSize: '18px',
             textAlign: 'center',
-            lineHeight: '1.5'
+            lineHeight: '1.5',
+            color: 'white'
           }}
         >
           <div>Score: {score.toLocaleString()}</div>
@@ -95,8 +96,9 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
         >
           <label
             style={{
-              fontSize: '20px',
-              fontWeight: 'bold'
+              fontSize: '16px',
+              fontWeight: 'bold',
+              color: 'white'
             }}
           >
             Enter Your Name:
@@ -109,14 +111,14 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
             onKeyDown={handleKeyDown}
             maxLength={10}
             style={{
-              fontSize: '24px',
-              padding: '10px',
-              width: '250px',
+              fontSize: '18px',
+              padding: '8px',
+              width: '200px',
               textAlign: 'center',
               fontFamily: 'monospace',
-              border: '2px solid black',
-              borderRadius: '4px',
-              backgroundColor: 'white'
+              border: '1px solid white',
+              backgroundColor: 'black',
+              color: 'white'
             }}
             placeholder="Enter name"
           />
@@ -124,32 +126,21 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
             type="submit"
             disabled={!name.trim()}
             style={{
-              fontSize: '20px',
-              padding: '10px 30px',
-              backgroundColor: name.trim() ? 'black' : '#ccc',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
+              fontSize: '16px',
+              padding: '8px 24px',
+              backgroundColor: name.trim() ? 'white' : 'black',
+              color: name.trim() ? 'black' : 'white',
+              border: '1px solid white',
               cursor: name.trim() ? 'pointer' : 'not-allowed',
               fontFamily: 'monospace',
-              letterSpacing: '1px'
+              letterSpacing: '1px',
+              opacity: name.trim() ? 1 : 0.5
             }}
           >
             SUBMIT
           </button>
         </form>
       </div>
-
-      <style>{`
-        @keyframes pulse {
-          0%, 100% {
-            transform: scale(1);
-          }
-          50% {
-            transform: scale(1.02);
-          }
-        }
-      `}</style>
     </div>
   )
 }
