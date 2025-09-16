@@ -371,6 +371,31 @@ export const shipSlice = createSlice({
      */
     resetLives: state => {
       state.lives = SHIPSTART
+    },
+
+    /**
+     * Reset ship to clean state for new game
+     */
+    resetShip: state => {
+      // Reset all activity flags
+      state.flaming = false
+      state.flameBlink = 0
+      state.thrusting = false
+      state.firing = false
+      state.bouncing = false
+      state.refueling = false
+      state.shielding = false
+
+      // Reset velocity
+      state.dx = 0
+      state.dy = 0
+      state.xslow = 0
+      state.yslow = 0
+
+      // Reset death counter
+      state.deadCount = 0
+
+      // Note: Don't reset lives, position, or fuel - those are set by game initialization
     }
   }
 })

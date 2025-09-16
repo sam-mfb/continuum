@@ -3,8 +3,6 @@
  */
 
 import type { Store } from '@reduxjs/toolkit'
-import type { GameState as CoreGameState } from '@dev/store'
-import type { SoundUIState } from '@core/sound/soundSlice'
 import { getGalaxyService } from '@core/galaxy'
 import { planetSlice } from '@core/planet'
 import { shipSlice } from '@core/ship'
@@ -17,13 +15,7 @@ import { initializeBunkers, initializeFuels } from '@core/planet'
 import { BunkerKind } from '@core/figs/types'
 import { SCRWTH, TOPMARG, BOTMARG } from '@core/screen'
 import { resetGame, setCurrentLevel } from './gameSlice'
-import type { GameState } from './gameSlice'
-
-// Extended state that includes game slice and sound
-export type ExtendedGameState = CoreGameState & {
-  game: GameState
-  sound: SoundUIState
-}
+import type { RootState } from './store'
 
 /**
  * Check if the current level is complete
@@ -41,7 +33,7 @@ export type ExtendedGameState = CoreGameState & {
  *
  * For levels with no bunkers, check if all fuel cells are collected.
  */
-export function checkLevelComplete(state: ExtendedGameState): boolean {
+export function checkLevelComplete(state: RootState): boolean {
   // Don't check if already complete
   if (state.game.levelComplete) {
     return false
@@ -77,10 +69,7 @@ export function checkLevelComplete(state: ExtendedGameState): boolean {
 /**
  * Load a specific level (planet) from the galaxy data
  */
-export function loadLevel(
-  store: Store<ExtendedGameState>,
-  levelNum: number
-): void {
+export function loadLevel(store: Store<RootState>, levelNum: number): void {
   const state = store.getState()
   const galaxyService = getGalaxyService()
 
@@ -156,7 +145,7 @@ export function loadLevel(
 /**
  * Handle transitioning to the next level
  */
-export function transitionToNextLevel(store: Store<ExtendedGameState>): void {
+export function transitionToNextLevel(store: Store<RootState>): void {
   const state = store.getState()
 
   // Check if we've completed all levels

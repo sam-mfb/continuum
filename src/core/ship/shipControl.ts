@@ -1,5 +1,4 @@
-import type { Action, ThunkAction } from '@reduxjs/toolkit'
-import type { GameState } from '@dev/store'
+import { configureStore, type Action, type ThunkAction } from '@reduxjs/toolkit'
 import { shipSlice } from '@core/ship'
 import { shotsSlice } from '@core/shots'
 import { planetSlice } from '@core/planet'
@@ -14,13 +13,29 @@ import {
   setShielding
 } from '@core/sound/soundSlice'
 import { SoundType } from '@core/sound/constants'
+import { wallsSlice } from '../walls'
 
 type ControlAction = {
   controlsPressed: ShipControl[]
 }
 
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/no-unused-vars
+function buildBaseStore() {
+  return configureStore({
+    reducer: {
+      ship: shipSlice.reducer,
+      shots: shotsSlice.reducer,
+      planet: planetSlice.reducer,
+      status: statusSlice.reducer,
+      walls: wallsSlice.reducer
+    }
+  })
+}
+
+type BaseState = ReturnType<ReturnType<typeof buildBaseStore>['getState']>
+
 export const shipControl =
-  (action: ControlAction): ThunkAction<void, GameState, unknown, Action> =>
+  (action: ControlAction): ThunkAction<void, BaseState, unknown, Action> =>
   (dispatch, getState) => {
     const { controlsPressed } = action
     const pressed = new Set(controlsPressed)

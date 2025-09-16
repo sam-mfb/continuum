@@ -130,6 +130,19 @@ const soundSlice = createSlice({
 
     stopSound: state => {
       state.currentSound = SoundType.NO_SOUND
+    },
+
+    /**
+     * Reset sound state for new game
+     */
+    resetSounds: state => {
+      state.discrete = []
+      state.currentSound = SoundType.NO_SOUND
+      state.continuous.thrusting = false
+      state.continuous.shielding = false
+      state.lastContinuous.thrusting = false
+      state.lastContinuous.shielding = false
+      // Keep enabled state as is - user preference
     }
   }
 })
@@ -144,6 +157,7 @@ export const {
   setEnabled,
   setCurrentSound,
   startSound,
-  stopSound
+  stopSound,
+  resetSounds
 } = soundSlice.actions
 export default soundSlice.reducer
