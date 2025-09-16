@@ -6,6 +6,7 @@ import { startGame, setMode } from './gameSlice'
 import type { RootState } from './store'
 import { setHighScore } from '@/core/highscore/highscoreSlice'
 import { shipSlice } from '@/core/ship/shipSlice'
+import { invalidateHighScore } from '@/core/status/statusSlice'
 import { initializeSoundService } from '@/core/sound/service'
 import { resetSounds } from '@/core/sound/soundSlice'
 import StartScreen from './StartScreen'
@@ -178,6 +179,11 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
           // Reset ship and sound to clean state
           dispatch(shipSlice.actions.resetShip())
           dispatch(resetSounds())
+
+          // Invalidate high score if starting at level > 1
+          if (level > 1) {
+            dispatch(invalidateHighScore())
+          }
 
           // Reinitialize sound service for new game
           initializeSoundService()
