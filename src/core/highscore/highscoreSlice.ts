@@ -1,6 +1,9 @@
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { createSlice } from '@reduxjs/toolkit'
 
+// LocalStorage key for high scores
+const HIGH_SCORES_KEY = 'continuum_highscores'
+
 export type HighScore = {
   user: string
   planet: number
@@ -22,18 +25,42 @@ export type HighScoreState = {
   10: HighScore
 }
 
-const initialState: HighScoreState = {
-  1: { user: 'Randy', planet: 3, score: 11145, fuel: 0, date: '' },
-  2: { user: 'Brian', planet: 3, score: 9590, fuel: 0, date: '' },
-  3: { user: 'Sam', planet: 2, score: 256, fuel: 0, date: '' },
-  4: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
-  5: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
-  6: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
-  7: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
-  8: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
-  9: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
-  10: { user: '', planet: 0, score: 0, fuel: 0, date: '' }
+// Load high scores from localStorage or use defaults
+const loadHighScores = (): HighScoreState => {
+  try {
+    const saved = localStorage.getItem(HIGH_SCORES_KEY)
+    if (saved) {
+      return JSON.parse(saved)
+    }
+  } catch (e) {
+    console.error('Failed to load high scores from localStorage:', e)
+  }
+
+  // Default high scores
+  return {
+    1: { user: 'Randy', planet: 3, score: 11145, fuel: 0, date: '' },
+    2: { user: 'Brian', planet: 3, score: 9590, fuel: 0, date: '' },
+    3: { user: 'Sam', planet: 2, score: 256, fuel: 0, date: '' },
+    4: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
+    5: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
+    6: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
+    7: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
+    8: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
+    9: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
+    10: { user: '', planet: 0, score: 0, fuel: 0, date: '' }
+  }
 }
+
+// Save high scores to localStorage
+const saveHighScores = (state: HighScoreState): void => {
+  try {
+    localStorage.setItem(HIGH_SCORES_KEY, JSON.stringify(state))
+  } catch (e) {
+    console.error('Failed to save high scores to localStorage:', e)
+  }
+}
+
+const initialState: HighScoreState = loadHighScores()
 
 export const highscoreSlice = createSlice({
   name: 'highscore',
@@ -70,9 +97,16 @@ export const highscoreSlice = createSlice({
         // Insert the new high score
         const insertSlot = insertPosition as keyof HighScoreState
         state[insertSlot] = newScore
+
+        // Save to localStorage after updating
+        saveHighScores(state)
       }
     },
-    resetHighScores: () => initialState
+    resetHighScores: () => {
+      const newState = loadHighScores()
+      saveHighScores(newState)
+      return newState
+    }
   }
 })
 

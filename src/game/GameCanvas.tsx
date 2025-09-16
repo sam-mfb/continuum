@@ -2,9 +2,13 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import type { BitmapRenderer } from '@lib/bitmap'
 import { createMonochromeBitmap, clearBitmap } from '@lib/bitmap'
-import { toggleAlignmentMode } from './gameSlice'
+import { toggleAlignmentMode, startGame, setMode } from './gameSlice'
 import type { RootState } from './store'
 import { invalidateHighScore } from '@/core/status/statusSlice'
+import { setHighScore } from '@/core/highscore/highscoreSlice'
+import StartScreen from './StartScreen'
+import HighScoreEntry from './HighScoreEntry'
+import GameOverScreen from './GameOverScreen'
 
 type GameCanvasProps = {
   renderer: BitmapRenderer
@@ -33,6 +37,8 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
   const alignmentMode = useSelector(
     (state: RootState) => state.game.alignmentMode
   )
+  const gameMode = useSelector((state: RootState) => state.game.mode)
+  const pendingHighScore = useSelector((state: RootState) => state.game.pendingHighScore)
   const [selectedLevel, setSelectedLevel] = useState<string>('1')
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number>(0)
@@ -42,6 +48,9 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
   const frameCountRef = useRef<number>(0)
 
   useEffect(() => {
+    // Only run game loop when in playing mode
+    if (gameMode !== 'playing') return
+
     const canvas = canvasRef.current
     if (!canvas) return
 
@@ -161,7 +170,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [renderer, width, height, scale, fps, frameIntervalMs])
+  }, [renderer, width, height, scale, fps, frameIntervalMs, gameMode])
 
   const handleLevelChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
     const level = e.target.value
@@ -174,6 +183,47 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     dispatch(toggleAlignmentMode())
   }
 
+  // Render different screens based on game mode
+  if (gameMode === 'start') {
+    return (
+      <StartScreen
+        onStartGame={() => {
+          dispatch(startGame())
+          onLevelSelect(1) // Start at level 1
+        }}
+      />
+    )
+  }
+
+  if (gameMode === 'highScoreEntry' && pendingHighScore) {
+    return (
+      <HighScoreEntry
+        score={pendingHighScore.score}
+        planet={pendingHighScore.planet}
+        fuel={pendingHighScore.fuel}
+        onSubmit={(name: string) => {
+          dispatch(setHighScore({
+            user: name,
+            score: pendingHighScore.score,
+            planet: pendingHighScore.planet,
+            fuel: pendingHighScore.fuel,
+            date: new Date().toISOString()
+          }))
+          dispatch(setMode('start'))
+        }}
+      />
+    )
+  }
+
+  if (gameMode === 'gameOver') {
+    return (
+      <GameOverScreen
+        onContinue={() => dispatch(setMode('start'))}
+      />
+    )
+  }
+
+  // Playing mode - render the game canvas
   return (
     <div
       style={{

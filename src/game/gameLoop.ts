@@ -83,7 +83,9 @@ import {
   loadGalaxyHeader,
   markLevelComplete,
   triggerGameOver,
-  resetGame
+  resetGame,
+  setMode,
+  setPendingHighScore
 } from './gameSlice'
 import {
   checkLevelComplete,
@@ -287,6 +289,28 @@ export const createGameRenderer =
     ) {
       console.log('Game Over - All lives lost')
       store.dispatch(triggerGameOver())
+
+      // Check if score qualifies for high score table
+      const fullState = store.getState() as RootState
+      const { status, highscore } = fullState
+
+      // Find the lowest high score
+      const lowestScore = Math.min(
+        ...Object.values(highscore).map(hs => hs.score || 0)
+      )
+
+      // Check if eligible and qualifies for high score
+      if (status.highScoreEligible && status.score > lowestScore) {
+        // Set pending high score and switch to entry mode
+        store.dispatch(setPendingHighScore({
+          score: status.score,
+          planet: status.currentlevel,
+          fuel: state.ship.fuel
+        }))
+      } else {
+        // Just show game over screen
+        store.dispatch(setMode('gameOver'))
+      }
 
       // Reset everything for a new game
       store.dispatch(resetGame())

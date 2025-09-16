@@ -11,6 +11,14 @@ import {
 } from './constants'
 import type { AlignmentMode } from '@/core/shared/alignment'
 
+export type GameMode = 'start' | 'playing' | 'highScoreEntry' | 'gameOver'
+
+export type PendingHighScore = {
+  score: number
+  planet: number
+  fuel: number
+}
+
 export type GameState = {
   // Level progression
   currentLevel: number
@@ -26,6 +34,10 @@ export type GameState = {
 
   // Display settings
   alignmentMode: AlignmentMode
+
+  // Game flow
+  mode: GameMode
+  pendingHighScore: PendingHighScore | null
 }
 
 const initialState: GameState = {
@@ -35,7 +47,9 @@ const initialState: GameState = {
   gameOver: false,
   levelComplete: false,
   statusMessage: '',
-  alignmentMode: 'screen-fixed' // Default to screen-fixed (not original)
+  alignmentMode: 'screen-fixed', // Default to screen-fixed (not original)
+  mode: 'start',
+  pendingHighScore: null
 }
 
 export const gameSlice = createSlice({
@@ -90,6 +104,32 @@ export const gameSlice = createSlice({
     toggleAlignmentMode: state => {
       state.alignmentMode =
         state.alignmentMode === 'world-fixed' ? 'screen-fixed' : 'world-fixed'
+    },
+
+    // Game flow management
+    setMode: (state, action: PayloadAction<GameMode>) => {
+      state.mode = action.payload
+      if (action.payload === 'start') {
+        state.pendingHighScore = null
+      }
+    },
+
+    startGame: state => {
+      state.mode = 'playing'
+      state.currentLevel = STARTING_LEVEL
+      state.gameOver = false
+      state.levelComplete = false
+      state.statusMessage = ''
+      state.pendingHighScore = null
+    },
+
+    setPendingHighScore: (state, action: PayloadAction<PendingHighScore>) => {
+      state.pendingHighScore = action.payload
+      state.mode = 'highScoreEntry'
+    },
+
+    clearPendingHighScore: state => {
+      state.pendingHighScore = null
     }
   }
 })
@@ -103,7 +143,11 @@ export const {
   setStatusMessage,
   clearStatusMessage,
   setAlignmentMode,
-  toggleAlignmentMode
+  toggleAlignmentMode,
+  setMode,
+  startGame,
+  setPendingHighScore,
+  clearPendingHighScore
 } = gameSlice.actions
 
 export default gameSlice.reducer
