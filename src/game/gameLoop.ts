@@ -95,7 +95,7 @@ import {
   loadLevel,
   transitionToNextLevel
 } from './levelManager'
-import { SHIPSTART } from './constants'
+import { TOTAL_INITIAL_LIVES } from './constants'
 import { store, type RootState } from './store'
 
 // Track initialization state
@@ -157,8 +157,8 @@ const initializeGame = async (): Promise<void> => {
     // Store galaxy header in Redux (no ArrayBuffer)
     store.dispatch(loadGalaxyHeader(galaxyHeader))
 
-    // Initialize lives (SHIPSTART + 1 for total, as SHIPSTART represents spare ships)
-    store.dispatch(shipSlice.actions.setLives(SHIPSTART + 1))
+    // Initialize lives (TOTAL_INITIAL_LIVES includes current ship + spare ships)
+    store.dispatch(shipSlice.actions.setLives(TOTAL_INITIAL_LIVES))
 
     // Initialize status (score, bonus, etc.)
     store.dispatch(statusSlice.actions.initStatus())
@@ -322,7 +322,7 @@ export const createGameRenderer =
 
       // Reset everything for a new game
       store.dispatch(resetGame())
-      store.dispatch(shipSlice.actions.setLives(SHIPSTART + 1))
+      store.dispatch(shipSlice.actions.setLives(TOTAL_INITIAL_LIVES))
       store.dispatch(statusSlice.actions.initStatus())
       loadLevel(store, 1)
     }
