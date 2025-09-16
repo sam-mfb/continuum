@@ -15,6 +15,10 @@ import { explosionsSlice } from '@core/explosions/explosionsSlice'
 import soundReducer from '@core/sound/soundSlice'
 import { wallsSlice } from '@core/walls/wallsSlice'
 import { highscoreSlice } from '@/core/highscore/highscoreSlice'
+import { highscoreMiddleware, loadHighScores } from '@/core/highscore/highscoreMiddleware'
+
+// Load persisted high scores
+const persistedHighScores = loadHighScores()
 
 // Create and export the store
 export const store = configureStore({
@@ -29,6 +33,11 @@ export const store = configureStore({
     sound: soundReducer,
     walls: wallsSlice.reducer,
     highscore: highscoreSlice.reducer
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(highscoreMiddleware),
+  preloadedState: {
+    highscore: persistedHighScores
   }
 })
 
