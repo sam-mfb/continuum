@@ -88,11 +88,10 @@ import {
 import {
   checkLevelComplete,
   loadLevel,
-  transitionToNextLevel,
-  type ExtendedGameState
+  transitionToNextLevel
 } from './levelManager'
 import { SHIPSTART } from './constants'
-import { store } from './store'
+import { store, type RootState } from './store'
 
 // Track initialization state
 let initializationComplete = false
@@ -160,7 +159,7 @@ const initializeGame = async (): Promise<void> => {
     store.dispatch(statusSlice.actions.initStatus())
 
     // Load level 1 using the level manager
-    loadLevel(store as Store<ExtendedGameState>, 1)
+    loadLevel(store as Store<RootState>, 1)
 
     initializationComplete = true
     console.log('Game initialization complete')
@@ -238,7 +237,7 @@ export const createGameRenderer =
     }
 
     // NOW get the state for this frame - after any respawn updates
-    const state = store.getState() as ExtendedGameState
+    const state = store.getState()
 
     // Reset sound accumulator for new frame
     store.dispatch(resetFrame())
@@ -293,7 +292,7 @@ export const createGameRenderer =
       store.dispatch(resetGame())
       store.dispatch(shipSlice.actions.setLives(SHIPSTART))
       store.dispatch(statusSlice.actions.initStatus())
-      loadLevel(store as Store<ExtendedGameState>, 1)
+      loadLevel(store, 1)
     }
 
     // Process ship controls and movement only if alive
@@ -541,7 +540,7 @@ export const createGameRenderer =
 
     // Get final state for drawing
     const finalState = store.getState()
-    const extFinalState = finalState as ExtendedGameState
+    const extFinalState = finalState
 
     // Handle fizz transition effect (crackle() from Play.c)
     if (transitionState.active) {
@@ -835,7 +834,7 @@ export const createGameRenderer =
     renderedBitmap = sbarClear({ statusBarTemplate })(renderedBitmap)
 
     // Then update with current values from state
-    const extState = finalState as ExtendedGameState
+    const extState = finalState
     const statusData = {
       fuel: finalState.ship.fuel,
       lives: finalState.ship.lives,
@@ -1383,6 +1382,6 @@ export const createGameRenderer =
 // Export galaxy header for level jumping
 export { store as getGameStore } from './store'
 export const getGalaxyHeader = (): GalaxyHeader | null => {
-  const state = store.getState() as ExtendedGameState
+  const state = store.getState()
   return state.game.galaxyHeader
 }

@@ -3,7 +3,6 @@
  */
 
 import { configureStore } from '@reduxjs/toolkit'
-import { combineReducers } from 'redux'
 
 // Import all reducers
 import gameReducer from './gameSlice'
@@ -15,25 +14,22 @@ import { statusSlice } from '@core/status/statusSlice'
 import { explosionsSlice } from '@core/explosions/explosionsSlice'
 import soundReducer from '@core/sound/soundSlice'
 import { wallsSlice } from '@core/walls/wallsSlice'
-import { spritesSlice } from '@dev/store/spritesSlice'
-
-// Combine all reducers
-const rootReducer = combineReducers({
-  game: gameReducer,
-  ship: shipSlice.reducer,
-  shots: shotsSlice.reducer,
-  planet: planetSlice.reducer,
-  screen: screenSlice.reducer,
-  status: statusSlice.reducer,
-  explosions: explosionsSlice.reducer,
-  sound: soundReducer,
-  walls: wallsSlice.reducer,
-  sprites: spritesSlice.reducer
-})
+import { highscoreSlice } from '@/core/highscore/highscoreSlice'
 
 // Create and export the store
 export const store = configureStore({
-  reducer: rootReducer
+  reducer: {
+    game: gameReducer,
+    ship: shipSlice.reducer,
+    shots: shotsSlice.reducer,
+    planet: planetSlice.reducer,
+    screen: screenSlice.reducer,
+    status: statusSlice.reducer,
+    explosions: explosionsSlice.reducer,
+    sound: soundReducer,
+    walls: wallsSlice.reducer,
+    highscore: highscoreSlice.reducer
+  }
 })
 
 // Export types

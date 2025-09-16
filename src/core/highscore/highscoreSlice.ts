@@ -35,7 +35,7 @@ const initialState: HighScoreState = {
   10: { user: '', planet: 0, score: 0, fuel: 0, date: '' }
 }
 
-const highscoreSlice = createSlice({
+export const highscoreSlice = createSlice({
   name: 'highscore',
   initialState,
   reducers: {
@@ -77,4 +77,3 @@ const highscoreSlice = createSlice({
 })
 
 export const { setHighScore, resetHighScores } = highscoreSlice.actions
-export default highscoreSlice.reducer
