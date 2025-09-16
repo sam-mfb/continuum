@@ -4,7 +4,9 @@ type GameOverScreenProps = {
   onContinue: () => void
 }
 
-const GameOverScreen: React.FC<GameOverScreenProps> = ({ onContinue }): React.ReactElement => {
+const GameOverScreen: React.FC<GameOverScreenProps> = ({
+  onContinue
+}): React.ReactElement => {
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent): void => {
       if (e.code === 'Space' || e.code === 'Enter') {
@@ -77,7 +79,6 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({ onContinue }): React.Re
           CONTINUE
         </button>
       </div>
-
     </div>
   )
 }

@@ -74,7 +74,10 @@ import {
   setShielding
 } from '@core/sound/soundSlice'
 import { playSounds } from '@core/sound/soundPlayer'
-import { initializeSoundService, cleanupSoundService } from '@core/sound/service'
+import {
+  initializeSoundService,
+  cleanupSoundService
+} from '@core/sound/service'
 import type { SoundUIState } from '@core/sound/soundSlice'
 import { SoundType } from '@core/sound/constants'
 
@@ -305,11 +308,13 @@ export const createGameRenderer =
       // Check if eligible and qualifies for high score
       if (status.highScoreEligible && status.score > lowestScore) {
         // Set pending high score and switch to entry mode
-        store.dispatch(setPendingHighScore({
-          score: status.score,
-          planet: status.currentlevel,
-          fuel: state.ship.fuel
-        }))
+        store.dispatch(
+          setPendingHighScore({
+            score: status.score,
+            planet: status.currentlevel,
+            fuel: state.ship.fuel
+          })
+        )
       } else {
         // Just show game over screen
         store.dispatch(setMode('gameOver'))

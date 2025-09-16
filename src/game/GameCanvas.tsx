@@ -38,7 +38,9 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
 }) => {
   const dispatch = useDispatch()
   const gameMode = useSelector((state: RootState) => state.game.mode)
-  const pendingHighScore = useSelector((state: RootState) => state.game.pendingHighScore)
+  const pendingHighScore = useSelector(
+    (state: RootState) => state.game.pendingHighScore
+  )
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number>(0)
   const lastFrameTimeRef = useRef<number>(0)
@@ -204,13 +206,15 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
         planet={pendingHighScore.planet}
         fuel={pendingHighScore.fuel}
         onSubmit={(name: string) => {
-          dispatch(setHighScore({
-            user: name,
-            score: pendingHighScore.score,
-            planet: pendingHighScore.planet,
-            fuel: pendingHighScore.fuel,
-            date: new Date().toISOString()
-          }))
+          dispatch(
+            setHighScore({
+              user: name,
+              score: pendingHighScore.score,
+              planet: pendingHighScore.planet,
+              fuel: pendingHighScore.fuel,
+              date: new Date().toISOString()
+            })
+          )
           dispatch(setMode('start'))
         }}
       />
@@ -218,11 +222,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
   }
 
   if (gameMode === 'gameOver') {
-    return (
-      <GameOverScreen
-        onContinue={() => dispatch(setMode('start'))}
-      />
-    )
+    return <GameOverScreen onContinue={() => dispatch(setMode('start'))} />
   }
 
   // Playing mode - render just the game canvas

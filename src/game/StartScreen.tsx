@@ -11,17 +11,24 @@ type StartScreenProps = {
   totalLevels: number
 }
 
-const StartScreen: React.FC<StartScreenProps> = ({ onStartGame, totalLevels }) => {
+const StartScreen: React.FC<StartScreenProps> = ({
+  onStartGame,
+  totalLevels
+}) => {
   const dispatch = useDispatch()
   const highScores = useSelector((state: RootState) => state.highscore)
-  const alignmentMode = useSelector((state: RootState) => state.game.alignmentMode)
+  const alignmentMode = useSelector(
+    (state: RootState) => state.game.alignmentMode
+  )
   const [showConfirm, setShowConfirm] = useState(false)
   const [selectedLevel, setSelectedLevel] = useState(1)
 
-  // Find the most recent score with a valid date
+  // Find the most recent score with a valid date (within last 5 minutes)
   const getMostRecentSlot = (): keyof HighScoreState | null => {
     let mostRecentSlot: keyof HighScoreState | null = null
     let mostRecentDate: Date | null = null
+    const now = new Date()
+    const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000) // 5 minutes in milliseconds
 
     Object.keys(highScores).forEach(key => {
       const slot = Number(key) as keyof HighScoreState
@@ -29,8 +36,8 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame, totalLevels }) =
       if (score.date && score.date !== '') {
         try {
           const date = new Date(score.date)
-          // Check if it's a valid date
-          if (!isNaN(date.getTime())) {
+          // Check if it's a valid date and within last 5 minutes
+          if (!isNaN(date.getTime()) && date >= fiveMinutesAgo) {
             if (!mostRecentDate || date > mostRecentDate) {
               mostRecentDate = date
               mostRecentSlot = slot
@@ -67,8 +74,12 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame, totalLevels }) =
       >
         <span>{slot}.</span>
         <span>{score.user || '---'}</span>
-        <span style={{ textAlign: 'right' }}>{score.score ? score.score.toLocaleString() : '---'}</span>
-        <span style={{ textAlign: 'center' }}>{score.planet ? `L${score.planet}` : '---'}</span>
+        <span style={{ textAlign: 'right' }}>
+          {score.score ? score.score.toLocaleString() : '---'}
+        </span>
+        <span style={{ textAlign: 'center' }}>
+          {score.planet ? `L${score.planet}` : '---'}
+        </span>
       </div>
     )
   }
@@ -85,7 +96,8 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame, totalLevels }) =
   }
 
   const handleAlignmentToggle = (): void => {
-    const newMode: AlignmentMode = alignmentMode === 'world-fixed' ? 'screen-fixed' : 'world-fixed'
+    const newMode: AlignmentMode =
+      alignmentMode === 'world-fixed' ? 'screen-fixed' : 'world-fixed'
     dispatch(setAlignmentMode(newMode))
   }
 
@@ -173,7 +185,9 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame, totalLevels }) =
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <label style={{ color: 'white', fontSize: '14px' }}>Start at:</label>
+              <label style={{ color: 'white', fontSize: '14px' }}>
+                Start at:
+              </label>
               <select
                 value={selectedLevel}
                 onChange={e => setSelectedLevel(Number(e.target.value))}
@@ -187,11 +201,13 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame, totalLevels }) =
                   cursor: 'pointer'
                 }}
               >
-                {Array.from({ length: totalLevels }, (_, i) => i + 1).map(level => (
-                  <option key={level} value={level}>
-                    {level}
-                  </option>
-                ))}
+                {Array.from({ length: totalLevels }, (_, i) => i + 1).map(
+                  level => (
+                    <option key={level} value={level}>
+                      {level}
+                    </option>
+                  )
+                )}
               </select>
             </div>
 
@@ -227,31 +243,31 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame, totalLevels }) =
           >
             <button
               onClick={() => onStartGame(selectedLevel)}
-            style={{
-              fontSize: '18px',
-              padding: '10px 24px',
-              backgroundColor: 'white',
-              color: 'black',
-              border: '1px solid white',
-              cursor: 'pointer',
-              fontFamily: 'monospace',
-              letterSpacing: '2px'
-            }}
+              style={{
+                fontSize: '18px',
+                padding: '10px 24px',
+                backgroundColor: 'white',
+                color: 'black',
+                border: '1px solid white',
+                cursor: 'pointer',
+                fontFamily: 'monospace',
+                letterSpacing: '2px'
+              }}
             >
               START GAME
             </button>
 
             <button
               onClick={handleResetScores}
-            style={{
-              fontSize: '11px',
-              padding: '6px 12px',
-              backgroundColor: 'black',
-              color: 'white',
-              border: '1px solid white',
-              cursor: 'pointer',
-              fontFamily: 'monospace'
-            }}
+              style={{
+                fontSize: '11px',
+                padding: '6px 12px',
+                backgroundColor: 'black',
+                color: 'white',
+                border: '1px solid white',
+                cursor: 'pointer',
+                fontFamily: 'monospace'
+              }}
             >
               {showConfirm ? 'Confirm Reset' : 'Reset Scores'}
             </button>
