@@ -74,7 +74,7 @@ import {
   setShielding
 } from '@core/sound/soundSlice'
 import { playSounds } from '@core/sound/soundPlayer'
-import { initializeSoundService } from '@core/sound/service'
+import { initializeSoundService, cleanupSoundService } from '@core/sound/service'
 import type { SoundUIState } from '@core/sound/soundSlice'
 import { SoundType } from '@core/sound/constants'
 
@@ -298,6 +298,9 @@ export const createGameRenderer =
       const lowestScore = Math.min(
         ...Object.values(highscore).map(hs => hs.score || 0)
       )
+
+      // Stop all sounds when game ends
+      cleanupSoundService()
 
       // Check if eligible and qualifies for high score
       if (status.highScoreEligible && status.score > lowestScore) {

@@ -1,11 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import type { BitmapRenderer } from '@lib/bitmap'
 import { createMonochromeBitmap, clearBitmap } from '@lib/bitmap'
-import { toggleAlignmentMode, startGame, setMode } from './gameSlice'
+import { startGame, setMode } from './gameSlice'
 import type { RootState } from './store'
-import { invalidateHighScore } from '@/core/status/statusSlice'
 import { setHighScore } from '@/core/highscore/highscoreSlice'
+import { shipSlice } from '@/core/ship/shipSlice'
+import { initializeSoundService } from '@/core/sound/service'
+import { resetSounds } from '@/core/sound/soundSlice'
 import StartScreen from './StartScreen'
 import HighScoreEntry from './HighScoreEntry'
 import GameOverScreen from './GameOverScreen'
@@ -34,12 +36,8 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
   onLevelSelect
 }) => {
   const dispatch = useDispatch()
-  const alignmentMode = useSelector(
-    (state: RootState) => state.game.alignmentMode
-  )
   const gameMode = useSelector((state: RootState) => state.game.mode)
   const pendingHighScore = useSelector((state: RootState) => state.game.pendingHighScore)
-  const [selectedLevel, setSelectedLevel] = useState<string>('1')
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number>(0)
   const lastFrameTimeRef = useRef<number>(0)
@@ -172,25 +170,23 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     }
   }, [renderer, width, height, scale, fps, frameIntervalMs, gameMode])
 
-  const handleLevelChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
-    const level = e.target.value
-    setSelectedLevel(level)
-    dispatch(invalidateHighScore())
-    onLevelSelect(parseInt(level, 10))
-  }
-
-  const handleAlignmentToggle = (): void => {
-    dispatch(toggleAlignmentMode())
-  }
-
   // Render different screens based on game mode
   if (gameMode === 'start') {
     return (
       <StartScreen
-        onStartGame={() => {
+        onStartGame={(level: number) => {
+          // Reset ship and sound to clean state
+          dispatch(shipSlice.actions.resetShip())
+          dispatch(resetSounds())
+
+          // Reinitialize sound service for new game
+          initializeSoundService()
+
+          // Start the game
           dispatch(startGame())
-          onLevelSelect(1) // Start at level 1
+          onLevelSelect(level)
         }}
+        totalLevels={totalLevels}
       />
     )
   }
@@ -223,85 +219,21 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     )
   }
 
-  // Playing mode - render the game canvas
+  // Playing mode - render just the game canvas
   return (
-    <div
+    <canvas
+      ref={canvasRef}
+      width={width * scale}
+      height={height * scale}
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px',
-        alignItems: 'center'
+        imageRendering: 'pixelated',
+        // @ts-ignore - vendor prefixes
+        WebkitImageRendering: 'pixelated',
+        MozImageRendering: 'crisp-edges',
+        border: '2px solid #666',
+        display: 'block'
       }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          gap: '20px',
-          alignItems: 'center',
-          padding: '10px',
-          backgroundColor: '#222',
-          borderRadius: '5px'
-        }}
-      >
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <label style={{ color: 'white', fontFamily: 'monospace' }}>
-            Jump to Level:
-          </label>
-          <select
-            value={selectedLevel}
-            onChange={handleLevelChange}
-            style={{
-              padding: '5px',
-              fontFamily: 'monospace',
-              backgroundColor: '#333',
-              color: 'white',
-              border: '1px solid #666',
-              borderRadius: '3px'
-            }}
-          >
-            {Array.from({ length: totalLevels }, (_, i) => i + 1).map(level => (
-              <option key={level} value={level}>
-                Level {level}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <input
-            type="checkbox"
-            id="originalBackground"
-            checked={alignmentMode === 'world-fixed'}
-            onChange={handleAlignmentToggle}
-            style={{
-              cursor: 'pointer'
-            }}
-          />
-          <label
-            htmlFor="originalBackground"
-            style={{
-              color: 'white',
-              fontFamily: 'monospace',
-              cursor: 'pointer'
-            }}
-          >
-            Original Background
-          </label>
-        </div>
-      </div>
-      <canvas
-        ref={canvasRef}
-        width={width * scale}
-        height={height * scale}
-        style={{
-          imageRendering: 'pixelated',
-          // @ts-ignore - vendor prefixes
-          WebkitImageRendering: 'pixelated',
-          MozImageRendering: 'crisp-edges',
-          border: '2px solid #666',
-          display: 'block'
-        }}
-      />
-    </div>
+    />
   )
 }
 

@@ -3,15 +3,20 @@ import { useSelector, useDispatch } from 'react-redux'
 import type { RootState } from './store'
 import type { HighScoreState } from '@/core/highscore/highscoreSlice'
 import { resetHighScores } from '@/core/highscore/highscoreSlice'
+import { setAlignmentMode } from './gameSlice'
+import type { AlignmentMode } from '@/core/shared/alignment'
 
 type StartScreenProps = {
-  onStartGame: () => void
+  onStartGame: (level: number) => void
+  totalLevels: number
 }
 
-const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
+const StartScreen: React.FC<StartScreenProps> = ({ onStartGame, totalLevels }) => {
   const dispatch = useDispatch()
   const highScores = useSelector((state: RootState) => state.highscore)
+  const alignmentMode = useSelector((state: RootState) => state.game.alignmentMode)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [selectedLevel, setSelectedLevel] = useState(1)
 
   const formatHighScore = (slot: keyof HighScoreState): React.ReactElement | null => {
     const score = highScores[slot]
@@ -45,6 +50,11 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
       // Auto-cancel confirmation after 3 seconds
       setTimeout(() => setShowConfirm(false), 3000)
     }
+  }
+
+  const handleAlignmentToggle = (): void => {
+    const newMode: AlignmentMode = alignmentMode === 'world-fixed' ? 'screen-fixed' : 'world-fixed'
+    dispatch(setAlignmentMode(newMode))
   }
 
   return (
@@ -119,12 +129,73 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
         <div
           style={{
             display: 'flex',
-            gap: '15px',
+            flexDirection: 'column',
+            gap: '20px',
             alignItems: 'center'
           }}
         >
-          <button
-            onClick={onStartGame}
+          <div
+            style={{
+              display: 'flex',
+              gap: '20px',
+              alignItems: 'center'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <label style={{ color: 'white', fontSize: '14px' }}>Start at:</label>
+              <select
+                value={selectedLevel}
+                onChange={e => setSelectedLevel(Number(e.target.value))}
+                style={{
+                  padding: '4px 8px',
+                  fontFamily: 'monospace',
+                  fontSize: '14px',
+                  backgroundColor: 'black',
+                  color: 'white',
+                  border: '1px solid white',
+                  cursor: 'pointer'
+                }}
+              >
+                {Array.from({ length: totalLevels }, (_, i) => i + 1).map(level => (
+                  <option key={level} value={level}>
+                    {level}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="checkbox"
+                id="originalBackground"
+                checked={alignmentMode === 'world-fixed'}
+                onChange={handleAlignmentToggle}
+                style={{
+                  cursor: 'pointer'
+                }}
+              />
+              <label
+                htmlFor="originalBackground"
+                style={{
+                  color: 'white',
+                  fontSize: '14px',
+                  cursor: 'pointer'
+                }}
+              >
+                Original Background
+              </label>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              gap: '15px',
+              alignItems: 'center'
+            }}
+          >
+            <button
+              onClick={() => onStartGame(selectedLevel)}
             style={{
               fontSize: '20px',
               padding: '12px 30px',
@@ -135,12 +206,12 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
               fontFamily: 'monospace',
               letterSpacing: '2px'
             }}
-          >
-            START GAME
-          </button>
+            >
+              START GAME
+            </button>
 
-          <button
-            onClick={handleResetScores}
+            <button
+              onClick={handleResetScores}
             style={{
               fontSize: '12px',
               padding: '8px 16px',
@@ -150,9 +221,10 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
               cursor: 'pointer',
               fontFamily: 'monospace'
             }}
-          >
-            {showConfirm ? 'Confirm Reset' : 'Reset Scores'}
-          </button>
+            >
+              {showConfirm ? 'Confirm Reset' : 'Reset Scores'}
+            </button>
+          </div>
         </div>
 
         <div
