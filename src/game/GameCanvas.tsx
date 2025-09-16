@@ -4,15 +4,16 @@ import type { BitmapRenderer } from '@lib/bitmap'
 import { createMonochromeBitmap, clearBitmap } from '@lib/bitmap'
 import { toggleAlignmentMode } from './gameSlice'
 import type { RootState } from './store'
+import { invalidateHighScore } from '@/core/status/statusSlice'
 
 type GameCanvasProps = {
   renderer: BitmapRenderer
-  width?: number
-  height?: number
-  scale?: number
-  fps?: number
-  totalLevels?: number
-  onLevelSelect?: (level: number) => void
+  width: number
+  height: number
+  scale: number
+  fps: number
+  totalLevels: number
+  onLevelSelect: (level: number) => void
 }
 
 /**
@@ -21,11 +22,11 @@ type GameCanvasProps = {
  */
 const GameCanvas: React.FC<GameCanvasProps> = ({
   renderer,
-  width = 512,
-  height = 342,
-  scale = 2,
-  fps = 20,
-  totalLevels = 30,
+  width,
+  height,
+  scale,
+  fps,
+  totalLevels,
   onLevelSelect
 }) => {
   const dispatch = useDispatch()
@@ -165,9 +166,8 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
   const handleLevelChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
     const level = e.target.value
     setSelectedLevel(level)
-    if (onLevelSelect) {
-      onLevelSelect(parseInt(level, 10))
-    }
+    dispatch(invalidateHighScore())
+    onLevelSelect(parseInt(level, 10))
   }
 
   const handleAlignmentToggle = (): void => {
@@ -183,65 +183,61 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
         alignItems: 'center'
       }}
     >
-      {onLevelSelect && (
-        <div
-          style={{
-            display: 'flex',
-            gap: '20px',
-            alignItems: 'center',
-            padding: '10px',
-            backgroundColor: '#222',
-            borderRadius: '5px'
-          }}
-        >
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <label style={{ color: 'white', fontFamily: 'monospace' }}>
-              Jump to Level:
-            </label>
-            <select
-              value={selectedLevel}
-              onChange={handleLevelChange}
-              style={{
-                padding: '5px',
-                fontFamily: 'monospace',
-                backgroundColor: '#333',
-                color: 'white',
-                border: '1px solid #666',
-                borderRadius: '3px'
-              }}
-            >
-              {Array.from({ length: totalLevels }, (_, i) => i + 1).map(
-                level => (
-                  <option key={level} value={level}>
-                    Level {level}
-                  </option>
-                )
-              )}
-            </select>
-          </div>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <input
-              type="checkbox"
-              id="originalBackground"
-              checked={alignmentMode === 'world-fixed'}
-              onChange={handleAlignmentToggle}
-              style={{
-                cursor: 'pointer'
-              }}
-            />
-            <label
-              htmlFor="originalBackground"
-              style={{
-                color: 'white',
-                fontFamily: 'monospace',
-                cursor: 'pointer'
-              }}
-            >
-              Original Background
-            </label>
-          </div>
+      <div
+        style={{
+          display: 'flex',
+          gap: '20px',
+          alignItems: 'center',
+          padding: '10px',
+          backgroundColor: '#222',
+          borderRadius: '5px'
+        }}
+      >
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <label style={{ color: 'white', fontFamily: 'monospace' }}>
+            Jump to Level:
+          </label>
+          <select
+            value={selectedLevel}
+            onChange={handleLevelChange}
+            style={{
+              padding: '5px',
+              fontFamily: 'monospace',
+              backgroundColor: '#333',
+              color: 'white',
+              border: '1px solid #666',
+              borderRadius: '3px'
+            }}
+          >
+            {Array.from({ length: totalLevels }, (_, i) => i + 1).map(level => (
+              <option key={level} value={level}>
+                Level {level}
+              </option>
+            ))}
+          </select>
         </div>
-      )}
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <input
+            type="checkbox"
+            id="originalBackground"
+            checked={alignmentMode === 'world-fixed'}
+            onChange={handleAlignmentToggle}
+            style={{
+              cursor: 'pointer'
+            }}
+          />
+          <label
+            htmlFor="originalBackground"
+            style={{
+              color: 'white',
+              fontFamily: 'monospace',
+              cursor: 'pointer'
+            }}
+          >
+            Original Background
+          </label>
+        </div>
+      </div>
       <canvas
         ref={canvasRef}
         width={width * scale}
