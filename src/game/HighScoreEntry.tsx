@@ -105,7 +105,7 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
             ref={inputRef}
             type="text"
             value={name}
-            onChange={e => setName(e.target.value.toUpperCase())}
+            onChange={e => setName(e.target.value)}
             onKeyDown={handleKeyDown}
             maxLength={10}
             style={{
@@ -114,12 +114,11 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
               width: '250px',
               textAlign: 'center',
               fontFamily: 'monospace',
-              textTransform: 'uppercase',
               border: '2px solid black',
               borderRadius: '4px',
               backgroundColor: 'white'
             }}
-            placeholder="AAA"
+            placeholder="Enter name"
           />
           <button
             type="submit"
