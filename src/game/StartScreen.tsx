@@ -1,14 +1,17 @@
-import React from 'react'
-import { useSelector } from 'react-redux'
+import React, { useState } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
 import type { RootState } from './store'
 import type { HighScoreState } from '@/core/highscore/highscoreSlice'
+import { resetHighScores } from '@/core/highscore/highscoreSlice'
 
 type StartScreenProps = {
   onStartGame: () => void
 }
 
 const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
+  const dispatch = useDispatch()
   const highScores = useSelector((state: RootState) => state.highscore)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const formatHighScore = (slot: keyof HighScoreState): React.ReactElement | null => {
     const score = highScores[slot]
@@ -31,6 +34,17 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
         <span style={{ textAlign: 'center' }}>L{score.planet}</span>
       </div>
     )
+  }
+
+  const handleResetScores = (): void => {
+    if (showConfirm) {
+      dispatch(resetHighScores())
+      setShowConfirm(false)
+    } else {
+      setShowConfirm(true)
+      // Auto-cancel confirmation after 3 seconds
+      setTimeout(() => setShowConfirm(false), 3000)
+    }
   }
 
   return (
@@ -101,29 +115,60 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
           </div>
         </div>
 
-        <button
-          onClick={onStartGame}
+        <div
           style={{
-            fontSize: '24px',
-            padding: '15px 40px',
-            backgroundColor: 'black',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontFamily: 'monospace',
-            letterSpacing: '2px',
-            transition: 'transform 0.2s'
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.transform = 'scale(1.05)'
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.transform = 'scale(1)'
+            display: 'flex',
+            gap: '20px',
+            alignItems: 'center'
           }}
         >
-          START GAME
-        </button>
+          <button
+            onClick={onStartGame}
+            style={{
+              fontSize: '24px',
+              padding: '15px 40px',
+              backgroundColor: 'black',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontFamily: 'monospace',
+              letterSpacing: '2px',
+              transition: 'transform 0.2s'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'scale(1.05)'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'scale(1)'
+            }}
+          >
+            START GAME
+          </button>
+
+          <button
+            onClick={handleResetScores}
+            style={{
+              fontSize: '14px',
+              padding: '10px 20px',
+              backgroundColor: showConfirm ? '#d00' : '#666',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontFamily: 'monospace',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'scale(1.05)'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'scale(1)'
+            }}
+          >
+            {showConfirm ? 'Confirm Reset' : 'Reset Scores'}
+          </button>
+        </div>
 
         <div
           style={{

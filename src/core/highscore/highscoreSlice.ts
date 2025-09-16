@@ -25,6 +25,20 @@ export type HighScoreState = {
   10: HighScore
 }
 
+// Default high scores
+const getDefaultHighScores = (): HighScoreState => ({
+  1: { user: 'Randy', planet: 3, score: 11145, fuel: 0, date: '' },
+  2: { user: 'Brian', planet: 3, score: 9590, fuel: 0, date: '' },
+  3: { user: 'Sam', planet: 2, score: 256, fuel: 0, date: '' },
+  4: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
+  5: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
+  6: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
+  7: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
+  8: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
+  9: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
+  10: { user: '', planet: 0, score: 0, fuel: 0, date: '' }
+})
+
 // Load high scores from localStorage or use defaults
 const loadHighScores = (): HighScoreState => {
   try {
@@ -36,19 +50,7 @@ const loadHighScores = (): HighScoreState => {
     console.error('Failed to load high scores from localStorage:', e)
   }
 
-  // Default high scores
-  return {
-    1: { user: 'Randy', planet: 3, score: 11145, fuel: 0, date: '' },
-    2: { user: 'Brian', planet: 3, score: 9590, fuel: 0, date: '' },
-    3: { user: 'Sam', planet: 2, score: 256, fuel: 0, date: '' },
-    4: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
-    5: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
-    6: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
-    7: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
-    8: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
-    9: { user: '', planet: 0, score: 0, fuel: 0, date: '' },
-    10: { user: '', planet: 0, score: 0, fuel: 0, date: '' }
-  }
+  return getDefaultHighScores()
 }
 
 // Save high scores to localStorage
@@ -103,8 +105,13 @@ export const highscoreSlice = createSlice({
       }
     },
     resetHighScores: () => {
-      const newState = loadHighScores()
-      saveHighScores(newState)
+      const newState = getDefaultHighScores()
+      // Clear localStorage to ensure defaults are used
+      try {
+        localStorage.removeItem(HIGH_SCORES_KEY)
+      } catch (e) {
+        console.error('Failed to clear high scores from localStorage:', e)
+      }
       return newState
     }
   }
