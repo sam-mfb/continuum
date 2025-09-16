@@ -18,8 +18,38 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame, totalLevels }) =
   const [showConfirm, setShowConfirm] = useState(false)
   const [selectedLevel, setSelectedLevel] = useState(1)
 
+  // Find the most recent score with a valid date
+  const getMostRecentSlot = (): keyof HighScoreState | null => {
+    let mostRecentSlot: keyof HighScoreState | null = null
+    let mostRecentDate: Date | null = null
+
+    Object.keys(highScores).forEach(key => {
+      const slot = Number(key) as keyof HighScoreState
+      const score = highScores[slot]
+      if (score.date && score.date !== '') {
+        try {
+          const date = new Date(score.date)
+          // Check if it's a valid date
+          if (!isNaN(date.getTime())) {
+            if (!mostRecentDate || date > mostRecentDate) {
+              mostRecentDate = date
+              mostRecentSlot = slot
+            }
+          }
+        } catch {
+          // Invalid date format, skip
+        }
+      }
+    })
+
+    return mostRecentSlot
+  }
+
+  const mostRecentSlot = getMostRecentSlot()
+
   const formatHighScore = (slot: keyof HighScoreState): React.ReactElement => {
     const score = highScores[slot]
+    const isRecent = slot === mostRecentSlot
 
     return (
       <div
@@ -28,8 +58,11 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame, totalLevels }) =
           display: 'grid',
           gridTemplateColumns: '30px 150px 100px 60px',
           gap: '20px',
-          fontSize: '18px',
-          padding: '5px 0'
+          fontSize: '16px',
+          padding: '4px 10px',
+          backgroundColor: isRecent ? 'white' : 'transparent',
+          color: isRecent ? 'black' : 'white',
+          margin: '0 -10px'
         }}
       >
         <span>{slot}.</span>
@@ -76,12 +109,12 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame, totalLevels }) =
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '40px'
+          gap: '30px'
         }}
       >
         <h1
           style={{
-            fontSize: '36px',
+            fontSize: '32px',
             margin: 0,
             letterSpacing: '3px',
             fontWeight: 'bold'
@@ -94,17 +127,17 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame, totalLevels }) =
           style={{
             backgroundColor: 'black',
             border: '1px solid white',
-            padding: '20px',
+            padding: '15px',
             minWidth: '400px'
           }}
         >
           <h2
             style={{
-              fontSize: '20px',
-              margin: '0 0 15px 0',
+              fontSize: '18px',
+              margin: '0 0 10px 0',
               textAlign: 'center',
               borderBottom: '1px solid white',
-              paddingBottom: '8px'
+              paddingBottom: '6px'
             }}
           >
             HIGH SCORES
@@ -128,7 +161,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame, totalLevels }) =
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: '20px',
+            gap: '15px',
             alignItems: 'center'
           }}
         >
@@ -195,8 +228,8 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame, totalLevels }) =
             <button
               onClick={() => onStartGame(selectedLevel)}
             style={{
-              fontSize: '20px',
-              padding: '12px 30px',
+              fontSize: '18px',
+              padding: '10px 24px',
               backgroundColor: 'white',
               color: 'black',
               border: '1px solid white',
@@ -211,8 +244,8 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame, totalLevels }) =
             <button
               onClick={handleResetScores}
             style={{
-              fontSize: '12px',
-              padding: '8px 16px',
+              fontSize: '11px',
+              padding: '6px 12px',
               backgroundColor: 'black',
               color: 'white',
               border: '1px solid white',
@@ -227,10 +260,10 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame, totalLevels }) =
 
         <div
           style={{
-            fontSize: '12px',
+            fontSize: '11px',
             color: 'white',
             textAlign: 'center',
-            lineHeight: '1.5',
+            lineHeight: '1.3',
             opacity: 0.8
           }}
         >
