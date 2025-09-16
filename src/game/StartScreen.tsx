@@ -18,9 +18,8 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame, totalLevels }) =
   const [showConfirm, setShowConfirm] = useState(false)
   const [selectedLevel, setSelectedLevel] = useState(1)
 
-  const formatHighScore = (slot: keyof HighScoreState): React.ReactElement | null => {
+  const formatHighScore = (slot: keyof HighScoreState): React.ReactElement => {
     const score = highScores[slot]
-    if (!score.user) return null
 
     return (
       <div
@@ -34,9 +33,9 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame, totalLevels }) =
         }}
       >
         <span>{slot}.</span>
-        <span>{score.user}</span>
-        <span style={{ textAlign: 'right' }}>{score.score.toLocaleString()}</span>
-        <span style={{ textAlign: 'center' }}>L{score.planet}</span>
+        <span>{score.user || '---'}</span>
+        <span style={{ textAlign: 'right' }}>{score.score ? score.score.toLocaleString() : '---'}</span>
+        <span style={{ textAlign: 'center' }}>{score.planet ? `L${score.planet}` : '---'}</span>
       </div>
     )
   }
@@ -121,8 +120,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame, totalLevels }) =
             {Object.keys(highScores)
               .map(Number)
               .sort((a, b) => a - b)
-              .map(slot => formatHighScore(slot as keyof HighScoreState))
-              .filter(Boolean)}
+              .map(slot => formatHighScore(slot as keyof HighScoreState))}
           </div>
         </div>
 
