@@ -842,6 +842,13 @@ export const createGameRenderer =
       // Clear the flash for next frame
       store.dispatch(clearShipDeathFlash())
 
+      // Play accumulated sounds before returning (important for 'A' key death!)
+      const deathFlashSoundState = store.getState().sound
+      playSounds(deathFlashSoundState, {
+        shipDeadCount: finalState.ship.deadCount,
+        fizzActive: false
+      })
+
       // Skip all other rendering and return early
       // The flash lasts exactly one frame
       return
