@@ -24,7 +24,7 @@ import {
   moveBullets,
   clearBunkShots
 } from '@core/shots'
-import { ShipControl, shipControl, shipSlice } from '@core/ship'
+import { ShipControl, shipControl, shipSlice, CRITFUEL } from '@core/ship'
 import { statusSlice } from '@core/status'
 import { SCRWTH, VIEWHT, screenSlice } from '@core/screen'
 import type { SpriteServiceV2 } from '@core/sprites'
@@ -344,6 +344,27 @@ export const createGameRenderer =
 
         // Move ship (Play.c:216 - move_ship())
         store.dispatch(shipSlice.actions.moveShip())
+      }
+
+      // Check and update fuel messages (replaces fuel_minus(0) from Play.c:169,1022)
+      // This needs to happen after ship movement which consumes fuel
+      const fuelState = store.getState()
+      const currentFuel = fuelState.ship.fuel
+      const currentMessage = fuelState.status.curmessage
+
+      if (currentFuel === 0 && currentMessage !== 'OUT OF FUEL') {
+        store.dispatch(statusSlice.actions.setMessage('OUT OF FUEL'))
+      } else if (
+        currentFuel < CRITFUEL &&
+        currentFuel > 0 &&
+        currentMessage !== 'FUEL CRITICAL'
+      ) {
+        store.dispatch(statusSlice.actions.setMessage('FUEL CRITICAL'))
+      } else if (
+        currentFuel >= CRITFUEL &&
+        (currentMessage === 'FUEL CRITICAL' || currentMessage === 'OUT OF FUEL')
+      ) {
+        store.dispatch(statusSlice.actions.setMessage(null))
       }
 
       // Apply containment after movement (Play.c:394-457 - contain_ship())
