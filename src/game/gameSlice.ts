@@ -4,11 +4,7 @@
 
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { GalaxyHeader } from '@core/galaxy'
-import {
-  STARTING_LEVEL,
-  GAME_OVER_MESSAGE,
-  LEVEL_COMPLETE_MESSAGE
-} from './constants'
+import { GAME_OVER_MESSAGE, LEVEL_COMPLETE_MESSAGE } from './constants'
 import type { AlignmentMode } from '@/core/shared/alignment'
 
 export type GameMode = 'start' | 'playing' | 'highScoreEntry' | 'gameOver'
@@ -21,7 +17,6 @@ export type PendingHighScore = {
 
 export type GameState = {
   // Level progression
-  currentLevel: number
   galaxyHeader: GalaxyHeader | null
   galaxyLoaded: boolean // Flag to indicate if galaxy is loaded
 
@@ -41,7 +36,6 @@ export type GameState = {
 }
 
 const initialState: GameState = {
-  currentLevel: STARTING_LEVEL,
   galaxyHeader: null,
   galaxyLoaded: false,
   gameOver: false,
@@ -63,15 +57,14 @@ export const gameSlice = createSlice({
     },
 
     // Level progression
-    setCurrentLevel: (state, action: PayloadAction<number>) => {
-      state.currentLevel = action.payload
-      state.levelComplete = false
-      state.statusMessage = ''
-    },
 
     markLevelComplete: state => {
       state.levelComplete = true
       state.statusMessage = LEVEL_COMPLETE_MESSAGE
+    },
+
+    clearLevelComplete: state => {
+      state.levelComplete = false
     },
 
     // Game over handling
@@ -81,7 +74,6 @@ export const gameSlice = createSlice({
     },
 
     resetGame: state => {
-      state.currentLevel = STARTING_LEVEL
       state.gameOver = false
       state.levelComplete = false
       state.statusMessage = ''
@@ -116,7 +108,6 @@ export const gameSlice = createSlice({
 
     startGame: state => {
       state.mode = 'playing'
-      state.currentLevel = STARTING_LEVEL
       state.gameOver = false
       state.levelComplete = false
       state.statusMessage = ''
@@ -136,8 +127,8 @@ export const gameSlice = createSlice({
 
 export const {
   loadGalaxyHeader,
-  setCurrentLevel,
   markLevelComplete,
+  clearLevelComplete,
   triggerGameOver,
   resetGame,
   setStatusMessage,

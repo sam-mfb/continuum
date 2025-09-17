@@ -285,6 +285,7 @@ const StartScreen: React.FC<StartScreenProps> = ({
         >
           <div>Controls:</div>
           <div>Z/X - Rotate | . - Thrust | / - Fire | Space - Shield</div>
+          <div>A - Self destruct (use when stuck)</div>
         </div>
       </div>
     </div>

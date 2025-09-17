@@ -24,7 +24,7 @@ import {
   moveBullets,
   clearBunkShots
 } from '@core/shots'
-import { ShipControl, shipControl, shipSlice } from '@core/ship'
+import { ShipControl, shipControl, shipSlice, CRITFUEL } from '@core/ship'
 import { statusSlice } from '@core/status'
 import { SCRWTH, VIEWHT, screenSlice } from '@core/screen'
 import type { SpriteServiceV2 } from '@core/sprites'
@@ -179,6 +179,84 @@ void initializeGame()
 
 // No longer need a separate resetGame function - handled by level manager
 
+/**
+ * Trigger ship death sequence - extracted for reuse
+ * Handles all death logic including bunker destruction, explosions, and sounds
+ */
+const triggerShipDeath = (store: Store<RootState>): void => {
+  // (a) Update ship state
+  store.dispatch(shipSlice.actions.killShip())
+
+  // (b) Death blast - destroy ONE nearby bunker (Play.c:338-346)
+  // Use global position from state (already calculated by containShip)
+  const deathState = store.getState()
+  const deathGlobalX = deathState.ship.globalx
+  const deathGlobalY = deathState.ship.globaly
+
+  // Only kills bunkers in field of view for directional types
+  const bunkers = deathState.planet.bunkers
+  const BUNKROTKINDS = 2 // Kinds 0-1 are directional, 2+ are omnidirectional
+
+  for (let index = 0; index < bunkers.length; index++) {
+    const bunker = bunkers[index]!
+
+    // Match original C logic: stop at first bunker with negative rot (sentinel value)
+    // This marks the end of active bunkers in the array
+    if (bunker.rot < 0) {
+      break
+    }
+
+    if (
+      bunker.alive &&
+      xyindist(
+        bunker.x - deathGlobalX,
+        bunker.y - deathGlobalY,
+        SKILLBRADIUS
+      ) &&
+      (bunker.kind >= BUNKROTKINDS || // Omnidirectional bunkers always killable
+        legalAngle(bunker.rot, bunker.x, bunker.y, deathGlobalX, deathGlobalY)) // Directional need angle check
+    ) {
+      store.dispatch(killBunker({ index }))
+
+      // Check if bunker was actually destroyed (difficult bunkers might survive)
+      const updatedBunker = store.getState().planet.bunkers[index]
+      if (!updatedBunker || !updatedBunker.alive) {
+        // Play bunker explosion sound - Play.c:368
+        store.dispatch(playDiscrete(SoundType.EXP1_SOUND))
+
+        // Award score for bunker destruction (Play.c:365-366)
+        store.dispatch(
+          statusSlice.actions.scoreBunker({
+            kind: bunker.kind,
+            rot: bunker.rot
+          })
+        )
+      }
+
+      // Trigger bunker explosion
+      store.dispatch(
+        startExplosion({
+          x: bunker.x,
+          y: bunker.y,
+          dir: bunker.rot,
+          kind: bunker.kind
+        })
+      )
+      break // Only kill ONE bunker per death (Play.c:345)
+    }
+  }
+
+  // (c) Start ship explosion
+  store.dispatch(startShipDeath({ x: deathGlobalX, y: deathGlobalY }))
+
+  // (d) Play ship explosion sound (high priority) - Terrain.c:414
+  store.dispatch(playDiscrete(SoundType.EXP2_SOUND))
+
+  // (e) Stop any continuous sounds when ship dies
+  store.dispatch(setThrusting(false))
+  store.dispatch(setShielding(false))
+}
+
 const getPressedControls = (keysDown: Set<string>): ShipControl[] => {
   const controls: ShipControl[] = []
 
@@ -261,7 +339,7 @@ export const createGameRenderer =
 
     // Check for level completion (only if not already transitioning)
     if (!transitionState.active && checkLevelComplete(state)) {
-      console.log(`Level ${state.game.currentLevel} complete!`)
+      console.log(`Level ${state.status.currentlevel} complete!`)
 
       // Award bonus points (Play.c:107 - score_plus(planetbonus))
       const bonusPoints = state.status.planetbonus
@@ -333,17 +411,44 @@ export const createGameRenderer =
     let on_right_side: boolean
 
     if (state.ship.deadCount === 0) {
-      // Only handle controls if not in fizz transition (but allow during pre-delay)
-      if (!transitionState.active || transitionState.preDelayFrames > 0) {
-        // shipControl will read globalx/globaly from ship state (set by previous frame's containShip)
-        store.dispatch(
-          shipControl({
-            controlsPressed: getPressedControls(frame.keysDown)
-          })
-        )
+      // Check for self-destruct command (A key) - must be alive to trigger
+      if (frame.keysDown.has('KeyA')) {
+        triggerShipDeath(store)
+        // Skip normal controls and movement since ship is now dead
+      } else {
+        // Only handle controls if not in fizz transition (but allow during pre-delay)
+        if (!transitionState.active || transitionState.preDelayFrames > 0) {
+          // shipControl will read globalx/globaly from ship state (set by previous frame's containShip)
+          store.dispatch(
+            shipControl({
+              controlsPressed: getPressedControls(frame.keysDown)
+            })
+          )
 
-        // Move ship (Play.c:216 - move_ship())
-        store.dispatch(shipSlice.actions.moveShip())
+          // Move ship (Play.c:216 - move_ship())
+          store.dispatch(shipSlice.actions.moveShip())
+        }
+      }
+
+      // Check and update fuel messages (replaces fuel_minus(0) from Play.c:169,1022)
+      // This needs to happen after ship movement which consumes fuel
+      const fuelState = store.getState()
+      const currentFuel = fuelState.ship.fuel
+      const currentMessage = fuelState.status.curmessage
+
+      if (currentFuel === 0 && currentMessage !== 'OUT OF FUEL') {
+        store.dispatch(statusSlice.actions.setMessage('OUT OF FUEL'))
+      } else if (
+        currentFuel < CRITFUEL &&
+        currentFuel > 0 &&
+        currentMessage !== 'FUEL CRITICAL'
+      ) {
+        store.dispatch(statusSlice.actions.setMessage('FUEL CRITICAL'))
+      } else if (
+        currentFuel >= CRITFUEL &&
+        (currentMessage === 'FUEL CRITICAL' || currentMessage === 'OUT OF FUEL')
+      ) {
+        store.dispatch(statusSlice.actions.setMessage(null))
       }
 
       // Apply containment after movement (Play.c:394-457 - contain_ship())
@@ -658,7 +763,7 @@ export const createGameRenderer =
           lives: finalState.ship.lives,
           score: finalState.status.score,
           bonus: finalState.status.planetbonus,
-          level: extFinalState.game.currentLevel,
+          level: extFinalState.status.currentlevel,
           message: extFinalState.game.statusMessage || '',
           spriteService
         }
@@ -709,7 +814,7 @@ export const createGameRenderer =
           lives: finalState.ship.lives,
           score: finalState.status.score,
           bonus: finalState.status.planetbonus,
-          level: extFinalState.game.currentLevel,
+          level: extFinalState.status.currentlevel,
           message: extFinalState.game.statusMessage || '',
           spriteService
         }
@@ -736,6 +841,13 @@ export const createGameRenderer =
 
       // Clear the flash for next frame
       store.dispatch(clearShipDeathFlash())
+
+      // Play accumulated sounds before returning (important for 'A' key death!)
+      const deathFlashSoundState = store.getState().sound
+      playSounds(deathFlashSoundState, {
+        shipDeadCount: finalState.ship.deadCount,
+        fizzActive: false
+      })
 
       // Skip all other rendering and return early
       // The flash lasts exactly one frame
@@ -872,7 +984,7 @@ export const createGameRenderer =
       lives: finalState.ship.lives,
       score: finalState.status.score,
       bonus: finalState.status.planetbonus,
-      level: extState.game.currentLevel, // Use game's current level
+      level: extState.status.currentlevel, // Use status's current level
       message: extState.game.statusMessage || finalState.status.curmessage, // Prefer game messages
       spriteService
     }
@@ -1100,84 +1212,7 @@ export const createGameRenderer =
 
       if (collision) {
         // Ship collision detected - trigger death sequence
-
-        // (a) Update ship state
-        store.dispatch(shipSlice.actions.killShip())
-
-        // (b) Death blast - destroy ONE nearby bunker (Play.c:338-346)
-        // Use global position from state (already calculated by containShip)
-        const deathState = store.getState()
-        const deathGlobalX = deathState.ship.globalx
-        const deathGlobalY = deathState.ship.globaly
-
-        // Only kills bunkers in field of view for directional types
-        const bunkers = deathState.planet.bunkers
-        const BUNKROTKINDS = 2 // Kinds 0-1 are directional, 2+ are omnidirectional
-
-        for (let index = 0; index < bunkers.length; index++) {
-          const bunker = bunkers[index]!
-
-          // Match original C logic: stop at first bunker with negative rot (sentinel value)
-          // This marks the end of active bunkers in the array
-          if (bunker.rot < 0) {
-            break
-          }
-
-          if (
-            bunker.alive &&
-            xyindist(
-              bunker.x - deathGlobalX,
-              bunker.y - deathGlobalY,
-              SKILLBRADIUS
-            ) &&
-            (bunker.kind >= BUNKROTKINDS || // Omnidirectional bunkers always killable
-              legalAngle(
-                bunker.rot,
-                bunker.x,
-                bunker.y,
-                deathGlobalX,
-                deathGlobalY
-              )) // Directional need angle check
-          ) {
-            store.dispatch(killBunker({ index }))
-
-            // Check if bunker was actually destroyed (difficult bunkers might survive)
-            const updatedBunker = store.getState().planet.bunkers[index]
-            if (!updatedBunker || !updatedBunker.alive) {
-              // Play bunker explosion sound - Play.c:368
-              store.dispatch(playDiscrete(SoundType.EXP1_SOUND))
-
-              // Award score for bunker destruction (Play.c:365-366)
-              store.dispatch(
-                statusSlice.actions.scoreBunker({
-                  kind: bunker.kind,
-                  rot: bunker.rot
-                })
-              )
-            }
-
-            // Trigger bunker explosion
-            store.dispatch(
-              startExplosion({
-                x: bunker.x,
-                y: bunker.y,
-                dir: bunker.rot,
-                kind: bunker.kind
-              })
-            )
-            break // Only kill ONE bunker per death (Play.c:345)
-          }
-        }
-
-        // (c) Start ship explosion
-        store.dispatch(startShipDeath({ x: deathGlobalX, y: deathGlobalY }))
-
-        // (d) Play ship explosion sound (high priority) - Terrain.c:414
-        store.dispatch(playDiscrete(SoundType.EXP2_SOUND))
-
-        // (e) Stop any continuous sounds when ship dies
-        store.dispatch(setThrusting(false))
-        store.dispatch(setShielding(false))
+        triggerShipDeath(store)
       }
     }
 

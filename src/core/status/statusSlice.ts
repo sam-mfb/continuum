@@ -75,16 +75,21 @@ export const statusSlice = createSlice({
       state.currentlevel++
     },
 
+    // Set the level directly (used by level manager)
+    setLevel: (state, action: PayloadAction<number>) => {
+      state.currentlevel = action.payload
+    },
+
     // Make game high score ineligible
     invalidateHighScore: state => {
       state.highScoreEligible = false
     },
 
     // Initialize for new game
-    initStatus: state => {
+    initStatus: (state, action: PayloadAction<number | undefined>) => {
       state.score = 0
       state.planetbonus = 0
-      state.currentlevel = 1
+      state.currentlevel = action.payload ?? 1
       state.curmessage = null
       state.highScoreEligible = true
     }
@@ -95,6 +100,7 @@ export const {
   setMessage,
   setPlanetBonus,
   nextLevel,
+  setLevel,
   invalidateHighScore,
   initStatus
 } = statusSlice.actions

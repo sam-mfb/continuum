@@ -1,5 +1,9 @@
 import type { Middleware } from '@reduxjs/toolkit'
-import { setHighScore, resetHighScores, getDefaultHighScores } from './highscoreSlice'
+import {
+  setHighScore,
+  resetHighScores,
+  getDefaultHighScores
+} from './highscoreSlice'
 import type { HighScoreState } from './highscoreSlice'
 
 const HIGHSCORE_STORAGE_KEY = 'continuum_highscores'
@@ -16,7 +20,10 @@ export const highscoreMiddleware: Middleware = store => next => action => {
   if (setHighScore.match(action)) {
     const state = store.getState()
     try {
-      localStorage.setItem(HIGHSCORE_STORAGE_KEY, JSON.stringify(state.highscore))
+      localStorage.setItem(
+        HIGHSCORE_STORAGE_KEY,
+        JSON.stringify(state.highscore)
+      )
     } catch (error) {
       console.error('Failed to save high scores to localStorage:', error)
     }
