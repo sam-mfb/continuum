@@ -411,7 +411,7 @@ export const createGameRenderer =
     let on_right_side: boolean
 
     if (state.ship.deadCount === 0) {
-      // Check for debug kill command (A key) - must be alive to trigger
+      // Check for self-destruct command (A key) - must be alive to trigger
       if (frame.keysDown.has('KeyA')) {
         triggerShipDeath(store)
         // Skip normal controls and movement since ship is now dead
