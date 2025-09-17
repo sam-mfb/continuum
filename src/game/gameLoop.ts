@@ -214,13 +214,7 @@ const triggerShipDeath = (store: Store<RootState>): void => {
         SKILLBRADIUS
       ) &&
       (bunker.kind >= BUNKROTKINDS || // Omnidirectional bunkers always killable
-        legalAngle(
-          bunker.rot,
-          bunker.x,
-          bunker.y,
-          deathGlobalX,
-          deathGlobalY
-        )) // Directional need angle check
+        legalAngle(bunker.rot, bunker.x, bunker.y, deathGlobalX, deathGlobalY)) // Directional need angle check
     ) {
       store.dispatch(killBunker({ index }))
 
