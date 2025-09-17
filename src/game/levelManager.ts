@@ -14,7 +14,7 @@ import { resetSparksAlive, clearShards } from '@core/explosions'
 import { initializeBunkers, initializeFuels } from '@core/planet'
 import { BunkerKind } from '@core/figs/types'
 import { SCRWTH, TOPMARG, BOTMARG } from '@core/screen'
-import { resetGame, setCurrentLevel } from './gameSlice'
+import { resetGame, clearLevelComplete, clearStatusMessage } from './gameSlice'
 import type { RootState } from './store'
 
 /**
@@ -78,8 +78,12 @@ export function loadLevel(store: Store<RootState>, levelNum: number): void {
     return
   }
 
-  // Update the current level in game state to match what we're loading
-  store.dispatch(setCurrentLevel(levelNum))
+  // Update the current level in status state to match what we're loading
+  store.dispatch(statusSlice.actions.setLevel(levelNum))
+
+  // Reset level complete flag and status message for the new level
+  store.dispatch(clearLevelComplete())
+  store.dispatch(clearStatusMessage())
 
   // Get the planet data for this level from the service
   const planet = galaxyService.getPlanet(levelNum)
@@ -151,7 +155,7 @@ export function transitionToNextLevel(store: Store<RootState>): void {
   // Check if we've completed all levels
   if (
     state.game.galaxyHeader &&
-    state.game.currentLevel >= state.game.galaxyHeader.planets
+    state.status.currentlevel >= state.game.galaxyHeader.planets
   ) {
     // Game won! For now, just loop back to level 1
     console.log('Game completed! Restarting from level 1')
@@ -159,7 +163,7 @@ export function transitionToNextLevel(store: Store<RootState>): void {
     loadLevel(store, 1)
   } else {
     // Load next level
-    const nextLevelNum = state.game.currentLevel + 1
+    const nextLevelNum = state.status.currentlevel + 1
     loadLevel(store, nextLevelNum)
   }
 }

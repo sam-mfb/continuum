@@ -261,7 +261,7 @@ export const createGameRenderer =
 
     // Check for level completion (only if not already transitioning)
     if (!transitionState.active && checkLevelComplete(state)) {
-      console.log(`Level ${state.game.currentLevel} complete!`)
+      console.log(`Level ${state.status.currentlevel} complete!`)
 
       // Award bonus points (Play.c:107 - score_plus(planetbonus))
       const bonusPoints = state.status.planetbonus
@@ -658,7 +658,7 @@ export const createGameRenderer =
           lives: finalState.ship.lives,
           score: finalState.status.score,
           bonus: finalState.status.planetbonus,
-          level: extFinalState.game.currentLevel,
+          level: extFinalState.status.currentlevel,
           message: extFinalState.game.statusMessage || '',
           spriteService
         }
@@ -709,7 +709,7 @@ export const createGameRenderer =
           lives: finalState.ship.lives,
           score: finalState.status.score,
           bonus: finalState.status.planetbonus,
-          level: extFinalState.game.currentLevel,
+          level: extFinalState.status.currentlevel,
           message: extFinalState.game.statusMessage || '',
           spriteService
         }
@@ -872,7 +872,7 @@ export const createGameRenderer =
       lives: finalState.ship.lives,
       score: finalState.status.score,
       bonus: finalState.status.planetbonus,
-      level: extState.game.currentLevel, // Use game's current level
+      level: extState.status.currentlevel, // Use status's current level
       message: extState.game.statusMessage || finalState.status.curmessage, // Prefer game messages
       spriteService
     }
