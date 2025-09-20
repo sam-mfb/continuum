@@ -8,59 +8,80 @@
 
 import type { Store } from '@reduxjs/toolkit'
 import type { BitmapRenderer } from '@lib/bitmap'
-import { fullFigure } from '@core/ship'
-import { drawShipShot } from '@core/shots'
-import { drawStrafe } from '@core/shots'
-import { drawDotSafe } from '@core/shots'
+import type { SpriteServiceV2 } from '@core/sprites'
+import type { GalaxyHeader } from '@core/galaxy'
+import type { ShardSprite, ShardSpriteSet, BunkerKind } from '@core/figs/types'
+import type { SoundUIState } from '@core/sound/soundSlice'
+
+// Ship imports
 import {
-  updateBunkerRotations,
-  updateFuelAnimations,
-  killBunker
-} from '@core/planet'
+  fullFigure,
+  flameOn,
+  grayFigure,
+  eraseFigure,
+  shiftFigure,
+  checkFigure,
+  checkForBounce,
+  ShipControl,
+  shipControl,
+  shipSlice,
+  CRITFUEL,
+  SKILLBRADIUS
+} from '@core/ship'
+
+// Shots imports
 import {
+  drawShipShot,
+  drawStrafe,
+  drawDotSafe,
   shotsSlice,
   doStrafes,
   bunkShoot,
   moveBullets,
-  clearBunkShots
+  clearBunkShots,
+  xyindist
 } from '@core/shots'
-import { ShipControl, shipControl, shipSlice, CRITFUEL } from '@core/ship'
-import { statusSlice } from '@core/status'
-import { SCRWTH, VIEWHT, screenSlice } from '@core/screen'
-import type { SpriteServiceV2 } from '@core/sprites'
-import { SCENTER, type BunkerKind } from '@core/figs/types'
-import { flameOn } from '@core/ship'
-import { grayFigure } from '@core/ship'
-import { eraseFigure } from '@core/ship'
-import { getAlignment } from '@core/shared'
-import { getBackgroundPattern } from '@core/shared'
-import { shiftFigure } from '@core/ship'
-import { whiteTerrain, blackTerrain } from '@core/walls'
-import { viewClear, viewWhite } from '@core/screen'
-import { LINE_KIND } from '@core/walls'
-import { updateSbar, sbarClear } from '@core/status'
-import { checkFigure } from '@core/ship'
-import { checkForBounce } from '@core/ship'
-import { doBunks } from '@core/planet'
-import { drawCraters } from '@core/planet'
-import { drawFuels } from '@core/planet'
-import { rint } from '@core/shared'
+
+// Planet imports
+import {
+  updateBunkerRotations,
+  updateFuelAnimations,
+  killBunker,
+  doBunks,
+  drawCraters,
+  drawFuels,
+  legalAngle
+} from '@core/planet'
+
+// Status imports
+import { statusSlice, updateSbar, sbarClear } from '@core/status'
+
+// Screen imports
+import { SCRWTH, VIEWHT, screenSlice, viewClear, viewWhite } from '@core/screen'
+
+// Walls imports
+import { whiteTerrain, blackTerrain, LINE_KIND } from '@core/walls'
+
+// Shared imports
+import { getAlignment, getBackgroundPattern, rint } from '@core/shared'
+import { containShip } from '@core/shared/containShip'
+import { SCENTER } from '@core/figs/types'
+
+// Explosions imports
 import {
   startShipDeath,
   startExplosion,
   updateExplosions,
   clearShipDeathFlash,
   resetSparksAlive,
-  clearShards
+  clearShards,
+  drawExplosions
 } from '@core/explosions'
-import { drawExplosions } from '@core/explosions'
-import type { ShardSprite, ShardSpriteSet } from '@core/figs/types'
-import { SKILLBRADIUS } from '@core/ship'
-import { xyindist } from '@core/shots'
-import { legalAngle } from '@core/planet'
+
+// Galaxy imports
 import { getGalaxyService } from '@core/galaxy'
-import type { GalaxyHeader } from '@core/galaxy'
-import { containShip } from '@core/shared/containShip'
+
+// Sound imports
 import {
   resetFrame,
   playDiscrete,
@@ -72,8 +93,9 @@ import {
   initializeSoundService,
   cleanupSoundService
 } from '@core/sound/service'
-import type { SoundUIState } from '@core/sound/soundSlice'
 import { SoundType } from '@core/sound/constants'
+
+// Transition imports
 import { startLevelTransitionThunk, updateTransition } from '@core/transition'
 
 // Game-specific imports
