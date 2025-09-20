@@ -4,7 +4,6 @@
 
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { GalaxyHeader } from '@core/galaxy'
-import { GAME_OVER_MESSAGE, LEVEL_COMPLETE_MESSAGE } from './constants'
 import type { AlignmentMode } from '@/core/shared/alignment'
 
 export type GameMode = 'start' | 'playing' | 'highScoreEntry' | 'gameOver'
@@ -60,7 +59,6 @@ export const gameSlice = createSlice({
 
     markLevelComplete: state => {
       state.levelComplete = true
-      state.statusMessage = LEVEL_COMPLETE_MESSAGE
     },
 
     clearLevelComplete: state => {
@@ -70,7 +68,6 @@ export const gameSlice = createSlice({
     // Game over handling
     triggerGameOver: state => {
       state.gameOver = true
-      state.statusMessage = GAME_OVER_MESSAGE
     },
 
     resetGame: state => {

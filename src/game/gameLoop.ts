@@ -353,6 +353,7 @@ export const createGameRenderer =
       console.log('Awarded extra life for level completion')
 
       store.dispatch(markLevelComplete())
+      store.dispatch(statusSlice.actions.setMessage('MISSION COMPLETE'))
       // Don't stop ship yet - it keeps moving during the countdown!
       // Ship can even die during this period (Play.c:109-113)
 
