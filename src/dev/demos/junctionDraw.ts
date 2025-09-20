@@ -204,11 +204,10 @@ export const junctionDrawRenderer: BitmapRenderer = (bitmap, frame, _env) => {
   }
 
   // First, create a crosshatch gray background
-  const clearedBitmap = viewClear({
+  let resultBitmap = viewClear({
     screenX: viewportState.x,
     screenY: viewportState.y
   })(bitmap)
-  bitmap.data.set(clearedBitmap.data)
 
   // Get wall data from Redux state
   const wallState = store.getState().walls
@@ -233,26 +232,25 @@ export const junctionDrawRenderer: BitmapRenderer = (bitmap, frame, _env) => {
   }
 
   // First render white terrain (undersides, patches, junctions) on top
-  let renderedBitmap = whiteTerrain({
+  resultBitmap = whiteTerrain({
     whites: wallState.whites,
     junctions: wallState.junctions,
     firstWhite: wallState.firstWhite,
     organizedWalls: wallState.organizedWalls,
     viewport: viewport,
     worldwidth: WORLD_WIDTH
-  })(bitmap)
+  })(resultBitmap)
 
   // Then render black terrain (top surfaces) for normal lines
-  renderedBitmap = blackTerrain({
+  resultBitmap = blackTerrain({
     thekind: LINE_KIND.NORMAL, // Draw only normal lines
     kindPointers: wallState.kindPointers,
     organizedWalls: wallState.organizedWalls,
     viewport: viewport,
     worldwidth: WORLD_WIDTH
-  })(renderedBitmap)
+  })(resultBitmap)
 
-  // Copy rendered bitmap data back to original
-  bitmap.data.set(renderedBitmap.data)
+  return resultBitmap
 
   // This will show all 64 junction combinations with:
   // - Black tops of all walls (from blackTerrain)

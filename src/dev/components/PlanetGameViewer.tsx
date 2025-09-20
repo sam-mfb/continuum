@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, type JSX } from 'react'
 import { useAppSelector, useAppDispatch, store } from '../store/store'
 import {
   createMonochromeBitmap,
-  clearBitmap,
   bitmapToCanvas
 } from '@lib/bitmap'
 import { createPlanetRenderer } from '../demos/planetRendererFactory'
@@ -113,9 +112,6 @@ export const PlanetGameViewer = ({
         const deltaTime = now - lastFrameTimeRef.current
         const totalTime = now - lastFrameTimeRef.current
 
-        // Clear bitmap
-        clearBitmap(bitmapRef.current!)
-
         // Create frame info
         const frameInfo = {
           frameCount: frameCountRef.current,
@@ -127,15 +123,18 @@ export const PlanetGameViewer = ({
           keysReleased: new Set<string>()
         }
 
-        // Call renderer
-        renderer(bitmapRef.current!, frameInfo, {
+        // Call renderer and get the result
+        const renderedBitmap = renderer(bitmapRef.current!, frameInfo, {
           width: 512,
           height: 342,
           fps: 20
         })
 
+        // Update bitmap reference for next frame
+        bitmapRef.current = renderedBitmap
+
         // Convert bitmap to canvas
-        bitmapToCanvas(bitmapRef.current!, ctx)
+        bitmapToCanvas(renderedBitmap, ctx)
 
         // Update timing
         lastFrameTimeRef.current = now

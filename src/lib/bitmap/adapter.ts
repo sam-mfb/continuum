@@ -13,7 +13,6 @@ import type {
   BitmapToCanvasOptions
 } from './types'
 import { createMonochromeBitmap } from './create'
-import { clearBitmap } from './operations'
 import { bitmapToCanvas } from './conversion'
 
 /**
@@ -40,14 +39,15 @@ export const createBitmapGameLoop = (
       bitmap = createMonochromeBitmap(ctx.canvas.width, ctx.canvas.height)
     }
 
-    // Clear bitmap to white
-    clearBitmap(bitmap)
+    // Call the bitmap renderer and get the result
+    // The renderer is responsible for clearing/initializing the bitmap as needed
+    const renderedBitmap = renderer(bitmap, frame, env)
 
-    // Call the bitmap renderer
-    renderer(bitmap, frame, env)
+    // Update the bitmap for the next frame
+    bitmap = renderedBitmap
 
     // Convert bitmap to canvas
-    bitmapToCanvas(bitmap, ctx, options)
+    bitmapToCanvas(renderedBitmap, ctx, options)
   }
 }
 
@@ -74,14 +74,15 @@ export const wrapBitmapRenderer = (
       bitmap = createMonochromeBitmap(ctx.canvas.width, ctx.canvas.height)
     }
 
-    // Clear bitmap
-    clearBitmap(bitmap)
+    // Render and get the result
+    // The renderer is responsible for clearing/initializing the bitmap as needed
+    const renderedBitmap = renderer(bitmap, frame, env)
 
-    // Render
-    renderer(bitmap, frame, env)
+    // Update the stored bitmap reference for getBitmap
+    bitmap = renderedBitmap
 
     // Convert to canvas
-    bitmapToCanvas(bitmap, ctx, options)
+    bitmapToCanvas(renderedBitmap, ctx, options)
   }
 
   return {

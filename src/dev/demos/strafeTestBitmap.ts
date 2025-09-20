@@ -68,21 +68,20 @@ export const strafeTestBitmapRenderer: BitmapRenderer = (
   }
 
   // Clear to white background (all zeros in our inverted bitmap)
-  bitmap.data.fill(0)
+  let resultBitmap = { ...bitmap }
+  resultBitmap.data.fill(0)
 
   // Draw all the strafes
-  let renderedBitmap = bitmap
   for (const strafe of strafes) {
-    renderedBitmap = drawStrafe({
+    resultBitmap = drawStrafe({
       x: strafe.x,
       y: strafe.y,
       rot: strafe.rot,
       scrnx: viewportState.x,
       scrny: viewportState.y,
       worldwidth: WORLD_WIDTH
-    })(renderedBitmap)
+    })(resultBitmap)
   }
 
-  // Copy rendered bitmap data back to original
-  bitmap.data.set(renderedBitmap.data)
+  return resultBitmap
 }

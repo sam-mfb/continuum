@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import type { BitmapRenderer } from '@lib/bitmap'
-import { createMonochromeBitmap, clearBitmap } from '@lib/bitmap'
+import { createMonochromeBitmap } from '@lib/bitmap'
 import { startGame, setMode } from '../gameSlice'
 import type { RootState } from '../store'
 import { setHighScore } from '@/core/highscore/highscoreSlice'
@@ -61,8 +61,8 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     // Set up pixel-perfect rendering
     ctx.imageSmoothingEnabled = false
 
-    // Create bitmap
-    const bitmap = createMonochromeBitmap(width, height)
+    // Create initial bitmap
+    let bitmap = createMonochromeBitmap(width, height)
 
     // Keyboard handlers
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -92,11 +92,8 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
       const deltaTime = currentTime - lastFrameTimeRef.current
 
       if (deltaTime >= frameIntervalMs) {
-        // Clear bitmap
-        clearBitmap(bitmap)
-
-        // Render game
-        renderer(
+        // Render game and get the resulting bitmap
+        const renderedBitmap = renderer(
           bitmap,
           {
             keysDown: keysDownRef.current,
@@ -114,24 +111,27 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
           }
         )
 
+        // Update bitmap reference for next frame
+        bitmap = renderedBitmap
+
         // Create offscreen canvas at native resolution
         const offscreen = document.createElement('canvas')
-        offscreen.width = bitmap.width
-        offscreen.height = bitmap.height
+        offscreen.width = renderedBitmap.width
+        offscreen.height = renderedBitmap.height
         const offCtx = offscreen.getContext('2d')!
 
         // Convert bitmap to ImageData
-        const imageData = new ImageData(bitmap.width, bitmap.height)
+        const imageData = new ImageData(renderedBitmap.width, renderedBitmap.height)
         const pixels = imageData.data
 
         // Convert monochrome bitmap to RGBA
-        for (let y = 0; y < bitmap.height; y++) {
-          for (let x = 0; x < bitmap.width; x++) {
-            const byteIndex = y * bitmap.rowBytes + Math.floor(x / 8)
+        for (let y = 0; y < renderedBitmap.height; y++) {
+          for (let x = 0; x < renderedBitmap.width; x++) {
+            const byteIndex = y * renderedBitmap.rowBytes + Math.floor(x / 8)
             const bitMask = 0x80 >> x % 8
-            const isSet = (bitmap.data[byteIndex]! & bitMask) !== 0
+            const isSet = (renderedBitmap.data[byteIndex]! & bitMask) !== 0
 
-            const pixelIndex = (y * bitmap.width + x) * 4
+            const pixelIndex = (y * renderedBitmap.width + x) * 4
             const value = isSet ? 0 : 255 // Black on white
 
             pixels[pixelIndex] = value // R
@@ -150,8 +150,8 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
           offscreen,
           0,
           0,
-          bitmap.width * scale,
-          bitmap.height * scale
+          renderedBitmap.width * scale,
+          renderedBitmap.height * scale
         )
 
         lastFrameTimeRef.current = currentTime

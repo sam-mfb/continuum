@@ -124,7 +124,7 @@ export const createStatusBarDemo =
     }
 
     // Create screen with gray background
-    let screen = viewClear({ screenX: 0, screenY: 0 })(cloneBitmap(bitmap))
+    let resultBitmap = viewClear({ screenX: 0, screenY: 0 })(cloneBitmap(bitmap))
 
     // Use newSbar to draw the complete status bar
     // For the demo, show typed text as a message, or show fuel status
@@ -137,7 +137,7 @@ export const createStatusBarDemo =
       message = 'OUT OF FUEL'
     }
 
-    screen = newSbar({
+    resultBitmap = newSbar({
       lives: state.ships,
       message,
       level: state.level,
@@ -145,8 +145,7 @@ export const createStatusBarDemo =
       fuel: state.fuel,
       bonus: state.bonus,
       spriteService
-    })(screen)
+    })(resultBitmap)
 
-    // Copy result back to bitmap
-    bitmap.data.set(screen.data)
+    return resultBitmap
   }

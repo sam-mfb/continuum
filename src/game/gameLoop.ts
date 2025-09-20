@@ -7,7 +7,7 @@
  */
 
 import type { Store } from '@reduxjs/toolkit'
-import type { BitmapRenderer, MonochromeBitmap } from '@lib/bitmap'
+import type { BitmapRenderer } from '@lib/bitmap'
 import { fullFigure } from '@core/ship'
 import { drawShipShot } from '@core/shots'
 import { drawStrafe } from '@core/shots'
@@ -74,10 +74,7 @@ import {
 } from '@core/sound/service'
 import type { SoundUIState } from '@core/sound/soundSlice'
 import { SoundType } from '@core/sound/constants'
-import {
-  startLevelTransitionThunk,
-  updateTransition
-} from '@core/transition'
+import { startLevelTransitionThunk, updateTransition } from '@core/transition'
 
 // Game-specific imports
 import {
@@ -88,10 +85,7 @@ import {
   setMode,
   setPendingHighScore
 } from './gameSlice'
-import {
-  checkLevelComplete,
-  loadLevel
-} from './levelManager'
+import { checkLevelComplete, loadLevel } from './levelManager'
 import { TOTAL_INITIAL_LIVES } from './constants'
 import { store, type RootState } from './store'
 
@@ -251,13 +245,13 @@ export const createGameRenderer =
     if (initializationError) {
       console.error('Initialization failed:', initializationError)
       bitmap.data.fill(0)
-      return
+      return bitmap
     }
 
     if (!initializationComplete) {
       // Still loading
       bitmap.data.fill(0)
-      return
+      return bitmap
     }
 
     // Handle death countdown and respawn BEFORE getting state for the frame
@@ -653,8 +647,7 @@ export const createGameRenderer =
     // Check for ship death flash effect (Terrain.c:413 - set_screen(front_screen, 0L))
     if (finalState.explosions.shipDeathFlash) {
       // Fill viewport with white (preserve status bar)
-      const whiteBitmap = viewWhite()(bitmap)
-      bitmap.data.set(whiteBitmap.data)
+      bitmap = viewWhite()(bitmap)
 
       // Clear the flash for next frame
       store.dispatch(clearShipDeathFlash())
@@ -668,17 +661,14 @@ export const createGameRenderer =
 
       // Skip all other rendering and return early
       // The flash lasts exactly one frame
-      return
+      return bitmap
     }
 
     // First, create a crosshatch gray background using viewClear
-    const clearedBitmap = viewClear({
+    bitmap = viewClear({
       screenX: finalState.screen.screenx,
       screenY: finalState.screen.screeny
     })(bitmap)
-
-    // Copy cleared bitmap data back to original
-    bitmap.data.set(clearedBitmap.data)
 
     // Draw craters (from Play.c:222 - draw_craters())
     // Craters are drawn early, after screen clear but before walls
@@ -695,7 +685,7 @@ export const createGameRenderer =
         .uint8
     }
 
-    const crateredBitmap = drawCraters({
+    bitmap = drawCraters({
       craters: finalState.planet.craters,
       numcraters: finalState.planet.numcraters,
       scrnx: finalState.screen.screenx,
@@ -704,9 +694,6 @@ export const createGameRenderer =
       on_right_side,
       craterImages
     })(bitmap)
-
-    // Copy cratered bitmap data back
-    bitmap.data.set(crateredBitmap.data)
 
     // Draw fuel cells (from Terrain.c - do_fuels is called after craters)
     // Get fuel sprites from service
@@ -739,25 +726,21 @@ export const createGameRenderer =
       }
     }
 
-    const fuelBitmap = drawFuels({
+    bitmap = drawFuels({
       fuels: finalState.planet.fuels,
       scrnx: finalState.screen.screenx,
       scrny: finalState.screen.screeny,
       fuelSprites
     })(bitmap)
 
-    // Copy fuel bitmap data back
-    bitmap.data.set(fuelBitmap.data)
-
     // Handle world wrapping for fuel cells
     if (on_right_side && finalState.planet.worldwrap) {
-      const wrappedFuelBitmap = drawFuels({
+      bitmap = drawFuels({
         fuels: finalState.planet.fuels,
         scrnx: finalState.screen.screenx - finalState.planet.worldwidth,
         scrny: finalState.screen.screeny,
         fuelSprites
       })(bitmap)
-      bitmap.data.set(wrappedFuelBitmap.data)
     }
 
     // Setup viewport for wall rendering
@@ -1235,16 +1218,16 @@ export const createGameRenderer =
     const currentTransition = store.getState().transition
     playSounds(soundState, {
       shipDeadCount: finalState.ship.deadCount,
-      fizzActive: currentTransition.active && currentTransition.preDelayFrames <= 0
+      fizzActive:
+        currentTransition.active && currentTransition.preDelayFrames <= 0
     })
 
-    // Copy rendered bitmap data back to original
-    bitmap.data.set(renderedBitmap.data)
+    // Update bitmap reference for transition processing
+    bitmap = renderedBitmap
 
     // Handle transition updates using thunk AFTER rendering
     // This ensures we capture the rendered game state, not an empty bitmap
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const transitionFrame = (store.dispatch as any)(
+    const transitionFrame = store.dispatch(
       updateTransition(bitmap, {
         statusData: {
           fuel: finalState.ship.fuel,
@@ -1257,23 +1240,26 @@ export const createGameRenderer =
         },
         store
       })
-    ) as MonochromeBitmap | null
+    )
 
     if (transitionFrame) {
-      // Transition is active, render the transition frame
-      bitmap.data.set(transitionFrame.data)
+      // Transition is active, return the transition frame
+      bitmap = transitionFrame
 
       // Play accumulated sounds
       const transitionSoundState = store.getState().sound
       playSounds(transitionSoundState, {
         shipDeadCount: finalState.ship.deadCount,
-        fizzActive: state.transition.active && state.transition.preDelayFrames <= 0
+        fizzActive:
+          state.transition.active && state.transition.preDelayFrames <= 0
       })
     }
+
+    // Return the final rendered bitmap
+    return bitmap
   }
 
 // Export galaxy header for level jumping
-export { store as getGameStore } from './store'
 export const getGalaxyHeader = (): GalaxyHeader | null => {
   const state = store.getState()
   return state.game.galaxyHeader

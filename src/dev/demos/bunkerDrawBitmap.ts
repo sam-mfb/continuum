@@ -260,14 +260,16 @@ export const createBunkerDrawBitmapRenderer =
     // Check initialization status
     if (initializationError) {
       console.error('Initialization failed:', initializationError)
-      bitmap.data.fill(0)
-      return
+      const errorBitmap = { ...bitmap }
+      errorBitmap.data.fill(0)
+      return errorBitmap
     }
 
     if (!initializationComplete) {
       // Still loading
-      bitmap.data.fill(0)
-      return
+      const loadingBitmap = { ...bitmap }
+      loadingBitmap.data.fill(0)
+      return loadingBitmap
     }
 
     const state = store.getState()
@@ -310,11 +312,10 @@ export const createBunkerDrawBitmapRenderer =
     }
 
     // First, create a crosshatch gray background
-    const clearedBitmap = viewClear({
+    let resultBitmap = viewClear({
       screenX: viewportState.x,
       screenY: viewportState.y
     })(bitmap)
-    bitmap.data.set(clearedBitmap.data)
 
     // Update animation state using the reducer
     // The follow bunker needs ship position - use viewport center as mock ship position
@@ -362,7 +363,7 @@ export const createBunkerDrawBitmapRenderer =
     store.dispatch(doStrafes())
 
     // Draw bunkers at normal position (Bunkers.c:46 - "do_bunks(screenx, screeny);")
-    let renderedBitmap = doBunks({
+    resultBitmap = doBunks({
       bunkrec: planetState.bunkers,
       scrnx: viewportState.x,
       scrny: viewportState.y,
@@ -390,7 +391,7 @@ export const createBunkerDrawBitmapRenderer =
           }
         }
       }
-    })(bitmap)
+    })(resultBitmap)
 
     // Second pass - wrapped position (Bunkers.c:47-48)
     // "if (on_right_side) do_bunks(screenx-worldwidth, screeny);"
@@ -402,7 +403,7 @@ export const createBunkerDrawBitmapRenderer =
     )
 
     if (onRightSide) {
-      renderedBitmap = doBunks({
+      resultBitmap = doBunks({
         bunkrec: planetState.bunkers,
         scrnx: viewportState.x - planetState.worldwidth,
         scrny: viewportState.y,
@@ -430,7 +431,7 @@ export const createBunkerDrawBitmapRenderer =
             }
           }
         }
-      })(renderedBitmap) // Pass already-rendered bitmap
+      })(resultBitmap) // Pass already-rendered bitmap
     }
 
     // Draw all bunker shots
@@ -454,7 +455,7 @@ export const createBunkerDrawBitmapRenderer =
           shotScreenY >= 0 &&
           shotScreenY < bitmap.height - 1
         ) {
-          renderedBitmap = drawDotSafe(shotScreenX, shotScreenY, renderedBitmap)
+          resultBitmap = drawDotSafe(shotScreenX, shotScreenY, resultBitmap)
         }
 
         // If wrapping world and near right edge, also check wrapped position
@@ -468,10 +469,10 @@ export const createBunkerDrawBitmapRenderer =
             shotScreenY >= 0 &&
             shotScreenY < bitmap.height - 1
           ) {
-            renderedBitmap = drawDotSafe(
+            resultBitmap = drawDotSafe(
               wrappedScreenX,
               shotScreenY,
-              renderedBitmap
+              resultBitmap
             )
           }
         }
@@ -482,23 +483,23 @@ export const createBunkerDrawBitmapRenderer =
     // Both ship shots and bunker shots create strafes when hitting non-bounce walls
     for (const strafe of updatedShotsState.strafes) {
       if (strafe.lifecount > 0) {
-        renderedBitmap = drawStrafe({
+        resultBitmap = drawStrafe({
           x: strafe.x,
           y: strafe.y,
           rot: strafe.rot,
           scrnx: viewportState.x,
           scrny: viewportState.y,
           worldwidth: planetState.worldwidth
-        })(renderedBitmap)
+        })(resultBitmap)
       }
     }
-
-    // Copy rendered bitmap data back to original
-    bitmap.data.set(renderedBitmap.data)
 
     // Draw a black box to indicate the mock ship position (center of screen)
     const shipX = bitmap.width / 2 - 4 // Center minus half of 8px
     const shipY = bitmap.height / 2 - 4
+
+    // Create a copy for the final modification
+    const finalBitmap = { ...resultBitmap, data: new Uint8Array(resultBitmap.data) }
 
     for (let y = 0; y < 8; y++) {
       for (let x = 0; x < 8; x++) {
@@ -514,8 +515,10 @@ export const createBunkerDrawBitmapRenderer =
         ) {
           const byteIndex = Math.floor(pixelY * bitmap.rowBytes + pixelX / 8)
           const bitIndex = 7 - (pixelX % 8)
-          bitmap.data[byteIndex]! |= 1 << bitIndex
+          finalBitmap.data[byteIndex]! |= 1 << bitIndex
         }
       }
     }
+
+    return finalBitmap
   }

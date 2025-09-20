@@ -95,8 +95,9 @@ export const planet3DrawingRenderer: BitmapRenderer = (bitmap, frame, _env) => {
       })
 
     // Show loading state
-    bitmap.data.fill(0)
-    return
+    const loadingBitmap = { ...bitmap }
+    loadingBitmap.data.fill(0)
+    return loadingBitmap
   }
 
   const planet = cachedPlanet
@@ -123,11 +124,10 @@ export const planet3DrawingRenderer: BitmapRenderer = (bitmap, frame, _env) => {
   }
 
   // First, create a crosshatch gray background
-  const clearedBitmap = viewClear({
+  let resultBitmap = viewClear({
     screenX: viewportState.x,
     screenY: viewportState.y
   })(bitmap)
-  bitmap.data.set(clearedBitmap.data)
 
   // Get wall data from Redux state
   const wallState = store.getState().walls
@@ -141,14 +141,14 @@ export const planet3DrawingRenderer: BitmapRenderer = (bitmap, frame, _env) => {
   }
 
   // First render white terrain (undersides, patches, junctions)
-  let renderedBitmap = whiteTerrain({
+  resultBitmap = whiteTerrain({
     whites: wallState.whites,
     junctions: wallState.junctions,
     firstWhite: wallState.firstWhite,
     organizedWalls: wallState.organizedWalls,
     viewport: viewport,
     worldwidth: planet.worldwidth
-  })(bitmap)
+  })(resultBitmap)
 
   // Then render black terrain (top surfaces) for each wall type
   // Render in order: NORMAL, BOUNCE, GHOST, XPLODE
@@ -160,15 +160,14 @@ export const planet3DrawingRenderer: BitmapRenderer = (bitmap, frame, _env) => {
   ]
 
   for (const kind of wallKinds) {
-    renderedBitmap = blackTerrain({
+    resultBitmap = blackTerrain({
       thekind: kind,
       kindPointers: wallState.kindPointers,
       organizedWalls: wallState.organizedWalls,
       viewport: viewport,
       worldwidth: planet.worldwidth
-    })(renderedBitmap)
+    })(resultBitmap)
   }
 
-  // Copy rendered bitmap data back to original
-  bitmap.data.set(renderedBitmap.data)
+  return resultBitmap
 }

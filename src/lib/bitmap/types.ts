@@ -35,12 +35,13 @@ export type MonochromeBitmap = {
 
 /**
  * Function that renders to a monochrome bitmap
+ * Returns a new bitmap rather than mutating the input
  */
 export type BitmapRenderer = (
   bitmap: MonochromeBitmap,
   frame: GameFrameInfo,
   env: GameEnvironment
-) => void
+) => MonochromeBitmap
 
 /**
  * Options for converting bitmap to canvas

@@ -283,29 +283,27 @@ export const createShardTestBitmapRenderer =
       }
     }
 
-    // Clear bitmap first
-    bitmap.data.fill(0)
-
     // Render the test and get the updated bitmap
-    const rendered = shardTestBitmap({
+    let resultBitmap = shardTestBitmap({
       bitmap,
       shardImages,
       screenX: viewportState.x,
       screenY: viewportState.y
     })
 
-    // Copy the rendered result back to the output bitmap
-    bitmap.data.set(rendered.data)
-
     // Draw viewport position indicator in top-left corner for debugging
     // Just draw a small indicator box in the corner to show we're scrolling
+    const finalBitmap = { ...resultBitmap, data: new Uint8Array(resultBitmap.data) }
+
     for (let i = 0; i < 4; i++) {
       for (let j = 0; j < 4; j++) {
         const x = 4 + i
         const y = 4 + j
         const byteIndex = Math.floor(y * bitmap.rowBytes + x / 8)
         const bitIndex = 7 - (x % 8)
-        bitmap.data[byteIndex]! |= 1 << bitIndex
+        finalBitmap.data[byteIndex]! |= 1 << bitIndex
       }
     }
+
+    return finalBitmap
   }

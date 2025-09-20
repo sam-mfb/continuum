@@ -268,19 +268,19 @@ const triggerBunkerExplosion = (bunker: BunkerConfig): void => {
 export const createExplosionBitmapRenderer =
   (spriteService: SpriteServiceV2): BitmapRenderer =>
   (bitmap, frame, _env) => {
-    // Clear the bitmap each frame
-    bitmap.data.fill(0)
-
     // Check initialization status
     if (initializationError) {
       console.error('Initialization failed:', initializationError)
-      bitmap.data.fill(0)
-      return
+      const errorBitmap = { ...bitmap }
+      errorBitmap.data.fill(0)
+      return errorBitmap
     }
 
     if (!initializationComplete) {
       // Still loading
-      return
+      const loadingBitmap = { ...bitmap }
+      loadingBitmap.data.fill(0)
+      return loadingBitmap
     }
 
     const state = store.getState()
@@ -323,13 +323,10 @@ export const createExplosionBitmapRenderer =
     const finalState = store.getState()
 
     // Create a crosshatch gray background
-    const clearedBitmap = viewClear({
+    let renderedBitmap = viewClear({
       screenX: finalState.screen.screenx,
       screenY: finalState.screen.screeny
     })(bitmap)
-    bitmap.data.set(clearedBitmap.data)
-
-    let renderedBitmap = bitmap
 
     // Draw all bunkers
     for (const bunker of bunkers) {
@@ -404,6 +401,5 @@ export const createExplosionBitmapRenderer =
     // P: FOLLOW (omnidirectional)
     // L: GENERATOR (omnidirectional)
 
-    // Copy rendered bitmap data back to original
-    bitmap.data.set(renderedBitmap.data)
+    return renderedBitmap
   }

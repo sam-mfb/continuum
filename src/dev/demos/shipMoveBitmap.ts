@@ -213,14 +213,16 @@ export const createShipMoveBitmapRenderer =
     // Check initialization status
     if (initializationError) {
       console.error('Initialization failed:', initializationError)
-      bitmap.data.fill(0)
-      return
+      const errorBitmap = { ...bitmap }
+      errorBitmap.data.fill(0)
+      return errorBitmap
     }
 
     if (!initializationComplete) {
       // Still loading
-      bitmap.data.fill(0)
-      return
+      const loadingBitmap = { ...bitmap }
+      loadingBitmap.data.fill(0)
+      return loadingBitmap
     }
 
     // Handle death countdown and respawn BEFORE getting state for the frame
@@ -454,24 +456,20 @@ export const createShipMoveBitmapRenderer =
     if (finalState.explosions.shipDeathFlash) {
       // Fill viewport with white (preserve status bar)
       const whiteBitmap = viewWhite()(bitmap)
-      bitmap.data.set(whiteBitmap.data)
 
       // Clear the flash for next frame
       store.dispatch(clearShipDeathFlash())
 
       // Skip all other rendering and return early
       // The flash lasts exactly one frame
-      return
+      return whiteBitmap
     }
 
     // First, create a crosshatch gray background using viewClear
-    const clearedBitmap = viewClear({
+    let resultBitmap = viewClear({
       screenX: finalState.screen.screenx,
       screenY: finalState.screen.screeny
     })(bitmap)
-
-    // Copy cleared bitmap data back to original
-    bitmap.data.set(clearedBitmap.data)
 
     // Draw craters (from Play.c:222 - draw_craters())
     // Craters are drawn early, after screen clear but before walls
@@ -487,7 +485,7 @@ export const createShipMoveBitmapRenderer =
         .uint8
     }
 
-    const crateredBitmap = drawCraters({
+    resultBitmap = drawCraters({
       craters: finalState.planet.craters,
       numcraters: finalState.planet.numcraters,
       scrnx: finalState.screen.screenx,
@@ -495,10 +493,7 @@ export const createShipMoveBitmapRenderer =
       worldwidth: finalState.planet.worldwidth,
       on_right_side,
       craterImages
-    })(bitmap)
-
-    // Copy cratered bitmap data back
-    bitmap.data.set(crateredBitmap.data)
+    })(resultBitmap)
 
     // Draw fuel cells (from Terrain.c - do_fuels is called after craters)
     // Get fuel sprites from service
@@ -531,25 +526,21 @@ export const createShipMoveBitmapRenderer =
       }
     }
 
-    const fuelBitmap = drawFuels({
+    resultBitmap = drawFuels({
       fuels: finalState.planet.fuels,
       scrnx: finalState.screen.screenx,
       scrny: finalState.screen.screeny,
       fuelSprites
-    })(bitmap)
-
-    // Copy fuel bitmap data back
-    bitmap.data.set(fuelBitmap.data)
+    })(resultBitmap)
 
     // Handle world wrapping for fuel cells
     if (on_right_side && finalState.planet.worldwrap) {
-      const wrappedFuelBitmap = drawFuels({
+      resultBitmap = drawFuels({
         fuels: finalState.planet.fuels,
         scrnx: finalState.screen.screenx - finalState.planet.worldwidth,
         scrny: finalState.screen.screeny,
         fuelSprites
-      })(bitmap)
-      bitmap.data.set(wrappedFuelBitmap.data)
+      })(resultBitmap)
     }
 
     // Setup viewport for wall rendering
@@ -579,12 +570,12 @@ export const createShipMoveBitmapRenderer =
 
     // Following Play.c order:
     // 1. gray_figure - ship shadow background (only if ship is alive)
-    let renderedBitmap = bitmap
+    // Continue with the result bitmap
 
     // Draw status bar (happens before game rendering)
     // First clear with the template
     const statusBarTemplate = spriteService.getStatusBarTemplate()
-    renderedBitmap = sbarClear({ statusBarTemplate })(renderedBitmap)
+    resultBitmap = sbarClear({ statusBarTemplate })(resultBitmap)
 
     // Then update with current values from state
     const statusData = {
@@ -599,7 +590,7 @@ export const createShipMoveBitmapRenderer =
 
     // Use newSbar for initial frame or major changes, updateSbar for incremental updates
     // For now, we'll use updateSbar each frame since it updates all fields
-    renderedBitmap = updateSbar(statusData)(renderedBitmap)
+    resultBitmap = updateSbar(statusData)(resultBitmap)
 
     if (finalState.ship.deadCount === 0) {
       // Compute background patterns for y and y+1 positions
@@ -620,40 +611,40 @@ export const createShipMoveBitmapRenderer =
         getBackgroundPattern(align1)
       ]
 
-      renderedBitmap = grayFigure({
+      resultBitmap = grayFigure({
         x: finalState.ship.shipx - (SCENTER - SHADOW_OFFSET_X),
         y: finalState.ship.shipy - (SCENTER - SHADOW_OFFSET_Y),
         def: shipMaskBitmap,
         background
-      })(renderedBitmap)
+      })(resultBitmap)
     }
 
     // 2. white_terrain - wall undersides/junctions
-    renderedBitmap = whiteTerrain({
+    resultBitmap = whiteTerrain({
       whites: finalState.walls.whites,
       junctions: finalState.walls.junctions,
       firstWhite: finalState.walls.firstWhite,
       organizedWalls: finalState.walls.organizedWalls,
       viewport: viewport,
       worldwidth: finalState.planet.worldwidth
-    })(renderedBitmap)
+    })(resultBitmap)
 
     // 3. black_terrain(L_GHOST) - ghost walls
-    renderedBitmap = blackTerrain({
+    resultBitmap = blackTerrain({
       thekind: LINE_KIND.GHOST,
       kindPointers: finalState.walls.kindPointers,
       organizedWalls: finalState.walls.organizedWalls,
       viewport: viewport,
       worldwidth: finalState.planet.worldwidth
-    })(renderedBitmap)
+    })(resultBitmap)
 
     // 4. erase_figure - erase ship area (only if ship is alive)
     if (finalState.ship.deadCount === 0) {
-      renderedBitmap = eraseFigure({
+      resultBitmap = eraseFigure({
         x: finalState.ship.shipx - SCENTER,
         y: finalState.ship.shipy - SCENTER,
         def: shipMaskBitmap
-      })(renderedBitmap)
+      })(resultBitmap)
     }
 
     // 5. check_for_bounce - check collision with bounce walls and update physics
@@ -662,8 +653,8 @@ export const createShipMoveBitmapRenderer =
     // Note: Bounce walls should always be rendered, even when ship is dead
     if (finalState.ship.deadCount === 0) {
       // Only check collision when alive
-      renderedBitmap = checkForBounce({
-        screen: renderedBitmap,
+      resultBitmap = checkForBounce({
+        screen: resultBitmap,
         store,
         shipDef: shipMaskBitmap,
         wallData: {
@@ -675,27 +666,27 @@ export const createShipMoveBitmapRenderer =
       })
     } else {
       // When dead, just draw bounce walls without collision check
-      renderedBitmap = blackTerrain({
+      resultBitmap = blackTerrain({
         thekind: LINE_KIND.BOUNCE,
         kindPointers: finalState.walls.kindPointers,
         organizedWalls: finalState.walls.organizedWalls,
         viewport: viewport,
         worldwidth: finalState.planet.worldwidth
-      })(renderedBitmap)
+      })(resultBitmap)
     }
 
     // 6. black_terrain(L_NORMAL) - normal walls
-    renderedBitmap = blackTerrain({
+    resultBitmap = blackTerrain({
       thekind: LINE_KIND.NORMAL,
       kindPointers: finalState.walls.kindPointers,
       organizedWalls: finalState.walls.organizedWalls,
       viewport: viewport,
       worldwidth: finalState.planet.worldwidth
-    })(renderedBitmap)
+    })(resultBitmap)
 
     // 7. do_bunkers - render all bunkers
     // First pass - normal position (Bunkers.c:46 - "do_bunks(screenx, screeny);")
-    renderedBitmap = doBunks({
+    resultBitmap = doBunks({
       bunkrec: finalState.planet.bunkers,
       scrnx: finalState.screen.screenx,
       scrny: finalState.screen.screeny,
@@ -723,12 +714,12 @@ export const createShipMoveBitmapRenderer =
           }
         }
       }
-    })(renderedBitmap)
+    })(resultBitmap)
 
     // Second pass - wrapped position (Bunkers.c:47-48)
     // "if (on_right_side) do_bunks(screenx-worldwidth, screeny);"
     if (on_right_side && finalState.planet.worldwrap) {
-      renderedBitmap = doBunks({
+      resultBitmap = doBunks({
         bunkrec: finalState.planet.bunkers,
         scrnx: finalState.screen.screenx - finalState.planet.worldwidth,
         scrny: finalState.screen.screeny,
@@ -756,7 +747,7 @@ export const createShipMoveBitmapRenderer =
             }
           }
         }
-      })(renderedBitmap)
+      })(resultBitmap)
     }
 
     // 8. move_bullets - Draw bunker shots BEFORE collision check (Play.c:238-239)
@@ -783,7 +774,7 @@ export const createShipMoveBitmapRenderer =
             shoty >= 0 &&
             shoty < VIEWHT - 1
           ) {
-            renderedBitmap = drawDotSafe(shotx, shoty, renderedBitmap)
+            resultBitmap = drawDotSafe(shotx, shoty, resultBitmap)
           }
 
           // Handle world wrapping for toroidal worlds
@@ -800,7 +791,7 @@ export const createShipMoveBitmapRenderer =
               shoty >= 0 &&
               shoty < VIEWHT - 1
             ) {
-              renderedBitmap = drawDotSafe(wrappedShotx, shoty, renderedBitmap)
+              resultBitmap = drawDotSafe(wrappedShotx, shoty, resultBitmap)
             }
           }
         }
@@ -811,7 +802,7 @@ export const createShipMoveBitmapRenderer =
     // Following Play.c:243-245 pattern
     // Only check collision if ship is alive
     if (finalState.ship.deadCount === 0) {
-      const collision = checkFigure(renderedBitmap, {
+      const collision = checkFigure(resultBitmap, {
         x: finalState.ship.shipx - SCENTER,
         y: finalState.ship.shipy - SCENTER,
         height: 32, // SHIPHT
@@ -888,31 +879,31 @@ export const createShipMoveBitmapRenderer =
     // 10. shift_figure - ship shadow (only if ship is alive)
     // 11. full_figure - draw ship (only if ship is alive)
     if (finalState.ship.deadCount === 0) {
-      renderedBitmap = shiftFigure({
+      resultBitmap = shiftFigure({
         x: finalState.ship.shipx - (SCENTER - SHADOW_OFFSET_X),
         y: finalState.ship.shipy - (SCENTER - SHADOW_OFFSET_Y),
         def: shipMaskBitmap
-      })(renderedBitmap)
+      })(resultBitmap)
 
       // Ship position needs to be offset by SCENTER (15) to account for center point
       // Original: full_figure(shipx-SCENTER, shipy-SCENTER, ship_defs[shiprot], ship_masks[shiprot], SHIPHT)
-      renderedBitmap = fullFigure({
+      resultBitmap = fullFigure({
         x: finalState.ship.shipx - SCENTER,
         y: finalState.ship.shipy - SCENTER,
         def: shipDefBitmap,
         mask: shipMaskBitmap
-      })(renderedBitmap)
+      })(resultBitmap)
     }
 
     // Draw shield effect if active (Play.c:252-255)
     if (finalState.ship.shielding) {
       // Draw shield using erase_figure (Play.c:254)
       const shieldSprite = spriteService.getShieldSprite()
-      renderedBitmap = eraseFigure({
+      resultBitmap = eraseFigure({
         x: finalState.ship.shipx - SCENTER, // Same position as ship
         y: finalState.ship.shipy - SCENTER,
         def: shieldSprite.bitmap // shield_def (Figs.c:71)
-      })(renderedBitmap)
+      })(resultBitmap)
 
       // When shielding, draw bullets AFTER shield (Play.c:252-253)
       // Bullets are already destroyed by moveBullets reducer, but we still draw surviving ones
@@ -933,7 +924,7 @@ export const createShipMoveBitmapRenderer =
             shoty >= 0 &&
             shoty < VIEWHT - 1
           ) {
-            renderedBitmap = drawDotSafe(shotx, shoty, renderedBitmap)
+            resultBitmap = drawDotSafe(shotx, shoty, resultBitmap)
           }
 
           // Handle world wrapping for toroidal worlds
@@ -950,7 +941,7 @@ export const createShipMoveBitmapRenderer =
               shoty >= 0 &&
               shoty < VIEWHT - 1
             ) {
-              renderedBitmap = drawDotSafe(wrappedShotx, shoty, renderedBitmap)
+              resultBitmap = drawDotSafe(wrappedShotx, shoty, resultBitmap)
             }
           }
         }
@@ -980,10 +971,10 @@ export const createShipMoveBitmapRenderer =
           shoty >= 0 &&
           shoty < VIEWHT - 3
         ) {
-          renderedBitmap = drawShipShot({
+          resultBitmap = drawShipShot({
             x: shotx,
             y: shoty
-          })(renderedBitmap)
+          })(resultBitmap)
         }
 
         // Handle world wrapping for toroidal worlds
@@ -997,10 +988,10 @@ export const createShipMoveBitmapRenderer =
             finalState.screen.screenx -
             1
           if (wrappedShotx >= 0 && wrappedShotx < SCRWTH - 3) {
-            renderedBitmap = drawShipShot({
+            resultBitmap = drawShipShot({
               x: wrappedShotx,
               y: shoty
-            })(renderedBitmap)
+            })(resultBitmap)
           }
         }
       }
@@ -1014,12 +1005,12 @@ export const createShipMoveBitmapRenderer =
         flameSprites.push(flame.bitmap)
       }
 
-      renderedBitmap = flameOn({
+      resultBitmap = flameOn({
         x: finalState.ship.shipx,
         y: finalState.ship.shipy,
         rot: finalState.ship.shiprot,
         flames: flameSprites
-      })(renderedBitmap)
+      })(resultBitmap)
     }
 
     // Draw strafes (Play.c:259 - do_strafes rendering loop)
@@ -1027,14 +1018,14 @@ export const createShipMoveBitmapRenderer =
     //   if(str->lifecount) draw_strafe(str->x, str->y, str->rot, screenx, screeny);
     for (const strafe of finalState.shots.strafes) {
       if (strafe.lifecount > 0) {
-        renderedBitmap = drawStrafe({
+        resultBitmap = drawStrafe({
           x: strafe.x,
           y: strafe.y,
           rot: strafe.rot,
           scrnx: finalState.screen.screenx,
           scrny: finalState.screen.screeny,
           worldwidth: finalState.planet.worldwidth
-        })(renderedBitmap)
+        })(resultBitmap)
       }
     }
 
@@ -1072,16 +1063,15 @@ export const createShipMoveBitmapRenderer =
         }
       } as ShardSpriteSet
 
-      renderedBitmap = drawExplosions({
+      resultBitmap = drawExplosions({
         explosions: extendedState.explosions,
         screenx: finalState.screen.screenx,
         screeny: finalState.screen.screeny,
         worldwidth: finalState.planet.worldwidth,
         worldwrap: finalState.planet.worldwrap,
         shardImages
-      })(renderedBitmap)
+      })(resultBitmap)
     }
 
-    // Copy rendered bitmap data back to original
-    bitmap.data.set(renderedBitmap.data)
+    return resultBitmap
   }

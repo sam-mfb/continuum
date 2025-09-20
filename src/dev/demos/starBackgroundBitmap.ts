@@ -120,8 +120,7 @@ export const createStarBackgroundBitmapRenderer =
           mask: shipMaskSprite.bitmap
         })(clearedBitmap)
 
-        bitmap.data.set(withShip.data)
-        break
+        return withShip
       }
 
       case 'fizzing': {
@@ -129,7 +128,6 @@ export const createStarBackgroundBitmapRenderer =
           // Get next frame of the transition
           // This advances the internal LFSR and returns the current state
           const fizzFrame = state.fizzTransition.nextFrame()
-          bitmap.data.set(fizzFrame.data)
 
           // Check if complete
           if (state.fizzTransition.isComplete) {
@@ -138,16 +136,14 @@ export const createStarBackgroundBitmapRenderer =
             state.fizzTransition = null
             state.delayFrames = 0
           }
+
+          return fizzFrame
         }
-        break
+        return bitmap
       }
 
       case 'complete': {
         // Show final star background during delay
-        if (state.toBitmap) {
-          bitmap.data.set(state.toBitmap)
-        }
-
         state.delayFrames++
 
         // Reset after delay
@@ -158,7 +154,14 @@ export const createStarBackgroundBitmapRenderer =
           state.fizzTransition = null
           state.delayFrames = 0
         }
-        break
+
+        if (state.toBitmap) {
+          bitmap.data.set(state.toBitmap)
+        }
+        return bitmap
       }
+
+      default:
+        return bitmap
     }
   }

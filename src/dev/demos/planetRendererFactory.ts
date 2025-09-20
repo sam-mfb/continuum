@@ -86,7 +86,10 @@ export const createPlanetRenderer: PlanetRendererFactory = (
         screenSlice.actions.setPosition({ x: initialX, y: initialY })
       )
       store.dispatch(gameViewActions.setInitialized())
-      return // Skip this frame to avoid jump
+      // Return empty bitmap for first frame to avoid jump
+      const emptyBitmap = { ...bitmap }
+      emptyBitmap.data.fill(0)
+      return emptyBitmap
     }
 
     // Handle keyboard input for viewport movement
@@ -174,8 +177,8 @@ export const createPlanetRenderer: PlanetRendererFactory = (
       })(renderedBitmap)
     }
 
-    // Copy rendered bitmap data back to original
-    bitmap.data.set(renderedBitmap.data)
+    // Keep track of the result
+    let resultBitmap = renderedBitmap
 
     // Draw bunkers and other sprites
     {
@@ -189,7 +192,7 @@ export const createPlanetRenderer: PlanetRendererFactory = (
       const planetState = bunkerStore.getState().planet
 
       // Draw bunkers at normal position (Bunkers.c:46 - "do_bunks(screenx, screeny);")
-      let bunkerBitmap = doBunks({
+      resultBitmap = doBunks({
         bunkrec: planetState.bunkers,
         scrnx: currentScreen.screenx,
         scrny: currentScreen.screeny,
@@ -215,7 +218,7 @@ export const createPlanetRenderer: PlanetRendererFactory = (
             }
           }
         }
-      })(bitmap)
+      })(resultBitmap)
 
       // Second pass - wrapped position (Bunkers.c:47-48)
       // "if (on_right_side) do_bunks(screenx-worldwidth, screeny);"
@@ -227,7 +230,7 @@ export const createPlanetRenderer: PlanetRendererFactory = (
       )
 
       if (onRightSide) {
-        bunkerBitmap = doBunks({
+        resultBitmap = doBunks({
           bunkrec: planetState.bunkers,
           scrnx: currentScreen.screenx - planet.worldwidth,
           scrny: currentScreen.screeny,
@@ -253,11 +256,10 @@ export const createPlanetRenderer: PlanetRendererFactory = (
               }
             }
           }
-        })(bunkerBitmap) // Pass already-rendered bitmap
+        })(resultBitmap) // Pass already-rendered bitmap
       }
 
-      // Copy bunker bitmap data back to original
-      bitmap.data.set(bunkerBitmap.data)
+      // Continue with fuel rendering
 
       // Update fuel cell animations
       bunkerStore.dispatch(updateFuelAnimations())
@@ -266,7 +268,7 @@ export const createPlanetRenderer: PlanetRendererFactory = (
       const updatedPlanetState = bunkerStore.getState().planet
 
       // Draw fuels at normal position
-      let fuelBitmap = drawFuels({
+      resultBitmap = drawFuels({
         fuels: updatedPlanetState.fuels,
         scrnx: currentScreen.screenx,
         scrny: currentScreen.screeny,
@@ -311,11 +313,11 @@ export const createPlanetRenderer: PlanetRendererFactory = (
             }
           }
         }
-      })(bitmap)
+      })(resultBitmap)
 
       // If wrapping world and near right edge, draw wrapped fuels
       if (onRightSide) {
-        fuelBitmap = drawFuels({
+        resultBitmap = drawFuels({
           fuels: updatedPlanetState.fuels,
           scrnx: currentScreen.screenx - planet.worldwidth,
           scrny: currentScreen.screeny,
@@ -362,14 +364,11 @@ export const createPlanetRenderer: PlanetRendererFactory = (
               }
             }
           }
-        })(fuelBitmap)
+        })(resultBitmap)
       }
 
-      // Copy fuel bitmap data back to original
-      bitmap.data.set(fuelBitmap.data)
-
       // Draw craters (world wrapping is handled internally by drawCraters)
-      const craterBitmap = drawCraters({
+      resultBitmap = drawCraters({
         craters: updatedPlanetState.craters,
         numcraters: updatedPlanetState.numcraters,
         scrnx: currentScreen.screenx,
@@ -382,11 +381,10 @@ export const createPlanetRenderer: PlanetRendererFactory = (
           background2: spriteService.getCraterSprite({ variant: 'background2' })
             .uint8
         }
-      })(bitmap)
-
-      // Copy crater bitmap data back to original
-      bitmap.data.set(craterBitmap.data)
+      })(resultBitmap)
     }
+
+    return resultBitmap
   }
 
   return renderer

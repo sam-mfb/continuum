@@ -137,14 +137,16 @@ export const createFuelDrawBitmapRenderer =
     // Check initialization status
     if (initializationError) {
       console.error('Initialization failed:', initializationError)
-      bitmap.data.fill(0)
-      return
+      const errorBitmap = { ...bitmap }
+      errorBitmap.data.fill(0)
+      return errorBitmap
     }
 
     if (!initializationComplete) {
       // Still loading
-      bitmap.data.fill(0)
-      return
+      const loadingBitmap = { ...bitmap }
+      loadingBitmap.data.fill(0)
+      return loadingBitmap
     }
 
     const state = store.getState()
@@ -187,11 +189,10 @@ export const createFuelDrawBitmapRenderer =
     }
 
     // First, create a crosshatch gray background
-    const clearedBitmap = viewClear({
+    let resultBitmap = viewClear({
       screenX: viewportState.x,
       screenY: viewportState.y
     })(bitmap)
-    bitmap.data.set(clearedBitmap.data)
 
     // Update fuel animation state using the reducer
     store.dispatch(updateFuelAnimations())
@@ -255,7 +256,7 @@ export const createFuelDrawBitmapRenderer =
     })
 
     // Apply fuel drawing to the bitmap
-    let renderedBitmap = drawFuelsFunc(bitmap)
+    resultBitmap = drawFuelsFunc(resultBitmap)
 
     // Handle world wrapping - call drawFuels again with wrapped coordinates
     if (onRightSide) {
@@ -265,13 +266,12 @@ export const createFuelDrawBitmapRenderer =
         scrny: viewportState.y,
         fuelSprites: fuelSprites
       })
-      renderedBitmap = drawFuelsWrapped(renderedBitmap)
+      resultBitmap = drawFuelsWrapped(resultBitmap)
     }
 
-    // Copy rendered bitmap data back to original
-    bitmap.data.set(renderedBitmap.data)
-
     // Draw a position marker in corner to show viewport is updating
+    const finalBitmap = { ...resultBitmap, data: new Uint8Array(resultBitmap.data) }
+
     for (let i = 0; i < 3; i++) {
       for (let j = 0; j < 3; j++) {
         const pixelX = 10 + i
@@ -279,8 +279,10 @@ export const createFuelDrawBitmapRenderer =
         if (pixelX < bitmap.width && pixelY < bitmap.height) {
           const byteIndex = Math.floor(pixelY * bitmap.rowBytes + pixelX / 8)
           const bitIndex = 7 - (pixelX % 8)
-          bitmap.data[byteIndex]! |= 1 << bitIndex
+          finalBitmap.data[byteIndex]! |= 1 << bitIndex
         }
       }
     }
+
+    return finalBitmap
   }
