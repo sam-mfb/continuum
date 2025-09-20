@@ -19,4 +19,8 @@ export {
   cleanupTransition
 } from './transitionThunks'
 export type { TransitionState } from './types'
-export { MICO_DELAY_FRAMES, TRANSITION_DELAY_FRAMES, FIZZ_DURATION } from './constants'
+export {
+  MICO_DELAY_FRAMES,
+  TRANSITION_DELAY_FRAMES,
+  FIZZ_DURATION
+} from './constants'

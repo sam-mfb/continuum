@@ -122,7 +122,10 @@ export const createShieldDemoRenderer =
     // Simple text indicator (draw a pattern to show shield state)
     if (shielding) {
       // Create a copy for modification
-      const finalBitmap = { ...resultBitmap, data: new Uint8Array(resultBitmap.data) }
+      const finalBitmap = {
+        ...resultBitmap,
+        data: new Uint8Array(resultBitmap.data)
+      }
 
       // Draw a simple indicator pattern in the top-left corner
       // This is just a visual cue that shield is active

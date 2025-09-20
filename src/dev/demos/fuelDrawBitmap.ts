@@ -270,7 +270,10 @@ export const createFuelDrawBitmapRenderer =
     }
 
     // Draw a position marker in corner to show viewport is updating
-    const finalBitmap = { ...resultBitmap, data: new Uint8Array(resultBitmap.data) }
+    const finalBitmap = {
+      ...resultBitmap,
+      data: new Uint8Array(resultBitmap.data)
+    }
 
     for (let i = 0; i < 3; i++) {
       for (let j = 0; j < 3; j++) {

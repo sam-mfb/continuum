@@ -30,6 +30,3 @@ export {
 
 // Conversion
 export { bitmapToImageData, bitmapToCanvas, canvasToBitmap } from './conversion'
-
-// Adapter
-export { createBitmapGameLoop, wrapBitmapRenderer } from './adapter'

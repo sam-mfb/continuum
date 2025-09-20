@@ -293,7 +293,10 @@ export const createShardTestBitmapRenderer =
 
     // Draw viewport position indicator in top-left corner for debugging
     // Just draw a small indicator box in the corner to show we're scrolling
-    const finalBitmap = { ...resultBitmap, data: new Uint8Array(resultBitmap.data) }
+    const finalBitmap = {
+      ...resultBitmap,
+      data: new Uint8Array(resultBitmap.data)
+    }
 
     for (let i = 0; i < 4; i++) {
       for (let j = 0; j < 4; j++) {

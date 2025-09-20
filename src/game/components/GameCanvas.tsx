@@ -121,7 +121,10 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
         const offCtx = offscreen.getContext('2d')!
 
         // Convert bitmap to ImageData
-        const imageData = new ImageData(renderedBitmap.width, renderedBitmap.height)
+        const imageData = new ImageData(
+          renderedBitmap.width,
+          renderedBitmap.height
+        )
         const pixels = imageData.data
 
         // Convert monochrome bitmap to RGBA

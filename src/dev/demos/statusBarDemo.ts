@@ -124,7 +124,9 @@ export const createStatusBarDemo =
     }
 
     // Create screen with gray background
-    let resultBitmap = viewClear({ screenX: 0, screenY: 0 })(cloneBitmap(bitmap))
+    let resultBitmap = viewClear({ screenX: 0, screenY: 0 })(
+      cloneBitmap(bitmap)
+    )
 
     // Use newSbar to draw the complete status bar
     // For the demo, show typed text as a message, or show fuel status

@@ -4,11 +4,7 @@ import type {
   BitmapToCanvasOptions,
   MonochromeBitmap
 } from '@lib/bitmap'
-import {
-  createMonochromeBitmap,
-  clearBitmap,
-  bitmapToCanvas
-} from '@lib/bitmap'
+import { createMonochromeBitmap, bitmapToCanvas } from '@lib/bitmap'
 import {
   StatsOverlay,
   type StatsConfig,
@@ -289,14 +285,18 @@ const GameView: React.FC<GameViewProps> = ({
                 bitmapRef.current = createMonochromeBitmap(width, height)
               }
 
-              // Clear bitmap
-              clearBitmap(bitmapRef.current)
+              // Call bitmap renderer and get the result
+              const renderedBitmap = game.bitmapRenderer(
+                bitmapRef.current,
+                frameInfo,
+                env
+              )
 
-              // Call bitmap renderer
-              game.bitmapRenderer(bitmapRef.current, frameInfo, env)
+              // Update bitmap reference for next frame
+              bitmapRef.current = renderedBitmap
 
               // Convert to canvas
-              bitmapToCanvas(bitmapRef.current, ctx, game.bitmapOptions)
+              bitmapToCanvas(renderedBitmap, ctx, game.bitmapOptions)
               break
           }
         }

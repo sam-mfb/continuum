@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState, type JSX } from 'react'
 import { useAppSelector, useAppDispatch, store } from '../store/store'
-import {
-  createMonochromeBitmap,
-  bitmapToCanvas
-} from '@lib/bitmap'
+import { createMonochromeBitmap, bitmapToCanvas } from '@lib/bitmap'
 import { createPlanetRenderer } from '../demos/planetRendererFactory'
 import { wallsActions } from '@core/walls'
 import { gameViewActions } from '../store/gameViewSlice'

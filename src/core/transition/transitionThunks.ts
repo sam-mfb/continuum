@@ -10,8 +10,15 @@ import type { SpriteServiceV2 } from '@core/sprites'
 import { starBackground } from '@core/screen/render/starBackground'
 import { fullFigure } from '@core/ship'
 import { SCENTER } from '@core/figs/types'
-import { createFizzTransition, type FizzTransition } from '@core/screen/render/fizz'
-import { playDiscrete, setThrusting, setShielding } from '@core/sound/soundSlice'
+import {
+  createFizzTransition,
+  type FizzTransition
+} from '@core/screen/render/fizz'
+import {
+  playDiscrete,
+  setThrusting,
+  setShielding
+} from '@core/sound/soundSlice'
 import { SoundType } from '@core/sound/constants'
 import { shipSlice } from '@core/ship/shipSlice'
 import { sbarClear, updateSbar } from '@core/status'
@@ -56,19 +63,25 @@ export const startLevelTransition =
  * Returns a bitmap to render if transition is active, null otherwise
  */
 export const updateTransition =
-  (currentFrameBitmap: MonochromeBitmap, renderContext: {
-    statusData: {
-      fuel: number
-      lives: number
-      score: number
-      bonus: number
-      level: number
-      message: string | null
-      spriteService: SpriteServiceV2
+  (
+    currentFrameBitmap: MonochromeBitmap,
+    renderContext: {
+      statusData: {
+        fuel: number
+        lives: number
+        score: number
+        bonus: number
+        level: number
+        message: string | null
+        spriteService: SpriteServiceV2
+      }
+      store: Store<RootState> // Full store for level transition
     }
-    store: Store<RootState> // Full store for level transition
-  }) =>
-  (dispatch: AppDispatch, getState: () => RootState): MonochromeBitmap | null => {
+  ) =>
+  (
+    dispatch: AppDispatch,
+    getState: () => RootState
+  ): MonochromeBitmap | null => {
     const state = getState().transition
 
     if (!state.active) {
@@ -110,27 +123,32 @@ export const updateTransition =
         width: 512,
         height: 342,
         rowBytes: 64,
-        data: new Uint8Array(512 * 342 / 8)
+        data: new Uint8Array((512 * 342) / 8)
       }
 
       let shipSprite = null
       let shipMaskSprite = null
       if (shipState.deadCount === 0) {
-        shipSprite = spriteService.getShipSprite(shipState.shiprot, { variant: 'def' })
-        shipMaskSprite = spriteService.getShipSprite(shipState.shiprot, { variant: 'mask' })
+        shipSprite = spriteService.getShipSprite(shipState.shiprot, {
+          variant: 'def'
+        })
+        shipMaskSprite = spriteService.getShipSprite(shipState.shiprot, {
+          variant: 'mask'
+        })
       }
 
       const starBg = starBackground({
         starCount: 150,
-        additionalRender: shipState.deadCount === 0
-          ? (screen: MonochromeBitmap): MonochromeBitmap =>
-              fullFigure({
-                x: shipState.shipx - SCENTER,
-                y: shipState.shipy - SCENTER,
-                def: shipSprite!.bitmap,
-                mask: shipMaskSprite!.bitmap
-              })(screen)
-          : undefined
+        additionalRender:
+          shipState.deadCount === 0
+            ? (screen: MonochromeBitmap): MonochromeBitmap =>
+                fullFigure({
+                  x: shipState.shipx - SCENTER,
+                  y: shipState.shipy - SCENTER,
+                  def: shipSprite!.bitmap,
+                  mask: shipMaskSprite!.bitmap
+                })(screen)
+            : undefined
       })(toBitmapObj)
 
       const toBitmapData = new Uint8Array(starBg.data)

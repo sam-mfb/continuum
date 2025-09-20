@@ -16,7 +16,7 @@ describe('BitmapRenderer pure function pattern', () => {
       }
 
       // Modify the result
-      result.data[0] = 0xFF
+      result.data[0] = 0xff
 
       return result
     }
@@ -46,7 +46,7 @@ describe('BitmapRenderer pure function pattern', () => {
     expect(inputBitmap.data).toEqual(originalData)
 
     // Output bitmap should have the modification
-    expect(outputBitmap.data[0]).toBe(0xFF)
+    expect(outputBitmap.data[0]).toBe(0xff)
 
     // Output should be a different object
     expect(outputBitmap).not.toBe(inputBitmap)

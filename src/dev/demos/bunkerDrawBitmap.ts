@@ -499,7 +499,10 @@ export const createBunkerDrawBitmapRenderer =
     const shipY = bitmap.height / 2 - 4
 
     // Create a copy for the final modification
-    const finalBitmap = { ...resultBitmap, data: new Uint8Array(resultBitmap.data) }
+    const finalBitmap = {
+      ...resultBitmap,
+      data: new Uint8Array(resultBitmap.data)
+    }
 
     for (let y = 0; y < 8; y++) {
       for (let x = 0; x < 8; x++) {
