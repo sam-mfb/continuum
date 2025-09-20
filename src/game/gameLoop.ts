@@ -37,12 +37,6 @@ import { getBackgroundPattern } from '@core/shared'
 import { shiftFigure } from '@core/ship'
 import { whiteTerrain, blackTerrain } from '@core/walls'
 import { viewClear, viewWhite } from '@core/screen'
-import { starBackground } from '@core/screen/render/starBackground'
-import {
-  createFizzTransition,
-  type FizzTransition
-} from '@core/screen/render/fizz'
-import { cloneBitmap } from '@lib/bitmap'
 import { LINE_KIND } from '@core/walls'
 import { updateSbar, sbarClear } from '@core/status'
 import { checkFigure } from '@core/ship'
@@ -80,6 +74,10 @@ import {
 } from '@core/sound/service'
 import type { SoundUIState } from '@core/sound/soundSlice'
 import { SoundType } from '@core/sound/constants'
+import {
+  startLevelTransitionThunk,
+  updateTransition
+} from '@core/transition'
 
 // Game-specific imports
 import {
@@ -92,8 +90,7 @@ import {
 } from './gameSlice'
 import {
   checkLevelComplete,
-  loadLevel,
-  transitionToNextLevel
+  loadLevel
 } from './levelManager'
 import { TOTAL_INITIAL_LIVES } from './constants'
 import { store, type RootState } from './store'
@@ -101,31 +98,6 @@ import { store, type RootState } from './store'
 // Track initialization state
 let initializationComplete = false
 let initializationError: Error | null = null
-
-// Track fizz transition state
-type TransitionState = {
-  active: boolean
-  preDelayFrames: number // Countdown before transition starts
-  fizzTransition: FizzTransition | null
-  fromBitmap: Uint8Array | null
-  toBitmap: Uint8Array | null
-  delayFrames: number
-  fizzJustFinished: boolean // True for one frame when fizz animation completes
-}
-
-const transitionState: TransitionState = {
-  active: false,
-  preDelayFrames: 0,
-  fizzTransition: null,
-  fromBitmap: null,
-  toBitmap: null,
-  delayFrames: 0,
-  fizzJustFinished: false
-}
-
-const MICO_DELAY_FRAMES = 45 // Delay before transition starts (MICODELAY from GW.h)
-const TRANSITION_DELAY_FRAMES = 30 // ~1.5 seconds at 20 FPS (original uses 150 ticks)
-const FIZZ_DURATION = 26 // Based on measurements of fizz time on a Mac Plus
 
 // Initialize game on module load
 const initializeGame = async (): Promise<void> => {
@@ -328,7 +300,7 @@ export const createGameRenderer =
     // Decrement bonus countdown every 10 frames (Play.c:197-201)
     // Original: bonuscount decrements each frame from 10 to 0
     // When it hits 0 (after 10 frames), planetbonus -= 10 and bonuscount resets
-    if (!transitionState.active) {
+    if (!state.transition.active) {
       if (frame.frameCount % 10 === 0) {
         store.dispatch(statusSlice.actions.decrementBonus())
       }
@@ -338,7 +310,7 @@ export const createGameRenderer =
     // Game over transitions still need handling (TODO: implement game over fizz)
 
     // Check for level completion (only if not already transitioning)
-    if (!transitionState.active && checkLevelComplete(state)) {
+    if (!state.transition.active && checkLevelComplete(state)) {
       console.log(`Level ${state.status.currentlevel} complete!`)
 
       // Award bonus points (Play.c:107 - score_plus(planetbonus))
@@ -357,10 +329,9 @@ export const createGameRenderer =
       // Don't stop ship yet - it keeps moving during the countdown!
       // Ship can even die during this period (Play.c:109-113)
 
-      // Start countdown to transition (micocycles from Play.c)
-      transitionState.active = true
-      transitionState.preDelayFrames = MICO_DELAY_FRAMES
-      transitionState.delayFrames = 0
+      // Start transition using thunk
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(store.dispatch as any)(startLevelTransitionThunk())
     }
 
     // Check for game over (all lives lost)
@@ -418,7 +389,7 @@ export const createGameRenderer =
         // Skip normal controls and movement since ship is now dead
       } else {
         // Only handle controls if not in fizz transition (but allow during pre-delay)
-        if (!transitionState.active || transitionState.preDelayFrames > 0) {
+        if (!state.transition.active || state.transition.preDelayFrames > 0) {
           // shipControl will read globalx/globaly from ship state (set by previous frame's containShip)
           store.dispatch(
             shipControl({
@@ -678,161 +649,6 @@ export const createGameRenderer =
 
     // Get final state for drawing
     const finalState = store.getState()
-    const extFinalState = finalState
-
-    // Handle fizz transition effect (crackle() from Play.c)
-    if (transitionState.active) {
-      // Handle pre-transition delay (micocycles countdown)
-      if (transitionState.preDelayFrames > 0) {
-        transitionState.preDelayFrames--
-
-        // When countdown reaches zero, stop the ship
-        if (transitionState.preDelayFrames === 0) {
-          store.dispatch(shipSlice.actions.stopShipMovement())
-        }
-
-        // Continue rendering the game normally during pre-delay
-        // Fall through to normal rendering
-      } else if (!transitionState.fizzTransition) {
-        // Pre-delay complete, initialize the fizz transition on first frame
-        // Play fizz start sound - Play.c:1248
-        store.dispatch(playDiscrete(SoundType.FIZZ_SOUND))
-
-        // Stop any continuous sounds when level ends
-        store.dispatch(setThrusting(false))
-        store.dispatch(setShielding(false))
-
-        // Create the "from" bitmap - current game state
-        const fromBitmap = cloneBitmap(bitmap)
-        // Render the current game state (will be done below)
-        // We'll capture it after normal rendering
-
-        // Create the "to" bitmap - star background with ship if alive
-        const toBitmap = cloneBitmap(bitmap)
-        const shipSprite =
-          finalState.ship.deadCount === 0
-            ? spriteService.getShipSprite(finalState.ship.shiprot, {
-                variant: 'def'
-              })
-            : null
-        const shipMaskSprite =
-          finalState.ship.deadCount === 0
-            ? spriteService.getShipSprite(finalState.ship.shiprot, {
-                variant: 'mask'
-              })
-            : null
-
-        const starBg = starBackground({
-          starCount: 150,
-          additionalRender:
-            finalState.ship.deadCount === 0
-              ? (screen: MonochromeBitmap): MonochromeBitmap =>
-                  fullFigure({
-                    x: finalState.ship.shipx - SCENTER,
-                    y: finalState.ship.shipy - SCENTER,
-                    def: shipSprite!.bitmap,
-                    mask: shipMaskSprite!.bitmap
-                  })(screen)
-              : undefined
-        })(toBitmap)
-
-        // Store bitmaps
-        transitionState.fromBitmap = new Uint8Array(fromBitmap.data)
-        transitionState.toBitmap = new Uint8Array(starBg.data)
-
-        // We'll create the actual fizz transition after rendering the current frame
-        // Fall through to render the current game state first
-      } else if (transitionState.fizzTransition.isComplete) {
-        // Check if this is the first frame after completion
-        if (transitionState.fizzJustFinished) {
-          // Play echo sound when fizz completes - Play.c:1250
-          store.dispatch(playDiscrete(SoundType.ECHO_SOUND))
-          // Reset the flag
-          transitionState.fizzJustFinished = false
-        }
-
-        // Fizz complete, show star background during delay
-        if (transitionState.toBitmap) {
-          bitmap.data.set(transitionState.toBitmap)
-        }
-
-        // Update status bar
-        const statusBarTemplate = spriteService.getStatusBarTemplate()
-        let renderedBitmap = sbarClear({ statusBarTemplate })(bitmap)
-        const statusData = {
-          fuel: finalState.ship.fuel,
-          lives: finalState.ship.lives,
-          score: finalState.status.score,
-          bonus: finalState.status.planetbonus,
-          level: extFinalState.status.currentlevel,
-          message: extFinalState.status.curmessage,
-          spriteService
-        }
-        renderedBitmap = updateSbar(statusData)(renderedBitmap)
-        bitmap.data.set(renderedBitmap.data)
-
-        transitionState.delayFrames++
-
-        // After delay, proceed with level transition
-        if (transitionState.delayFrames >= TRANSITION_DELAY_FRAMES) {
-          // Clean up transition state
-          transitionState.active = false
-          transitionState.preDelayFrames = 0
-          transitionState.fizzTransition = null
-          transitionState.fromBitmap = null
-          transitionState.toBitmap = null
-          transitionState.delayFrames = 0
-          transitionState.fizzJustFinished = false
-
-          // Trigger the actual level load
-          transitionToNextLevel(store)
-        }
-
-        // Play all accumulated sounds before returning
-        const soundState = store.getState().sound
-        playSounds(soundState, {
-          shipDeadCount: finalState.ship.deadCount,
-          fizzActive:
-            transitionState.active && transitionState.preDelayFrames <= 0
-        })
-
-        return
-      } else {
-        // Fizz in progress
-        const fizzFrame = transitionState.fizzTransition.nextFrame()
-        bitmap.data.set(fizzFrame.data)
-
-        // Check if fizz just completed
-        if (transitionState.fizzTransition.isComplete) {
-          transitionState.fizzJustFinished = true
-        }
-
-        // Update status bar
-        const statusBarTemplate = spriteService.getStatusBarTemplate()
-        let renderedBitmap = sbarClear({ statusBarTemplate })(bitmap)
-        const statusData = {
-          fuel: finalState.ship.fuel,
-          lives: finalState.ship.lives,
-          score: finalState.status.score,
-          bonus: finalState.status.planetbonus,
-          level: extFinalState.status.currentlevel,
-          message: extFinalState.status.curmessage,
-          spriteService
-        }
-        renderedBitmap = updateSbar(statusData)(renderedBitmap)
-        bitmap.data.set(renderedBitmap.data)
-
-        // Play all accumulated sounds before returning
-        const fizzSoundState = store.getState().sound
-        playSounds(fizzSoundState, {
-          shipDeadCount: finalState.ship.deadCount,
-          fizzActive:
-            transitionState.active && transitionState.preDelayFrames <= 0
-        })
-
-        return
-      }
-    }
 
     // Check for ship death flash effect (Terrain.c:413 - set_screen(front_screen, 0L))
     if (finalState.explosions.shipDeathFlash) {
@@ -1416,33 +1232,42 @@ export const createGameRenderer =
 
     // Play all accumulated sounds for this frame
     const soundState = store.getState().sound
+    const currentTransition = store.getState().transition
     playSounds(soundState, {
       shipDeadCount: finalState.ship.deadCount,
-      fizzActive: transitionState.active && transitionState.preDelayFrames <= 0
+      fizzActive: currentTransition.active && currentTransition.preDelayFrames <= 0
     })
 
     // Copy rendered bitmap data back to original
     bitmap.data.set(renderedBitmap.data)
 
-    // If we just initialized the transition, capture the rendered frame and create fizz
-    if (
-      transitionState.active &&
-      !transitionState.fizzTransition &&
-      transitionState.fromBitmap
-    ) {
-      // Capture the current rendered frame
-      transitionState.fromBitmap = new Uint8Array(bitmap.data)
+    // Handle transition updates using thunk AFTER rendering
+    // This ensures we capture the rendered game state, not an empty bitmap
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const transitionFrame = (store.dispatch as any)(
+      updateTransition(bitmap, {
+        statusData: {
+          fuel: finalState.ship.fuel,
+          lives: finalState.ship.lives,
+          score: finalState.status.score,
+          bonus: finalState.status.planetbonus,
+          level: finalState.status.currentlevel,
+          message: finalState.status.curmessage,
+          spriteService
+        },
+        store
+      })
+    ) as MonochromeBitmap | null
 
-      // Create the fizz transition
-      const fromBitmap = cloneBitmap(bitmap)
-      fromBitmap.data = transitionState.fromBitmap
-      const toBitmap = cloneBitmap(bitmap)
-      toBitmap.data = transitionState.toBitmap!
+    if (transitionFrame) {
+      // Transition is active, render the transition frame
+      bitmap.data.set(transitionFrame.data)
 
-      transitionState.fizzTransition = createFizzTransition({
-        from: fromBitmap,
-        to: toBitmap,
-        durationFrames: FIZZ_DURATION
+      // Play accumulated sounds
+      const transitionSoundState = store.getState().sound
+      playSounds(transitionSoundState, {
+        shipDeadCount: finalState.ship.deadCount,
+        fizzActive: state.transition.active && state.transition.preDelayFrames <= 0
       })
     }
   }

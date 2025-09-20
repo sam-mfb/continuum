@@ -15,6 +15,7 @@ import { explosionsSlice } from '@core/explosions/explosionsSlice'
 import soundReducer from '@core/sound/soundSlice'
 import { wallsSlice } from '@core/walls/wallsSlice'
 import { highscoreSlice } from '@/core/highscore/highscoreSlice'
+import { transitionSlice } from '@core/transition'
 import {
   highscoreMiddleware,
   loadHighScores
@@ -35,7 +36,8 @@ export const store = configureStore({
     explosions: explosionsSlice.reducer,
     sound: soundReducer,
     walls: wallsSlice.reducer,
-    highscore: highscoreSlice.reducer
+    highscore: highscoreSlice.reducer,
+    transition: transitionSlice.reducer
   },
   middleware: getDefaultMiddleware =>
     getDefaultMiddleware().concat(highscoreMiddleware),
