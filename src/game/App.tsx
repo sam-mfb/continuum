@@ -1,6 +1,6 @@
 import React from 'react'
 import { Provider } from 'react-redux'
-import GameCanvas from './GameCanvas'
+import GameCanvas from './components/GameCanvas'
 import { store } from './store'
 import { loadLevel } from './levelManager'
 import type { BitmapRenderer } from '@lib/bitmap'

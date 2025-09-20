@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import type { RootState } from './store'
+import type { RootState } from '../store'
 import type { HighScoreState } from '@/core/highscore/highscoreSlice'
 import { resetHighScores } from '@/core/highscore/highscoreSlice'
-import { setAlignmentMode } from './gameSlice'
+import { setAlignmentMode } from '../gameSlice'
 import type { AlignmentMode } from '@/core/shared/alignment'
 
 type StartScreenProps = {
