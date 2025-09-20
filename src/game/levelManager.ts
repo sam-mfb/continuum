@@ -14,8 +14,9 @@ import { resetSparksAlive, clearShards } from '@core/explosions'
 import { initializeBunkers, initializeFuels } from '@core/planet'
 import { BunkerKind } from '@core/figs/types'
 import { SCRWTH, TOPMARG, BOTMARG } from '@core/screen'
-import { resetGame, clearLevelComplete, clearStatusMessage } from './gameSlice'
+import { resetGame, clearLevelComplete } from './gameSlice'
 import type { RootState } from './store'
+import { setMessage } from '@/core/status/statusSlice'
 
 /**
  * Check if the current level is complete
@@ -83,7 +84,7 @@ export function loadLevel(store: Store<RootState>, levelNum: number): void {
 
   // Reset level complete flag and status message for the new level
   store.dispatch(clearLevelComplete())
-  store.dispatch(clearStatusMessage())
+  store.dispatch(setMessage(null))
 
   // Get the planet data for this level from the service
   const planet = galaxyService.getPlanet(levelNum)

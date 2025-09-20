@@ -765,7 +765,7 @@ export const createGameRenderer =
           score: finalState.status.score,
           bonus: finalState.status.planetbonus,
           level: extFinalState.status.currentlevel,
-          message: extFinalState.game.statusMessage || '',
+          message: extFinalState.status.curmessage,
           spriteService
         }
         renderedBitmap = updateSbar(statusData)(renderedBitmap)
@@ -816,7 +816,7 @@ export const createGameRenderer =
           score: finalState.status.score,
           bonus: finalState.status.planetbonus,
           level: extFinalState.status.currentlevel,
-          message: extFinalState.game.statusMessage || '',
+          message: extFinalState.status.curmessage,
           spriteService
         }
         renderedBitmap = updateSbar(statusData)(renderedBitmap)
@@ -986,7 +986,7 @@ export const createGameRenderer =
       score: finalState.status.score,
       bonus: finalState.status.planetbonus,
       level: extState.status.currentlevel, // Use status's current level
-      message: extState.game.statusMessage || finalState.status.curmessage, // Prefer game messages
+      message: finalState.status.curmessage,
       spriteService
     }
 

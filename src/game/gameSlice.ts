@@ -23,9 +23,6 @@ export type GameState = {
   gameOver: boolean
   levelComplete: boolean
 
-  // Messages
-  statusMessage: string
-
   // Display settings
   alignmentMode: AlignmentMode
 
@@ -39,7 +36,6 @@ const initialState: GameState = {
   galaxyLoaded: false,
   gameOver: false,
   levelComplete: false,
-  statusMessage: '',
   alignmentMode: 'screen-fixed', // Default to screen-fixed (not original)
   mode: 'start',
   pendingHighScore: null
@@ -73,16 +69,6 @@ export const gameSlice = createSlice({
     resetGame: state => {
       state.gameOver = false
       state.levelComplete = false
-      state.statusMessage = ''
-    },
-
-    // Status message
-    setStatusMessage: (state, action: PayloadAction<string>) => {
-      state.statusMessage = action.payload
-    },
-
-    clearStatusMessage: state => {
-      state.statusMessage = ''
     },
 
     // Display settings
@@ -107,7 +93,6 @@ export const gameSlice = createSlice({
       state.mode = 'playing'
       state.gameOver = false
       state.levelComplete = false
-      state.statusMessage = ''
       state.pendingHighScore = null
     },
 
@@ -128,8 +113,6 @@ export const {
   clearLevelComplete,
   triggerGameOver,
   resetGame,
-  setStatusMessage,
-  clearStatusMessage,
   setAlignmentMode,
   toggleAlignmentMode,
   setMode,
