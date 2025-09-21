@@ -13,11 +13,11 @@
 
 import type { BitmapRenderer } from '@lib/bitmap'
 import { viewClear } from '@core/screen'
-import { starBackground } from '@core/screen/render/starBackground'
 import {
-  createFizzTransition,
-  type FizzTransition
-} from '@core/screen/render/fizz'
+  createFizzTransitionService,
+  type FizzTransitionService,
+  starBackground
+} from '@core/transition'
 import { fullFigure } from '@core/ship'
 import { SCRWTH, VIEWHT } from '@core/screen'
 import type { SpriteServiceV2 } from '@core/sprites'
@@ -27,7 +27,7 @@ import { cloneBitmap } from '@lib/bitmap'
 // State for tracking the transition - persists across render calls
 type TransitionState = {
   mode: 'normal' | 'fizzing' | 'complete'
-  fizzTransition: FizzTransition | null
+  fizzTransitionService: FizzTransitionService
   fromBitmap: Uint8Array | null
   toBitmap: Uint8Array | null
   delayFrames: number
@@ -35,7 +35,7 @@ type TransitionState = {
 
 const state: TransitionState = {
   mode: 'normal',
-  fizzTransition: null,
+  fizzTransitionService: createFizzTransitionService(),
   fromBitmap: null,
   toBitmap: null,
   delayFrames: 0
@@ -87,12 +87,12 @@ export const createStarBackgroundBitmapRenderer =
       state.fromBitmap = new Uint8Array(withShip.data)
       state.toBitmap = new Uint8Array(starBg.data)
 
-      // Initialize fizz transition with progressive implementation
-      state.fizzTransition = createFizzTransition({
-        from: withShip,
-        to: starBg,
-        durationFrames: FIZZ_DURATION
-      })
+      // Initialize fizz transition service
+      state.fizzTransitionService.initialize(
+        withShip,
+        starBg,
+        FIZZ_DURATION
+      )
       state.mode = 'fizzing'
       // Don't return - fall through to render the first frame
     }
@@ -124,16 +124,16 @@ export const createStarBackgroundBitmapRenderer =
       }
 
       case 'fizzing': {
-        if (state.fizzTransition) {
+        if (state.fizzTransitionService.isInitialized) {
           // Get next frame of the transition
           // This advances the internal LFSR and returns the current state
-          const fizzFrame = state.fizzTransition.nextFrame()
+          const fizzFrame = state.fizzTransitionService.nextFrame()
 
           // Check if complete
-          if (state.fizzTransition.isComplete) {
+          if (state.fizzTransitionService.isComplete) {
             state.mode = 'complete'
-            // Clean up the transition object
-            state.fizzTransition = null
+            // Reset the service for next use
+            state.fizzTransitionService.reset()
             state.delayFrames = 0
           }
 
@@ -151,7 +151,6 @@ export const createStarBackgroundBitmapRenderer =
           state.mode = 'normal'
           state.fromBitmap = null
           state.toBitmap = null
-          state.fizzTransition = null
           state.delayFrames = 0
         }
 

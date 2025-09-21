@@ -6,7 +6,7 @@
  */
 
 import type { Store } from '@reduxjs/toolkit'
-import type { RootState, AppDispatch } from '../store'
+import type { RootState } from '../store'
 import type { MonochromeBitmap, GameFrameInfo } from '@lib/bitmap'
 
 import {
@@ -41,9 +41,7 @@ import {
   playDiscrete
 } from '@core/sound/soundSlice'
 import { SoundType } from '@core/sound/constants'
-import {
-  startLevelTransitionThunk
-} from '@core/transition'
+import { startLevelTransition } from '@core/transition'
 
 import { checkLevelComplete, loadLevel } from '../levelManager'
 import {
@@ -118,8 +116,8 @@ const handleLevelCompletion = (store: Store<RootState>): void => {
     store.dispatch(markLevelComplete())
     store.dispatch(statusSlice.actions.setMessage('MISSION COMPLETE'))
 
-    // Start transition using thunk - invoke the thunk directly
-    startLevelTransitionThunk()(store.dispatch as AppDispatch)
+    // Start transition directly using the reducer action
+    store.dispatch(startLevelTransition())
   }
 }
 
@@ -193,8 +191,9 @@ const handleShipMovement = (
 
     // Only handle controls if not in fizz transition
     if (!state.transition.active || state.transition.preDelayFrames > 0) {
-      // shipControl is a thunk - cast dispatch to proper type
-      ;(store.dispatch as AppDispatch)(
+      // shipControl is a thunk - use any cast for dispatch
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(store.dispatch as any)(
         shipControl({
           controlsPressed: getPressedControls(frame.keysDown)
         })

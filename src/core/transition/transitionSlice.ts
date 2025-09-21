@@ -2,7 +2,7 @@
  * @fileoverview Redux slice for managing level transitions
  */
 
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
+import { createSlice } from '@reduxjs/toolkit'
 import type { TransitionState } from './types'
 import { MICO_DELAY_FRAMES } from './constants'
 
@@ -11,8 +11,6 @@ const initialState: TransitionState = {
   preDelayFrames: 0,
   fizzActive: false,
   fizzStarted: false,
-  fromBitmap: null,
-  toBitmap: null,
   delayFrames: 0,
   fizzJustFinished: false
 }
@@ -23,7 +21,7 @@ export const transitionSlice = createSlice({
   reducers: {
     /**
      * Start a level completion transition
-     * Sets up the pre-delay countdown
+     * Sets up the pre-delay countdown and fizz state
      */
     startLevelTransition: state => {
       state.active = true
@@ -31,6 +29,7 @@ export const transitionSlice = createSlice({
       state.delayFrames = 0
       state.fizzJustFinished = false
       state.fizzStarted = false
+      state.fizzActive = true
     },
 
     /**
@@ -43,21 +42,6 @@ export const transitionSlice = createSlice({
       }
     },
 
-    /**
-     * Initialize the fizz effect with from/to bitmap data
-     * Called when pre-delay reaches zero
-     */
-    initializeFizz: (
-      state,
-      action: PayloadAction<{
-        fromBitmap: Uint8Array
-        toBitmap: Uint8Array
-      }>
-    ) => {
-      state.fizzActive = true
-      state.fromBitmap = action.payload.fromBitmap
-      state.toBitmap = action.payload.toBitmap
-    },
 
     /**
      * Mark that the fizz transition has been started
@@ -101,8 +85,6 @@ export const transitionSlice = createSlice({
       state.preDelayFrames = 0
       state.fizzActive = false
       state.fizzStarted = false
-      state.fromBitmap = null
-      state.toBitmap = null
       state.delayFrames = 0
       state.fizzJustFinished = false
     }
@@ -112,7 +94,6 @@ export const transitionSlice = createSlice({
 export const {
   startLevelTransition,
   decrementPreDelay,
-  initializeFizz,
   markFizzStarted,
   completeFizz,
   clearFizzFinished,

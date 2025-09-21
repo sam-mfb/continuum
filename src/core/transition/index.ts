@@ -6,7 +6,6 @@ export { transitionSlice } from './transitionSlice'
 export {
   startLevelTransition,
   decrementPreDelay,
-  initializeFizz,
   markFizzStarted,
   completeFizz,
   clearFizzFinished,
@@ -14,10 +13,12 @@ export {
   resetTransition
 } from './transitionSlice'
 export {
-  startLevelTransition as startLevelTransitionThunk,
-  updateTransition,
-  cleanupTransition
+  updateTransition
 } from './transitionThunks'
+export type { FizzTransitionService } from './FizzTransitionService'
+export { createFizzTransitionService } from './FizzTransitionService'
+export { starBackgroundWithShip } from './render/starBackgroundWithShip'
+export { starBackground } from './render/starBackground'
 export type { TransitionState } from './types'
 export {
   MICO_DELAY_FRAMES,

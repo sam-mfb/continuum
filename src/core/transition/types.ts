@@ -3,6 +3,23 @@
  */
 
 /**
+ * Minimal root state type for transition system
+ * Allows transition module to work without importing from game layer
+ */
+export type TransitionRootState = {
+  transition: TransitionState
+  ship: {
+    deadCount: number
+    shiprot: number
+    shipx: number
+    shipy: number
+  }
+  // Other slices can be any shape
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any
+}
+
+/**
  * State for managing level transition effects
  */
 export type TransitionState = {
@@ -17,12 +34,6 @@ export type TransitionState = {
 
   /** Whether the fizz transition has been started (prevents re-creation) */
   fizzStarted: boolean
-
-  /** Bitmap data for the "from" state (current game view) */
-  fromBitmap: Uint8Array | null
-
-  /** Bitmap data for the "to" state (star background) */
-  toBitmap: Uint8Array | null
 
   /** Post-transition delay frames counter */
   delayFrames: number

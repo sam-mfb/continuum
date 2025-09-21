@@ -9,13 +9,19 @@
  * rendering, and sound playback through specialized submodules.
  */
 
-import type { BitmapRenderer } from '@lib/bitmap'
+import type { BitmapRenderer, MonochromeBitmap } from '@lib/bitmap'
 import type { SpriteServiceV2 } from '@core/sprites'
 import type { GalaxyHeader } from '@core/galaxy'
 
-import { updateTransition } from '@core/transition'
+import {
+  updateTransition,
+  createFizzTransitionService,
+  starBackgroundWithShip
+} from '@core/transition'
+import { sbarClear, updateSbar } from '@core/status'
 import { store, type RootState } from './store'
 import { getInitializationStatus } from './initialization'
+import { transitionToNextLevel } from './levelManager'
 import { updateGameState } from './gameLoop/stateUpdates'
 import { renderGame } from './gameLoop/rendering'
 import { playFrameSounds } from './gameLoop/soundManager'
@@ -29,8 +35,11 @@ import { playFrameSounds } from './gameLoop/soundManager'
  * 3. Sound - playing accumulated sounds for the frame
  */
 export const createGameRenderer =
-  (spriteService: SpriteServiceV2): BitmapRenderer =>
-  (bitmap, frame, _env) => {
+  (spriteService: SpriteServiceV2): BitmapRenderer => {
+  // Create the fizz transition service once for this renderer instance
+  const fizzTransitionService = createFizzTransitionService()
+
+  return (bitmap, frame, _env) => {
     // Check initialization status
     const { complete, error } = getInitializationStatus()
 
@@ -67,18 +76,50 @@ export const createGameRenderer =
 
     // Phase 3: Handle transition effects
     // Apply any active transition effects (level complete fizz, etc.)
+
+    // Create status bar adder function with current state
+    const addStatusBar = (bmp: MonochromeBitmap): MonochromeBitmap => {
+      const statusBarTemplate = spriteService.getStatusBarTemplate()
+      let result = sbarClear({ statusBarTemplate })(bmp)
+      result = updateSbar({
+        fuel: state.ship.fuel,
+        lives: state.ship.lives,
+        score: state.status.score,
+        bonus: state.status.planetbonus,
+        level: state.status.currentlevel,
+        message: state.status.curmessage,
+        spriteService
+      })(result)
+      return result
+    }
+
+    // Create target bitmap creator function
+    const createTargetBitmap = (shipState: { deadCount: number; shiprot: number; shipx: number; shipy: number }): MonochromeBitmap => {
+      const targetBitmap: MonochromeBitmap = {
+        width: 512,
+        height: 342,
+        rowBytes: 64,
+        data: new Uint8Array((512 * 342) / 8)
+      }
+
+      return starBackgroundWithShip({
+        includeShip: shipState.deadCount === 0,
+        shipState: {
+          shiprot: shipState.shiprot,
+          shipx: shipState.shipx,
+          shipy: shipState.shipy
+        },
+        spriteService
+      })(targetBitmap)
+    }
+
     const transitionFrame = store.dispatch(
       updateTransition(bitmap, {
-        statusData: {
-          fuel: state.ship.fuel,
-          lives: state.ship.lives,
-          score: state.status.score,
-          bonus: state.status.planetbonus,
-          level: state.status.currentlevel,
-          message: state.status.curmessage,
-          spriteService
-        },
-        store
+        addStatusBar,
+        createTargetBitmap,
+        store,
+        fizzTransitionService,
+        onTransitionComplete: transitionToNextLevel
       })
     )
 
@@ -101,6 +142,7 @@ export const createGameRenderer =
     // Return the final rendered bitmap
     return bitmap
   }
+}
 
 /**
  * Export galaxy header for level jumping

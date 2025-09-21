@@ -2,18 +2,10 @@
  * @fileoverview Thunks for managing level transitions
  */
 
-import type { Store } from '@reduxjs/toolkit'
-import type { AppDispatch, RootState } from '@/game/store'
+import type { Store, Dispatch } from '@reduxjs/toolkit'
+import type { TransitionRootState } from './types'
+import type { FizzTransitionService } from './FizzTransitionService'
 import type { MonochromeBitmap } from '@lib/bitmap'
-import { cloneBitmap } from '@lib/bitmap'
-import type { SpriteServiceV2 } from '@core/sprites'
-import { starBackground } from '@core/screen/render/starBackground'
-import { fullFigure } from '@core/ship'
-import { SCENTER } from '@core/figs/types'
-import {
-  createFizzTransition,
-  type FizzTransition
-} from '@core/screen/render/fizz'
 import {
   playDiscrete,
   setThrusting,
@@ -21,12 +13,8 @@ import {
 } from '@core/sound/soundSlice'
 import { SoundType } from '@core/sound/constants'
 import { shipSlice } from '@core/ship/shipSlice'
-import { sbarClear, updateSbar } from '@core/status'
-import { transitionToNextLevel } from '@/game/levelManager'
 import {
-  startLevelTransition as startTransition,
   decrementPreDelay,
-  initializeFizz,
   markFizzStarted,
   completeFizz,
   clearFizzFinished,
@@ -35,53 +23,26 @@ import {
 } from './transitionSlice'
 import { TRANSITION_DELAY_FRAMES, FIZZ_DURATION } from './constants'
 
-// Module-level state for the active fizz transition
-// Not stored in Redux to keep state serializable
-let activeFizzTransition: FizzTransition | null = null
-
-/**
- * Start a level completion transition
- * Initializes the transition state ("to" bitmap will be created when fizz starts)
- */
-export const startLevelTransition =
-  () =>
-  (dispatch: AppDispatch): void => {
-    // Start the transition countdown
-    dispatch(startTransition())
-
-    // Initialize with empty bitmaps - they'll be created when fizz starts
-    dispatch(
-      initializeFizz({
-        fromBitmap: new Uint8Array(0),
-        toBitmap: new Uint8Array(0)
-      })
-    )
-  }
-
 /**
  * Update the transition state for the current frame
  * Returns a bitmap to render if transition is active, null otherwise
  */
-export const updateTransition =
-  (
-    currentFrameBitmap: MonochromeBitmap,
-    renderContext: {
-      statusData: {
-        fuel: number
-        lives: number
-        score: number
-        bonus: number
-        level: number
-        message: string | null
-        spriteService: SpriteServiceV2
-      }
-      store: Store<RootState> // Full store for level transition
-    }
-  ) =>
-  (
-    dispatch: AppDispatch,
-    getState: () => RootState
-  ): MonochromeBitmap | null => {
+export function updateTransition<TState extends TransitionRootState>(
+  currentFrameBitmap: MonochromeBitmap,
+  renderContext: {
+    addStatusBar: (bitmap: MonochromeBitmap) => MonochromeBitmap
+    createTargetBitmap: (shipState: {
+      deadCount: number
+      shiprot: number
+      shipx: number
+      shipy: number
+    }) => MonochromeBitmap
+    store: Store<TState>
+    fizzTransitionService: FizzTransitionService
+    onTransitionComplete?: (store: Store<TState>) => void
+  }
+): (dispatch: Dispatch, getState: () => TState) => MonochromeBitmap | null {
+  return (dispatch, getState) => {
     const state = getState().transition
 
     if (!state.active) {
@@ -103,7 +64,11 @@ export const updateTransition =
     }
 
     // Initialize fizz on first frame after pre-delay
-    if (!activeFizzTransition && state.fizzActive && !state.fizzStarted) {
+    if (
+      !renderContext.fizzTransitionService.isInitialized &&
+      state.fizzActive &&
+      !state.fizzStarted
+    ) {
       // Play fizz start sound
       dispatch(playDiscrete(SoundType.FIZZ_SOUND))
 
@@ -111,100 +76,48 @@ export const updateTransition =
       dispatch(setThrusting(false))
       dispatch(setShielding(false))
 
-      // Capture the current frame as "from" bitmap
-      const fromBitmapData = new Uint8Array(currentFrameBitmap.data)
-
-      // Get current ship state for creating "to" bitmap with correct position
+      // Get ship state for creating target bitmap
       const shipState = getState().ship
-      const { spriteService } = renderContext.statusData
 
-      // Create the "to" bitmap NOW with current ship position
-      const toBitmapObj: MonochromeBitmap = {
-        width: 512,
-        height: 342,
-        rowBytes: 64,
-        data: new Uint8Array((512 * 342) / 8)
-      }
+      // Create the target bitmap using the passed callback
+      const targetBitmap = renderContext.createTargetBitmap(shipState)
 
-      let shipSprite = null
-      let shipMaskSprite = null
-      if (shipState.deadCount === 0) {
-        shipSprite = spriteService.getShipSprite(shipState.shiprot, {
-          variant: 'def'
-        })
-        shipMaskSprite = spriteService.getShipSprite(shipState.shiprot, {
-          variant: 'mask'
-        })
-      }
-
-      const starBg = starBackground({
-        starCount: 150,
-        additionalRender:
-          shipState.deadCount === 0
-            ? (screen: MonochromeBitmap): MonochromeBitmap =>
-                fullFigure({
-                  x: shipState.shipx - SCENTER,
-                  y: shipState.shipy - SCENTER,
-                  def: shipSprite!.bitmap,
-                  mask: shipMaskSprite!.bitmap
-                })(screen)
-            : undefined
-      })(toBitmapObj)
-
-      const toBitmapData = new Uint8Array(starBg.data)
-
-      // Update Redux with both bitmaps
-      dispatch(
-        initializeFizz({
-          fromBitmap: fromBitmapData,
-          toBitmap: toBitmapData
-        })
+      // Initialize the fizz transition service with current frame and target
+      renderContext.fizzTransitionService.initialize(
+        currentFrameBitmap,
+        targetBitmap,
+        FIZZ_DURATION
       )
-
-      // Create the fizz transition instance
-      const fromBitmap = cloneBitmap(currentFrameBitmap)
-      const toBitmap = cloneBitmap(currentFrameBitmap)
-      toBitmap.data = toBitmapData
-
-      activeFizzTransition = createFizzTransition({
-        from: fromBitmap,
-        to: toBitmap,
-        durationFrames: FIZZ_DURATION
-      })
 
       // Mark fizz as started
       dispatch(markFizzStarted())
 
       // Return the first fizz frame
-      const fizzFrame = activeFizzTransition.nextFrame()
-      return addStatusBar(fizzFrame, renderContext.statusData)
+      const fizzFrame = renderContext.fizzTransitionService.nextFrame()
+      return renderContext.addStatusBar(fizzFrame)
     }
 
     // Handle fizz in progress
-    if (activeFizzTransition) {
-      if (activeFizzTransition.isComplete) {
+    if (renderContext.fizzTransitionService.isInitialized && state.fizzActive) {
+      if (renderContext.fizzTransitionService.isComplete) {
         // Fizz just completed
         dispatch(completeFizz())
 
         // Play echo sound
         dispatch(playDiscrete(SoundType.ECHO_SOUND))
 
-        // Clear the transition instance
-        activeFizzTransition = null
-
-        // Return star background
-        const resultBitmap = cloneBitmap(currentFrameBitmap)
-        resultBitmap.data.set(state.toBitmap!)
-        return addStatusBar(resultBitmap, renderContext.statusData)
+        // Return the target bitmap from the service
+        const images = renderContext.fizzTransitionService.getImages()
+        return images.to ? renderContext.addStatusBar(images.to) : null
       } else {
         // Fizz still in progress
-        const fizzFrame = activeFizzTransition.nextFrame()
-        return addStatusBar(fizzFrame, renderContext.statusData)
+        const fizzFrame = renderContext.fizzTransitionService.nextFrame()
+        return renderContext.addStatusBar(fizzFrame)
       }
     }
 
     // Handle post-fizz delay
-    if (!state.fizzActive && state.toBitmap) {
+    if (!state.fizzActive && state.active) {
       // Clear the "just finished" flag if set
       if (state.fizzJustFinished) {
         dispatch(clearFizzFinished())
@@ -218,49 +131,23 @@ export const updateTransition =
         // Clean up transition state
         dispatch(resetTransition())
 
+        // Reset the transition service now that everything is done
+        renderContext.fizzTransitionService.reset()
+
         // Trigger the actual level load
-        transitionToNextLevel(renderContext.store)
+        if (renderContext.onTransitionComplete) {
+          renderContext.onTransitionComplete(renderContext.store)
+        }
 
         // Return null to resume normal rendering
         return null
       }
 
-      // Show star background during delay
-      const resultBitmap = cloneBitmap(currentFrameBitmap)
-      resultBitmap.data.set(state.toBitmap)
-      return addStatusBar(resultBitmap, renderContext.statusData)
+      // Show target bitmap from service during delay
+      const images = renderContext.fizzTransitionService.getImages()
+      return images.to ? renderContext.addStatusBar(images.to) : null
     }
 
     return null
   }
-
-/**
- * Helper to add status bar to a bitmap
- */
-function addStatusBar(
-  bitmap: MonochromeBitmap,
-  statusData: {
-    fuel: number
-    lives: number
-    score: number
-    bonus: number
-    level: number
-    message: string | null
-    spriteService: SpriteServiceV2
-  }
-): MonochromeBitmap {
-  const { spriteService, ...data } = statusData
-  const statusBarTemplate = spriteService.getStatusBarTemplate()
-
-  let result = sbarClear({ statusBarTemplate })(bitmap)
-  result = updateSbar({ ...data, spriteService })(result)
-
-  return result
-}
-
-/**
- * Clean up module state when transition system resets
- */
-export function cleanupTransition(): void {
-  activeFizzTransition = null
 }
