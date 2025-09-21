@@ -6,7 +6,7 @@
  */
 
 import type { RootState } from '../store'
-import { playSounds } from '@core/sound/soundPlayer'
+import { playSounds } from '@core/sound'
 
 export type SoundContext = {
   state: RootState

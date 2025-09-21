@@ -10,9 +10,9 @@ import { gravityVector } from '@core/shared/gravityVector'
 import {
   playDiscrete,
   setThrusting,
-  setShielding
-} from '@core/sound/soundSlice'
-import { SoundType } from '@core/sound/constants'
+  setShielding,
+  SoundType
+} from '@core/sound'
 import { wallsSlice } from '../walls'
 
 type ControlAction = {

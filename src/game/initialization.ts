@@ -6,12 +6,12 @@
  */
 
 import type { Store } from '@reduxjs/toolkit'
-import type { SoundUIState } from '@core/sound/soundSlice'
+import type { SoundUIState } from '@core/sound'
 import { getGalaxyService } from '@core/galaxy'
 import {
   initializeSoundService,
   cleanupSoundService
-} from '@core/sound/service'
+} from '@core/sound'
 import { shipSlice } from '@core/ship'
 import { statusSlice } from '@core/status'
 import { TOTAL_INITIAL_LIVES } from './constants'

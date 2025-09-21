@@ -38,9 +38,9 @@ import { containShip } from '@core/shared/containShip'
 import { rint } from '@core/shared'
 import {
   resetFrame,
-  playDiscrete
-} from '@core/sound/soundSlice'
-import { SoundType } from '@core/sound/constants'
+  playDiscrete,
+  SoundType
+} from '@core/sound'
 import { startLevelTransition } from '@core/transition'
 
 import { checkLevelComplete, loadLevel } from '../levelManager'

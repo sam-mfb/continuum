@@ -7,9 +7,7 @@
 import React, { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import type { RootState } from '@dev/store'
-import { setVolume, toggleSound } from '@core/sound/soundSlice'
-import { initializeSoundService } from '@core/sound/service'
-import type { SoundService } from '@core/sound/service'
+import { setVolume, toggleSound, initializeSoundService, type SoundService } from '@core/sound'
 
 export const SoundTestPanel: React.FC = () => {
   const dispatch = useDispatch()

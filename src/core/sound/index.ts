@@ -24,6 +24,9 @@ export * from './soundSlice'
 // Sound engine - Internal, exposed for test panel
 export * from './soundEngine'
 
+// Sound Player - For game loop integration
+export { playSounds } from './soundPlayer'
+
 // Audio output (Phase 6)
 export * from './audioOutput'
 

@@ -6,20 +6,20 @@ import { configureStore } from '@reduxjs/toolkit'
 
 // Import all reducers
 import gameReducer from './gameSlice'
-import { shipSlice } from '@core/ship/shipSlice'
-import { shotsSlice } from '@core/shots/shotsSlice'
-import { planetSlice } from '@core/planet/planetSlice'
-import { screenSlice } from '@core/screen/screenSlice'
-import { statusSlice } from '@core/status/statusSlice'
-import { explosionsSlice } from '@core/explosions/explosionsSlice'
-import soundReducer from '@core/sound/soundSlice'
-import { wallsSlice } from '@core/walls/wallsSlice'
-import { highscoreSlice } from '@/core/highscore/highscoreSlice'
+import { shipSlice } from '@core/ship'
+import { shotsSlice } from '@core/shots'
+import { planetSlice } from '@core/planet'
+import { screenSlice } from '@core/screen'
+import { statusSlice } from '@core/status'
+import { explosionsSlice } from '@core/explosions'
+import { soundReducer } from '@core/sound'
+import { wallsSlice } from '@core/walls'
+import { highscoreSlice } from '@/core/highscore'
 import { transitionSlice } from '@core/transition'
 import {
   highscoreMiddleware,
   loadHighScores
-} from '@/core/highscore/highscoreMiddleware'
+} from '@/core/highscore'
 
 // Load persisted high scores
 const persistedHighScores = loadHighScores()

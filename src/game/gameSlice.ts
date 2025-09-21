@@ -4,7 +4,7 @@
 
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { GalaxyHeader } from '@core/galaxy'
-import type { AlignmentMode } from '@/core/shared/alignment'
+import type { AlignmentMode } from '@/core/shared'
 
 export type GameMode = 'start' | 'playing' | 'highScoreEntry' | 'gameOver'
 

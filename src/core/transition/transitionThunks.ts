@@ -9,9 +9,9 @@ import type { MonochromeBitmap } from '@lib/bitmap'
 import {
   playDiscrete,
   setThrusting,
-  setShielding
-} from '@core/sound/soundSlice'
-import { SoundType } from '@core/sound/constants'
+  setShielding,
+  SoundType
+} from '@core/sound'
 import { shipSlice } from '@core/ship/shipSlice'
 import {
   decrementPreDelay,

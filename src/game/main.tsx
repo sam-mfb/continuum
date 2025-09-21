@@ -7,7 +7,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import { createSpriteServiceV2 } from '@core/sprites'
 import { createGameRenderer, getGalaxyHeader } from './gameLoop'
-import { setAlignmentMode } from '@/core/shared/alignment'
+import { setAlignmentMode } from '@/core/shared'
 import { store } from './store'
 
 const app = document.querySelector<HTMLDivElement>('#app')!

@@ -16,7 +16,7 @@ import { BunkerKind } from '@core/figs/types'
 import { SCRWTH, TOPMARG, BOTMARG } from '@core/screen'
 import { resetGame, clearLevelComplete } from './gameSlice'
 import type { RootState } from './store'
-import { setMessage } from '@/core/status/statusSlice'
+import { setMessage } from '@/core/status'
 
 /**
  * Check if the current level is complete

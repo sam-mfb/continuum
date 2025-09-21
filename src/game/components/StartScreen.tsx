@@ -1,10 +1,10 @@
 import React, { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState } from '../store'
-import type { HighScoreState } from '@/core/highscore/highscoreSlice'
-import { resetHighScores } from '@/core/highscore/highscoreSlice'
+import type { HighScoreState } from '@/core/highscore'
+import { resetHighScores } from '@/core/highscore'
 import { setAlignmentMode } from '../gameSlice'
-import type { AlignmentMode } from '@/core/shared/alignment'
+import type { AlignmentMode } from '@/core/shared'
 
 type StartScreenProps = {
   onStartGame: (level: number) => void
