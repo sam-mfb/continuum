@@ -47,38 +47,20 @@ Create `render/index.ts` for:
 - `ship`
 - `shots`
 
-## Phase 3: Resolve Duplicate Exports
+## Phase 3: Resolve Duplicate Exports ✅ COMPLETED
 **Priority: Medium | Risk: Medium**
 
-### 3.1 Screen package
-- **Current duplicates**: `viewClear`, `viewWhite`
-- **Solution**:
-  - Keep render functions only in `render/index.ts`
-  - Remove from main `index.ts`
-  - Update main `index.ts` to re-export from render:
-    ```typescript
-    export { viewClear, viewWhite } from './render';
-    ```
+### 3.1 Screen package ✅
+- **Status**: Already correctly re-exporting from `./render`
+- No duplicates found
 
-### 3.2 Status package
-- **Current duplicates**: `updateSbar`, `sbarClear`, `newSbar`
-- **Solution**:
-  - Keep render functions only in `render/index.ts`
-  - Remove from main `index.ts`
-  - Update main `index.ts` to re-export from render:
-    ```typescript
-    export { updateSbar, sbarClear, newSbar } from './render';
-    ```
+### 3.2 Status package ✅
+- **Status**: Already correctly re-exporting from `./render`
+- No duplicates found
 
-### 3.3 Walls package
-- **Current duplicates**: `whiteTerrain`, `blackTerrain`
-- **Solution**:
-  - Keep render functions only in `render/index.ts`
-  - Remove from main `index.ts`
-  - Update main `index.ts` to re-export from render:
-    ```typescript
-    export { whiteTerrain, blackTerrain } from './render';
-    ```
+### 3.3 Walls package ✅
+- **Status**: Already correctly re-exporting from `./render`
+- No duplicates found
 
 ## Phase 4: Clean Up Unused Exports
 **Priority: Low | Risk: Low**
