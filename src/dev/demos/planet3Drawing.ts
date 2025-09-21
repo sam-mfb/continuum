@@ -16,7 +16,7 @@ import { Galaxy } from '@core/galaxy'
 import { parsePlanet } from '@core/planet'
 import { VIEWHT } from '@core/screen'
 import { viewClear } from '@core/screen/render'
-import { ASSET_PATHS } from '@core/constants'
+import { ASSET_PATHS } from '@/dev/constants'
 
 // Create store instance
 const store = buildGameStore()

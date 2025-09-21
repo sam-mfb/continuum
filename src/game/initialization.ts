@@ -9,7 +9,7 @@ import type { GalaxyService } from '@core/galaxy'
 import { initializeSoundService, cleanupSoundService } from '@core/sound'
 import { shipSlice } from '@core/ship'
 import { statusSlice } from '@core/status'
-import { TOTAL_INITIAL_LIVES } from './constants'
+import { TOTAL_INITIAL_LIVES, ASSET_PATHS } from './constants'
 import { loadGalaxyHeader } from './gameSlice'
 import { store } from './store'
 
@@ -44,7 +44,7 @@ export const initializeGame = async (galaxyService: GalaxyService): Promise<Gala
 
     // Load the release galaxy file using the service
     console.log('Loading galaxy file...')
-    const galaxyHeader = await galaxyService.loadGalaxy()
+    const galaxyHeader = await galaxyService.loadGalaxy(ASSET_PATHS.GALAXY_DATA)
     console.log('Galaxy header:', galaxyHeader)
     console.log(`Galaxy contains ${galaxyHeader.planets} levels`)
 

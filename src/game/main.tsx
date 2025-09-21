@@ -12,6 +12,7 @@ import { setAlignmentMode } from '@/core/shared'
 import { store } from './store'
 import { initializeGame } from './initialization'
 import { loadLevel } from './levelManager'
+import { ASSET_PATHS } from './constants'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 const root = createRoot(app)
@@ -19,7 +20,10 @@ const root = createRoot(app)
 async function initGame(): Promise<void> {
   try {
     // Initialize services
-    const spriteService = await createSpriteService()
+    const spriteService = await createSpriteService({
+      spriteResource: ASSET_PATHS.SPRITE_RESOURCE,
+      statusBarResource: ASSET_PATHS.STATUS_BAR_RESOURCE
+    })
     console.log('Sprite service initialized')
 
     const galaxyService = createGalaxyService()

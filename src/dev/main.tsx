@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
 import { store } from './store/store'
 import { createSpriteService } from '@core/sprites'
+import { ASSET_PATHS } from './constants'
 import App from './App'
 import './index.css'
 
@@ -10,7 +11,10 @@ import './index.css'
 async function initializeApp(): Promise<void> {
   try {
     // Load sprites before initializing Redux
-    const spriteService = await createSpriteService()
+    const spriteService = await createSpriteService({
+      spriteResource: ASSET_PATHS.SPRITE_RESOURCE,
+      statusBarResource: ASSET_PATHS.STATUS_BAR_RESOURCE
+    })
 
     // Now render the app with sprites loaded
     createRoot(document.getElementById('root')!).render(

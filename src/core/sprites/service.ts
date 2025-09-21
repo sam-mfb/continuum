@@ -15,7 +15,6 @@ import { BunkerKind } from '@core/figs/types'
 import type { AllSprites } from '@core/figs/types'
 import { createMonochromeBitmap } from '@lib/bitmap'
 import type { MonochromeBitmap } from '@lib/bitmap/types'
-import { ASSET_PATHS } from '@core/constants'
 
 // Sprite variants - explicit background selection
 export type ShipVariant = 'def' | 'mask'
@@ -114,9 +113,17 @@ type PrecomputedStorage = {
 /**
  * Creates an improved sprite service with pre-computed format conversions
  */
-export async function createSpriteService(): Promise<SpriteService> {
+export async function createSpriteService(assetPaths?: {
+  spriteResource?: string
+  statusBarResource?: string
+}): Promise<SpriteService> {
+  // Default paths if not provided
+  const paths = {
+    spriteResource: assetPaths?.spriteResource ?? '/rsrc_260.bin',
+    statusBarResource: assetPaths?.statusBarResource ?? '/rsrc_259.bin'
+  }
   // Load sprite resource file
-  const response = await fetch(ASSET_PATHS.SPRITE_RESOURCE)
+  const response = await fetch(paths.spriteResource)
   if (!response.ok) {
     throw new Error('Failed to load sprite resource')
   }
@@ -125,7 +132,7 @@ export async function createSpriteService(): Promise<SpriteService> {
   const allSprites = extractAllSprites(arrayBuffer)
 
   // Load status bar template
-  const statusBarResponse = await fetch(ASSET_PATHS.STATUS_BAR_RESOURCE)
+  const statusBarResponse = await fetch(paths.statusBarResource)
   if (!statusBarResponse.ok) {
     throw new Error('Failed to load status bar resource')
   }

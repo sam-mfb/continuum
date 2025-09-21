@@ -6,7 +6,6 @@
  * storing non-serializable ArrayBuffers in Redux state.
  */
 
-import { ASSET_PATHS } from '@core/constants'
 import { parsePlanet } from '@core/planet'
 import type { PlanetState } from '@core/planet'
 import { Galaxy } from './methods'
@@ -18,9 +17,9 @@ import type { GalaxyHeader, PlanetsBuffer } from './types'
 export type GalaxyService = {
   /**
    * Load galaxy data from a file
-   * @param path - Optional custom path, defaults to ASSET_PATHS.GALAXY_DATA
+   * @param path - Path to the galaxy data file
    */
-  loadGalaxy(path?: string): Promise<GalaxyHeader>
+  loadGalaxy(path: string): Promise<GalaxyHeader>
 
   /**
    * Get the cached galaxy header
@@ -80,9 +79,7 @@ export function createGalaxyService(): GalaxyService {
   }
 
   return {
-    async loadGalaxy(
-      path: string = ASSET_PATHS.GALAXY_DATA
-    ): Promise<GalaxyHeader> {
+    async loadGalaxy(path: string): Promise<GalaxyHeader> {
       // Fetch the galaxy file
       const response = await fetch(path)
       if (!response.ok) {
