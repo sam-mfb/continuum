@@ -177,16 +177,6 @@ export function createGalaxyService(): GalaxyService {
   }
 }
 
-// Create and export a singleton instance
-let galaxyServiceInstance: GalaxyService | null = null
-
-/**
- * Get the singleton galaxy service instance
- * Creates it if it doesn't exist yet
- */
-export function getGalaxyService(): GalaxyService {
-  if (!galaxyServiceInstance) {
-    galaxyServiceInstance = createGalaxyService()
-  }
-  return galaxyServiceInstance
-}
+// Note: The galaxy service is now created by the consumer and passed via dependency injection.
+// This follows the same pattern as the sprite and sound services for better testability
+// and explicit dependency management.

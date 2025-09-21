@@ -5,26 +5,25 @@
  * galaxy loading, and initial state configuration.
  */
 
-import type { Store } from '@reduxjs/toolkit'
-import type { SoundUIState } from '@core/sound'
-import { getGalaxyService } from '@core/galaxy'
+import type { GalaxyService } from '@core/galaxy'
 import { initializeSoundService, cleanupSoundService } from '@core/sound'
 import { shipSlice } from '@core/ship'
 import { statusSlice } from '@core/status'
 import { TOTAL_INITIAL_LIVES } from './constants'
 import { loadGalaxyHeader } from './gameSlice'
-import { loadLevel } from './levelManager'
-import { store, type RootState } from './store'
+import { store } from './store'
 
 // Track initialization state
 let initializationComplete = false
 let initializationError: Error | null = null
 
 /**
- * Initialize the game on module load
+ * Initialize the game
  * Sets up sound service, loads galaxy, and initializes game state
+ * @param galaxyService - The galaxy service instance to use
+ * @returns The galaxy service for further use
  */
-export const initializeGame = async (): Promise<void> => {
+export const initializeGame = async (galaxyService: GalaxyService): Promise<GalaxyService> => {
   try {
     console.log('Starting game initialization...')
 
@@ -32,7 +31,7 @@ export const initializeGame = async (): Promise<void> => {
     console.log('Initializing sound service...')
     try {
       // Get initial sound settings from our store
-      const soundState = store.getState().sound as SoundUIState
+      const soundState = store.getState().sound
       await initializeSoundService({
         volume: soundState.volume,
         enabled: soundState.enabled
@@ -45,7 +44,6 @@ export const initializeGame = async (): Promise<void> => {
 
     // Load the release galaxy file using the service
     console.log('Loading galaxy file...')
-    const galaxyService = getGalaxyService()
     const galaxyHeader = await galaxyService.loadGalaxy()
     console.log('Galaxy header:', galaxyHeader)
     console.log(`Galaxy contains ${galaxyHeader.planets} levels`)
@@ -59,14 +57,16 @@ export const initializeGame = async (): Promise<void> => {
     // Initialize status (score, bonus, etc.)
     store.dispatch(statusSlice.actions.initStatus())
 
-    // Load level 1 using the level manager
-    loadLevel(store as Store<RootState>, 1)
+    // Note: Level loading will now be done after initialization,
+    // when the galaxy service can be passed to loadLevel
 
     initializationComplete = true
     console.log('Game initialization complete')
+    return galaxyService
   } catch (error) {
     console.error('Error initializing game:', error)
     initializationError = error as Error
+    throw error
   }
 }
 
@@ -88,5 +88,4 @@ export const cleanupGame = (): void => {
   cleanupSoundService()
 }
 
-// Start initialization when module loads
-void initializeGame()
+// Note: Initialization is now triggered by main.tsx which creates and passes the galaxy service

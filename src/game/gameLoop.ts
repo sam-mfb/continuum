@@ -10,7 +10,7 @@
 
 import type { BitmapRenderer, MonochromeBitmap } from '@lib/bitmap'
 import type { SpriteService } from '@core/sprites'
-import type { GalaxyHeader } from '@core/galaxy'
+import type { GalaxyService } from '@core/galaxy'
 
 import {
   updateTransition,
@@ -18,7 +18,7 @@ import {
   starBackgroundWithShip
 } from '@core/transition'
 import { sbarClear, updateSbar } from '@core/status/render'
-import { store, type RootState } from './store'
+import { store } from './store'
 import { getInitializationStatus } from './initialization'
 import { transitionToNextLevel } from './levelManager'
 import { updateGameState } from './gameLoop/stateUpdates'
@@ -34,7 +34,8 @@ import { playFrameSounds } from './gameLoop/soundManager'
  * 3. Sound - playing accumulated sounds for the frame
  */
 export const createGameRenderer = (
-  spriteService: SpriteService
+  spriteService: SpriteService,
+  galaxyService: GalaxyService
 ): BitmapRenderer => {
   // Create the fizz transition service once for this renderer instance
   const fizzTransitionService = createFizzTransitionService()
@@ -60,7 +61,8 @@ export const createGameRenderer = (
     updateGameState({
       store,
       frame,
-      bitmap
+      bitmap,
+      galaxyService
     })
 
     // Get current state after updates
@@ -124,7 +126,7 @@ export const createGameRenderer = (
         createTargetBitmap,
         store,
         fizzTransitionService,
-        onTransitionComplete: transitionToNextLevel
+        onTransitionComplete: () => transitionToNextLevel(store, galaxyService)
       })
     )
 
@@ -147,12 +149,4 @@ export const createGameRenderer = (
     // Return the final rendered bitmap
     return bitmap
   }
-}
-
-/**
- * Export galaxy header for level jumping
- */
-export const getGalaxyHeader = (): GalaxyHeader | null => {
-  const state = store.getState() as RootState
-  return state.game.galaxyHeader
 }

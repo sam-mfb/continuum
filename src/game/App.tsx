@@ -4,13 +4,15 @@ import GameCanvas from './components/GameCanvas'
 import { store } from './store'
 import { loadLevel } from './levelManager'
 import type { BitmapRenderer } from '@lib/bitmap'
+import type { GalaxyService } from '@core/galaxy'
 
 type AppProps = {
   renderer: BitmapRenderer
   totalLevels: number
+  galaxyService: GalaxyService
 }
 
-const App: React.FC<AppProps> = ({ renderer, totalLevels }) => {
+const App: React.FC<AppProps> = ({ renderer, totalLevels, galaxyService }) => {
   return (
     <Provider store={store}>
       <GameCanvas
@@ -21,7 +23,7 @@ const App: React.FC<AppProps> = ({ renderer, totalLevels }) => {
         fps={20} // Original Continuum runs at 20 FPS
         totalLevels={totalLevels}
         onLevelSelect={(level: number) => {
-          loadLevel(store, level)
+          loadLevel(store, level, galaxyService)
         }}
       />
     </Provider>

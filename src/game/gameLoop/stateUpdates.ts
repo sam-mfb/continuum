@@ -6,6 +6,7 @@
  */
 
 import type { Store } from '@reduxjs/toolkit'
+import type { GalaxyService } from '@core/galaxy'
 import type { RootState } from '../store'
 import type { MonochromeBitmap, GameFrameInfo } from '@lib/bitmap'
 
@@ -52,6 +53,7 @@ export type StateUpdateContext = {
   store: Store<RootState>
   frame: GameFrameInfo
   bitmap: MonochromeBitmap
+  galaxyService: GalaxyService
 }
 
 // No longer need StateUpdateResult - all data is in the store
@@ -116,7 +118,7 @@ const handleLevelCompletion = (store: Store<RootState>): void => {
 /**
  * Handle game over condition
  */
-const handleGameOver = (store: Store<RootState>): void => {
+const handleGameOver = (store: Store<RootState>, galaxyService: GalaxyService): void => {
   const state = store.getState()
 
   if (
@@ -158,7 +160,7 @@ const handleGameOver = (store: Store<RootState>): void => {
     store.dispatch(resetGame())
     store.dispatch(shipSlice.actions.setLives(TOTAL_INITIAL_LIVES))
     store.dispatch(statusSlice.actions.initStatus())
-    loadLevel(store, 1)
+    loadLevel(store, 1, galaxyService)
   }
 }
 
@@ -397,7 +399,7 @@ const processBunkerKills = (store: Store<RootState>): void => {
  * Main state update function
  */
 export const updateGameState = (context: StateUpdateContext): void => {
-  const { store, frame } = context
+  const { store, frame, galaxyService } = context
 
   // Handle death countdown and respawn
   handleDeathAndRespawn(store)
@@ -417,7 +419,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
   handleLevelCompletion(store)
 
   // Check for game over
-  handleGameOver(store)
+  handleGameOver(store, galaxyService)
 
   // Handle ship movement and controls
   const { globalx, globaly } = handleShipMovement(store, frame)

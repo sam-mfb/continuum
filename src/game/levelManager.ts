@@ -3,7 +3,7 @@
  */
 
 import type { Store } from '@reduxjs/toolkit'
-import { getGalaxyService } from '@core/galaxy'
+import type { GalaxyService } from '@core/galaxy'
 import { planetSlice } from '@core/planet'
 import { shipSlice } from '@core/ship'
 import { screenSlice } from '@core/screen'
@@ -70,9 +70,8 @@ export function checkLevelComplete(state: RootState): boolean {
 /**
  * Load a specific level (planet) from the galaxy data
  */
-export function loadLevel(store: Store<RootState>, levelNum: number): void {
+export function loadLevel(store: Store<RootState>, levelNum: number, galaxyService: GalaxyService): void {
   const state = store.getState()
-  const galaxyService = getGalaxyService()
 
   if (!state.game.galaxyHeader || !galaxyService.isLoaded()) {
     console.error('Galaxy data not loaded')
@@ -150,7 +149,7 @@ export function loadLevel(store: Store<RootState>, levelNum: number): void {
 /**
  * Handle transitioning to the next level
  */
-export function transitionToNextLevel(store: Store<RootState>): void {
+export function transitionToNextLevel(store: Store<RootState>, galaxyService: GalaxyService): void {
   const state = store.getState()
 
   // Check if we've completed all levels
@@ -161,10 +160,10 @@ export function transitionToNextLevel(store: Store<RootState>): void {
     // Game won! For now, just loop back to level 1
     console.log('Game completed! Restarting from level 1')
     store.dispatch(resetGame())
-    loadLevel(store, 1)
+    loadLevel(store, 1, galaxyService)
   } else {
     // Load next level
     const nextLevelNum = state.status.currentlevel + 1
-    loadLevel(store, nextLevelNum)
+    loadLevel(store, nextLevelNum, galaxyService)
   }
 }

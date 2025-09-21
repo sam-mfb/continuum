@@ -6,21 +6,34 @@ import './style.css'
 import { createRoot } from 'react-dom/client'
 import App from './App'
 import { createSpriteService } from '@core/sprites'
-import { createGameRenderer, getGalaxyHeader } from './gameLoop'
+import { createGalaxyService } from '@core/galaxy'
+import { createGameRenderer } from './gameLoop'
 import { setAlignmentMode } from '@/core/shared'
 import { store } from './store'
+import { initializeGame } from './initialization'
+import { loadLevel } from './levelManager'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 const root = createRoot(app)
 
 async function initGame(): Promise<void> {
   try {
-    // Initialize sprite service
+    // Initialize services
     const spriteService = await createSpriteService()
     console.log('Sprite service initialized')
 
-    const renderer = createGameRenderer(spriteService)
-    const galaxyHeader = getGalaxyHeader()
+    const galaxyService = createGalaxyService()
+    console.log('Galaxy service created')
+
+    // Initialize game and load galaxy
+    await initializeGame(galaxyService)
+    console.log('Game initialized')
+
+    // Load level 1
+    loadLevel(store, 1, galaxyService)
+
+    const renderer = createGameRenderer(spriteService, galaxyService)
+    const galaxyHeader = store.getState().game.galaxyHeader
     const totalLevels = galaxyHeader?.planets || 30
 
     // Set up alignment mode subscription
@@ -34,8 +47,7 @@ async function initGame(): Promise<void> {
       setAlignmentMode(state.game.alignmentMode)
     })
 
-    // Render the App component with JSX
-    root.render(<App renderer={renderer} totalLevels={totalLevels} />)
+    root.render(<App renderer={renderer} totalLevels={totalLevels} galaxyService={galaxyService} />)
 
     console.log('Game started!')
   } catch (error) {
