@@ -1,9 +1,9 @@
 import type { MonochromeBitmap, BitmapRenderer } from '@lib/bitmap'
 import type { ShardSpriteSet, ShardSprite } from '@core/figs/types'
-import { drawShard } from '@core/explosions'
+import { drawShard } from '@core/explosions/render'
 import { SHARDHT } from '@core/figs/types'
 import type { SpriteServiceV2 } from '@core/sprites'
-import { viewClear } from '@core/screen'
+import { viewClear } from '@core/screen/render'
 
 // Viewport state - for scrolling around
 const viewportState = {

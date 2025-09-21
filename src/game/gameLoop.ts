@@ -18,7 +18,7 @@ import {
   createFizzTransitionService,
   starBackgroundWithShip
 } from '@core/transition'
-import { sbarClear, updateSbar } from '@core/status'
+import { sbarClear, updateSbar } from '@core/status/render'
 import { store, type RootState } from './store'
 import { getInitializationStatus } from './initialization'
 import { transitionToNextLevel } from './levelManager'

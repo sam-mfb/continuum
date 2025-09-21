@@ -15,7 +15,9 @@ import {
   flameOn,
   grayFigure,
   eraseFigure,
-  shiftFigure,
+  shiftFigure
+} from '@core/ship/render'
+import {
   checkForBounce,
   checkFigure
 } from '@core/ship'
@@ -24,29 +26,35 @@ import {
   drawShipShot,
   drawStrafe,
   drawDotSafe
-} from '@core/shots'
+} from '@core/shots/render'
 import {
   doBunks,
   drawCraters,
   drawFuels
-} from '@core/planet'
+} from '@core/planet/render'
 import {
-  drawExplosions,
+  drawExplosions
+} from '@core/explosions/render'
+import {
   clearShipDeathFlash
 } from '@core/explosions'
 import {
   updateSbar,
   sbarClear
-} from '@core/status'
+} from '@core/status/render'
 import {
   SCRWTH,
-  VIEWHT,
-  viewClear,
-  viewWhite
+  VIEWHT
 } from '@core/screen'
 import {
+  viewClear,
+  viewWhite
+} from '@core/screen/render'
+import {
   whiteTerrain,
-  blackTerrain,
+  blackTerrain
+} from '@core/walls/render'
+import {
   LINE_KIND
 } from '@core/walls'
 import {

@@ -12,13 +12,13 @@
  */
 
 import type { BitmapRenderer } from '@lib/bitmap'
-import { viewClear } from '@core/screen'
+import { viewClear } from '@core/screen/render'
 import {
   createFizzTransitionService,
   type FizzTransitionService,
   starBackground
 } from '@core/transition'
-import { fullFigure } from '@core/ship'
+import { fullFigure } from '@core/ship/render'
 import { SCRWTH, VIEWHT } from '@core/screen'
 import type { SpriteServiceV2 } from '@core/sprites'
 import { SCENTER } from '@core/figs/types'

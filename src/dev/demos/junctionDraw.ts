@@ -8,12 +8,12 @@
 
 import type { BitmapRenderer } from '@lib/bitmap'
 import type { LineRec } from '@core/walls'
-import { whiteTerrain, blackTerrain } from '@core/walls'
+import { whiteTerrain, blackTerrain } from '@core/walls/render'
 import { wallsActions } from '@core/walls'
 import { buildGameStore } from '@dev/store'
 import { LINE_KIND, NEW_TYPE } from '@core/walls'
 import { createWall } from '@core/walls'
-import { viewClear } from '@core/screen'
+import { viewClear } from '@core/screen/render'
 
 // Create store instance
 const store = buildGameStore()

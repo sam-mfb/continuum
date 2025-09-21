@@ -18,10 +18,10 @@ import {
   startExplosion,
   updateExplosions
 } from '@core/explosions'
-import { drawExplosions } from '@core/explosions'
+import { drawExplosions } from '@core/explosions/render'
 import type { ExplosionsState } from '@core/explosions'
-import { drawBunker } from '@core/planet'
-import { viewClear } from '@core/screen'
+import { drawBunker } from '@core/planet/render'
+import { viewClear } from '@core/screen/render'
 import { ASSET_PATHS } from '@core/constants'
 
 // Configure store with explosions slice

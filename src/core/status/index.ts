@@ -10,6 +10,3 @@ export * from './scoring'
 
 // State management
 export { statusSlice } from './statusSlice'
-
-// Rendering functions
-export { updateSbar, sbarClear, newSbar } from './render'

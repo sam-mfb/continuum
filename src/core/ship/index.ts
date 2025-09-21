@@ -15,6 +15,3 @@ export { shipControl } from './shipControl'
 
 // Physics
 export { checkForBounce } from './physics/checkForBounce'
-
-// Rendering functions
-export * from './render'

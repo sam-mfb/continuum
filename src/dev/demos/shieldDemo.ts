@@ -6,14 +6,14 @@
  */
 
 import type { BitmapRenderer } from '@lib/bitmap'
-import { fullFigure } from '@core/ship'
-import { eraseFigure } from '@core/ship'
-import { grayFigure } from '@core/ship'
-import { shiftFigure } from '@core/ship'
+import { fullFigure } from '@core/ship/render'
+import { eraseFigure } from '@core/ship/render'
+import { grayFigure } from '@core/ship/render'
+import { shiftFigure } from '@core/ship/render'
 import type { SpriteServiceV2 } from '@core/sprites'
 import { SCENTER } from '@core/figs/types'
 import { SCRWTH, VIEWHT } from '@core/screen'
-import { viewClear } from '@core/screen'
+import { viewClear } from '@core/screen/render'
 import { getAlignment } from '@core/shared'
 import { getBackgroundPattern } from '@core/shared'
 

@@ -8,14 +8,14 @@
 
 import type { BitmapRenderer } from '@lib/bitmap'
 import type { PlanetState } from '@core/planet'
-import { whiteTerrain, blackTerrain } from '@core/walls'
+import { whiteTerrain, blackTerrain } from '@core/walls/render'
 import { wallsActions } from '@core/walls'
 import { buildGameStore } from '@dev/store'
 import { LINE_KIND } from '@core/walls'
 import { Galaxy } from '@core/galaxy'
 import { parsePlanet } from '@core/planet'
 import { VIEWHT } from '@core/screen'
-import { viewClear } from '@core/screen'
+import { viewClear } from '@core/screen/render'
 import { ASSET_PATHS } from '@core/constants'
 
 // Create store instance

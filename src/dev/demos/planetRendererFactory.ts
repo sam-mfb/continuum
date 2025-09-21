@@ -7,7 +7,7 @@
 import type { PlanetRendererFactory, GameRendererStore } from './types'
 import type { PlanetState } from '@core/planet'
 import type { BitmapRenderer } from '@lib/bitmap'
-import { whiteTerrain, blackTerrain } from '@core/walls'
+import { whiteTerrain, blackTerrain } from '@core/walls/render'
 import { wallsActions } from '@core/walls'
 import { screenSlice } from '@core/screen'
 import { gameViewSlice } from '@dev/store'
@@ -15,7 +15,7 @@ const gameViewActions = gameViewSlice.actions
 import { LINE_KIND } from '@core/walls'
 import { VIEWHT } from '@core/screen'
 import { isOnRightSide } from '@core/shared/viewport'
-import { doBunks } from '@core/planet'
+import { doBunks } from '@core/planet/render'
 import { configureStore } from '@reduxjs/toolkit'
 import {
   planetSlice,
@@ -24,9 +24,9 @@ import {
   initializeFuels,
   updateFuelAnimations
 } from '@core/planet'
-import { drawFuels } from '@core/planet'
-import { drawCraters } from '@core/planet'
-import { viewClear } from '@core/screen'
+import { drawFuels } from '@core/planet/render'
+import { drawCraters } from '@core/planet/render'
+import { viewClear } from '@core/screen/render'
 
 // Create store with planet slice
 const bunkerStore = configureStore({

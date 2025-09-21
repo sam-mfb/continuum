@@ -5,7 +5,7 @@
 import type { MonochromeBitmap } from '@lib/bitmap'
 import type { SpriteServiceV2 } from '@core/sprites'
 import { starBackground } from './starBackground'
-import { fullFigure } from '@core/ship'
+import { fullFigure } from '@core/ship/render'
 import { SCENTER } from '@core/figs/types'
 
 /**

@@ -4,7 +4,7 @@
 
 import type { BitmapRenderer } from '@lib/bitmap'
 import { setPixel, clearPixel } from '@lib/bitmap'
-import { viewClear } from '@core/screen'
+import { viewClear } from '@core/screen/render'
 
 /**
  * Creates a checkerboard pattern that appears gray at normal viewing distance

@@ -7,7 +7,7 @@
  */
 
 import type { BitmapRenderer } from '@lib/bitmap'
-import { drawStrafe } from '@core/shots'
+import { drawStrafe } from '@core/shots/render'
 
 // Define a simple world
 const WORLD_WIDTH = 512

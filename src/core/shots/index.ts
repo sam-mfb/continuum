@@ -27,6 +27,3 @@ export { xyindist } from './xyindist'
 export { xyindistance } from './xyindistance'
 export { startStrafe } from './startStrafe'
 export { setLife } from './setLife'
-
-// Rendering functions
-export * from './render'

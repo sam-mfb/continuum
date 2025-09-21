@@ -16,6 +16,3 @@ export {
   resetSparksAlive,
   clearShards
 } from './explosionsSlice'
-
-// Rendering functions
-export * from './render'

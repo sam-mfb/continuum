@@ -23,6 +23,3 @@ export const { loadPlanet } = _planetSlice.actions
 // Planet functions
 export { parsePlanet } from './parsePlanet'
 export { legalAngle } from './legalAngle'
-
-// Rendering functions
-export * from './render'
