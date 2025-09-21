@@ -13,7 +13,6 @@ import type { BitmapRenderer } from '@lib/bitmap'
 import type { SpriteServiceV2 } from '@core/sprites'
 import type { GalaxyHeader } from '@core/galaxy'
 
-import { SCRWTH } from '@core/screen'
 import { updateTransition } from '@core/transition'
 import { store, type RootState } from './store'
 import { getInitializationStatus } from './initialization'
@@ -60,16 +59,10 @@ export const createGameRenderer =
 
     // Phase 2: Render the game
     // This draws all visual elements based on the updated state
-    // Calculate rendering context from current state
-    const on_right_side = state.screen.screenx > state.planet.worldwidth - SCRWTH
-
     bitmap = renderGame({
       bitmap,
       state,
-      spriteService,
-      globalx: state.ship.globalx,
-      globaly: state.ship.globaly,
-      on_right_side
+      spriteService
     })
 
     // Phase 3: Handle transition effects

@@ -60,9 +60,6 @@ export type RenderContext = {
   bitmap: MonochromeBitmap
   state: RootState
   spriteService: SpriteServiceV2
-  globalx: number
-  globaly: number
-  on_right_side: boolean
 }
 
 /**
@@ -87,7 +84,10 @@ const renderDeathFlash = (bitmap: MonochromeBitmap, state: RootState): Monochrom
  */
 const renderBackground = (context: RenderContext): MonochromeBitmap => {
   let { bitmap } = context
-  const { state, spriteService, on_right_side } = context
+  const { state, spriteService } = context
+
+  // Derive on_right_side from state
+  const on_right_side = state.screen.screenx > state.planet.worldwidth - SCRWTH
 
   // Create crosshatch gray background
   bitmap = viewClear({
@@ -279,7 +279,10 @@ const renderTerrain = (context: RenderContext): MonochromeBitmap => {
  * Render bunkers
  */
 const renderBunkers = (context: RenderContext): MonochromeBitmap => {
-  let { bitmap, state, spriteService, on_right_side } = context
+  let { bitmap, state, spriteService } = context
+
+  // Derive on_right_side from state
+  const on_right_side = state.screen.screenx > state.planet.worldwidth - SCRWTH
 
   const getBunkerSprite = (kind: BunkerKind, rotation: number): {
     def: Uint8Array
