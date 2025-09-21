@@ -7,7 +7,9 @@ export type {
   MonochromeBitmap,
   BitmapRenderer,
   BitmapToCanvasOptions,
-  Rectangle
+  Rectangle,
+  GameFrameInfo,
+  GameEnvironment
 } from './types'
 
 // Creation utilities

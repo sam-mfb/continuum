@@ -13,6 +13,7 @@ import type { BitmapRenderer } from '@lib/bitmap'
 import type { SpriteServiceV2 } from '@core/sprites'
 import type { GalaxyHeader } from '@core/galaxy'
 
+import { SCRWTH } from '@core/screen'
 import { updateTransition } from '@core/transition'
 import { store, type RootState } from './store'
 import { getInitializationStatus } from './initialization'
@@ -48,7 +49,7 @@ export const createGameRenderer =
 
     // Phase 1: Update game state
     // This handles all game logic, physics, and state changes
-    const stateUpdateResult = updateGameState({
+    updateGameState({
       store,
       frame,
       bitmap
@@ -59,13 +60,16 @@ export const createGameRenderer =
 
     // Phase 2: Render the game
     // This draws all visual elements based on the updated state
+    // Calculate rendering context from current state
+    const on_right_side = state.screen.screenx > state.planet.worldwidth - SCRWTH
+
     bitmap = renderGame({
       bitmap,
       state,
       spriteService,
-      globalx: stateUpdateResult.globalx,
-      globaly: stateUpdateResult.globaly,
-      on_right_side: stateUpdateResult.on_right_side
+      globalx: state.ship.globalx,
+      globaly: state.ship.globaly,
+      on_right_side
     })
 
     // Phase 3: Handle transition effects
@@ -92,11 +96,13 @@ export const createGameRenderer =
 
     // Phase 4: Play accumulated sounds
     // This plays all sounds that were triggered during this frame
+    // Get fresh state in case transition modified it
+    const finalState = store.getState()
     playFrameSounds({
-      state: store.getState(),
-      shipDeadCount: state.ship.deadCount,
-      transitionActive: stateUpdateResult.transitionActive,
-      preDelayFrames: state.transition.preDelayFrames
+      state: finalState,
+      shipDeadCount: finalState.ship.deadCount,
+      transitionActive: finalState.transition.active,
+      preDelayFrames: finalState.transition.preDelayFrames
     })
 
     // Return the final rendered bitmap

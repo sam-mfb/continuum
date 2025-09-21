@@ -2,7 +2,9 @@ import React, { useEffect, useRef, useState } from 'react'
 import type {
   BitmapRenderer,
   BitmapToCanvasOptions,
-  MonochromeBitmap
+  MonochromeBitmap,
+  GameFrameInfo,
+  GameEnvironment
 } from '@lib/bitmap'
 import { createMonochromeBitmap, bitmapToCanvas } from '@lib/bitmap'
 import {
@@ -37,24 +39,8 @@ import {
  */
 
 // Types
-export type GameFrameInfo = {
-  // Timing
-  frameCount: number // Total frames since start
-  deltaTime: number // Milliseconds since last frame
-  totalTime: number // Total milliseconds since start
-  targetDelta: number // Expected ms between frames (1000/fps)
-
-  // Input
-  keysDown: Set<string> // Currently pressed keys
-  keysPressed: Set<string> // Keys pressed this frame
-  keysReleased: Set<string> // Keys released this frame
-}
-
-export type GameEnvironment = {
-  width: number
-  height: number
-  fps: number
-}
+// Re-export for backward compatibility
+export type { GameFrameInfo, GameEnvironment } from '@lib/bitmap'
 
 export type GameLoopFunction = (
   ctx: CanvasRenderingContext2D,

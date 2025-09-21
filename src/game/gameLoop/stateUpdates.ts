@@ -7,7 +7,7 @@
 
 import type { Store } from '@reduxjs/toolkit'
 import type { RootState, AppDispatch } from '../store'
-import type { MonochromeBitmap } from '@lib/bitmap'
+import type { MonochromeBitmap, GameFrameInfo } from '@lib/bitmap'
 
 import {
   shipSlice,
@@ -58,29 +58,13 @@ import { getPressedControls } from '../controls'
 import { triggerShipDeath } from '../shipDeath'
 import { cleanupGame } from '../initialization'
 
-// Frame info type matching what's passed from bitmap renderer
-export type FrameInfo = {
-  frameCount: number
-  keysDown: Set<string>
-  keysPressed: Set<string>
-  keysReleased: Set<string>
-}
-
 export type StateUpdateContext = {
   store: Store<RootState>
-  frame: FrameInfo
+  frame: GameFrameInfo
   bitmap: MonochromeBitmap
 }
 
-export type StateUpdateResult = {
-  globalx: number
-  globaly: number
-  on_right_side: boolean
-  shipAlive: boolean
-  shielding: boolean
-  flaming: boolean
-  transitionActive: boolean
-}
+// No longer need StateUpdateResult - all data is in the store
 
 /**
  * Handle death countdown and respawn
@@ -193,8 +177,8 @@ const handleGameOver = (store: Store<RootState>): void => {
  */
 const handleShipMovement = (
   store: Store<RootState>,
-  frame: FrameInfo
-): { globalx: number; globaly: number; on_right_side: boolean } => {
+  frame: GameFrameInfo
+): { globalx: number; globaly: number } => {
   const state = store.getState()
 
   if (state.ship.deadCount === 0) {
@@ -203,8 +187,7 @@ const handleShipMovement = (
       triggerShipDeath(store)
       return {
         globalx: state.ship.globalx,
-        globaly: state.ship.globaly,
-        on_right_side: state.screen.screenx > state.planet.worldwidth - SCRWTH
+        globaly: state.ship.globaly
       }
     }
 
@@ -285,16 +268,14 @@ const handleShipMovement = (
 
     return {
       globalx: contained.globalx,
-      globaly: contained.globaly,
-      on_right_side: contained.on_right_side
+      globaly: contained.globaly
     }
   }
 
   // Ship is dead, use existing position
   return {
     globalx: state.ship.globalx,
-    globaly: state.ship.globaly,
-    on_right_side: state.screen.screenx > state.planet.worldwidth - SCRWTH
+    globaly: state.ship.globaly
   }
 }
 
@@ -424,7 +405,7 @@ const processBunkerKills = (store: Store<RootState>): void => {
 /**
  * Main state update function
  */
-export const updateGameState = (context: StateUpdateContext): StateUpdateResult => {
+export const updateGameState = (context: StateUpdateContext): void => {
   const { store, frame } = context
 
   // Handle death countdown and respawn
@@ -448,7 +429,7 @@ export const updateGameState = (context: StateUpdateContext): StateUpdateResult 
   handleGameOver(store)
 
   // Handle ship movement and controls
-  const { globalx, globaly, on_right_side } = handleShipMovement(store, frame)
+  const { globalx, globaly } = handleShipMovement(store, frame)
 
   // Update bunker rotations for animated bunkers
   store.dispatch(updateBunkerRotations({ globalx, globaly }))
@@ -511,14 +492,4 @@ export const updateGameState = (context: StateUpdateContext): StateUpdateResult 
       gravityPoints: finalState.planet.gravityPoints
     })
   )
-
-  return {
-    globalx,
-    globaly,
-    on_right_side,
-    shipAlive: finalState.ship.deadCount === 0,
-    shielding: finalState.ship.shielding,
-    flaming: finalState.ship.flaming,
-    transitionActive: finalState.transition.active
-  }
 }

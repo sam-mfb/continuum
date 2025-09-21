@@ -1,5 +1,5 @@
 import React from 'react'
-import type { GameFrameInfo } from './GameView'
+import type { GameFrameInfo } from '@lib/bitmap'
 
 export type StatsPosition =
   | 'top-left'
