@@ -9,7 +9,7 @@
 import type { BitmapRenderer } from '@lib/bitmap'
 import { doBunks } from '@core/planet/render'
 import { configureStore } from '@reduxjs/toolkit'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 import {
   planetSlice,
   loadPlanet,
@@ -255,7 +255,7 @@ initializeGame()
  * Factory function to create bitmap renderer for bunker drawing game
  */
 export const createBunkerDrawBitmapRenderer =
-  (spriteService: SpriteServiceV2): BitmapRenderer =>
+  (spriteService: SpriteService): BitmapRenderer =>
   (bitmap, frame, _env) => {
     // Check initialization status
     if (initializationError) {

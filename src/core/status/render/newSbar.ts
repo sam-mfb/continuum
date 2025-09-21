@@ -13,7 +13,7 @@ import { writeLevel } from './writeLevel'
 import { writeScore } from './writeScore'
 import { writeFuel } from './writeFuel'
 import { writeBonus } from './writeBonus'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 
 /**
  * Performs a complete redraw of the status bar.
@@ -48,7 +48,7 @@ export function newSbar(deps: {
   score: number
   fuel: number
   bonus: number
-  spriteService: SpriteServiceV2
+  spriteService: SpriteService
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
     const { lives, message, level, score, fuel, bonus, spriteService } = deps

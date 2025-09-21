@@ -2,15 +2,14 @@
  * Main Game Loop
  *
  * Full game implementation with level progression, lives management,
- * and game over/restart functionality. Based on shipMoveBitmap demo
- * but with complete game flow.
+ * and game over/restart functionality.
  *
  * This file orchestrates the game loop by coordinating state updates,
  * rendering, and sound playback through specialized submodules.
  */
 
 import type { BitmapRenderer, MonochromeBitmap } from '@lib/bitmap'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 import type { GalaxyHeader } from '@core/galaxy'
 
 import {
@@ -34,8 +33,9 @@ import { playFrameSounds } from './gameLoop/soundManager'
  * 2. Rendering - drawing all visual elements to the bitmap
  * 3. Sound - playing accumulated sounds for the frame
  */
-export const createGameRenderer =
-  (spriteService: SpriteServiceV2): BitmapRenderer => {
+export const createGameRenderer = (
+  spriteService: SpriteService
+): BitmapRenderer => {
   // Create the fizz transition service once for this renderer instance
   const fizzTransitionService = createFizzTransitionService()
 
@@ -94,7 +94,12 @@ export const createGameRenderer =
     }
 
     // Create target bitmap creator function
-    const createTargetBitmap = (shipState: { deadCount: number; shiprot: number; shipx: number; shipy: number }): MonochromeBitmap => {
+    const createTargetBitmap = (shipState: {
+      deadCount: number
+      shiprot: number
+      shipx: number
+      shipy: number
+    }): MonochromeBitmap => {
       const targetBitmap: MonochromeBitmap = {
         width: 512,
         height: 342,
@@ -151,3 +156,4 @@ export const getGalaxyHeader = (): GalaxyHeader | null => {
   const state = store.getState() as RootState
   return state.game.galaxyHeader
 }
+

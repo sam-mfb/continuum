@@ -10,7 +10,7 @@ import { fullFigure } from '@core/ship/render'
 import { eraseFigure } from '@core/ship/render'
 import { grayFigure } from '@core/ship/render'
 import { shiftFigure } from '@core/ship/render'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 import { SCENTER } from '@core/figs/types'
 import { SCRWTH, VIEWHT } from '@core/screen'
 import { viewClear } from '@core/screen/render'
@@ -32,7 +32,7 @@ let shipRotation = 0
  * Shield demo renderer
  */
 export const createShieldDemoRenderer =
-  (spriteService: SpriteServiceV2): BitmapRenderer =>
+  (spriteService: SpriteService): BitmapRenderer =>
   (bitmap, frame, _env) => {
     // Check if space bar is held for shield
     const shielding = frame.keysDown.has('Space')

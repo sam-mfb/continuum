@@ -20,7 +20,7 @@ import {
 } from '@core/transition'
 import { fullFigure } from '@core/ship/render'
 import { SCRWTH, VIEWHT } from '@core/screen'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 import { SCENTER } from '@core/figs/types'
 import { cloneBitmap } from '@lib/bitmap'
 
@@ -52,7 +52,7 @@ const FIZZ_DURATION = 26 // based on measurements of fizz time on a Mac Plus
  * Factory function to create bitmap renderer for star background demo
  */
 export const createStarBackgroundBitmapRenderer =
-  (spriteService: SpriteServiceV2): BitmapRenderer =>
+  (spriteService: SpriteService): BitmapRenderer =>
   (bitmap, frame, _env) => {
     // Handle spacebar press to trigger transition
     if (frame.keysDown.has('Space') && state.mode === 'normal') {

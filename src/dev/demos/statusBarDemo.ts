@@ -14,7 +14,7 @@ import type { BitmapRenderer } from '@lib/bitmap'
 import { cloneBitmap } from '@lib/bitmap'
 import { viewClear } from '@core/screen/render'
 import { newSbar } from '@core/status/render'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 
 // State for the demo - persists across render calls
 type StatusBarState = {
@@ -87,7 +87,7 @@ function processInput(keysDown: Set<string>): void {
  * Factory function to create the status bar demo renderer
  */
 export const createStatusBarDemo =
-  (spriteService: SpriteServiceV2): BitmapRenderer =>
+  (spriteService: SpriteService): BitmapRenderer =>
   (bitmap, frame, _env) => {
     // Initialize on first frame
     if (!state.initialized) {

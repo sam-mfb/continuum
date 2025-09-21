@@ -8,7 +8,7 @@
 import { type MonochromeBitmap } from '@lib/bitmap'
 import { writeStr } from './writeStr'
 import { MESSAGE_X, MESSAGE_Y } from '@core/status'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 
 /**
  * Writes a text message at the message area of the status bar.
@@ -25,7 +25,7 @@ import type { SpriteServiceV2 } from '@core/sprites'
  */
 export function writeMessage(deps: {
   message: string | null
-  spriteService: SpriteServiceV2
+  spriteService: SpriteService
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
     const { message, spriteService } = deps

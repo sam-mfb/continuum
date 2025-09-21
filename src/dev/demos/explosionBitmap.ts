@@ -10,7 +10,7 @@ import type { BitmapRenderer, MonochromeBitmap } from '@lib/bitmap'
 import { planetSlice } from '@core/planet'
 import { screenSlice } from '@core/screen'
 import { buildGameStore } from '@dev/store'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 import type { ShardSprite, ShardSpriteSet } from '@core/figs/types'
 import { xbcenter, ybcenter } from '@core/planet'
 import {
@@ -266,7 +266,7 @@ const triggerBunkerExplosion = (bunker: BunkerConfig): void => {
  * Factory function to create bitmap renderer for explosion game
  */
 export const createExplosionBitmapRenderer =
-  (spriteService: SpriteServiceV2): BitmapRenderer =>
+  (spriteService: SpriteService): BitmapRenderer =>
   (bitmap, frame, _env) => {
     // Check initialization status
     if (initializationError) {

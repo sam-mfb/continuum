@@ -8,7 +8,7 @@
 import { type MonochromeBitmap } from '@lib/bitmap'
 import { drawDigit } from './drawDigit'
 import { LIVES_START_X, LIVES_Y, LIVES_SPACING } from '@core/status'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 
 /**
  * Draws ship icons to represent the number of remaining lives.
@@ -25,7 +25,7 @@ import type { SpriteServiceV2 } from '@core/sprites'
  */
 export function writeLives(deps: {
   lives: number
-  spriteService: SpriteServiceV2
+  spriteService: SpriteService
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
     const { lives, spriteService } = deps

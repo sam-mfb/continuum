@@ -8,7 +8,7 @@
 import { type MonochromeBitmap } from '@lib/bitmap'
 import { writeLong } from './writeLong'
 import { SCORE_Y, SCORE_X_NORMAL, SCORE_X_LARGE } from '@core/status'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 
 /**
  * Writes the score value at a position that varies based on magnitude.
@@ -25,7 +25,7 @@ import type { SpriteServiceV2 } from '@core/sprites'
  */
 export function writeScore(deps: {
   score: number
-  spriteService: SpriteServiceV2
+  spriteService: SpriteService
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
     const { score, spriteService } = deps

@@ -34,7 +34,7 @@ import { shipControl } from '@core/ship'
 import { buildGameStore } from '@dev/store'
 import { containShip } from '@core/shared/containShip'
 import { SCRWTH, VIEWHT, TOPMARG, BOTMARG } from '@core/screen'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 import { SCENTER, type BunkerKind } from '@core/figs/types'
 import { flameOn } from '@core/ship/render'
 import { grayFigure } from '@core/ship/render'
@@ -208,7 +208,7 @@ const getPressedControls = (keysDown: Set<string>): ShipControl[] => {
  * Bitmap renderer for ship movement game
  */
 export const createShipMoveBitmapRenderer =
-  (spriteService: SpriteServiceV2): BitmapRenderer =>
+  (spriteService: SpriteService): BitmapRenderer =>
   (bitmap, frame, _env) => {
     // Check initialization status
     if (initializationError) {

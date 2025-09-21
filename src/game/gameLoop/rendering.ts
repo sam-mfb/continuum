@@ -6,7 +6,7 @@
  */
 
 import type { MonochromeBitmap } from '@lib/bitmap'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 import type { RootState } from '../store'
 import type { BunkerKind, ShardSprite, ShardSpriteSet } from '@core/figs/types'
 
@@ -67,7 +67,7 @@ import { triggerShipDeath } from '../shipDeath'
 export type RenderContext = {
   bitmap: MonochromeBitmap
   state: RootState
-  spriteService: SpriteServiceV2
+  spriteService: SpriteService
 }
 
 /**

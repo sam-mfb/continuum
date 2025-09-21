@@ -5,7 +5,7 @@
 import './style.css'
 import { createRoot } from 'react-dom/client'
 import App from './App'
-import { createSpriteServiceV2 } from '@core/sprites'
+import { createSpriteService } from '@core/sprites'
 import { createGameRenderer, getGalaxyHeader } from './gameLoop'
 import { setAlignmentMode } from '@/core/shared'
 import { store } from './store'
@@ -16,7 +16,7 @@ const root = createRoot(app)
 async function initGame(): Promise<void> {
   try {
     // Initialize sprite service
-    const spriteService = await createSpriteServiceV2()
+    const spriteService = await createSpriteService()
     console.log('Sprite service initialized')
 
     const renderer = createGameRenderer(spriteService)

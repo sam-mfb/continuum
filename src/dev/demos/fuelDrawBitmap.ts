@@ -14,7 +14,7 @@ import { planetSlice, loadPlanet, updateFuelAnimations } from '@core/planet'
 import type { Fuel, PlanetState } from '@core/planet'
 import { isOnRightSide } from '@core/shared/viewport'
 import { FUELFRAMES } from '@core/figs/types'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 import { viewClear } from '@core/screen/render'
 
 // Create store with planet slice
@@ -132,7 +132,7 @@ initializeGame()
  * Factory function to create bitmap renderer for fuel drawing game
  */
 export const createFuelDrawBitmapRenderer =
-  (spriteService: SpriteServiceV2): BitmapRenderer =>
+  (spriteService: SpriteService): BitmapRenderer =>
   (bitmap, frame, _env) => {
     // Check initialization status
     if (initializationError) {

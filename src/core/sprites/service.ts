@@ -33,7 +33,7 @@ export type ShipOptions = { variant: ShipVariant }
 export type FullOptions = { variant: FullVariant }
 
 // New sprite service interface
-export type SpriteServiceV2 = {
+export type SpriteService = {
   // Ship only has def and mask
   getShipSprite(rotation: number, options: ShipOptions): SpriteData
 
@@ -114,7 +114,7 @@ type PrecomputedStorage = {
 /**
  * Creates an improved sprite service with pre-computed format conversions
  */
-export async function createSpriteServiceV2(): Promise<SpriteServiceV2> {
+export async function createSpriteService(): Promise<SpriteService> {
   // Load sprite resource file
   const response = await fetch(ASSET_PATHS.SPRITE_RESOURCE)
   if (!response.ok) {

@@ -3,7 +3,7 @@
  */
 
 import type { MonochromeBitmap } from '@lib/bitmap'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 import { starBackground } from './starBackground'
 import { fullFigure } from '@core/ship/render'
 import { SCENTER } from '@core/figs/types'
@@ -20,7 +20,7 @@ import { SCENTER } from '@core/figs/types'
 export function starBackgroundWithShip(deps: {
   includeShip: boolean
   shipState?: { shiprot: number; shipx: number; shipy: number }
-  spriteService: SpriteServiceV2
+  spriteService: SpriteService
 }): (bitmap: MonochromeBitmap) => MonochromeBitmap {
   const { includeShip, shipState, spriteService } = deps
 

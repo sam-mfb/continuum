@@ -2,7 +2,7 @@ import type { MonochromeBitmap, BitmapRenderer } from '@lib/bitmap'
 import type { ShardSpriteSet, ShardSprite } from '@core/figs/types'
 import { drawShard } from '@core/explosions/render'
 import { SHARDHT } from '@core/figs/types'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 import { viewClear } from '@core/screen/render'
 
 // Viewport state - for scrolling around
@@ -232,7 +232,7 @@ export function shardTestBitmap(deps: {
  * Factory function to create bitmap renderer for shard test
  */
 export const createShardTestBitmapRenderer =
-  (spriteService: SpriteServiceV2): BitmapRenderer =>
+  (spriteService: SpriteService): BitmapRenderer =>
   (bitmap, frame) => {
     // Handle keyboard input for viewport movement
     const moveSpeed = 1

@@ -12,7 +12,7 @@ import { writeScore } from './writeScore'
 import { writeBonus } from './writeBonus'
 import { writeLevel } from './writeLevel'
 import { writeMessage } from './writeMessage'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 
 /**
  * Performs an incremental update of frequently changing status bar fields.
@@ -43,7 +43,7 @@ export function updateSbar(deps: {
   bonus: number
   level: number
   message: string | null
-  spriteService: SpriteServiceV2
+  spriteService: SpriteService
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
     const { fuel, lives, score, bonus, level, message, spriteService } = deps
