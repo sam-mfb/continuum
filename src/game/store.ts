@@ -16,10 +16,7 @@ import { soundReducer } from '@core/sound'
 import { wallsSlice } from '@core/walls'
 import { highscoreSlice } from '@/core/highscore'
 import { transitionSlice } from '@core/transition'
-import {
-  highscoreMiddleware,
-  loadHighScores
-} from '@/core/highscore'
+import { highscoreMiddleware, loadHighScores } from '@/core/highscore'
 
 // Load persisted high scores
 const persistedHighScores = loadHighScores()

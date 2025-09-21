@@ -156,4 +156,3 @@ export const getGalaxyHeader = (): GalaxyHeader | null => {
   const state = store.getState() as RootState
   return state.game.galaxyHeader
 }
-

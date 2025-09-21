@@ -22,9 +22,7 @@ export const playFrameSounds = (context: SoundContext): void => {
   const { state } = context
 
   // Determine if fizz sound should play (transition active and past pre-delay)
-  const fizzActive =
-    context.transitionActive &&
-    context.preDelayFrames <= 0
+  const fizzActive = context.transitionActive && context.preDelayFrames <= 0
 
   // Play all sounds with context
   playSounds(state.sound, {

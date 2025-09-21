@@ -9,11 +9,7 @@ import type { Store } from '@reduxjs/toolkit'
 import type { RootState } from '../store'
 import type { MonochromeBitmap, GameFrameInfo } from '@lib/bitmap'
 
-import {
-  shipSlice,
-  shipControl,
-  CRITFUEL
-} from '@core/ship'
+import { shipSlice, shipControl, CRITFUEL } from '@core/ship'
 import {
   shotsSlice,
   doStrafes,
@@ -36,11 +32,7 @@ import { statusSlice } from '@core/status'
 import { screenSlice, SCRWTH, VIEWHT } from '@core/screen'
 import { containShip } from '@core/shared/containShip'
 import { rint } from '@core/shared'
-import {
-  resetFrame,
-  playDiscrete,
-  SoundType
-} from '@core/sound'
+import { resetFrame, playDiscrete, SoundType } from '@core/sound'
 import { startLevelTransition } from '@core/transition'
 
 import { checkLevelComplete, loadLevel } from '../levelManager'

@@ -10,7 +10,12 @@ import { shipSlice, SKILLBRADIUS } from '@core/ship'
 import { xyindist } from '@core/shots'
 import { killBunker, legalAngle } from '@core/planet'
 import { startShipDeath, startExplosion } from '@core/explosions'
-import { playDiscrete, setThrusting, setShielding, SoundType } from '@core/sound'
+import {
+  playDiscrete,
+  setThrusting,
+  setShielding,
+  SoundType
+} from '@core/sound'
 import { statusSlice } from '@core/status'
 import type { RootState } from './store'
 

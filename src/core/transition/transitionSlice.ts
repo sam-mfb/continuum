@@ -42,7 +42,6 @@ export const transitionSlice = createSlice({
       }
     },
 
-
     /**
      * Mark that the fizz transition has been started
      * Prevents recreating the FizzTransition instance

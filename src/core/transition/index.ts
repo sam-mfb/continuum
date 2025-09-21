@@ -12,9 +12,7 @@ export {
   incrementDelay,
   resetTransition
 } from './transitionSlice'
-export {
-  updateTransition
-} from './transitionThunks'
+export { updateTransition } from './transitionThunks'
 export type { FizzTransitionService } from './FizzTransitionService'
 export { createFizzTransitionService } from './FizzTransitionService'
 export { starBackgroundWithShip } from './render/starBackgroundWithShip'

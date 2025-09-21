@@ -1,7 +1,14 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { ShipState } from './types'
 import { ShipControl } from './types'
-import { SHIP, DEAD_TIME, FUELSTART, FUELGAIN, FUELBURN, SHIPSTART } from './constants'
+import {
+  SHIP,
+  DEAD_TIME,
+  FUELSTART,
+  FUELGAIN,
+  FUELBURN,
+  SHIPSTART
+} from './constants'
 
 const initialState: ShipState = {
   shiprot: 0,

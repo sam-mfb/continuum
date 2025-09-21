@@ -88,11 +88,7 @@ export const createStarBackgroundBitmapRenderer =
       state.toBitmap = new Uint8Array(starBg.data)
 
       // Initialize fizz transition service
-      state.fizzTransitionService.initialize(
-        withShip,
-        starBg,
-        FIZZ_DURATION
-      )
+      state.fizzTransitionService.initialize(withShip, starBg, FIZZ_DURATION)
       state.mode = 'fizzing'
       // Don't return - fall through to render the first frame
     }

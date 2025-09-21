@@ -14,7 +14,11 @@ import { SBARSIZE } from '@core/screen'
  */
 export type FizzTransitionService = {
   /** Initialize a new transition with bitmaps and duration */
-  initialize(from: MonochromeBitmap, to: MonochromeBitmap, durationFrames: number): void
+  initialize(
+    from: MonochromeBitmap,
+    to: MonochromeBitmap,
+    durationFrames: number
+  ): void
 
   /** Generate the next frame of the transition */
   nextFrame(): MonochromeBitmap
@@ -46,7 +50,9 @@ export type FizzTransitionService = {
  * @param seed Optional LFSR seed (default: 4357 from original)
  * @returns FizzTransitionService instance
  */
-export function createFizzTransitionService(seed = 4357): FizzTransitionService {
+export function createFizzTransitionService(
+  seed = 4357
+): FizzTransitionService {
   // Service state
   let from: MonochromeBitmap | null = null
   let to: MonochromeBitmap | null = null
@@ -127,7 +133,11 @@ export function createFizzTransitionService(seed = 4357): FizzTransitionService 
   }
 
   return {
-    initialize(fromBitmap: MonochromeBitmap, toBitmap: MonochromeBitmap, duration: number): void {
+    initialize(
+      fromBitmap: MonochromeBitmap,
+      toBitmap: MonochromeBitmap,
+      duration: number
+    ): void {
       from = fromBitmap
       to = toBitmap
       durationFrames = duration
@@ -139,7 +149,10 @@ export function createFizzTransitionService(seed = 4357): FizzTransitionService 
       initialized = true
     },
 
-    getImages(): { from: MonochromeBitmap | null; to: MonochromeBitmap | null } {
+    getImages(): {
+      from: MonochromeBitmap | null
+      to: MonochromeBitmap | null
+    } {
       return { from, to }
     },
 

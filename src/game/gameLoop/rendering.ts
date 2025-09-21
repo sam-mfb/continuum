@@ -17,50 +17,18 @@ import {
   eraseFigure,
   shiftFigure
 } from '@core/ship/render'
-import {
-  checkForBounce,
-  checkFigure
-} from '@core/ship'
+import { checkForBounce, checkFigure } from '@core/ship'
 import { SCENTER } from '@core/figs/types'
-import {
-  drawShipShot,
-  drawStrafe,
-  drawDotSafe
-} from '@core/shots/render'
-import {
-  doBunks,
-  drawCraters,
-  drawFuels
-} from '@core/planet/render'
-import {
-  drawExplosions
-} from '@core/explosions/render'
-import {
-  clearShipDeathFlash
-} from '@core/explosions'
-import {
-  updateSbar,
-  sbarClear
-} from '@core/status/render'
-import {
-  SCRWTH,
-  VIEWHT
-} from '@core/screen'
-import {
-  viewClear,
-  viewWhite
-} from '@core/screen/render'
-import {
-  whiteTerrain,
-  blackTerrain
-} from '@core/walls/render'
-import {
-  LINE_KIND
-} from '@core/walls'
-import {
-  getAlignment,
-  getBackgroundPattern
-} from '@core/shared'
+import { drawShipShot, drawStrafe, drawDotSafe } from '@core/shots/render'
+import { doBunks, drawCraters, drawFuels } from '@core/planet/render'
+import { drawExplosions } from '@core/explosions/render'
+import { clearShipDeathFlash } from '@core/explosions'
+import { updateSbar, sbarClear } from '@core/status/render'
+import { SCRWTH, VIEWHT } from '@core/screen'
+import { viewClear, viewWhite } from '@core/screen/render'
+import { whiteTerrain, blackTerrain } from '@core/walls/render'
+import { LINE_KIND } from '@core/walls'
+import { getAlignment, getBackgroundPattern } from '@core/shared'
 import { store } from '../store'
 import { triggerShipDeath } from '../shipDeath'
 
@@ -73,7 +41,10 @@ export type RenderContext = {
 /**
  * Handle death flash effect
  */
-const renderDeathFlash = (bitmap: MonochromeBitmap, state: RootState): MonochromeBitmap | null => {
+const renderDeathFlash = (
+  bitmap: MonochromeBitmap,
+  state: RootState
+): MonochromeBitmap | null => {
   if (state.explosions.shipDeathFlash) {
     // Fill viewport with white (preserve status bar)
     bitmap = viewWhite()(bitmap)
@@ -105,7 +76,8 @@ const renderBackground = (context: RenderContext): MonochromeBitmap => {
 
   // Draw craters
   const craterImages = {
-    background1: spriteService.getCraterSprite({ variant: 'background1' }).uint8,
+    background1: spriteService.getCraterSprite({ variant: 'background1' })
+      .uint8,
     background2: spriteService.getCraterSprite({ variant: 'background2' }).uint8
   }
 
@@ -292,7 +264,10 @@ const renderBunkers = (context: RenderContext): MonochromeBitmap => {
   // Derive on_right_side from state
   const on_right_side = state.screen.screenx > state.planet.worldwidth - SCRWTH
 
-  const getBunkerSprite = (kind: BunkerKind, rotation: number): {
+  const getBunkerSprite = (
+    kind: BunkerKind,
+    rotation: number
+  ): {
     def: Uint8Array
     mask: Uint8Array
     images: {
@@ -422,10 +397,7 @@ const renderShots = (context: RenderContext): MonochromeBitmap => {
         state.screen.screenx > state.planet.worldwidth - SCRWTH
       ) {
         const wrappedShotx =
-          shot.x +
-          state.planet.worldwidth -
-          state.screen.screenx -
-          1
+          shot.x + state.planet.worldwidth - state.screen.screenx - 1
         if (wrappedShotx >= 0 && wrappedShotx < SCRWTH - 3) {
           bitmap = drawShipShot({
             x: wrappedShotx,
@@ -449,10 +421,9 @@ const renderShip = (context: RenderContext): MonochromeBitmap => {
     const shipSprite = spriteService.getShipSprite(state.ship.shiprot, {
       variant: 'def'
     })
-    const shipMaskSprite = spriteService.getShipSprite(
-      state.ship.shiprot,
-      { variant: 'mask' }
-    )
+    const shipMaskSprite = spriteService.getShipSprite(state.ship.shiprot, {
+      variant: 'mask'
+    })
 
     const shipDefBitmap = shipSprite.bitmap
     const shipMaskBitmap = shipMaskSprite.bitmap
