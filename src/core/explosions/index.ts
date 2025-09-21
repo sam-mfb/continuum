@@ -18,6 +18,4 @@ export {
 } from './explosionsSlice'
 
 // Rendering functions
-export { drawExplosions } from './render/drawExplosions'
-export { drawShard } from './render/drawShard'
-export { drawSparkSafe } from './render/drawSparkSafe'
+export * from './render'
