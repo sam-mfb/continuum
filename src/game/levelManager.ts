@@ -75,13 +75,6 @@ export function loadLevel(
   levelNum: number,
   galaxyService: GalaxyService
 ): void {
-  const state = store.getState()
-
-  if (!state.game.galaxyHeader) {
-    console.error('Galaxy header not in Redux state')
-    return
-  }
-
   // Update the current level in status state to match what we're loading
   store.dispatch(statusSlice.actions.setLevel(levelNum))
 
@@ -158,12 +151,10 @@ export function transitionToNextLevel(
   galaxyService: GalaxyService
 ): void {
   const state = store.getState()
+  const galaxyHeader = galaxyService.getHeader()
 
   // Check if we've completed all levels
-  if (
-    state.game.galaxyHeader &&
-    state.status.currentlevel >= state.game.galaxyHeader.planets
-  ) {
+  if (state.status.currentlevel >= galaxyHeader.planets) {
     // Game won! For now, just loop back to level 1
     console.log('Game completed! Restarting from level 1')
     store.dispatch(resetGame())

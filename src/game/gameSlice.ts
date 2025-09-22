@@ -3,7 +3,6 @@
  */
 
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
-import type { GalaxyHeader } from '@core/galaxy'
 import type { AlignmentMode } from '@/core/shared'
 
 export type GameMode = 'start' | 'playing' | 'highScoreEntry' | 'gameOver'
@@ -15,10 +14,6 @@ export type PendingHighScore = {
 }
 
 export type GameState = {
-  // Level progression
-  galaxyHeader: GalaxyHeader | null
-  galaxyLoaded: boolean // Flag to indicate if galaxy is loaded
-
   // Game status
   gameOver: boolean
   levelComplete: boolean
@@ -32,8 +27,6 @@ export type GameState = {
 }
 
 const initialState: GameState = {
-  galaxyHeader: null,
-  galaxyLoaded: false,
   gameOver: false,
   levelComplete: false,
   alignmentMode: 'screen-fixed', // Default to screen-fixed (not original)
@@ -45,14 +38,7 @@ export const gameSlice = createSlice({
   name: 'game',
   initialState,
   reducers: {
-    // Galaxy data management
-    loadGalaxyHeader: (state, action: PayloadAction<GalaxyHeader>) => {
-      state.galaxyHeader = action.payload
-      state.galaxyLoaded = true
-    },
-
     // Level progression
-
     markLevelComplete: state => {
       state.levelComplete = true
     },
@@ -108,7 +94,6 @@ export const gameSlice = createSlice({
 })
 
 export const {
-  loadGalaxyHeader,
   markLevelComplete,
   clearLevelComplete,
   triggerGameOver,

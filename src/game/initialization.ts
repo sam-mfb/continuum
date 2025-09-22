@@ -10,7 +10,6 @@ import { initializeSoundService, cleanupSoundService } from '@core/sound'
 import { shipSlice } from '@core/ship'
 import { statusSlice } from '@core/status'
 import { TOTAL_INITIAL_LIVES } from './constants'
-import { loadGalaxyHeader } from './gameSlice'
 import { store } from './store'
 
 // Track initialization state
@@ -49,9 +48,6 @@ export const initializeGame = async (
     const galaxyHeader = galaxyService.getHeader()
     console.log('Galaxy header:', galaxyHeader)
     console.log(`Galaxy contains ${galaxyHeader.planets} levels`)
-
-    // Store galaxy header in Redux (no ArrayBuffer)
-    store.dispatch(loadGalaxyHeader(galaxyHeader))
 
     // Initialize lives (TOTAL_INITIAL_LIVES includes current ship + spare ships)
     store.dispatch(shipSlice.actions.setLives(TOTAL_INITIAL_LIVES))

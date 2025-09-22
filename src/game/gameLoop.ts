@@ -11,12 +11,9 @@
 import type { BitmapRenderer, MonochromeBitmap } from '@lib/bitmap'
 import type { SpriteService } from '@core/sprites'
 import type { GalaxyService } from '@core/galaxy'
+import type { FizzTransitionService } from '@core/transition'
 
-import {
-  updateTransition,
-  createFizzTransitionService,
-  starBackgroundWithShip
-} from '@core/transition'
+import { updateTransition, starBackgroundWithShip } from '@core/transition'
 import { sbarClear, updateSbar } from '@core/status/render'
 import { store } from './store'
 import { getInitializationStatus } from './initialization'
@@ -35,11 +32,9 @@ import { playFrameSounds } from './gameLoop/soundManager'
  */
 export const createGameRenderer = (
   spriteService: SpriteService,
-  galaxyService: GalaxyService
+  galaxyService: GalaxyService,
+  fizzTransitionService: FizzTransitionService
 ): BitmapRenderer => {
-  // Create the fizz transition service once for this renderer instance
-  const fizzTransitionService = createFizzTransitionService()
-
   return (bitmap, frame, _env) => {
     // Check initialization status
     const { complete, error } = getInitializationStatus()

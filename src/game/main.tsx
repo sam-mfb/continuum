@@ -7,6 +7,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import { createSpriteService } from '@core/sprites'
 import { createGalaxyService } from '@core/galaxy'
+import { createFizzTransitionService } from '@core/transition'
 import { createGameRenderer } from './gameLoop'
 import { setAlignmentMode } from '@/core/shared'
 import { store } from './store'
@@ -29,6 +30,9 @@ async function initGame(): Promise<void> {
     const galaxyService = await createGalaxyService(ASSET_PATHS.GALAXY_DATA)
     console.log('Galaxy service created with initial galaxy loaded')
 
+    const fizzTransitionService = createFizzTransitionService()
+    console.log('Fizz transition service created')
+
     // Initialize game (sound setup, etc)
     await initializeGame(galaxyService)
     console.log('Game initialized')
@@ -36,9 +40,12 @@ async function initGame(): Promise<void> {
     // Load level 1
     loadLevel(store, 1, galaxyService)
 
-    const renderer = createGameRenderer(spriteService, galaxyService)
-    const galaxyHeader = store.getState().game.galaxyHeader
-    const totalLevels = galaxyHeader?.planets || 30
+    const renderer = createGameRenderer(
+      spriteService,
+      galaxyService,
+      fizzTransitionService
+    )
+    const totalLevels = galaxyService.getHeader().planets
 
     // Set up alignment mode subscription
     // Set initial alignment mode from Redux state
