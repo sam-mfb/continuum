@@ -26,10 +26,10 @@ async function initGame(): Promise<void> {
     })
     console.log('Sprite service initialized')
 
-    const galaxyService = createGalaxyService()
-    console.log('Galaxy service created')
+    const galaxyService = await createGalaxyService(ASSET_PATHS.GALAXY_DATA)
+    console.log('Galaxy service created with initial galaxy loaded')
 
-    // Initialize game and load galaxy
+    // Initialize game (sound setup, etc)
     await initializeGame(galaxyService)
     console.log('Game initialized')
 
@@ -51,7 +51,13 @@ async function initGame(): Promise<void> {
       setAlignmentMode(state.game.alignmentMode)
     })
 
-    root.render(<App renderer={renderer} totalLevels={totalLevels} galaxyService={galaxyService} />)
+    root.render(
+      <App
+        renderer={renderer}
+        totalLevels={totalLevels}
+        galaxyService={galaxyService}
+      />
+    )
 
     console.log('Game started!')
   } catch (error) {

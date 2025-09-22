@@ -25,11 +25,11 @@ const initialState: GalaxyState = {
 export const loadGalaxyFile = createAsyncThunk(
   'galaxy/loadFile',
   async (fileName: 'continuum_galaxy.bin' | 'release_galaxy.bin') => {
-    // Create a new galaxy service instance for dev tools
-    const galaxyService = createGalaxyService()
+    // Create a new galaxy service instance for dev tools with initial galaxy
+    const galaxyService = await createGalaxyService(`/art/${fileName}`)
 
-    // Load galaxy using the service
-    const galaxyHeader = await galaxyService.loadGalaxy(`/art/${fileName}`)
+    // Get the loaded galaxy header
+    const galaxyHeader = galaxyService.getHeader()
 
     // Get all planets for dev display
     const planets = galaxyService.getAllPlanets()

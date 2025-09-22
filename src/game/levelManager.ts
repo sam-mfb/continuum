@@ -70,11 +70,15 @@ export function checkLevelComplete(state: RootState): boolean {
 /**
  * Load a specific level (planet) from the galaxy data
  */
-export function loadLevel(store: Store<RootState>, levelNum: number, galaxyService: GalaxyService): void {
+export function loadLevel(
+  store: Store<RootState>,
+  levelNum: number,
+  galaxyService: GalaxyService
+): void {
   const state = store.getState()
 
-  if (!state.game.galaxyHeader || !galaxyService.isLoaded()) {
-    console.error('Galaxy data not loaded')
+  if (!state.game.galaxyHeader) {
+    console.error('Galaxy header not in Redux state')
     return
   }
 
@@ -149,7 +153,10 @@ export function loadLevel(store: Store<RootState>, levelNum: number, galaxyServi
 /**
  * Handle transitioning to the next level
  */
-export function transitionToNextLevel(store: Store<RootState>, galaxyService: GalaxyService): void {
+export function transitionToNextLevel(
+  store: Store<RootState>,
+  galaxyService: GalaxyService
+): void {
   const state = store.getState()
 
   // Check if we've completed all levels

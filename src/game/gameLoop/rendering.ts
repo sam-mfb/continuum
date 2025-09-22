@@ -85,7 +85,8 @@ export const renderGame = (context: RenderContext): MonochromeBitmap => {
 
   // 2. draw_craters
   const craterImages = {
-    background1: spriteService.getCraterSprite({ variant: 'background1' }).uint8,
+    background1: spriteService.getCraterSprite({ variant: 'background1' })
+      .uint8,
     background2: spriteService.getCraterSprite({ variant: 'background2' }).uint8
   }
 

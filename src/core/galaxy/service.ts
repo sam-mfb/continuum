@@ -23,15 +23,15 @@ export type GalaxyService = {
 
   /**
    * Get the cached galaxy header
-   * @returns Galaxy header or null if not loaded
+   * @returns Galaxy header
    */
-  getHeader(): GalaxyHeader | null
+  getHeader(): GalaxyHeader
 
   /**
    * Get the cached planets buffer
-   * @returns Planets buffer or null if not loaded
+   * @returns Planets buffer
    */
-  getPlanetsBuffer(): PlanetsBuffer | null
+  getPlanetsBuffer(): PlanetsBuffer
 
   /**
    * Parse and return a specific planet
@@ -45,42 +45,47 @@ export type GalaxyService = {
    * @returns Array of all parsed planets
    */
   getAllPlanets(): PlanetState[]
-
-  /**
-   * Check if galaxy data is loaded
-   */
-  isLoaded(): boolean
-
-  /**
-   * Clear all cached data
-   */
-  clear(): void
 }
 
 /**
  * Private storage for galaxy data
  */
 type GalaxyStorage = {
-  header: GalaxyHeader | null
-  planetsBuffer: PlanetsBuffer | null
+  header: GalaxyHeader
+  planetsBuffer: PlanetsBuffer
   parsedPlanetsCache: Map<number, PlanetState>
 }
 
 /**
- * Creates a galaxy service instance
- * @returns Galaxy service with all methods
+ * Creates a galaxy service instance with an initially loaded galaxy
+ * @param initialPath - Path to the initial galaxy data file
+ * @returns Promise that resolves to a galaxy service with all methods
  */
-export function createGalaxyService(): GalaxyService {
+export async function createGalaxyService(
+  initialPath: string
+): Promise<GalaxyService> {
+  // Load initial galaxy data
+  const response = await fetch(initialPath)
+  if (!response.ok) {
+    throw new Error(`Failed to load initial galaxy file from ${initialPath}`)
+  }
+
+  const arrayBuffer = await response.arrayBuffer()
+  const { headerBuffer, planetsBuffer } = Galaxy.splitBuffer(arrayBuffer)
+  const header = Galaxy.parseHeader(headerBuffer)
+
   // Private storage - not accessible outside the service
   const storage: GalaxyStorage = {
-    header: null,
-    planetsBuffer: null,
+    header,
+    planetsBuffer,
     parsedPlanetsCache: new Map()
   }
 
-  return {
+  console.log(`Initial galaxy loaded: ${header.planets} planets`)
+
+  const service: GalaxyService = {
     async loadGalaxy(path: string): Promise<GalaxyHeader> {
-      // Fetch the galaxy file
+      // Fetch the new galaxy file
       const response = await fetch(path)
       if (!response.ok) {
         throw new Error(`Failed to load galaxy file from ${path}`)
@@ -90,7 +95,7 @@ export function createGalaxyService(): GalaxyService {
       const { headerBuffer, planetsBuffer } = Galaxy.splitBuffer(arrayBuffer)
       const header = Galaxy.parseHeader(headerBuffer)
 
-      // Store in private cache
+      // Atomic swap - only update storage after successful load
       storage.header = header
       storage.planetsBuffer = planetsBuffer
       storage.parsedPlanetsCache.clear() // Clear any previously parsed planets
@@ -100,19 +105,15 @@ export function createGalaxyService(): GalaxyService {
       return header
     },
 
-    getHeader(): GalaxyHeader | null {
+    getHeader(): GalaxyHeader {
       return storage.header
     },
 
-    getPlanetsBuffer(): PlanetsBuffer | null {
+    getPlanetsBuffer(): PlanetsBuffer {
       return storage.planetsBuffer
     },
 
     getPlanet(levelNum: number): PlanetState {
-      if (!storage.header || !storage.planetsBuffer) {
-        throw new Error('Galaxy data not loaded. Call loadGalaxy() first.')
-      }
-
       // Check cache first
       if (storage.parsedPlanetsCache.has(levelNum)) {
         return storage.parsedPlanetsCache.get(levelNum)!
@@ -151,27 +152,15 @@ export function createGalaxyService(): GalaxyService {
     },
 
     getAllPlanets(): PlanetState[] {
-      if (!storage.header || !storage.planetsBuffer) {
-        throw new Error('Galaxy data not loaded. Call loadGalaxy() first.')
-      }
-
       const planets: PlanetState[] = []
       for (let i = 1; i <= storage.header.planets; i++) {
-        planets.push(this.getPlanet(i))
+        planets.push(service.getPlanet(i))
       }
       return planets
-    },
-
-    isLoaded(): boolean {
-      return storage.header !== null && storage.planetsBuffer !== null
-    },
-
-    clear(): void {
-      storage.header = null
-      storage.planetsBuffer = null
-      storage.parsedPlanetsCache.clear()
     }
   }
+
+  return service
 }
 
 // Note: The galaxy service is now created by the consumer and passed via dependency injection.

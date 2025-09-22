@@ -118,7 +118,10 @@ const handleLevelCompletion = (store: Store<RootState>): void => {
 /**
  * Handle game over condition
  */
-const handleGameOver = (store: Store<RootState>, galaxyService: GalaxyService): void => {
+const handleGameOver = (
+  store: Store<RootState>,
+  galaxyService: GalaxyService
+): void => {
   const state = store.getState()
 
   if (

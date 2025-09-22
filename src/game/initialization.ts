@@ -9,7 +9,7 @@ import type { GalaxyService } from '@core/galaxy'
 import { initializeSoundService, cleanupSoundService } from '@core/sound'
 import { shipSlice } from '@core/ship'
 import { statusSlice } from '@core/status'
-import { TOTAL_INITIAL_LIVES, ASSET_PATHS } from './constants'
+import { TOTAL_INITIAL_LIVES } from './constants'
 import { loadGalaxyHeader } from './gameSlice'
 import { store } from './store'
 
@@ -19,11 +19,13 @@ let initializationError: Error | null = null
 
 /**
  * Initialize the game
- * Sets up sound service, loads galaxy, and initializes game state
- * @param galaxyService - The galaxy service instance to use
+ * Sets up sound service and initializes game state
+ * @param galaxyService - The galaxy service instance to use (already loaded)
  * @returns The galaxy service for further use
  */
-export const initializeGame = async (galaxyService: GalaxyService): Promise<GalaxyService> => {
+export const initializeGame = async (
+  galaxyService: GalaxyService
+): Promise<GalaxyService> => {
   try {
     console.log('Starting game initialization...')
 
@@ -42,9 +44,9 @@ export const initializeGame = async (galaxyService: GalaxyService): Promise<Gala
       // Continue without sound - game is still playable
     }
 
-    // Load the release galaxy file using the service
-    console.log('Loading galaxy file...')
-    const galaxyHeader = await galaxyService.loadGalaxy(ASSET_PATHS.GALAXY_DATA)
+    // Get the already-loaded galaxy header from the service
+    console.log('Getting galaxy header from service...')
+    const galaxyHeader = galaxyService.getHeader()
     console.log('Galaxy header:', galaxyHeader)
     console.log(`Galaxy contains ${galaxyHeader.planets} levels`)
 
