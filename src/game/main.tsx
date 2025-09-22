@@ -42,9 +42,7 @@ async function initGame(): Promise<void> {
     })
     console.log('Store created with services')
 
-    // Initialize game (sound setup, etc)
     store.dispatch(initializeGame())
-    console.log('Game initialized')
 
     // Load level 1
     loadLevel(store, 1, galaxyService)

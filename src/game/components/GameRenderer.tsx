@@ -1,56 +1,35 @@
 import React, { useEffect, useRef } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
 import type { BitmapRenderer } from '@lib/bitmap'
 import { createMonochromeBitmap } from '@lib/bitmap'
-import { startGame, setMode } from '../gameSlice'
-import type { RootState } from '../store'
-import { setHighScore } from '@/core/highscore'
-import { shipSlice } from '@/core/ship'
-import { invalidateHighScore } from '@/core/status'
-import { initializeSoundService, resetSounds } from '@/core/sound'
-import StartScreen from './StartScreen'
-import HighScoreEntry from './HighScoreEntry'
-import GameOverScreen from './GameOverScreen'
 
-type GameCanvasProps = {
+type GameRendererProps = {
   renderer: BitmapRenderer
   width: number
   height: number
   scale: number
   fps: number
-  totalLevels: number
-  onLevelSelect: (level: number) => void
 }
 
 /**
- * Simple game canvas component without any UI controls
- * Perfect for the production game
+ * Game renderer component - handles canvas rendering and game loop
+ * Only active when the game is in 'playing' mode
  */
-const GameCanvas: React.FC<GameCanvasProps> = ({
+const GameRenderer: React.FC<GameRendererProps> = ({
   renderer,
   width,
   height,
   scale,
-  fps,
-  totalLevels,
-  onLevelSelect
+  fps
 }) => {
-  const dispatch = useDispatch()
-  const gameMode = useSelector((state: RootState) => state.game.mode)
-  const pendingHighScore = useSelector(
-    (state: RootState) => state.game.pendingHighScore
-  )
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number>(0)
   const lastFrameTimeRef = useRef<number>(0)
   const frameIntervalMs = 1000 / fps
   const keysDownRef = useRef<Set<string>>(new Set())
   const frameCountRef = useRef<number>(0)
+  const startTimeRef = useRef<number>(0)
 
   useEffect(() => {
-    // Only run game loop when in playing mode
-    if (gameMode !== 'playing') return
-
     const canvas = canvasRef.current
     if (!canvas) return
 
@@ -72,9 +51,8 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
         e.code === 'KeyZ' || // Left
         e.code === 'KeyX' || // Right
         e.code === 'Period' || // Thrust
-        e.code === 'Slash'
+        e.code === 'Slash' // Fire
       ) {
-        // Fire
         e.preventDefault()
       }
     }
@@ -86,6 +64,9 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('keyup', handleKeyUp)
 
+    // Initialize start time
+    startTimeRef.current = performance.now()
+
     // Game loop
     const gameLoop = (currentTime: number): void => {
       const deltaTime = currentTime - lastFrameTimeRef.current
@@ -95,25 +76,25 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
         const renderedBitmap = renderer(
           bitmap,
           {
-            keysDown: keysDownRef.current,
-            keysPressed: new Set(),
-            keysReleased: new Set(),
             frameCount: frameCountRef.current,
             deltaTime: deltaTime,
-            totalTime: currentTime,
-            targetDelta: frameIntervalMs
+            totalTime: currentTime - startTimeRef.current,
+            targetDelta: frameIntervalMs,
+            keysDown: keysDownRef.current,
+            keysPressed: new Set(),
+            keysReleased: new Set()
           },
           {
-            width,
-            height,
-            fps
+            width: width,
+            height: height,
+            fps: fps
           }
         )
 
-        // Update bitmap reference for next frame
+        // Update the bitmap for next frame
         bitmap = renderedBitmap
 
-        // Create offscreen canvas at native resolution
+        // Create offscreen canvas for pixel-perfect scaling
         const offscreen = document.createElement('canvas')
         offscreen.width = renderedBitmap.width
         offscreen.height = renderedBitmap.height
@@ -130,7 +111,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
         for (let y = 0; y < renderedBitmap.height; y++) {
           for (let x = 0; x < renderedBitmap.width; x++) {
             const byteIndex = y * renderedBitmap.rowBytes + Math.floor(x / 8)
-            const bitMask = 0x80 >> x % 8
+            const bitMask = 0x80 >> (x % 8)
             const isSet = (renderedBitmap.data[byteIndex]! & bitMask) !== 0
 
             const pixelIndex = (y * renderedBitmap.width + x) * 4
@@ -173,61 +154,8 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [renderer, width, height, scale, fps, frameIntervalMs, gameMode])
+  }, [renderer, width, height, scale, fps, frameIntervalMs])
 
-  // Render different screens based on game mode
-  if (gameMode === 'start') {
-    return (
-      <StartScreen
-        onStartGame={(level: number) => {
-          // Reset ship and sound to clean state
-          dispatch(shipSlice.actions.resetShip())
-          dispatch(resetSounds())
-
-          // Invalidate high score if starting at level > 1
-          if (level > 1) {
-            dispatch(invalidateHighScore())
-          }
-
-          // Reinitialize sound service for new game
-          initializeSoundService()
-
-          // Start the game
-          dispatch(startGame())
-          onLevelSelect(level)
-        }}
-        totalLevels={totalLevels}
-      />
-    )
-  }
-
-  if (gameMode === 'highScoreEntry' && pendingHighScore) {
-    return (
-      <HighScoreEntry
-        score={pendingHighScore.score}
-        planet={pendingHighScore.planet}
-        fuel={pendingHighScore.fuel}
-        onSubmit={(name: string) => {
-          dispatch(
-            setHighScore({
-              user: name,
-              score: pendingHighScore.score,
-              planet: pendingHighScore.planet,
-              fuel: pendingHighScore.fuel,
-              date: new Date().toISOString()
-            })
-          )
-          dispatch(setMode('start'))
-        }}
-      />
-    )
-  }
-
-  if (gameMode === 'gameOver') {
-    return <GameOverScreen onContinue={() => dispatch(setMode('start'))} />
-  }
-
-  // Playing mode - render just the game canvas
   return (
     <canvas
       ref={canvasRef}
@@ -245,4 +173,4 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
   )
 }
 
-export default GameCanvas
+export default GameRenderer
