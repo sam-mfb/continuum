@@ -6,7 +6,7 @@ import type { MonochromeBitmap } from '@lib/bitmap'
 import type { SpriteService } from '@core/sprites'
 import { starBackground } from './starBackground'
 import { fullFigure } from '@core/ship/render'
-import { SCENTER } from '@core/figs/types'
+import { SCENTER } from '@core/figs'
 
 /**
  * Creates a star background bitmap for level transitions

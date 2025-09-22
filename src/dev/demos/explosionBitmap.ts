@@ -11,7 +11,7 @@ import { planetSlice } from '@core/planet'
 import { screenSlice } from '@core/screen'
 import { buildGameStore } from '@dev/store'
 import type { SpriteService } from '@core/sprites'
-import type { ShardSprite, ShardSpriteSet } from '@core/figs/types'
+import type { ShardSprite, ShardSpriteSet } from '@core/figs'
 import { xbcenter, ybcenter } from '@core/planet'
 import {
   explosionsSlice,

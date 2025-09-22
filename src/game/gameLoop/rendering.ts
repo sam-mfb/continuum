@@ -7,8 +7,8 @@
 
 import type { MonochromeBitmap } from '@lib/bitmap'
 import type { SpriteService } from '@core/sprites'
-import type { RootState } from '../store'
-import type { BunkerKind, ShardSprite, ShardSpriteSet } from '@core/figs/types'
+import type { RootState, GameStore } from '../store'
+import type { BunkerKind, ShardSprite, ShardSpriteSet } from '@core/figs'
 
 import {
   fullFigure,
@@ -18,7 +18,7 @@ import {
   shiftFigure
 } from '@core/ship/render'
 import { checkForBounce, checkFigure } from '@core/ship'
-import { SCENTER } from '@core/figs/types'
+import { SCENTER } from '@core/figs'
 import { drawShipShot, drawStrafe, drawDotSafe } from '@core/shots/render'
 import { doBunks, drawCraters, drawFuels } from '@core/planet/render'
 import { drawExplosions } from '@core/explosions/render'
@@ -29,20 +29,20 @@ import { viewClear, viewWhite } from '@core/screen/render'
 import { whiteTerrain, blackTerrain } from '@core/walls/render'
 import { LINE_KIND } from '@core/walls'
 import { getAlignment, getBackgroundPattern } from '@core/shared'
-import { store } from '../store'
 import { triggerShipDeath } from '../shipDeath'
 
 export type RenderContext = {
   bitmap: MonochromeBitmap
   state: RootState
   spriteService: SpriteService
+  store: GameStore
 }
 
 /**
  * Main rendering function - matches exact order from main branch gameLoop.ts
  */
 export const renderGame = (context: RenderContext): MonochromeBitmap => {
-  let { bitmap, state, spriteService } = context
+  let { bitmap, state, spriteService, store } = context
 
   // Check for death flash
   if (state.explosions.shipDeathFlash) {

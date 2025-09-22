@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { toUint16Array, toMonochromeBitmap, precomputeFormats } from './service'
 import type { SpriteService, SpriteData } from './service'
-import { BunkerKind } from '@core/figs/types'
+import { BunkerKind } from '@core/figs'
 
 // Type tests to ensure API is correct
 describe('SpriteService Type Tests', () => {

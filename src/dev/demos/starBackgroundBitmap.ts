@@ -21,7 +21,7 @@ import {
 import { fullFigure } from '@core/ship/render'
 import { SCRWTH, VIEWHT } from '@core/screen'
 import type { SpriteService } from '@core/sprites'
-import { SCENTER } from '@core/figs/types'
+import { SCENTER } from '@core/figs'
 import { cloneBitmap } from '@lib/bitmap'
 
 // State for tracking the transition - persists across render calls

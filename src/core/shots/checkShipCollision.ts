@@ -5,7 +5,7 @@
 
 import type { ShotRec } from './types'
 import { xyindist } from './xyindist'
-import { SCENTER } from '@core/figs/types'
+import { SCENTER } from '@core/figs'
 
 export type ShipCollisionResult = {
   hit: boolean

@@ -1,10 +1,10 @@
 import React from 'react'
-import { Provider } from 'react-redux'
+import { useStore } from 'react-redux'
 import GameCanvas from './components/GameCanvas'
-import { store } from './store'
 import { loadLevel } from './levelManager'
 import type { BitmapRenderer } from '@lib/bitmap'
 import type { GalaxyService } from '@core/galaxy'
+import type { GameStore } from './store'
 
 type AppProps = {
   renderer: BitmapRenderer
@@ -13,20 +13,20 @@ type AppProps = {
 }
 
 const App: React.FC<AppProps> = ({ renderer, totalLevels, galaxyService }) => {
+  const store = useStore() as GameStore
+
   return (
-    <Provider store={store}>
-      <GameCanvas
-        renderer={renderer}
-        width={512}
-        height={342}
-        scale={2} // Pixel-doubled like the demos
-        fps={20} // Original Continuum runs at 20 FPS
-        totalLevels={totalLevels}
-        onLevelSelect={(level: number) => {
-          loadLevel(store, level, galaxyService)
-        }}
-      />
-    </Provider>
+    <GameCanvas
+      renderer={renderer}
+      width={512}
+      height={342}
+      scale={2} // Pixel-doubled like the demos
+      fps={20} // Original Continuum runs at 20 FPS
+      totalLevels={totalLevels}
+      onLevelSelect={(level: number) => {
+        loadLevel(store, level, galaxyService)
+      }}
+    />
   )
 }
 

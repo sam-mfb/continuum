@@ -1,7 +1,7 @@
 import type { MonochromeBitmap, BitmapRenderer } from '@lib/bitmap'
-import type { ShardSpriteSet, ShardSprite } from '@core/figs/types'
+import type { ShardSpriteSet, ShardSprite } from '@core/figs'
 import { drawShard } from '@core/explosions/render'
-import { SHARDHT } from '@core/figs/types'
+import { SHARDHT } from '@core/figs'
 import type { SpriteService } from '@core/sprites'
 import { viewClear } from '@core/screen/render'
 

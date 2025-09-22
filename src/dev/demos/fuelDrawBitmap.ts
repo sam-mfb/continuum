@@ -13,7 +13,7 @@ import { configureStore } from '@reduxjs/toolkit'
 import { planetSlice, loadPlanet, updateFuelAnimations } from '@core/planet'
 import type { Fuel, PlanetState } from '@core/planet'
 import { isOnRightSide } from '@core/shared/viewport'
-import { FUELFRAMES } from '@core/figs/types'
+import { FUELFRAMES } from '@core/figs'
 import type { SpriteService } from '@core/sprites'
 import { viewClear } from '@core/screen/render'
 

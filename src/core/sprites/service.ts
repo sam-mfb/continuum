@@ -10,9 +10,8 @@
 
 import { expandTitlePage } from '@dev/art/utils'
 
-import { extractAllSprites } from '@core/figs'
-import { BunkerKind } from '@core/figs/types'
-import type { AllSprites } from '@core/figs/types'
+import { extractAllSprites, BunkerKind } from '@core/figs'
+import type { AllSprites } from '@core/figs'
 import { createMonochromeBitmap } from '@lib/bitmap'
 import type { MonochromeBitmap } from '@lib/bitmap/types'
 

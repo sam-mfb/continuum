@@ -1,6 +1,6 @@
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { createSlice } from '@reduxjs/toolkit'
-import type { BunkerKind } from '@core/figs/types'
+import type { BunkerKind } from '@core/figs'
 
 export type SpriteType =
   | 'ship'

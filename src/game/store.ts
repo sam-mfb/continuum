@@ -3,9 +3,12 @@
  */
 
 import { configureStore } from '@reduxjs/toolkit'
+import type { GalaxyService } from '@core/galaxy'
+import type { SpriteService } from '@core/sprites'
+import type { FizzTransitionService } from '@core/transition'
 
 // Import all reducers
-import gameReducer from './gameSlice'
+import { gameSlice } from './gameSlice'
 import { shipSlice } from '@core/ship'
 import { shotsSlice } from '@core/shots'
 import { planetSlice } from '@core/planet'
@@ -18,31 +21,48 @@ import { highscoreSlice } from '@/core/highscore'
 import { transitionSlice } from '@core/transition'
 import { highscoreMiddleware, loadHighScores } from '@/core/highscore'
 
-// Load persisted high scores
-const persistedHighScores = loadHighScores()
+// Define the services that will be injected
+export type GameServices = {
+  galaxyService: GalaxyService
+  spriteService: SpriteService
+  fizzTransitionService: FizzTransitionService
+}
 
-// Create and export the store
-export const store = configureStore({
-  reducer: {
-    game: gameReducer,
-    ship: shipSlice.reducer,
-    shots: shotsSlice.reducer,
-    planet: planetSlice.reducer,
-    screen: screenSlice.reducer,
-    status: statusSlice.reducer,
-    explosions: explosionsSlice.reducer,
-    sound: soundReducer,
-    walls: wallsSlice.reducer,
-    highscore: highscoreSlice.reducer,
-    transition: transitionSlice.reducer
-  },
-  middleware: getDefaultMiddleware =>
-    getDefaultMiddleware().concat(highscoreMiddleware),
-  preloadedState: {
-    highscore: persistedHighScores
-  }
-})
+// Create store factory function
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+export const createGameStore = (services: GameServices) => {
+  // Load persisted high scores
+  const persistedHighScores = loadHighScores()
+
+  return configureStore({
+    reducer: {
+      game: gameSlice.reducer,
+      ship: shipSlice.reducer,
+      shots: shotsSlice.reducer,
+      planet: planetSlice.reducer,
+      screen: screenSlice.reducer,
+      status: statusSlice.reducer,
+      explosions: explosionsSlice.reducer,
+      sound: soundReducer,
+      walls: wallsSlice.reducer,
+      highscore: highscoreSlice.reducer,
+      transition: transitionSlice.reducer
+    },
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({
+        thunk: {
+          extraArgument: services
+        }
+      }).concat(highscoreMiddleware),
+    preloadedState: {
+      highscore: persistedHighScores
+    }
+  })
+}
+
+// Define the actual state shape
+export type GameStore = ReturnType<typeof createGameStore>
+export type RootState = ReturnType<GameStore['getState']>
 
 // Export types
-export type RootState = ReturnType<typeof store.getState>
-export type AppDispatch = typeof store.dispatch
+export type AppDispatch = GameStore['dispatch']

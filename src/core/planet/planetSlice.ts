@@ -1,7 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { PlanetState } from './types'
 import { BunkerKind } from './types'
-import { BUNKROTKINDS, FUELFRAMES } from '@core/figs/types'
+import { BUNKROTKINDS, FUELFRAMES } from '@core/figs'
 import { PLANET } from './constants'
 import { aimBunk } from '@core/shots'
 import { rint } from '@core/shared'

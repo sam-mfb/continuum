@@ -5,7 +5,7 @@ import {
   BUNKROTKINDS,
   type BunkerSprite,
   type BunkerKind
-} from '@core/figs/types'
+} from '@core/figs'
 import { build68kArch } from '@lib/asm'
 import { jsrWAddress } from '@lib/asm/assemblyMacros'
 import type { Bunker } from '../types'

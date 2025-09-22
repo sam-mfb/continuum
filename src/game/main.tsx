@@ -4,14 +4,15 @@
 
 import './style.css'
 import { createRoot } from 'react-dom/client'
+import { Provider } from 'react-redux'
 import App from './App'
 import { createSpriteService } from '@core/sprites'
 import { createGalaxyService } from '@core/galaxy'
 import { createFizzTransitionService } from '@core/transition'
 import { createGameRenderer } from './gameLoop'
 import { setAlignmentMode } from '@/core/shared'
-import { store } from './store'
-import { initializeGame } from './initialization'
+import { createGameStore } from './store'
+import { initializeGame } from './initializationThunks'
 import { loadLevel } from './levelManager'
 import { ASSET_PATHS } from './constants'
 
@@ -33,14 +34,23 @@ async function initGame(): Promise<void> {
     const fizzTransitionService = createFizzTransitionService()
     console.log('Fizz transition service created')
 
+    // Create store with services
+    const store = createGameStore({
+      galaxyService,
+      spriteService,
+      fizzTransitionService
+    })
+    console.log('Store created with services')
+
     // Initialize game (sound setup, etc)
-    await initializeGame(galaxyService)
+    store.dispatch(initializeGame())
     console.log('Game initialized')
 
     // Load level 1
     loadLevel(store, 1, galaxyService)
 
     const renderer = createGameRenderer(
+      store,
       spriteService,
       galaxyService,
       fizzTransitionService
@@ -59,11 +69,13 @@ async function initGame(): Promise<void> {
     })
 
     root.render(
-      <App
-        renderer={renderer}
-        totalLevels={totalLevels}
-        galaxyService={galaxyService}
-      />
+      <Provider store={store}>
+        <App
+          renderer={renderer}
+          totalLevels={totalLevels}
+          galaxyService={galaxyService}
+        />
+      </Provider>
     )
 
     console.log('Game started!')

@@ -5,7 +5,7 @@
  * level progression, and entity updates
  */
 
-import type { Store } from '@reduxjs/toolkit'
+import type { Store, UnknownAction } from '@reduxjs/toolkit'
 import type { GalaxyService } from '@core/galaxy'
 import type { RootState } from '../store'
 import type { MonochromeBitmap, GameFrameInfo } from '@lib/bitmap'
@@ -47,7 +47,7 @@ import {
 import { TOTAL_INITIAL_LIVES } from '../constants'
 import { getPressedControls } from '../controls'
 import { triggerShipDeath } from '../shipDeath'
-import { cleanupGame } from '../initialization'
+import { cleanupGame } from '../initializationThunks'
 
 export type StateUpdateContext = {
   store: Store<RootState>
@@ -141,8 +141,8 @@ const handleGameOver = (
       ...Object.values(highscore).map(hs => hs.score || 0)
     )
 
-    // Stop all sounds when game ends
-    cleanupGame()
+    // Stop all sounds when game ends and reset initialization status
+    store.dispatch(cleanupGame() as unknown as UnknownAction)
 
     // Check if eligible and qualifies for high score
     if (status.highScoreEligible && status.score > lowestScore) {

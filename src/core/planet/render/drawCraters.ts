@@ -1,6 +1,6 @@
 import { type MonochromeBitmap } from '@lib/bitmap'
 import { SCRWTH, VIEWHT } from '@core/screen'
-import { CRATERHT } from '@core/figs/types'
+import { CRATERHT } from '@core/figs'
 import type { Crater } from '../types'
 import { CRATERCENTER } from '../constants'
 import { drawMedium } from './drawMedium'

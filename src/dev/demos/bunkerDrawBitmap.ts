@@ -17,7 +17,7 @@ import {
   initializeBunkers
 } from '@core/planet'
 import { shotsSlice, bunkShoot, moveBullets, doStrafes } from '@core/shots'
-import { BunkerKind } from '@core/figs/types'
+import { BunkerKind } from '@core/figs'
 import type { Bunker, PlanetState } from '@core/planet'
 import { drawDotSafe } from '@core/shots/render'
 import { drawStrafe } from '@core/shots/render'

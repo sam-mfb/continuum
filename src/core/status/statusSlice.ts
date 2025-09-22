@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
-import { type BunkerKind } from '@core/figs/types'
+import { type BunkerKind } from '@core/figs'
 import { getBunkerScore, SCORE_FUEL } from './scoring'
 
 // All possible status messages from Play.c

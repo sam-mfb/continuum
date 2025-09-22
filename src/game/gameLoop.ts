@@ -12,11 +12,11 @@ import type { BitmapRenderer, MonochromeBitmap } from '@lib/bitmap'
 import type { SpriteService } from '@core/sprites'
 import type { GalaxyService } from '@core/galaxy'
 import type { FizzTransitionService } from '@core/transition'
+import type { GameStore } from './store'
+import type { UnknownAction } from '@reduxjs/toolkit'
 
 import { updateTransition, starBackgroundWithShip } from '@core/transition'
 import { sbarClear, updateSbar } from '@core/status/render'
-import { store } from './store'
-import { getInitializationStatus } from './initialization'
 import { transitionToNextLevel } from './levelManager'
 import { updateGameState } from './gameLoop/stateUpdates'
 import { renderGame } from './gameLoop/rendering'
@@ -31,22 +31,24 @@ import { playFrameSounds } from './gameLoop/soundManager'
  * 3. Sound - playing accumulated sounds for the frame
  */
 export const createGameRenderer = (
+  store: GameStore,
   spriteService: SpriteService,
   galaxyService: GalaxyService,
   fizzTransitionService: FizzTransitionService
 ): BitmapRenderer => {
   return (bitmap, frame, _env) => {
-    // Check initialization status
-    const { complete, error } = getInitializationStatus()
+    // Check initialization status from Redux state
+    const gameState = store.getState().game
+    const { initializationStatus, initializationError } = gameState
 
-    if (error) {
-      console.error('Initialization failed:', error)
+    if (initializationStatus === 'error') {
+      console.error('Initialization failed:', initializationError)
       bitmap.data.fill(0)
       return bitmap
     }
 
-    if (!complete) {
-      // Still loading
+    if (initializationStatus !== 'complete') {
+      // Still loading or not started
       bitmap.data.fill(0)
       return bitmap
     }
@@ -68,7 +70,8 @@ export const createGameRenderer = (
     bitmap = renderGame({
       bitmap,
       state,
-      spriteService
+      spriteService,
+      store
     })
 
     // Phase 3: Handle transition effects
@@ -119,11 +122,13 @@ export const createGameRenderer = (
       updateTransition(bitmap, {
         addStatusBar,
         createTargetBitmap,
-        store,
+        store: store as unknown as Parameters<
+          typeof updateTransition
+        >[1]['store'],
         fizzTransitionService,
         onTransitionComplete: () => transitionToNextLevel(store, galaxyService)
-      })
-    )
+      }) as unknown as UnknownAction
+    ) as unknown as MonochromeBitmap | null
 
     if (transitionFrame) {
       // Transition is active, use the transition frame
