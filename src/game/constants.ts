@@ -11,6 +11,10 @@ export { SHIPSTART }
 export const TOTAL_INITIAL_LIVES = SHIPSTART + 1 // Total lives including current ship
 export const STARTING_LEVEL = 1
 
+// Sound defaults
+export const DEFAULT_SOUND_VOLUME = 0.5
+export const DEFAULT_SOUND_MUTED = false
+
 // Asset paths for the game
 export const ASSET_PATHS = {
   // Galaxy data files

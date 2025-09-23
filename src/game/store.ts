@@ -30,11 +30,35 @@ export type GameServices = {
   soundService: SoundService
 }
 
+// Initial settings for the game
+export type GameInitialSettings = {
+  soundVolume: number
+  soundEnabled: boolean
+  initialLives: number
+}
+
 // Create store factory function
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export const createGameStore = (services: GameServices) => {
+export const createGameStore = (
+  services: GameServices,
+  initialSettings: GameInitialSettings
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+) => {
   // Load persisted high scores
   const persistedHighScores = loadHighScores()
+
+  // Build preloaded state with initial settings
+  const preloadedState = {
+    highscore: persistedHighScores,
+    sound: {
+      ...soundSlice.getInitialState(),
+      volume: initialSettings.soundVolume,
+      enabled: initialSettings.soundEnabled
+    },
+    ship: {
+      ...shipSlice.getInitialState(),
+      lives: initialSettings.initialLives
+    }
+  }
 
   return configureStore({
     reducer: {
@@ -56,9 +80,7 @@ export const createGameStore = (services: GameServices) => {
           extraArgument: services
         }
       }).concat(highscoreMiddleware),
-    preloadedState: {
-      highscore: persistedHighScores
-    }
+    preloadedState
   })
 }
 

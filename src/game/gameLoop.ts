@@ -39,22 +39,6 @@ export const createGameRenderer = (
     // Create a fresh bitmap for this frame
     let bitmap = createGameBitmap()
 
-    // Check initialization status from Redux state
-    const gameState = store.getState().game
-    const { initializationStatus, initializationError } = gameState
-
-    if (initializationStatus === 'error') {
-      console.error('Initialization failed:', initializationError)
-      bitmap.data.fill(0)
-      return bitmap
-    }
-
-    if (initializationStatus !== 'complete') {
-      // Still loading or not started
-      bitmap.data.fill(0)
-      return bitmap
-    }
-
     // Phase 1: Update game state
     // This handles all game logic, physics, and state changes
     updateGameState({
@@ -63,7 +47,8 @@ export const createGameRenderer = (
       keys,
       bitmap,
       galaxyService,
-      fizzTransitionService
+      fizzTransitionService,
+      soundService
     })
 
     // Get current state after updates

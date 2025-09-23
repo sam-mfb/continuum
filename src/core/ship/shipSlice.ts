@@ -10,10 +10,12 @@ import {
   SHIPSTART
 } from './constants'
 
+// Note: TOTAL_INITIAL_LIVES will be set via preloadedState when creating the store
+// Default to 3 here for tests and development
 const initialState: ShipState = {
   shiprot: 0,
   fuel: FUELSTART,
-  lives: SHIPSTART,
+  lives: 3, // Will be overridden by preloadedState in production
   flaming: false,
   flameBlink: 0,
   thrusting: false,

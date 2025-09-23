@@ -5,11 +5,12 @@
  * level progression, and entity updates
  */
 
-import type { Store, UnknownAction } from '@reduxjs/toolkit'
+import type { Store } from '@reduxjs/toolkit'
 import type { GalaxyService } from '@core/galaxy'
 import type { RootState } from '../store'
 import type { MonochromeBitmap, FrameInfo, KeyInfo } from '@lib/bitmap'
 import type { FizzTransitionService } from '@core/transition'
+import type { SoundService } from '@core/sound'
 
 import { shipSlice, shipControl, CRITFUEL } from '@core/ship'
 import {
@@ -57,7 +58,6 @@ import {
 import { TOTAL_INITIAL_LIVES } from '../constants'
 import { getPressedControls } from '../controls'
 import { triggerShipDeath } from '../shipDeath'
-import { cleanupGame } from '../initializationThunks'
 import { handleTransitionSounds } from './soundManager'
 
 export type StateUpdateContext = {
@@ -67,6 +67,7 @@ export type StateUpdateContext = {
   bitmap: MonochromeBitmap
   galaxyService: GalaxyService
   fizzTransitionService?: FizzTransitionService
+  soundService: SoundService
 }
 
 // No longer need StateUpdateResult - all data is in the store
@@ -133,7 +134,8 @@ const handleLevelCompletion = (store: Store<RootState>): void => {
  */
 const handleGameOver = (
   store: Store<RootState>,
-  galaxyService: GalaxyService
+  galaxyService: GalaxyService,
+  soundService: SoundService
 ): void => {
   const state = store.getState()
 
@@ -154,8 +156,8 @@ const handleGameOver = (
       ...Object.values(highscore).map(hs => hs.score || 0)
     )
 
-    // Stop all sounds when game ends and reset initialization status
-    store.dispatch(cleanupGame() as unknown as UnknownAction)
+    // Stop all sounds when game ends
+    soundService.cleanup()
 
     // Check if eligible and qualifies for high score
     if (status.highScoreEligible && status.score > lowestScore) {
@@ -488,7 +490,7 @@ const updateTransitionState = (
  * Main state update function
  */
 export const updateGameState = (context: StateUpdateContext): void => {
-  const { store, frame, keys, galaxyService, fizzTransitionService } = context
+  const { store, frame, keys, galaxyService, fizzTransitionService, soundService } = context
 
   // Reset sound accumulator for new frame (must happen BEFORE any sounds are dispatched)
   store.dispatch(resetFrame())
@@ -511,7 +513,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
   handleLevelCompletion(store)
 
   // Check for game over
-  handleGameOver(store, galaxyService)
+  handleGameOver(store, galaxyService, soundService)
 
   // Handle ship movement and controls
   const { globalx, globaly } = handleShipMovement(store, keys)

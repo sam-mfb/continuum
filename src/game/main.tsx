@@ -13,9 +13,13 @@ import { createSoundService } from '@core/sound'
 import { createGameRenderer } from './gameLoop'
 import { setAlignmentMode } from '@/core/shared'
 import { createGameStore } from './store'
-import { initializeGame } from './initializationThunks'
 import { loadLevel } from './levelManager'
-import { ASSET_PATHS } from './constants'
+import {
+  ASSET_PATHS,
+  DEFAULT_SOUND_VOLUME,
+  DEFAULT_SOUND_MUTED,
+  TOTAL_INITIAL_LIVES
+} from './constants'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 const root = createRoot(app)
@@ -35,19 +39,27 @@ async function initGame(): Promise<void> {
     const fizzTransitionService = createFizzTransitionService()
     console.log('Fizz transition service created')
 
-    const soundService = await createSoundService()
+    const soundService = await createSoundService({
+      volume: DEFAULT_SOUND_VOLUME,
+      muted: DEFAULT_SOUND_MUTED
+    })
     console.log('Sound service created')
 
-    // Create store with services
-    const store = createGameStore({
-      galaxyService,
-      spriteService,
-      fizzTransitionService,
-      soundService
-    })
+    // Create store with services and initial settings
+    const store = createGameStore(
+      {
+        galaxyService,
+        spriteService,
+        fizzTransitionService,
+        soundService
+      },
+      {
+        soundVolume: DEFAULT_SOUND_VOLUME,
+        soundEnabled: !DEFAULT_SOUND_MUTED,
+        initialLives: TOTAL_INITIAL_LIVES
+      }
+    )
     console.log('Game store created with services')
-
-    store.dispatch(initializeGame())
 
     // Load level 1
     loadLevel(store, 1, galaxyService)
