@@ -12,7 +12,7 @@ export {
   startShipDeath,
   startExplosion,
   updateExplosions,
-  clearShipDeathFlash,
+  decrementShipDeathFlash,
   resetSparksAlive,
   clearShards
 } from './explosionsSlice'

@@ -21,7 +21,8 @@ import {
   SHIPSPARKS,
   SH_SPARKLIFE,
   SH_SPADDLIFE,
-  SH_SP_SPEED16
+  SH_SP_SPEED16,
+  DEATH_FLASH_FRAMES
 } from './constants'
 
 const initializeShard = (): ShardRec => ({
@@ -50,7 +51,7 @@ const initialState: ExplosionsState = {
   sparks: Array.from({ length: NUMSPARKS }, initializeSpark),
   totalsparks: 0,
   sparksalive: 0,
-  shipDeathFlash: false
+  shipDeathFlashFrames: 0
 }
 
 export const explosionsSlice = createSlice({
@@ -217,7 +218,7 @@ export const explosionsSlice = createSlice({
 
       // Set white flash flag (Terrain.c:413 - set_screen(front_screen, 0L))
       // This creates the "obnoxious" white screen flash effect
-      state.shipDeathFlash = true
+      state.shipDeathFlashFrames = DEATH_FLASH_FRAMES + 1
 
       // Ship explosions use 100 sparks, no shards (Terrain.c:415-423)
       // This is just a wrapper around start_blowup with ship-specific parameters
@@ -425,15 +426,16 @@ export const explosionsSlice = createSlice({
       state.sparks = state.sparks.map(() => initializeSpark())
       state.totalsparks = 0
       state.sparksalive = 0
-      state.shipDeathFlash = false
     },
 
     /**
      * Clear the ship death flash after rendering one frame
      * This ensures the white flash only lasts one frame
      */
-    clearShipDeathFlash: state => {
-      state.shipDeathFlash = false
+    decrementShipDeathFlash: state => {
+      if (state.shipDeathFlashFrames > 0) {
+        state.shipDeathFlashFrames--
+      }
     },
 
     /**
@@ -473,7 +475,7 @@ export const {
   startBlowup,
   updateExplosions,
   clearExplosions,
-  clearShipDeathFlash,
+  decrementShipDeathFlash,
   resetSparksAlive,
   clearShards
 } = explosionsSlice.actions

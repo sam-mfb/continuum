@@ -29,7 +29,8 @@ import {
   startExplosion,
   updateExplosions,
   resetSparksAlive,
-  clearShards
+  clearShards,
+  decrementShipDeathFlash
 } from '@core/explosions'
 import { statusSlice } from '@core/status'
 import { screenSlice, SCRWTH, VIEWHT } from '@core/screen'
@@ -567,6 +568,10 @@ export const updateGameState = (context: StateUpdateContext): void => {
 
   // Reset sound accumulator for new frame (must happen BEFORE any sounds are dispatched)
   store.dispatch(resetFrame())
+
+  // death flash only lasts one frame so reset it at the start of every
+  // state update
+  store.dispatch(decrementShipDeathFlash())
 
   // Handle transition state updates first (pre-delay, fizz, post-delay)
   updateTransitionState(store, galaxyService, fizzTransitionService)

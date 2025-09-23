@@ -23,7 +23,6 @@ import { SCENTER } from '@core/figs'
 import { drawShipShot, drawStrafe, drawDotSafe } from '@core/shots/render'
 import { doBunks, drawCraters, drawFuels } from '@core/planet/render'
 import { drawExplosions } from '@core/explosions/render'
-import { clearShipDeathFlash } from '@core/explosions'
 import { updateSbar, sbarClear } from '@core/status/render'
 import { SCRWTH, VIEWHT } from '@core/screen'
 import { viewClear, viewWhite } from '@core/screen/render'
@@ -99,9 +98,8 @@ export const renderGame = (context: RenderContext): MonochromeBitmap => {
   }
 
   // Check for death flash
-  if (state.explosions.shipDeathFlash) {
+  if (state.explosions.shipDeathFlashFrames) {
     bitmap = viewWhite()(bitmap)
-    store.dispatch(clearShipDeathFlash())
     return bitmap
   }
 

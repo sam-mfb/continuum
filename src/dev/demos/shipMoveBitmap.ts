@@ -59,7 +59,7 @@ import {
   startShipDeath,
   startExplosion,
   updateExplosions,
-  clearShipDeathFlash,
+  decrementShipDeathFlash,
   resetSparksAlive,
   clearShards
 } from '@core/explosions'
@@ -455,12 +455,12 @@ export const createShipMoveBitmapRenderer =
     const finalState = store.getState()
 
     // Check for ship death flash effect (Terrain.c:413 - set_screen(front_screen, 0L))
-    if (finalState.explosions.shipDeathFlash) {
+    if (finalState.explosions.shipDeathFlashFrames) {
       // Fill viewport with white (preserve status bar)
       const whiteBitmap = viewWhite()(bitmap)
 
       // Clear the flash for next frame
-      store.dispatch(clearShipDeathFlash())
+      store.dispatch(decrementShipDeathFlash())
 
       // Skip all other rendering and return early
       // The flash lasts exactly one frame
