@@ -36,7 +36,13 @@ import { statusSlice } from '@core/status'
 import { screenSlice, SCRWTH, VIEWHT } from '@core/screen'
 import { containShip } from '@core/shared/containShip'
 import { rint } from '@core/shared'
-import { resetFrame, playDiscrete, SoundType } from '@core/sound'
+import {
+  resetFrame,
+  playDiscrete,
+  SoundType,
+  setThrusting,
+  setShielding
+} from '@core/sound'
 import {
   startLevelTransition,
   decrementPreFizz,
@@ -57,7 +63,6 @@ import {
 import { TOTAL_INITIAL_LIVES } from '../constants'
 import { getPressedControls } from '../controls'
 import { triggerShipDeath } from '../shipDeath'
-import { handleTransitionSounds } from './soundManager'
 
 import { BunkerKind } from '@core/figs'
 
@@ -456,6 +461,32 @@ const processBunkerKills = (store: Store<RootState>): void => {
 
 // Note: Ship collision checking is now handled in the rendering module
 // where we have access to the sprite service and rendered bitmap
+
+/**
+ * Handle transition-specific sound triggers
+ * Called when transition state changes
+ */
+const handleTransitionSounds = (
+  store: Store<RootState>,
+  prevState: RootState['transition'],
+  currState: RootState['transition']
+): void => {
+  // Check if transitioning from 'level-complete' to 'fizz'
+  if (prevState.status === 'level-complete' && currState.status === 'fizz') {
+    // Play fizz start sound
+    store.dispatch(playDiscrete(SoundType.FIZZ_SOUND))
+
+    // Stop any continuous sounds
+    store.dispatch(setThrusting(false))
+    store.dispatch(setShielding(false))
+  }
+
+  // Check if transitioning from 'fizz' to 'starmap'
+  if (prevState.status === 'fizz' && currState.status === 'starmap') {
+    // Play echo sound
+    store.dispatch(playDiscrete(SoundType.ECHO_SOUND))
+  }
+}
 
 /**
  * Handle transitioning to the next level

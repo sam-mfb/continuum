@@ -1,9 +1,6 @@
 /**
  * Main Game Loop
  *
- * Full game implementation with level progression, lives management,
- * and game over/restart functionality.
- *
  * This file orchestrates the game loop by coordinating state updates,
  * rendering, and sound playback through specialized submodules.
  */
@@ -18,16 +15,8 @@ import type { GameStore } from './store'
 
 import { updateGameState } from './gameLoop/stateUpdates'
 import { renderGame } from './gameLoop/rendering'
-import { playFrameSounds } from './gameLoop/soundManager'
+import { playSounds } from '@core/sound'
 
-/**
- * Main game renderer with level progression and game over handling
- *
- * This function coordinates the three main phases of game execution:
- * 1. State updates - game logic, physics, collision detection, transitions
- * 2. Rendering - drawing all visual elements including transition effects
- * 3. Sound - playing accumulated sounds for the frame
- */
 export const createGameRenderer = (
   store: GameStore,
   spriteService: SpriteService,
@@ -39,8 +28,8 @@ export const createGameRenderer = (
     // Create a fresh bitmap for this frame
     let bitmap = createGameBitmap()
 
-    // Phase 1: Update game state
     // This handles all game logic, physics, and state changes
+    // except for ship collisions which use rendering to detect
     updateGameState({
       store,
       frame,
@@ -54,8 +43,8 @@ export const createGameRenderer = (
     // Get current state after updates
     const state = store.getState()
 
-    // Phase 2: Render the game (includes transition effects)
     // This draws all visual elements based on the updated state
+    // It also handles ship collisions so it does modify state
     bitmap = renderGame({
       bitmap,
       state,
@@ -67,14 +56,14 @@ export const createGameRenderer = (
     // Get fresh state because currently render does cause some state modifications
     const finalState = store.getState()
 
-    // Phase 3: Play accumulated sounds
     // This plays all sounds that were triggered during this frame
-    playFrameSounds(
+    playSounds(
+      finalState.sound,
+      soundService,
       {
-        state: finalState,
+        fizzActive: finalState.transition.status === 'fizz',
         shipDeadCount: finalState.ship.deadCount
-      },
-      soundService
+      }
     )
 
     // Return the final rendered bitmap
