@@ -9,6 +9,7 @@ import type { Store, UnknownAction } from '@reduxjs/toolkit'
 import type { GalaxyService } from '@core/galaxy'
 import type { RootState } from '../store'
 import type { MonochromeBitmap, FrameInfo, KeyInfo } from '@lib/bitmap'
+import type { FizzTransitionService } from '@core/transition'
 
 import { shipSlice, shipControl, CRITFUEL } from '@core/ship'
 import {
@@ -34,9 +35,18 @@ import { screenSlice, SCRWTH, VIEWHT } from '@core/screen'
 import { containShip } from '@core/shared/containShip'
 import { rint } from '@core/shared'
 import { resetFrame, playDiscrete, SoundType } from '@core/sound'
-import { startLevelTransition } from '@core/transition'
+import {
+  startLevelTransition,
+  decrementPreDelay,
+  markFizzStarted,
+  completeFizz,
+  clearFizzFinished,
+  incrementDelay,
+  resetTransition,
+  TRANSITION_DELAY_FRAMES
+} from '@core/transition'
 
-import { checkLevelComplete, loadLevel } from '../levelManager'
+import { checkLevelComplete, loadLevel, transitionToNextLevel } from '../levelManager'
 import {
   markLevelComplete,
   triggerGameOver,
@@ -48,6 +58,7 @@ import { TOTAL_INITIAL_LIVES } from '../constants'
 import { getPressedControls } from '../controls'
 import { triggerShipDeath } from '../shipDeath'
 import { cleanupGame } from '../initializationThunks'
+import { handleTransitionSounds } from './soundManager'
 
 export type StateUpdateContext = {
   store: Store<RootState>
@@ -55,6 +66,7 @@ export type StateUpdateContext = {
   keys: KeyInfo
   bitmap: MonochromeBitmap
   galaxyService: GalaxyService
+  fizzTransitionService?: FizzTransitionService
 }
 
 // No longer need StateUpdateResult - all data is in the store
@@ -400,10 +412,86 @@ const processBunkerKills = (store: Store<RootState>): void => {
 // where we have access to the sprite service and rendered bitmap
 
 /**
+ * Update transition state (pre-delay, fizz lifecycle, post-delay)
+ * Returns true if transition completed this frame
+ */
+const updateTransitionState = (
+  store: Store<RootState>,
+  galaxyService: GalaxyService,
+  fizzTransitionService?: FizzTransitionService
+): boolean => {
+  const prevState = store.getState().transition
+
+  if (!prevState.active) {
+    return false
+  }
+
+  // Handle pre-delay countdown
+  if (prevState.preDelayFrames > 0) {
+    store.dispatch(decrementPreDelay())
+
+    // When countdown reaches zero, stop the ship and trigger sounds
+    const newState = store.getState().transition
+    if (newState.preDelayFrames === 0) {
+      store.dispatch(shipSlice.actions.stopShipMovement())
+      // Mark that fizz should start
+      store.dispatch(markFizzStarted())
+
+      // Handle sounds for fizz start
+      handleTransitionSounds(store, prevState, store.getState().transition)
+    }
+
+    return false
+  }
+
+  // Check if fizz is complete
+  if (
+    fizzTransitionService &&
+    fizzTransitionService.isInitialized &&
+    prevState.fizzActive &&
+    fizzTransitionService.isComplete
+  ) {
+    store.dispatch(completeFizz())
+
+    // Handle sounds for fizz completion
+    handleTransitionSounds(store, prevState, store.getState().transition)
+
+    return false
+  }
+
+  // Handle post-fizz delay
+  if (!prevState.fizzActive && prevState.active) {
+    // Clear the "just finished" flag if set
+    if (prevState.fizzJustFinished) {
+      store.dispatch(clearFizzFinished())
+    }
+
+    // Increment delay counter
+    store.dispatch(incrementDelay())
+
+    // Check if delay is complete
+    if (store.getState().transition.delayFrames >= TRANSITION_DELAY_FRAMES) {
+      // Reset transition state
+      store.dispatch(resetTransition())
+
+      // Trigger the actual level load
+      transitionToNextLevel(store, galaxyService)
+
+      return true
+    }
+  }
+
+  return false
+}
+
+/**
  * Main state update function
  */
 export const updateGameState = (context: StateUpdateContext): void => {
-  const { store, frame, keys, galaxyService } = context
+  const { store, frame, keys, galaxyService, fizzTransitionService } = context
+
+  // Handle transition state updates first (pre-delay, fizz, post-delay)
+  updateTransitionState(store, galaxyService, fizzTransitionService)
 
   // Handle death countdown and respawn
   handleDeathAndRespawn(store)

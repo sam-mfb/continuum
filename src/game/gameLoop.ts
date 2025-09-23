@@ -8,7 +8,7 @@
  * rendering, and sound playback through specialized submodules.
  */
 
-import type { BitmapRenderer, MonochromeBitmap } from '@lib/bitmap'
+import type { BitmapRenderer } from '@lib/bitmap'
 import { createGameBitmap } from '@lib/bitmap'
 import type { SpriteService } from '@core/sprites'
 import type { GalaxyService } from '@core/galaxy'
@@ -16,22 +16,16 @@ import type { FizzTransitionService } from '@core/transition'
 import type { SoundService } from '@core/sound'
 import type { GameStore } from './store'
 
-import { updateTransition } from '@core/transition'
-import { sbarClear, updateSbar } from '@core/status/render'
-import { transitionToNextLevel } from './levelManager'
 import { updateGameState } from './gameLoop/stateUpdates'
 import { renderGame } from './gameLoop/rendering'
 import { playFrameSounds } from './gameLoop/soundManager'
-import { fullFigure } from '@/core/ship/render'
-import { SCENTER } from '@/core/figs'
-import { starBackground } from '@/core/transition/render'
 
 /**
  * Main game renderer with level progression and game over handling
  *
  * This function coordinates the three main phases of game execution:
- * 1. State updates - game logic, physics, collision detection
- * 2. Rendering - drawing all visual elements to the bitmap
+ * 1. State updates - game logic, physics, collision detection, transitions
+ * 2. Rendering - drawing all visual elements including transition effects
  * 3. Sound - playing accumulated sounds for the frame
  */
 export const createGameRenderer = (
@@ -68,86 +62,24 @@ export const createGameRenderer = (
       frame,
       keys,
       bitmap,
-      galaxyService
+      galaxyService,
+      fizzTransitionService
     })
 
     // Get current state after updates
     const state = store.getState()
 
-    // Phase 2: Render the game
+    // Phase 2: Render the game (includes transition effects)
     // This draws all visual elements based on the updated state
     bitmap = renderGame({
       bitmap,
       state,
       spriteService,
-      store
+      store,
+      fizzTransitionService
     })
 
-    // Phase 3: Handle transition effects
-    // Apply any active transition effects (level complete fizz, etc.)
-
-    // Create status bar adder function with current state
-    const addStatusBar = (bmp: MonochromeBitmap): MonochromeBitmap => {
-      const statusBarTemplate = spriteService.getStatusBarTemplate()
-      let result = sbarClear({ statusBarTemplate })(bmp)
-      result = updateSbar({
-        fuel: state.ship.fuel,
-        lives: state.ship.lives,
-        score: state.status.score,
-        bonus: state.status.planetbonus,
-        level: state.status.currentlevel,
-        message: state.status.curmessage,
-        spriteService
-      })(result)
-      return result
-    }
-
-    // Create target bitmap creator function
-    const createTargetBitmap = (shipState: {
-      deadCount: number
-      shiprot: number
-      shipx: number
-      shipy: number
-    }): MonochromeBitmap => {
-      const STAR_COUNT = 150
-
-      const shipSprite = spriteService.getShipSprite(shipState.shiprot, {
-        variant: 'def'
-      })
-      const shipMaskSprite = spriteService.getShipSprite(shipState.shiprot, {
-        variant: 'mask'
-      })
-
-      return starBackground({
-        starCount: STAR_COUNT,
-        additionalRender: (screen: MonochromeBitmap): MonochromeBitmap =>
-          fullFigure({
-            x: shipState.shipx - SCENTER,
-            y: shipState.shipy - SCENTER,
-            def: shipSprite.bitmap,
-            mask: shipMaskSprite.bitmap
-          })(screen)
-      })
-    }
-
-    const transitionFrame = store.dispatch(
-      updateTransition(bitmap, {
-        addStatusBar,
-        createTargetBitmap,
-        store: store as unknown as Parameters<
-          typeof updateTransition
-        >[1]['store'],
-        fizzTransitionService,
-        onTransitionComplete: () => transitionToNextLevel(store, galaxyService)
-      })
-    )
-
-    if (transitionFrame) {
-      // Transition is active, use the transition frame
-      bitmap = transitionFrame
-    }
-
-    // Phase 4: Play accumulated sounds
+    // Phase 3: Play accumulated sounds
     // This plays all sounds that were triggered during this frame
     // Get fresh state in case transition modified it
     const finalState = store.getState()

@@ -9,6 +9,7 @@ import type { MonochromeBitmap } from '@lib/bitmap'
 import type { SpriteService } from '@core/sprites'
 import type { RootState, GameStore } from '../store'
 import type { BunkerKind, ShardSprite, ShardSpriteSet } from '@core/figs'
+import type { FizzTransitionService } from '@core/transition'
 
 import {
   fullFigure,
@@ -30,19 +31,73 @@ import { whiteTerrain, blackTerrain } from '@core/walls/render'
 import { LINE_KIND } from '@core/walls'
 import { getAlignment, getBackgroundPattern } from '@core/shared'
 import { triggerShipDeath } from '../shipDeath'
+import { FIZZ_DURATION, TRANSITION_DELAY_FRAMES } from '@core/transition'
+import { starBackground } from '@core/transition/render'
 
 export type RenderContext = {
   bitmap: MonochromeBitmap
   state: RootState
   spriteService: SpriteService
   store: GameStore
+  fizzTransitionService?: FizzTransitionService
 }
 
 /**
  * Main rendering function - matches exact order from main branch gameLoop.ts
  */
 export const renderGame = (context: RenderContext): MonochromeBitmap => {
-  let { bitmap, state, spriteService, store } = context
+  let { bitmap, state, spriteService, store, fizzTransitionService } = context
+
+  // Check if transition is already in progress (not initialization frame)
+  // If so, skip normal rendering and just show the transition
+  if (
+    state.transition.active &&
+    state.transition.preDelayFrames === 0 &&
+    fizzTransitionService &&
+    fizzTransitionService.isInitialized
+  ) {
+    // Helper to add status bar to bitmap
+    const addStatusBar = (bmp: MonochromeBitmap): MonochromeBitmap => {
+      const statusBarTemplate = spriteService.getStatusBarTemplate()
+      let result = sbarClear({ statusBarTemplate })(bmp)
+      result = updateSbar({
+        fuel: state.ship.fuel,
+        lives: state.ship.lives,
+        score: state.status.score,
+        bonus: state.status.planetbonus,
+        level: state.status.currentlevel,
+        message: state.status.curmessage,
+        spriteService
+      })(result)
+      return result
+    }
+
+    // Handle fizz in progress
+    if (state.transition.fizzActive) {
+      if (fizzTransitionService.isComplete) {
+        // Fizz just completed - return target bitmap
+        const images = fizzTransitionService.getImages()
+        return images.to ? addStatusBar(images.to) : bitmap
+      } else {
+        // Fizz still in progress
+        const fizzFrame = fizzTransitionService.nextFrame()
+        return addStatusBar(fizzFrame)
+      }
+    }
+
+    // Handle post-fizz delay - show target bitmap
+    if (!state.transition.fizzActive && state.transition.active) {
+      // Check if we need to reset the service
+      if (state.transition.delayFrames >= TRANSITION_DELAY_FRAMES) {
+        fizzTransitionService.reset()
+        // Continue with normal rendering
+      } else {
+        // Show target bitmap during delay
+        const images = fizzTransitionService.getImages()
+        return images.to ? addStatusBar(images.to) : bitmap
+      }
+    }
+  }
 
   // Check for death flash
   if (state.explosions.shipDeathFlash) {
@@ -532,6 +587,64 @@ export const renderGame = (context: RenderContext): MonochromeBitmap => {
       worldwrap: state.planet.worldwrap,
       shardImages
     })(renderedBitmap)
+  }
+
+  // Check if we need to initialize the fizz transition
+  // This happens AFTER normal rendering so we have the correct source bitmap
+  if (
+    state.transition.active &&
+    state.transition.preDelayFrames === 0 &&
+    fizzTransitionService &&
+    !fizzTransitionService.isInitialized &&
+    state.transition.fizzActive &&
+    state.transition.fizzStarted
+  ) {
+    // Create the target bitmap (starfield with ship)
+    const STAR_COUNT = 150
+    const shipSprite = spriteService.getShipSprite(state.ship.shiprot, {
+      variant: 'def'
+    })
+    const shipMaskSprite = spriteService.getShipSprite(state.ship.shiprot, {
+      variant: 'mask'
+    })
+
+    const targetBitmap = starBackground({
+      starCount: STAR_COUNT,
+      additionalRender: (screen: MonochromeBitmap): MonochromeBitmap =>
+        fullFigure({
+          x: state.ship.shipx - SCENTER,
+          y: state.ship.shipy - SCENTER,
+          def: shipSprite.bitmap,
+          mask: shipMaskSprite.bitmap
+        })(screen)
+    })
+
+    // Initialize the fizz transition service with the RENDERED game screen
+    fizzTransitionService.initialize(
+      renderedBitmap, // Use the fully rendered game bitmap, not empty bitmap
+      targetBitmap,
+      FIZZ_DURATION
+    )
+
+    // Helper to add status bar to bitmap
+    const addStatusBar = (bmp: MonochromeBitmap): MonochromeBitmap => {
+      const statusBarTemplate = spriteService.getStatusBarTemplate()
+      let result = sbarClear({ statusBarTemplate })(bmp)
+      result = updateSbar({
+        fuel: state.ship.fuel,
+        lives: state.ship.lives,
+        score: state.status.score,
+        bonus: state.status.planetbonus,
+        level: state.status.currentlevel,
+        message: state.status.curmessage,
+        spriteService
+      })(result)
+      return result
+    }
+
+    // Return the first fizz frame
+    const fizzFrame = fizzTransitionService.nextFrame()
+    return addStatusBar(fizzFrame)
   }
 
   return renderedBitmap
