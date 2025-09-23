@@ -34,7 +34,7 @@ let shipRotation = 0
  */
 export const createShieldDemoRenderer =
   (spriteService: SpriteService): BitmapRenderer =>
-  (frame: FrameInfo, keys: KeyInfo) => {
+  (_frame: FrameInfo, keys: KeyInfo) => {
     const bitmap = createGameBitmap()
     // Check if space bar is held for shield
     const shielding = keys.keysDown.has('Space')

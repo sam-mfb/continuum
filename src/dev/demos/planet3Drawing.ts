@@ -74,7 +74,7 @@ let cachedPlanet: PlanetState | null = null
  * Renderer that displays planet 3's walls using both blackTerrain and whiteTerrain
  */
 export const planet3DrawingRenderer: BitmapRenderer = (
-  frame: FrameInfo,
+  _frame: FrameInfo,
   keys: KeyInfo
 ) => {
   const bitmap = createGameBitmap()

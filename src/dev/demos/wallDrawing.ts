@@ -59,7 +59,7 @@ const viewportState = {
  * Renderer that displays complete walls using both blackTerrain and whiteTerrain
  */
 export const wallDrawingRenderer: BitmapRenderer = (
-  frame: FrameInfo,
+  _frame: FrameInfo,
   keys: KeyInfo
 ) => {
   const bitmap = createGameBitmap()

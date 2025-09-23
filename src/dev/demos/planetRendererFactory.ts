@@ -77,7 +77,7 @@ export const createPlanetRenderer: PlanetRendererFactory = (
   store.dispatch(gameViewActions.setInitialized())
 
   // Return the renderer function
-  const renderer: BitmapRenderer = (frame: FrameInfo, keys: KeyInfo) => {
+  const renderer: BitmapRenderer = (_frame: FrameInfo, keys: KeyInfo) => {
     const bitmap = createGameBitmap()
     const state = store.getState()
     const { walls, gameView, screen } = state

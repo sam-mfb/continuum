@@ -89,7 +89,7 @@ function processInput(keysDown: Set<string>): void {
  */
 export const createStatusBarDemo =
   (spriteService: SpriteService): BitmapRenderer =>
-  (frame: FrameInfo, keys: KeyInfo) => {
+  (_frame: FrameInfo, keys: KeyInfo) => {
     const bitmap = createGameBitmap()
     // Initialize on first frame
     if (!state.initialized) {

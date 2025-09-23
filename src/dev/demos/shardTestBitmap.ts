@@ -239,7 +239,7 @@ export function shardTestBitmap(deps: {
  */
 export const createShardTestBitmapRenderer =
   (spriteService: SpriteService): BitmapRenderer =>
-  (frame: FrameInfo, keys: KeyInfo) => {
+  (_frame: FrameInfo, keys: KeyInfo) => {
     const bitmap = createGameBitmap()
     // Handle keyboard input for viewport movement
     const moveSpeed = 1

@@ -134,7 +134,7 @@ initializeGame()
  */
 export const createFuelDrawBitmapRenderer =
   (spriteService: SpriteService): BitmapRenderer =>
-  (frame: FrameInfo, keys: KeyInfo) => {
+  (_frame: FrameInfo, keys: KeyInfo) => {
     const bitmap = createGameBitmap()
     // Check initialization status
     if (initializationError) {

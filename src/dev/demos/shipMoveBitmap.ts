@@ -210,7 +210,7 @@ const getPressedControls = (keysDown: Set<string>): ShipControl[] => {
  */
 export const createShipMoveBitmapRenderer =
   (spriteService: SpriteService): BitmapRenderer =>
-  (frame: FrameInfo, keys: KeyInfo) => {
+  (_frame: FrameInfo, keys: KeyInfo) => {
     const bitmap = createGameBitmap()
     // Check initialization status
     if (initializationError) {
