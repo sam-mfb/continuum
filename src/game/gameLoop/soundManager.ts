@@ -29,7 +29,6 @@ export const handleTransitionSounds = (
   // Check if fizz just started (pre-delay just hit 0)
   if (prevState.preDelayFrames > 0 && currState.preDelayFrames === 0 && currState.fizzStarted) {
     // Play fizz start sound
-    console.log('Transition: Playing FIZZ_SOUND')
     store.dispatch(playDiscrete(SoundType.FIZZ_SOUND))
 
     // Stop any continuous sounds
@@ -40,7 +39,6 @@ export const handleTransitionSounds = (
   // Check if fizz just completed
   if (prevState.fizzActive && !currState.fizzActive && currState.fizzJustFinished) {
     // Play echo sound
-    console.log('Transition: Playing ECHO_SOUND')
     store.dispatch(playDiscrete(SoundType.ECHO_SOUND))
   }
 }

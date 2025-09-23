@@ -490,6 +490,9 @@ const updateTransitionState = (
 export const updateGameState = (context: StateUpdateContext): void => {
   const { store, frame, keys, galaxyService, fizzTransitionService } = context
 
+  // Reset sound accumulator for new frame (must happen BEFORE any sounds are dispatched)
+  store.dispatch(resetFrame())
+
   // Handle transition state updates first (pre-delay, fizz, post-delay)
   updateTransitionState(store, galaxyService, fizzTransitionService)
 
@@ -498,9 +501,6 @@ export const updateGameState = (context: StateUpdateContext): void => {
 
   // Get state after respawn handling
   const state = store.getState()
-
-  // Reset sound accumulator for new frame
-  store.dispatch(resetFrame())
 
   // Decrement bonus countdown every 10 frames
   if (!state.transition.active && frame.frameCount % 10 === 0) {
