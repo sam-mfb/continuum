@@ -13,8 +13,6 @@ import type { Store } from '@reduxjs/toolkit'
 export type SoundContext = {
   state: RootState
   shipDeadCount: number
-  transitionActive: boolean
-  preDelayFrames: number
 }
 
 /**
@@ -26,8 +24,8 @@ export const handleTransitionSounds = (
   prevState: RootState['transition'],
   currState: RootState['transition']
 ): void => {
-  // Check if fizz just started (pre-delay just hit 0)
-  if (prevState.preDelayFrames > 0 && currState.preDelayFrames === 0 && currState.fizzStarted) {
+  // Check if transitioning from 'level-complete' to 'fizz'
+  if (prevState.status === 'level-complete' && currState.status === 'fizz') {
     // Play fizz start sound
     store.dispatch(playDiscrete(SoundType.FIZZ_SOUND))
 
@@ -36,8 +34,8 @@ export const handleTransitionSounds = (
     store.dispatch(setShielding(false))
   }
 
-  // Check if fizz just completed
-  if (prevState.fizzActive && !currState.fizzActive && currState.fizzJustFinished) {
+  // Check if transitioning from 'fizz' to 'starmap'
+  if (prevState.status === 'fizz' && currState.status === 'starmap') {
     // Play echo sound
     store.dispatch(playDiscrete(SoundType.ECHO_SOUND))
   }
@@ -52,8 +50,8 @@ export const playFrameSounds = (
 ): void => {
   const { state } = context
 
-  // Determine if fizz sound should play (transition active and past pre-delay)
-  const fizzActive = context.transitionActive && context.preDelayFrames <= 0
+  // Determine if fizz sound should play based on transition status
+  const fizzActive = state.transition.status === 'fizz'
 
   // Play all sounds with context
   playSounds(state.sound, soundService, {

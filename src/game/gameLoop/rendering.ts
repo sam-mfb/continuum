@@ -48,11 +48,9 @@ export type RenderContext = {
 export const renderGame = (context: RenderContext): MonochromeBitmap => {
   let { bitmap, state, spriteService, store, fizzTransitionService } = context
 
-  // Check if transition is already in progress (not initialization frame)
-  // If so, skip normal rendering and just show the transition
+  // Check if we're in fizz or starmap phase - skip normal rendering
   if (
-    state.transition.active &&
-    state.transition.preDelayFrames === 0 &&
+    (state.transition.status === 'fizz' || state.transition.status === 'starmap') &&
     fizzTransitionService &&
     fizzTransitionService.isInitialized
   ) {
@@ -72,27 +70,27 @@ export const renderGame = (context: RenderContext): MonochromeBitmap => {
       return result
     }
 
-    // Handle fizz in progress
-    if (state.transition.fizzActive) {
+    // Handle fizz phase
+    if (state.transition.status === 'fizz') {
       if (fizzTransitionService.isComplete) {
-        // Fizz just completed - return target bitmap
+        // Fizz animation complete but not yet transitioned to starmap
         const images = fizzTransitionService.getImages()
         return images.to ? addStatusBar(images.to) : bitmap
       } else {
-        // Fizz still in progress
+        // Fizz animation in progress
         const fizzFrame = fizzTransitionService.nextFrame()
         return addStatusBar(fizzFrame)
       }
     }
 
-    // Handle post-fizz delay - show target bitmap
-    if (!state.transition.fizzActive && state.transition.active) {
-      // Check if we need to reset the service
-      if (state.transition.delayFrames >= TRANSITION_DELAY_FRAMES) {
+    // Handle starmap phase - show target bitmap
+    if (state.transition.status === 'starmap') {
+      // Check if we're about to transition to next level
+      if (state.transition.starmapFrames >= TRANSITION_DELAY_FRAMES) {
         fizzTransitionService.reset()
         // Continue with normal rendering
       } else {
-        // Show target bitmap during delay
+        // Show starmap (target bitmap)
         const images = fizzTransitionService.getImages()
         return images.to ? addStatusBar(images.to) : bitmap
       }
@@ -589,16 +587,14 @@ export const renderGame = (context: RenderContext): MonochromeBitmap => {
     })(renderedBitmap)
   }
 
-  // Check if we need to initialize the fizz transition
+  // Initialize fizz transition when entering fizz phase
   // This happens AFTER normal rendering so we have the correct source bitmap
   if (
-    state.transition.active &&
-    state.transition.preDelayFrames === 0 &&
+    state.transition.status === 'fizz' &&
     fizzTransitionService &&
-    !fizzTransitionService.isInitialized &&
-    state.transition.fizzActive &&
-    state.transition.fizzStarted
+    !fizzTransitionService.isInitialized
   ) {
+
     // Create the target bitmap (starfield with ship)
     const STAR_COUNT = 150
     const shipSprite = spriteService.getShipSprite(state.ship.shiprot, {

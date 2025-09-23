@@ -20,24 +20,20 @@ export type TransitionRootState = {
 }
 
 /**
+ * Status of the transition state machine
+ */
+export type TransitionStatus = 'inactive' | 'level-complete' | 'fizz' | 'starmap'
+
+/**
  * State for managing level transition effects
  */
 export type TransitionState = {
-  /** Whether a transition is currently active */
-  active: boolean
+  /** Current status of the transition */
+  status: TransitionStatus
 
-  /** Countdown frames before transition effect starts (allows ship to keep moving) */
-  preDelayFrames: number
+  /** Countdown frames before fizz effect starts (ship can still move) */
+  preFizzFrames: number
 
-  /** Whether the fizz effect is currently playing */
-  fizzActive: boolean
-
-  /** Whether the fizz transition has been started (prevents re-creation) */
-  fizzStarted: boolean
-
-  /** Post-transition delay frames counter */
-  delayFrames: number
-
-  /** Flag set for one frame when fizz completes (triggers ECHO_SOUND) */
-  fizzJustFinished: boolean
+  /** Frames showing starmap after fizz completes */
+  starmapFrames: number
 }

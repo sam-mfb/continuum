@@ -38,11 +38,9 @@ import { rint } from '@core/shared'
 import { resetFrame, playDiscrete, SoundType } from '@core/sound'
 import {
   startLevelTransition,
-  decrementPreDelay,
-  markFizzStarted,
-  completeFizz,
-  clearFizzFinished,
-  incrementDelay,
+  decrementPreFizz,
+  transitionToStarmap,
+  incrementStarmap,
   resetTransition,
   TRANSITION_DELAY_FRAMES
 } from '@core/transition'
@@ -104,10 +102,13 @@ const handleDeathAndRespawn = (store: Store<RootState>): void => {
 /**
  * Handle level completion checks
  */
-const handleLevelCompletion = (store: Store<RootState>): void => {
+const handleLevelCompletion = (
+  store: Store<RootState>,
+  fizzTransitionService?: FizzTransitionService
+): void => {
   const state = store.getState()
 
-  if (!state.transition.active && checkLevelComplete(state)) {
+  if (state.transition.status === 'inactive' && checkLevelComplete(state)) {
     console.log(`Level ${state.status.currentlevel} complete!`)
 
     // Award bonus points
@@ -126,6 +127,11 @@ const handleLevelCompletion = (store: Store<RootState>): void => {
 
     // Start transition directly using the reducer action
     store.dispatch(startLevelTransition())
+
+    // Reset fizz service to ensure clean state for new level
+    if (fizzTransitionService) {
+      fizzTransitionService.reset()
+    }
   }
 }
 
@@ -201,8 +207,8 @@ const handleShipMovement = (
       }
     }
 
-    // Only handle controls if not in fizz transition
-    if (!state.transition.active || state.transition.preDelayFrames > 0) {
+    // Only handle controls if not in fizz or starmap phase
+    if (state.transition.status === 'inactive' || state.transition.status === 'level-complete') {
       // shipControl is a thunk - use any cast for dispatch
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(store.dispatch as any)(
@@ -423,56 +429,54 @@ const updateTransitionState = (
   fizzTransitionService?: FizzTransitionService
 ): boolean => {
   const prevState = store.getState().transition
+  const { status, preFizzFrames, starmapFrames } = prevState
 
-  if (!prevState.active) {
+  if (status === 'inactive') {
     return false
   }
 
-  // Handle pre-delay countdown
-  if (prevState.preDelayFrames > 0) {
-    store.dispatch(decrementPreDelay())
+  // Handle level-complete phase (countdown to fizz)
+  if (status === 'level-complete') {
+    if (preFizzFrames > 0) {
+      const prevFrames = preFizzFrames
+      store.dispatch(decrementPreFizz())
 
-    // When countdown reaches zero, stop the ship and trigger sounds
-    const newState = store.getState().transition
-    if (newState.preDelayFrames === 0) {
-      store.dispatch(shipSlice.actions.stopShipMovement())
-      // Mark that fizz should start
-      store.dispatch(markFizzStarted())
+      // When countdown reaches zero, stop the ship and trigger sounds
+      const newState = store.getState().transition
+      if (prevFrames > 0 && newState.preFizzFrames === 0) {
+        store.dispatch(shipSlice.actions.stopShipMovement())
+        // Status automatically transitions to 'fizz' in reducer
 
-      // Handle sounds for fizz start
+        // Handle sounds for fizz start
+        handleTransitionSounds(store, prevState, store.getState().transition)
+      }
+    }
+    return false
+  }
+
+  // Handle fizz phase
+  if (status === 'fizz') {
+    // Check if fizz animation is complete
+    if (
+      fizzTransitionService &&
+      fizzTransitionService.isInitialized &&
+      fizzTransitionService.isComplete
+    ) {
+      store.dispatch(transitionToStarmap())
+
+      // Handle sounds for transition to starmap
       handleTransitionSounds(store, prevState, store.getState().transition)
     }
-
     return false
   }
 
-  // Check if fizz is complete
-  if (
-    fizzTransitionService &&
-    fizzTransitionService.isInitialized &&
-    prevState.fizzActive &&
-    fizzTransitionService.isComplete
-  ) {
-    store.dispatch(completeFizz())
+  // Handle starmap phase
+  if (status === 'starmap') {
+    // Increment starmap display counter
+    store.dispatch(incrementStarmap())
 
-    // Handle sounds for fizz completion
-    handleTransitionSounds(store, prevState, store.getState().transition)
-
-    return false
-  }
-
-  // Handle post-fizz delay
-  if (!prevState.fizzActive && prevState.active) {
-    // Clear the "just finished" flag if set
-    if (prevState.fizzJustFinished) {
-      store.dispatch(clearFizzFinished())
-    }
-
-    // Increment delay counter
-    store.dispatch(incrementDelay())
-
-    // Check if delay is complete
-    if (store.getState().transition.delayFrames >= TRANSITION_DELAY_FRAMES) {
+    // Check if starmap display is complete
+    if (starmapFrames >= TRANSITION_DELAY_FRAMES) {
       // Reset transition state
       store.dispatch(resetTransition())
 
@@ -505,12 +509,12 @@ export const updateGameState = (context: StateUpdateContext): void => {
   const state = store.getState()
 
   // Decrement bonus countdown every 10 frames
-  if (!state.transition.active && frame.frameCount % 10 === 0) {
+  if (state.transition.status === 'inactive' && frame.frameCount % 10 === 0) {
     store.dispatch(statusSlice.actions.decrementBonus())
   }
 
   // Check for level completion
-  handleLevelCompletion(store)
+  handleLevelCompletion(store, fizzTransitionService)
 
   // Check for game over
   handleGameOver(store, galaxyService, soundService)

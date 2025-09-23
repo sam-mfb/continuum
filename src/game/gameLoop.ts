@@ -71,9 +71,7 @@ export const createGameRenderer = (
     playFrameSounds(
       {
         state: finalState,
-        shipDeadCount: finalState.ship.deadCount,
-        transitionActive: finalState.transition.active,
-        preDelayFrames: finalState.transition.preDelayFrames
+        shipDeadCount: finalState.ship.deadCount
       },
       soundService
     )

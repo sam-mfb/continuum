@@ -7,12 +7,9 @@ import type { TransitionState } from './types'
 import { MICO_DELAY_FRAMES } from './constants'
 
 const initialState: TransitionState = {
-  active: false,
-  preDelayFrames: 0,
-  fizzActive: false,
-  fizzStarted: false,
-  delayFrames: 0,
-  fizzJustFinished: false
+  status: 'inactive',
+  preFizzFrames: 0,
+  starmapFrames: 0
 }
 
 export const transitionSlice = createSlice({
@@ -21,58 +18,48 @@ export const transitionSlice = createSlice({
   reducers: {
     /**
      * Start a level completion transition
-     * Sets up the pre-delay countdown and fizz state
+     * Sets up the level-complete phase with countdown to fizz
      */
     startLevelTransition: state => {
-      state.active = true
-      state.preDelayFrames = MICO_DELAY_FRAMES
-      state.delayFrames = 0
-      state.fizzJustFinished = false
-      state.fizzStarted = false
-      state.fizzActive = true
+      state.status = 'level-complete'
+      state.preFizzFrames = MICO_DELAY_FRAMES
+      state.starmapFrames = 0
     },
 
     /**
-     * Decrement the pre-transition delay counter
+     * Decrement the pre-fizz countdown
      * Ship can still move during this countdown
+     * Transitions to fizz when reaches 0
      */
-    decrementPreDelay: state => {
-      if (state.preDelayFrames > 0) {
-        state.preDelayFrames--
+    decrementPreFizz: state => {
+      if (state.preFizzFrames > 0) {
+        state.preFizzFrames--
+        // Auto-transition to fizz when countdown completes
+        if (state.preFizzFrames === 0) {
+          state.status = 'fizz'
+        }
       }
     },
 
     /**
-     * Mark that the fizz transition has been started
-     * Prevents recreating the FizzTransition instance
+     * Transition from fizz to starmap phase
+     * Called when fizz animation completes
      */
-    markFizzStarted: state => {
-      state.fizzStarted = true
+    transitionToStarmap: state => {
+      if (state.status === 'fizz') {
+        state.status = 'starmap'
+        state.starmapFrames = 0
+      }
     },
 
     /**
-     * Mark the fizz animation as complete
-     * Sets the justFinished flag for sound triggering
+     * Increment the starmap display counter
+     * Counts frames showing starmap before next level loads
      */
-    completeFizz: state => {
-      state.fizzActive = false
-      state.fizzJustFinished = true
-    },
-
-    /**
-     * Clear the fizz completion flag
-     * Called after the ECHO_SOUND has been triggered
-     */
-    clearFizzFinished: state => {
-      state.fizzJustFinished = false
-    },
-
-    /**
-     * Increment the post-transition delay counter
-     * Counts frames after fizz completes before level load
-     */
-    incrementDelay: state => {
-      state.delayFrames++
+    incrementStarmap: state => {
+      if (state.status === 'starmap') {
+        state.starmapFrames++
+      }
     },
 
     /**
@@ -80,23 +67,18 @@ export const transitionSlice = createSlice({
      * Called when transition completes and next level loads
      */
     resetTransition: state => {
-      state.active = false
-      state.preDelayFrames = 0
-      state.fizzActive = false
-      state.fizzStarted = false
-      state.delayFrames = 0
-      state.fizzJustFinished = false
+      state.status = 'inactive'
+      state.preFizzFrames = 0
+      state.starmapFrames = 0
     }
   }
 })
 
 export const {
   startLevelTransition,
-  decrementPreDelay,
-  markFizzStarted,
-  completeFizz,
-  clearFizzFinished,
-  incrementDelay,
+  decrementPreFizz,
+  transitionToStarmap,
+  incrementStarmap,
   resetTransition
 } = transitionSlice.actions
 
