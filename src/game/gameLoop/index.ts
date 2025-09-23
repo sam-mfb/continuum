@@ -11,10 +11,10 @@ import type { SpriteService } from '@core/sprites'
 import type { GalaxyService } from '@core/galaxy'
 import type { FizzTransitionService } from '@core/transition'
 import type { SoundService } from '@core/sound'
-import type { GameStore } from './store'
+import type { GameStore } from '../store'
 
-import { updateGameState } from './gameLoop/stateUpdates'
-import { renderGame } from './gameLoop/rendering'
+import { updateGameState } from './stateUpdates'
+import { renderGame } from './rendering'
 import { playSounds } from '@core/sound'
 
 export const createGameRenderer = (
