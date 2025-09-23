@@ -48,27 +48,29 @@ export type RenderContext = {
 export const renderGame = (context: RenderContext): MonochromeBitmap => {
   let { bitmap, state, spriteService, store, fizzTransitionService } = context
 
+  // Helper to add status bar to bitmap - used for fizz/starmap phases
+  const addStatusBar = (bmp: MonochromeBitmap): MonochromeBitmap => {
+    const statusBarTemplate = spriteService.getStatusBarTemplate()
+    let result = sbarClear({ statusBarTemplate })(bmp)
+    result = updateSbar({
+      fuel: state.ship.fuel,
+      lives: state.ship.lives,
+      score: state.status.score,
+      bonus: state.status.planetbonus,
+      level: state.status.currentlevel,
+      message: state.status.curmessage,
+      spriteService
+    })(result)
+    return result
+  }
+
   // Check if we're in fizz or starmap phase - skip normal rendering
   if (
-    (state.transition.status === 'fizz' || state.transition.status === 'starmap') &&
+    (state.transition.status === 'fizz' ||
+      state.transition.status === 'starmap') &&
     fizzTransitionService &&
     fizzTransitionService.isInitialized
   ) {
-    // Helper to add status bar to bitmap
-    const addStatusBar = (bmp: MonochromeBitmap): MonochromeBitmap => {
-      const statusBarTemplate = spriteService.getStatusBarTemplate()
-      let result = sbarClear({ statusBarTemplate })(bmp)
-      result = updateSbar({
-        fuel: state.ship.fuel,
-        lives: state.ship.lives,
-        score: state.status.score,
-        bonus: state.status.planetbonus,
-        level: state.status.currentlevel,
-        message: state.status.curmessage,
-        spriteService
-      })(result)
-      return result
-    }
 
     // Handle fizz phase
     if (state.transition.status === 'fizz') {
@@ -77,9 +79,9 @@ export const renderGame = (context: RenderContext): MonochromeBitmap => {
         const images = fizzTransitionService.getImages()
         return images.to ? addStatusBar(images.to) : bitmap
       } else {
-        // Fizz animation in progress
+        // Fizz animation in progress - fizz frames already have status bar from source
         const fizzFrame = fizzTransitionService.nextFrame()
-        return addStatusBar(fizzFrame)
+        return fizzFrame
       }
     }
 
@@ -594,7 +596,6 @@ export const renderGame = (context: RenderContext): MonochromeBitmap => {
     fizzTransitionService &&
     !fizzTransitionService.isInitialized
   ) {
-
     // Create the target bitmap (starfield with ship)
     const STAR_COUNT = 150
     const shipSprite = spriteService.getShipSprite(state.ship.shiprot, {
@@ -606,13 +607,17 @@ export const renderGame = (context: RenderContext): MonochromeBitmap => {
 
     const targetBitmap = starBackground({
       starCount: STAR_COUNT,
-      additionalRender: (screen: MonochromeBitmap): MonochromeBitmap =>
-        fullFigure({
-          x: state.ship.shipx - SCENTER,
-          y: state.ship.shipy - SCENTER,
-          def: shipSprite.bitmap,
-          mask: shipMaskSprite.bitmap
-        })(screen)
+      additionalRender:
+        // don't draw ship if it's dead
+        state.ship.deadCount === 0
+          ? (screen: MonochromeBitmap): MonochromeBitmap =>
+              fullFigure({
+                x: state.ship.shipx - SCENTER,
+                y: state.ship.shipy - SCENTER,
+                def: shipSprite.bitmap,
+                mask: shipMaskSprite.bitmap
+              })(screen)
+          : undefined
     })
 
     // Initialize the fizz transition service with the RENDERED game screen
@@ -622,25 +627,9 @@ export const renderGame = (context: RenderContext): MonochromeBitmap => {
       FIZZ_DURATION
     )
 
-    // Helper to add status bar to bitmap
-    const addStatusBar = (bmp: MonochromeBitmap): MonochromeBitmap => {
-      const statusBarTemplate = spriteService.getStatusBarTemplate()
-      let result = sbarClear({ statusBarTemplate })(bmp)
-      result = updateSbar({
-        fuel: state.ship.fuel,
-        lives: state.ship.lives,
-        score: state.status.score,
-        bonus: state.status.planetbonus,
-        level: state.status.currentlevel,
-        message: state.status.curmessage,
-        spriteService
-      })(result)
-      return result
-    }
-
-    // Return the first fizz frame
+    // Return the first fizz frame - it already has the status bar from the source bitmap
     const fizzFrame = fizzTransitionService.nextFrame()
-    return addStatusBar(fizzFrame)
+    return fizzFrame
   }
 
   return renderedBitmap
