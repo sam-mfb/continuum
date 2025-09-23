@@ -64,10 +64,11 @@ export const createGameRenderer = (
       fizzTransitionService
     })
 
+    // Get fresh state because currently render does cause some state modifications
+    const finalState = store.getState()
+
     // Phase 3: Play accumulated sounds
     // This plays all sounds that were triggered during this frame
-    // Get fresh state in case transition modified it
-    const finalState = store.getState()
     playFrameSounds(
       {
         state: finalState,

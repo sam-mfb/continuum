@@ -71,7 +71,6 @@ export const renderGame = (context: RenderContext): MonochromeBitmap => {
     fizzTransitionService &&
     fizzTransitionService.isInitialized
   ) {
-
     // Handle fizz phase
     if (state.transition.status === 'fizz') {
       if (fizzTransitionService.isComplete) {

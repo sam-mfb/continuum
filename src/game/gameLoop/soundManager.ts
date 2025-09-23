@@ -7,7 +7,13 @@
 
 import type { RootState } from '../store'
 import type { SoundService } from '@core/sound'
-import { SoundType, playSounds, playDiscrete, setThrusting, setShielding } from '@core/sound'
+import {
+  SoundType,
+  playSounds,
+  playDiscrete,
+  setThrusting,
+  setShielding
+} from '@core/sound'
 import type { Store } from '@reduxjs/toolkit'
 
 export type SoundContext = {

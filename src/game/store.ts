@@ -21,6 +21,11 @@ import { wallsSlice } from '@core/walls'
 import { highscoreSlice } from '@/core/highscore'
 import { transitionSlice } from '@core/transition'
 import { highscoreMiddleware, loadHighScores } from '@/core/highscore'
+import {
+  useDispatch,
+  useSelector,
+  type TypedUseSelectorHook
+} from 'react-redux'
 
 // Define the services that will be injected
 export type GameServices = {
@@ -88,5 +93,7 @@ export const createGameStore = (
 export type GameStore = ReturnType<typeof createGameStore>
 export type RootState = ReturnType<GameStore['getState']>
 
-// Export types
-export type AppDispatch = GameStore['dispatch']
+type AppDispatch = GameStore['dispatch']
+
+export const useAppDispatch: () => AppDispatch = useDispatch
+export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector

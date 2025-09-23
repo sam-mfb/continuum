@@ -5,7 +5,7 @@
 import './style.css'
 import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
-import App from './App'
+import { App } from './App'
 import { createSpriteService } from '@core/sprites'
 import { createGalaxyService } from '@core/galaxy'
 import { createFizzTransitionService } from '@core/transition'
@@ -59,9 +59,6 @@ try {
   )
   console.log('Game store created with services')
 
-  // Load level 1
-  //loadLevel(store, 1, galaxyService)
-
   const renderer = createGameRenderer(
     store,
     spriteService,
@@ -90,7 +87,6 @@ try {
       <App
         renderer={renderer}
         totalLevels={totalLevels}
-        galaxyService={galaxyService}
         soundService={soundService}
       />
     </Provider>
