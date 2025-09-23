@@ -13,7 +13,6 @@ export * from './types'
 export { createSoundService, type SoundService } from './service'
 
 // Redux slice - For UI settings only
-export { default as soundReducer } from './soundSlice'
 export * from './soundSlice'
 
 // Sound engine - Internal, exposed for test panel
