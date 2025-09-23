@@ -6,12 +6,10 @@
 export type {
   MonochromeBitmap,
   BitmapRenderer,
-  LegacyBitmapRenderer,
   BitmapToCanvasOptions,
   Rectangle,
   FrameInfo,
   KeyInfo,
-  GameFrameInfo,
   GameEnvironment
 } from './types'
 

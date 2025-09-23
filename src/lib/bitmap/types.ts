@@ -60,31 +60,6 @@ export type KeyInfo = {
 }
 
 /**
- * Frame information passed to bitmap renderers (DEPRECATED)
- * Contains timing and input state for the current frame
- * @deprecated Use FrameInfo and KeyInfo separately
- */
-export type GameFrameInfo = {
-  // Timing
-  /** Total frames since start */
-  frameCount: number
-  /** Milliseconds since last frame */
-  deltaTime: number
-  /** Total milliseconds since start */
-  totalTime: number
-  /** Expected ms between frames (1000/fps) */
-  targetDelta: number
-
-  // Input
-  /** Currently pressed keys */
-  keysDown: Set<string>
-  /** Keys pressed this frame */
-  keysPressed: Set<string>
-  /** Keys released this frame */
-  keysReleased: Set<string>
-}
-
-/**
  * Environment information for the game
  * Contains display dimensions and target framerate
  */
@@ -104,17 +79,6 @@ export type GameEnvironment = {
 export type BitmapRenderer = (
   frame: FrameInfo,
   keys: KeyInfo
-) => MonochromeBitmap
-
-/**
- * Function that renders to a monochrome bitmap (DEPRECATED)
- * Returns a new bitmap rather than mutating the input
- * @deprecated Use the new BitmapRenderer signature
- */
-export type LegacyBitmapRenderer = (
-  bitmap: MonochromeBitmap,
-  frame: GameFrameInfo,
-  env: GameEnvironment
 ) => MonochromeBitmap
 
 /**
