@@ -337,14 +337,12 @@ export async function createSoundService(initialSettings: {
       // Engine access for test panel
       getEngine: (): SoundEngine | null => soundEngine,
 
-      // Cleanup method
+      // Cleanup method - stops sounds but keeps engine alive for reuse
       cleanup: (): void => {
-        if (soundEngine) {
-          if (isPlaying) {
-            soundEngine.stop()
-          }
-          soundEngine = null
+        if (soundEngine && isPlaying) {
+          soundEngine.stop()
         }
+        // Don't null out soundEngine - keep it alive for next game
         currentSound = null
         isPlaying = false
         highPriorityPlaying = false
