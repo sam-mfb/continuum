@@ -6,6 +6,7 @@
  */
 
 import type { RootState } from '../store'
+import type { SoundService } from '@core/sound'
 import { playSounds } from '@core/sound'
 
 export type SoundContext = {
@@ -18,14 +19,17 @@ export type SoundContext = {
 /**
  * Play all accumulated sounds for the current frame
  */
-export const playFrameSounds = (context: SoundContext): void => {
+export const playFrameSounds = (
+  context: SoundContext,
+  soundService: SoundService
+): void => {
   const { state } = context
 
   // Determine if fizz sound should play (transition active and past pre-delay)
   const fizzActive = context.transitionActive && context.preDelayFrames <= 0
 
   // Play all sounds with context
-  playSounds(state.sound, {
+  playSounds(state.sound, soundService, {
     shipDeadCount: context.shipDeadCount,
     fizzActive
   })

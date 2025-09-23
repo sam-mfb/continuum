@@ -12,6 +12,7 @@ import type { BitmapRenderer, MonochromeBitmap } from '@lib/bitmap'
 import type { SpriteService } from '@core/sprites'
 import type { GalaxyService } from '@core/galaxy'
 import type { FizzTransitionService } from '@core/transition'
+import type { SoundService } from '@core/sound'
 import type { GameStore } from './store'
 import type { UnknownAction } from '@reduxjs/toolkit'
 
@@ -34,7 +35,8 @@ export const createGameRenderer = (
   store: GameStore,
   spriteService: SpriteService,
   galaxyService: GalaxyService,
-  fizzTransitionService: FizzTransitionService
+  fizzTransitionService: FizzTransitionService,
+  soundService: SoundService
 ): BitmapRenderer => {
   return (bitmap, frame, _env) => {
     // Check initialization status from Redux state
@@ -139,12 +141,15 @@ export const createGameRenderer = (
     // This plays all sounds that were triggered during this frame
     // Get fresh state in case transition modified it
     const finalState = store.getState()
-    playFrameSounds({
-      state: finalState,
-      shipDeadCount: finalState.ship.deadCount,
-      transitionActive: finalState.transition.active,
-      preDelayFrames: finalState.transition.preDelayFrames
-    })
+    playFrameSounds(
+      {
+        state: finalState,
+        shipDeadCount: finalState.ship.deadCount,
+        transitionActive: finalState.transition.active,
+        preDelayFrames: finalState.transition.preDelayFrames
+      },
+      soundService
+    )
 
     // Return the final rendered bitmap
     return bitmap

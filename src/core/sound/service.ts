@@ -52,20 +52,13 @@ export type SoundService = {
 
   // Engine access for test panel
   getEngine(): SoundEngine | null
-}
 
-// Internal state
-let serviceInstance: SoundService | null = null
-let soundEngine: SoundEngine | null = null
-let currentSound: SoundType | null = null
-let isPlaying = false
-let isMuted = false
-let currentVolume = 1.0
-let highPriorityPlaying = false
+  // Cleanup method
+  cleanup(): void
+}
 
 // Track continuous sounds for resumption after interruption
 export type ContinuousSound = 'thruster' | 'shield' | 'none'
-let currentContinuous: ContinuousSound = 'none'
 
 /**
  * Map SoundType enum to engine sound types
@@ -87,135 +80,21 @@ const soundTypeToEngine: Partial<Record<SoundType, GameSoundType>> = {
 }
 
 /**
- * Resume audio context on user interaction
- */
-async function resumeAudioContext(): Promise<void> {
-  if (soundEngine?.resumeContext) {
-    await soundEngine.resumeContext()
-  }
-}
-
-/**
- * Internal helper to play a sound by engine type
- */
-function playSoundByType(
-  soundType: GameSoundType,
-  options?: { highPriority?: boolean }
-): void {
-  if (!soundEngine) return
-
-  // Try to resume audio context on any play attempt (in case it's suspended)
-  resumeAudioContext()
-
-  // Check if muted
-  if (isMuted) {
-    return
-  }
-
-  // Update continuous sound state
-  if (soundType === 'thruster') {
-    currentContinuous = 'thruster'
-  } else if (soundType === 'shield') {
-    currentContinuous = 'shield'
-  } else if (soundType === 'silence') {
-    currentContinuous = 'none'
-  }
-
-  // Check if high-priority sound is blocking
-  // High-priority sounds block normal sounds but can be interrupted by other high-priority sounds
-  // Exception: 'silence' is always allowed (used to stop sounds)
-  if (
-    highPriorityPlaying &&
-    soundType !== 'silence' &&
-    !options?.highPriority
-  ) {
-    return
-  }
-
-  // If playing silence, clear the high-priority flag since we're stopping whatever was playing
-  if (soundType === 'silence' && highPriorityPlaying) {
-    highPriorityPlaying = false
-  }
-
-  // Start the engine first if not already playing
-  if (!isPlaying) {
-    soundEngine.start()
-    isPlaying = true
-  }
-
-  // Determine if this is a discrete (interrupting) sound
-  const isContinuous = soundType === 'thruster' || soundType === 'shield'
-  const isDiscrete = !isContinuous && soundType !== 'silence'
-
-  // Play the sound with appropriate callback
-  if (options?.highPriority) {
-    // If interrupting another high-priority sound, the old one won't get its callback
-    // so we manage the flag here
-    highPriorityPlaying = true
-    soundEngine.play(soundType, () => {
-      highPriorityPlaying = false
-      // After high-priority discrete sound completes, resume continuous if needed
-      if (isDiscrete && currentContinuous !== 'none' && soundEngine) {
-        soundEngine.play(currentContinuous)
-      }
-    })
-  } else if (isDiscrete) {
-    // For non-high-priority discrete sounds, add callback to resume continuous
-    soundEngine.play(soundType, () => {
-      // After discrete sound completes, resume whatever continuous should be playing
-      if (currentContinuous !== 'none' && soundEngine) {
-        soundEngine.play(currentContinuous)
-      }
-    })
-  } else {
-    // Continuous sounds and silence don't need callbacks
-    soundEngine.play(soundType)
-  }
-}
-
-/**
- * Internal helper to play a sound by SoundType enum
- */
-function playSound(
-  soundType: SoundType,
-  options?: { highPriority?: boolean }
-): void {
-  const engineType = soundTypeToEngine[soundType]
-  if (!engineType) {
-    return
-  }
-
-  playSoundByType(engineType, options)
-
-  // Track current sound
-  currentSound = soundType
-}
-
-/**
- * Stop all sounds
- */
-function stopAllSounds(): void {
-  if (!soundEngine || !isPlaying) return
-
-  soundEngine.stop()
-  isPlaying = false
-  currentSound = null
-  highPriorityPlaying = false
-  currentContinuous = 'none'
-}
-
-/**
- * Initialize the sound service
- * Should be called once at game start
+ * Create a new sound service instance
  * @param initialSettings - Optional initial volume and mute settings
  */
 export async function createSoundService(initialSettings?: {
   volume?: number
   muted?: boolean
 }): Promise<SoundService> {
-  if (serviceInstance) {
-    return serviceInstance
-  }
+  // Internal state for this instance
+  let soundEngine: SoundEngine | null = null
+  let currentSound: SoundType | null = null
+  let isPlaying = false
+  let isMuted = false
+  let currentVolume = 1.0
+  let highPriorityPlaying = false
+  let currentContinuous: ContinuousSound = 'none'
 
   try {
     // Create and initialize the sound engine
@@ -223,15 +102,133 @@ export async function createSoundService(initialSettings?: {
 
     // Apply initial settings (defaults if not provided)
     currentVolume = initialSettings?.volume ?? 1.0
-    isMuted = !(initialSettings?.muted ?? true)
+    isMuted = initialSettings?.muted ?? false
 
     // Apply initial volume
     if (soundEngine) {
       soundEngine.setVolume(currentVolume)
     }
 
+    /**
+     * Resume audio context on user interaction
+     */
+    async function resumeAudioContext(): Promise<void> {
+      if (soundEngine?.resumeContext) {
+        await soundEngine.resumeContext()
+      }
+    }
+
+    /**
+     * Internal helper to play a sound by engine type
+     */
+    function playSoundByType(
+      soundType: GameSoundType,
+      options?: { highPriority?: boolean }
+    ): void {
+      if (!soundEngine) return
+
+      // Try to resume audio context on any play attempt (in case it's suspended)
+      resumeAudioContext()
+
+      // Check if muted
+      if (isMuted) {
+        return
+      }
+
+      // Update continuous sound state
+      if (soundType === 'thruster') {
+        currentContinuous = 'thruster'
+      } else if (soundType === 'shield') {
+        currentContinuous = 'shield'
+      } else if (soundType === 'silence') {
+        currentContinuous = 'none'
+      }
+
+      // Check if high-priority sound is blocking
+      // High-priority sounds block normal sounds but can be interrupted by other high-priority sounds
+      // Exception: 'silence' is always allowed (used to stop sounds)
+      if (
+        highPriorityPlaying &&
+        soundType !== 'silence' &&
+        !options?.highPriority
+      ) {
+        return
+      }
+
+      // If playing silence, clear the high-priority flag since we're stopping whatever was playing
+      if (soundType === 'silence' && highPriorityPlaying) {
+        highPriorityPlaying = false
+      }
+
+      // Start the engine first if not already playing
+      if (!isPlaying) {
+        soundEngine.start()
+        isPlaying = true
+      }
+
+      // Determine if this is a discrete (interrupting) sound
+      const isContinuous = soundType === 'thruster' || soundType === 'shield'
+      const isDiscrete = !isContinuous && soundType !== 'silence'
+
+      // Play the sound with appropriate callback
+      if (options?.highPriority) {
+        // If interrupting another high-priority sound, the old one won't get its callback
+        // so we manage the flag here
+        highPriorityPlaying = true
+        soundEngine.play(soundType, () => {
+          highPriorityPlaying = false
+          // After high-priority discrete sound completes, resume continuous if needed
+          if (isDiscrete && currentContinuous !== 'none' && soundEngine) {
+            soundEngine.play(currentContinuous)
+          }
+        })
+      } else if (isDiscrete) {
+        // For non-high-priority discrete sounds, add callback to resume continuous
+        soundEngine.play(soundType, () => {
+          // After discrete sound completes, resume whatever continuous should be playing
+          if (currentContinuous !== 'none' && soundEngine) {
+            soundEngine.play(currentContinuous)
+          }
+        })
+      } else {
+        // Continuous sounds and silence don't need callbacks
+        soundEngine.play(soundType)
+      }
+    }
+
+    /**
+     * Internal helper to play a sound by SoundType enum
+     */
+    function playSound(
+      soundType: SoundType,
+      options?: { highPriority?: boolean }
+    ): void {
+      const engineType = soundTypeToEngine[soundType]
+      if (!engineType) {
+        return
+      }
+
+      playSoundByType(engineType, options)
+
+      // Track current sound
+      currentSound = soundType
+    }
+
+    /**
+     * Stop all sounds
+     */
+    function stopAllSounds(): void {
+      if (!soundEngine || !isPlaying) return
+
+      soundEngine.stop()
+      isPlaying = false
+      currentSound = null
+      highPriorityPlaying = false
+      currentContinuous = 'none'
+    }
+
     // Create the service instance
-    serviceInstance = {
+    const serviceInstance: SoundService = {
       // Ship sounds
       playShipFire: (options?): void =>
         playSound(SoundType.FIRE_SOUND, options),
@@ -338,43 +335,26 @@ export async function createSoundService(initialSettings?: {
       getCurrentContinuous: (): ContinuousSound => currentContinuous,
 
       // Engine access for test panel
-      getEngine: (): SoundEngine | null => soundEngine
+      getEngine: (): SoundEngine | null => soundEngine,
+
+      // Cleanup method
+      cleanup: (): void => {
+        if (soundEngine) {
+          if (isPlaying) {
+            soundEngine.stop()
+          }
+          soundEngine = null
+        }
+        currentSound = null
+        isPlaying = false
+        highPriorityPlaying = false
+        currentContinuous = 'none'
+      }
     }
 
     return serviceInstance
   } catch (error) {
-    console.error('Failed to initialize sound service:', error)
+    console.error('Failed to create sound service:', error)
     throw error
   }
-}
-
-/**
- * Get the sound service instance
- * Throws if not initialized
- */
-export function getSoundService(): SoundService {
-  if (!serviceInstance) {
-    throw new Error(
-      'Sound service not initialized. Call initializeSoundService() first.'
-    )
-  }
-  return serviceInstance
-}
-
-/**
- * Clean up the sound service
- * Should be called when game is unmounted
- */
-export function cleanupSoundService(): void {
-  if (soundEngine) {
-    if (isPlaying) {
-      soundEngine.stop()
-    }
-    soundEngine = null
-  }
-
-  serviceInstance = null
-  currentSound = null
-  isPlaying = false
-  highPriorityPlaying = false
 }

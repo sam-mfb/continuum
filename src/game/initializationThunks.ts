@@ -6,12 +6,11 @@
  */
 
 import { createAsyncThunk } from '@reduxjs/toolkit'
-import { createSoundService, cleanupSoundService } from '@core/sound'
 import { shipSlice } from '@core/ship'
 import { statusSlice } from '@core/status'
 import { TOTAL_INITIAL_LIVES } from './constants'
 import type { RootState } from './store'
-import type { GalaxyService } from '@/core/galaxy'
+import type { SoundService } from '@/core/sound'
 
 /**
  * Initialize the game
@@ -20,34 +19,26 @@ import type { GalaxyService } from '@/core/galaxy'
 export const initializeGame = createAsyncThunk<
   undefined,
   void,
-  { state: RootState; extra: { galaxyService: GalaxyService } }
+  { state: RootState; extra: { soundService: SoundService } }
 >(
   'game/initialize',
   async (_, { getState, dispatch, extra }): Promise<undefined> => {
-    const { galaxyService } = extra
+    const { soundService } = extra
 
     console.log('Starting game initialization...')
 
-    // Initialize sound service
-    console.log('Initializing sound service...')
+    // Configure sound service with initial settings
+    console.log('Configuring sound service...')
     try {
       // Get initial sound settings from our store
       const soundState = getState().sound
-      await createSoundService({
-        volume: soundState.volume,
-        muted: soundState.enabled
-      })
-      console.log('Sound service initialized successfully')
+      soundService.setVolume(soundState.volume)
+      soundService.setMuted(!soundState.enabled)
+      console.log('Sound service configured successfully')
     } catch (soundError) {
-      console.warn('Failed to initialize sound service:', soundError)
+      console.warn('Failed to configure sound service:', soundError)
       // Continue without sound - game is still playable
     }
-
-    // Get the already-loaded galaxy header from the service
-    console.log('Getting galaxy header from service...')
-    const galaxyHeader = galaxyService.getHeader()
-    console.log('Galaxy header:', galaxyHeader)
-    console.log(`Galaxy contains ${galaxyHeader.planets} levels`)
 
     // Initialize lives (TOTAL_INITIAL_LIVES includes current ship + spare ships)
     dispatch(shipSlice.actions.setLives(TOTAL_INITIAL_LIVES))
@@ -63,9 +54,11 @@ export const initializeGame = createAsyncThunk<
  * Clean up resources (called when game ends)
  * Also resets initialization state back to 'init'
  */
-export const cleanupGame = createAsyncThunk(
-  'game/cleanup',
-  async (): Promise<void> => {
-    cleanupSoundService()
-  }
-)
+export const cleanupGame = createAsyncThunk<
+  void,
+  void,
+  { extra: { soundService: SoundService } }
+>('game/cleanup', async (_, { extra }): Promise<void> => {
+  const { soundService } = extra
+  soundService.cleanup()
+})

@@ -9,6 +9,7 @@ import App from './App'
 import { createSpriteService } from '@core/sprites'
 import { createGalaxyService } from '@core/galaxy'
 import { createFizzTransitionService } from '@core/transition'
+import { createSoundService } from '@core/sound'
 import { createGameRenderer } from './gameLoop'
 import { setAlignmentMode } from '@/core/shared'
 import { createGameStore } from './store'
@@ -34,11 +35,15 @@ async function initGame(): Promise<void> {
     const fizzTransitionService = createFizzTransitionService()
     console.log('Fizz transition service created')
 
+    const soundService = await createSoundService()
+    console.log('Sound service created')
+
     // Create store with services
     const store = createGameStore({
       galaxyService,
       spriteService,
-      fizzTransitionService
+      fizzTransitionService,
+      soundService
     })
     console.log('Game store created with services')
 
@@ -51,7 +56,8 @@ async function initGame(): Promise<void> {
       store,
       spriteService,
       galaxyService,
-      fizzTransitionService
+      fizzTransitionService,
+      soundService
     )
     const totalLevels = galaxyService.getHeader().planets
 
@@ -72,6 +78,7 @@ async function initGame(): Promise<void> {
           renderer={renderer}
           totalLevels={totalLevels}
           galaxyService={galaxyService}
+          soundService={soundService}
         />
       </Provider>
     )

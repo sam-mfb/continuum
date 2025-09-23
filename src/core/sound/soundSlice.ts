@@ -43,7 +43,7 @@ const initialState: SoundUIState = {
   currentSound: SoundType.NO_SOUND
 }
 
-const soundSlice = createSlice({
+export const soundSlice = createSlice({
   name: 'sound',
   initialState,
   reducers: {
@@ -160,4 +160,3 @@ export const {
   stopSound,
   resetSounds
 } = soundSlice.actions
-export default soundSlice.reducer

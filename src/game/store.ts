@@ -6,6 +6,7 @@ import { configureStore } from '@reduxjs/toolkit'
 import type { GalaxyService } from '@core/galaxy'
 import type { SpriteService } from '@core/sprites'
 import type { FizzTransitionService } from '@core/transition'
+import type { SoundService } from '@core/sound'
 
 // Import all reducers
 import { gameSlice } from './gameSlice'
@@ -15,7 +16,7 @@ import { planetSlice } from '@core/planet'
 import { screenSlice } from '@core/screen'
 import { statusSlice } from '@core/status'
 import { explosionsSlice } from '@core/explosions'
-import { soundReducer } from '@core/sound'
+import { soundSlice } from '@core/sound'
 import { wallsSlice } from '@core/walls'
 import { highscoreSlice } from '@/core/highscore'
 import { transitionSlice } from '@core/transition'
@@ -26,6 +27,7 @@ export type GameServices = {
   galaxyService: GalaxyService
   spriteService: SpriteService
   fizzTransitionService: FizzTransitionService
+  soundService: SoundService
 }
 
 // Create store factory function
@@ -43,7 +45,7 @@ export const createGameStore = (services: GameServices) => {
       screen: screenSlice.reducer,
       status: statusSlice.reducer,
       explosions: explosionsSlice.reducer,
-      sound: soundReducer,
+      sound: soundSlice.reducer,
       walls: wallsSlice.reducer,
       highscore: highscoreSlice.reducer,
       transition: transitionSlice.reducer
