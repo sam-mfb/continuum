@@ -18,9 +18,12 @@ import { statusSlice } from '@core/status'
 import { explosionsSlice } from '@core/explosions'
 import { soundSlice } from '@core/sound'
 import { wallsSlice } from '@core/walls'
-import { highscoreSlice } from '@/core/highscore'
 import { transitionSlice } from '@core/transition'
-import { highscoreMiddleware, loadHighScores } from '@/core/highscore'
+import {
+  highscoreSlice,
+  highscoreMiddleware,
+  loadHighScores
+} from '@/core/highscore'
 import {
   useDispatch,
   useSelector,

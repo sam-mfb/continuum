@@ -57,14 +57,10 @@ export const createGameRenderer = (
     const finalState = store.getState()
 
     // This plays all sounds that were triggered during this frame
-    playSounds(
-      finalState.sound,
-      soundService,
-      {
-        fizzActive: finalState.transition.status === 'fizz',
-        shipDeadCount: finalState.ship.deadCount
-      }
-    )
+    playSounds(finalState.sound, soundService, {
+      fizzActive: finalState.transition.status === 'fizz',
+      shipDeadCount: finalState.ship.deadCount
+    })
 
     // Return the final rendered bitmap
     return bitmap

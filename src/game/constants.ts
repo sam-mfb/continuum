@@ -2,10 +2,7 @@
  * @fileoverview Game-specific constants
  */
 
-import { SHIPSTART } from '@core/ship'
-
-// Re-export for backward compatibility
-export { SHIPSTART }
+import { SHIPSTART } from '@/core/ship'
 
 // Game progression
 export const TOTAL_INITIAL_LIVES = SHIPSTART + 1 // Total lives including current ship

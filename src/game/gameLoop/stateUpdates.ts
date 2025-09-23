@@ -34,8 +34,7 @@ import {
 } from '@core/explosions'
 import { statusSlice } from '@core/status'
 import { screenSlice, SCRWTH, VIEWHT } from '@core/screen'
-import { containShip } from '@core/shared/containShip'
-import { rint } from '@core/shared'
+import { containShip, rint } from '@core/shared'
 import {
   resetFrame,
   playDiscrete,
@@ -74,6 +73,111 @@ export type StateUpdateContext = {
   galaxyService: GalaxyService
   fizzTransitionService?: FizzTransitionService
   soundService: SoundService
+}
+
+/**
+ * Main state update function
+ */
+export const updateGameState = (context: StateUpdateContext): void => {
+  const {
+    store,
+    frame,
+    keys,
+    galaxyService,
+    fizzTransitionService,
+    soundService
+  } = context
+
+  // Reset sound accumulator for new frame (must happen BEFORE any sounds are dispatched)
+  store.dispatch(resetFrame())
+
+  // decrement death flash at start of state update
+  store.dispatch(decrementShipDeathFlash())
+
+  // Handle transition state updates first (pre-delay, fizz, post-delay)
+  updateTransitionState(store, galaxyService, fizzTransitionService)
+
+  // Handle death countdown and respawn
+  handleDeathAndRespawn(store)
+
+  // Get state after respawn handling
+  const state = store.getState()
+
+  // Decrement bonus countdown every 10 frames
+  if (state.transition.status === 'inactive' && frame.frameCount % 10 === 0) {
+    store.dispatch(statusSlice.actions.decrementBonus())
+  }
+
+  // Check for level completion
+  handleLevelCompletion(store, fizzTransitionService)
+
+  // Check for game over
+  handleGameOver(store, soundService)
+
+  // Handle ship movement and controls
+  const { globalx, globaly } = handleShipMovement(store, keys)
+
+  // Update bunker rotations for animated bunkers
+  store.dispatch(updateBunkerRotations({ globalx, globaly }))
+
+  // Update fuel cell animations
+  store.dispatch(updateFuelAnimations())
+
+  // Handle bunker shooting
+  handleBunkerShooting(store, globalx, globaly)
+
+  // Move ship shots
+  const currentState = store.getState()
+  store.dispatch(
+    shotsSlice.actions.moveShipshots({
+      bunkers: currentState.planet.bunkers,
+      shipPosition: {
+        x: globalx,
+        y: globaly
+      },
+      shipAlive: currentState.ship.deadCount === 0,
+      walls: currentState.planet.lines,
+      worldwidth: currentState.planet.worldwidth,
+      worldwrap: currentState.planet.worldwrap
+    })
+  )
+
+  // Process bunker kills
+  processBunkerKills(store)
+
+  // Handle self-hit shield feedback
+  const shotsState = store.getState().shots
+  if (shotsState.selfHitShield) {
+    store.dispatch(shipSlice.actions.activateShieldFeedback())
+    store.dispatch(playDiscrete(SoundType.SHLD_SOUND))
+  }
+
+  // Move bunker shots with shield protection
+  const finalState = store.getState()
+  store.dispatch(
+    moveBullets({
+      worldwidth: finalState.planet.worldwidth,
+      worldwrap: finalState.planet.worldwrap,
+      walls: finalState.planet.lines,
+      shipGlobalX: finalState.ship.globalx,
+      shipGlobalY: finalState.ship.globaly,
+      shielding: finalState.ship.shielding
+    })
+  )
+
+  // Update strafe lifecounts
+  store.dispatch(doStrafes())
+
+  // Update explosions
+  store.dispatch(
+    updateExplosions({
+      worldwidth: finalState.planet.worldwidth,
+      worldwrap: finalState.planet.worldwrap,
+      gravx: finalState.planet.gravx,
+      gravy: finalState.planet.gravy,
+      gravityPoints: finalState.planet.gravityPoints
+    })
+  )
 }
 
 /**
@@ -459,9 +563,6 @@ const processBunkerKills = (store: Store<RootState>): void => {
   }
 }
 
-// Note: Ship collision checking is now handled in the rendering module
-// where we have access to the sprite service and rendered bitmap
-
 /**
  * Handle transition-specific sound triggers
  * Called when transition state changes
@@ -582,110 +683,4 @@ const updateTransitionState = (
   }
 
   return false
-}
-
-/**
- * Main state update function
- */
-export const updateGameState = (context: StateUpdateContext): void => {
-  const {
-    store,
-    frame,
-    keys,
-    galaxyService,
-    fizzTransitionService,
-    soundService
-  } = context
-
-  // Reset sound accumulator for new frame (must happen BEFORE any sounds are dispatched)
-  store.dispatch(resetFrame())
-
-  // death flash only lasts one frame so reset it at the start of every
-  // state update
-  store.dispatch(decrementShipDeathFlash())
-
-  // Handle transition state updates first (pre-delay, fizz, post-delay)
-  updateTransitionState(store, galaxyService, fizzTransitionService)
-
-  // Handle death countdown and respawn
-  handleDeathAndRespawn(store)
-
-  // Get state after respawn handling
-  const state = store.getState()
-
-  // Decrement bonus countdown every 10 frames
-  if (state.transition.status === 'inactive' && frame.frameCount % 10 === 0) {
-    store.dispatch(statusSlice.actions.decrementBonus())
-  }
-
-  // Check for level completion
-  handleLevelCompletion(store, fizzTransitionService)
-
-  // Check for game over
-  handleGameOver(store, soundService)
-
-  // Handle ship movement and controls
-  const { globalx, globaly } = handleShipMovement(store, keys)
-
-  // Update bunker rotations for animated bunkers
-  store.dispatch(updateBunkerRotations({ globalx, globaly }))
-
-  // Update fuel cell animations
-  store.dispatch(updateFuelAnimations())
-
-  // Handle bunker shooting
-  handleBunkerShooting(store, globalx, globaly)
-
-  // Move ship shots
-  const currentState = store.getState()
-  store.dispatch(
-    shotsSlice.actions.moveShipshots({
-      bunkers: currentState.planet.bunkers,
-      shipPosition: {
-        x: globalx,
-        y: globaly
-      },
-      shipAlive: currentState.ship.deadCount === 0,
-      walls: currentState.planet.lines,
-      worldwidth: currentState.planet.worldwidth,
-      worldwrap: currentState.planet.worldwrap
-    })
-  )
-
-  // Process bunker kills
-  processBunkerKills(store)
-
-  // Handle self-hit shield feedback
-  const shotsState = store.getState().shots
-  if (shotsState.selfHitShield) {
-    store.dispatch(shipSlice.actions.activateShieldFeedback())
-    store.dispatch(playDiscrete(SoundType.SHLD_SOUND))
-  }
-
-  // Move bunker shots with shield protection
-  const finalState = store.getState()
-  store.dispatch(
-    moveBullets({
-      worldwidth: finalState.planet.worldwidth,
-      worldwrap: finalState.planet.worldwrap,
-      walls: finalState.planet.lines,
-      shipGlobalX: finalState.ship.globalx,
-      shipGlobalY: finalState.ship.globaly,
-      shielding: finalState.ship.shielding
-    })
-  )
-
-  // Update strafe lifecounts
-  store.dispatch(doStrafes())
-
-  // Update explosions
-  store.dispatch(
-    updateExplosions({
-      worldwidth: finalState.planet.worldwidth,
-      worldwrap: finalState.planet.worldwrap,
-      gravx: finalState.planet.gravx,
-      gravy: finalState.planet.gravy,
-      gravityPoints: finalState.planet.gravityPoints
-    })
-  )
 }
