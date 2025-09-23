@@ -37,8 +37,11 @@ export type RenderContext = {
   bitmap: MonochromeBitmap
   state: RootState
   spriteService: SpriteService
+  // we currently have a dependency on the store at the rendering phase because collision detections are
+  // handled through rendering (checkFigure(), specifically). that means handling ship deaths and ship
+  // bounces currently have to take place in the rendering stage
   store: GameStore
-  fizzTransitionService?: FizzTransitionService
+  fizzTransitionService: FizzTransitionService
 }
 
 /**
@@ -67,7 +70,6 @@ export const renderGame = (context: RenderContext): MonochromeBitmap => {
   if (
     (state.transition.status === 'fizz' ||
       state.transition.status === 'starmap') &&
-    fizzTransitionService &&
     fizzTransitionService.isInitialized
   ) {
     // Handle fizz phase
@@ -590,7 +592,6 @@ export const renderGame = (context: RenderContext): MonochromeBitmap => {
   // This happens AFTER normal rendering so we have the correct source bitmap
   if (
     state.transition.status === 'fizz' &&
-    fizzTransitionService &&
     !fizzTransitionService.isInitialized
   ) {
     // Create the target bitmap (starfield with ship)
