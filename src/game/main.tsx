@@ -13,7 +13,6 @@ import { createSoundService } from '@core/sound'
 import { createGameRenderer } from './gameLoop'
 import { setAlignmentMode } from '@/core/shared'
 import { createGameStore } from './store'
-import { loadLevel } from './levelManager'
 import {
   ASSET_PATHS,
   DEFAULT_SOUND_VOLUME,

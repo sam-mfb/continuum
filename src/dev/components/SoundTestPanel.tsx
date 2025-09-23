@@ -28,7 +28,7 @@ export const SoundTestPanel: React.FC = () => {
   useEffect(() => {
     // Initialize sound service on mount
     if (!isInitialized) {
-      createSoundService()
+      createSoundService({ volume: masterVolume, muted: !enabled })
         .then(service => {
           setSoundService(service)
           // Sync initial state with Redux

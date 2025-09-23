@@ -4,7 +4,7 @@ import GameRenderer from './components/GameRenderer'
 import StartScreen from './components/StartScreen'
 import HighScoreEntry from './components/HighScoreEntry'
 import GameOverScreen from './components/GameOverScreen'
-import { loadLevel } from './levelManager'
+import { loadLevel } from './levelThunks'
 import { startGame, setMode } from './gameSlice'
 import { setHighScore } from '@/core/highscore'
 import { shipSlice } from '@/core/ship'
@@ -24,7 +24,6 @@ type AppProps = {
 const App: React.FC<AppProps> = ({
   renderer,
   totalLevels,
-  galaxyService,
   soundService
 }) => {
   const store = useStore() as GameStore
@@ -55,7 +54,8 @@ const App: React.FC<AppProps> = ({
             soundService.setMuted(!soundState.enabled)
 
             // Load the selected level
-            loadLevel(store, level, galaxyService)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ;(dispatch as any)(loadLevel(level))
 
             // Start the game
             dispatch(startGame())

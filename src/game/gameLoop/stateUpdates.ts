@@ -45,11 +45,7 @@ import {
   TRANSITION_DELAY_FRAMES
 } from '@core/transition'
 
-import {
-  checkLevelComplete,
-  loadLevel,
-  transitionToNextLevel
-} from '../levelManager'
+import { loadLevel } from '../levelThunks'
 import {
   markLevelComplete,
   triggerGameOver,
@@ -62,6 +58,8 @@ import { getPressedControls } from '../controls'
 import { triggerShipDeath } from '../shipDeath'
 import { handleTransitionSounds } from './soundManager'
 
+import { BunkerKind } from '@core/figs'
+
 export type StateUpdateContext = {
   store: Store<RootState>
   frame: FrameInfo
@@ -70,6 +68,40 @@ export type StateUpdateContext = {
   galaxyService: GalaxyService
   fizzTransitionService?: FizzTransitionService
   soundService: SoundService
+}
+
+/**
+ * Check if the current level is complete
+ * Based on kill_bunk() from orig/Sources/Play.c:369-377
+ *
+ * A level is complete when all non-generator bunkers are destroyed.
+ * Generator bunkers (GENERATORBUNK) do not need to be destroyed for mission completion.
+ * This allows level designers to create "blocked" indestructible generators.
+ *
+ * From Play.c:369-372:
+ *   missioncomplete = TRUE;
+ *   for(bp=bunkers; bp->rot >= 0; bp++)
+ *       if (bp->alive && bp->kind != GENERATORBUNK)
+ *           missioncomplete = FALSE;
+ */
+function checkLevelComplete(state: RootState): boolean {
+  // Don't check if already complete
+  if (state.game.levelComplete) {
+    return false
+  }
+
+  const { bunkers } = state.planet
+
+  // Implement mission completion logic from Play.c:369-372
+  // Check if all non-generator bunkers are destroyed
+  const allNonGeneratorBunkersDestroyed = bunkers.every(
+    bunker =>
+      bunker.rot < 0 || // rot < 0 is sentinel marker
+      !bunker.alive || // bunker is destroyed
+      bunker.kind === BunkerKind.GENERATOR // Play.c:371 - generators don't count
+  )
+
+  return allNonGeneratorBunkersDestroyed
 }
 
 /**
@@ -142,7 +174,6 @@ const handleLevelCompletion = (
  */
 const handleGameOver = (
   store: Store<RootState>,
-  galaxyService: GalaxyService,
   soundService: SoundService
 ): void => {
   const state = store.getState()
@@ -186,7 +217,8 @@ const handleGameOver = (
     store.dispatch(resetGame())
     store.dispatch(shipSlice.actions.setLives(TOTAL_INITIAL_LIVES))
     store.dispatch(statusSlice.actions.initStatus())
-    loadLevel(store, 1, galaxyService)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(store.dispatch as any)(loadLevel(1))
   }
 }
 
@@ -425,6 +457,31 @@ const processBunkerKills = (store: Store<RootState>): void => {
 // where we have access to the sprite service and rendered bitmap
 
 /**
+ * Handle transitioning to the next level
+ */
+const transitionToNextLevel = (
+  store: Store<RootState>,
+  galaxyService: GalaxyService
+): void => {
+  const state = store.getState()
+  const galaxyHeader = galaxyService.getHeader()
+
+  // Check if we've completed all levels
+  if (state.status.currentlevel >= galaxyHeader.planets) {
+    // Game won! For now, just loop back to level 1
+    console.log('Game completed! Restarting from level 1')
+    store.dispatch(resetGame())
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(store.dispatch as any)(loadLevel(1))
+  } else {
+    // Load next level
+    const nextLevelNum = state.status.currentlevel + 1
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(store.dispatch as any)(loadLevel(nextLevelNum))
+  }
+}
+
+/**
  * Update transition state (pre-delay, fizz lifecycle, post-delay)
  * Returns true if transition completed this frame
  */
@@ -529,7 +586,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
   handleLevelCompletion(store, fizzTransitionService)
 
   // Check for game over
-  handleGameOver(store, galaxyService, soundService)
+  handleGameOver(store, soundService)
 
   // Handle ship movement and controls
   const { globalx, globaly } = handleShipMovement(store, keys)
