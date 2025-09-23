@@ -31,8 +31,6 @@ import { setMessage } from '@/core/status'
  *   for(bp=bunkers; bp->rot >= 0; bp++)
  *       if (bp->alive && bp->kind != GENERATORBUNK)
  *           missioncomplete = FALSE;
- *
- * For levels with no bunkers, check if all fuel cells are collected.
  */
 export function checkLevelComplete(state: RootState): boolean {
   // Don't check if already complete
@@ -40,7 +38,7 @@ export function checkLevelComplete(state: RootState): boolean {
     return false
   }
 
-  const { bunkers, fuels } = state.planet
+  const { bunkers } = state.planet
 
   // Implement mission completion logic from Play.c:369-372
   // Check if all non-generator bunkers are destroyed
@@ -51,20 +49,7 @@ export function checkLevelComplete(state: RootState): boolean {
       bunker.kind === BunkerKind.GENERATOR // Play.c:371 - generators don't count
   )
 
-  // Check if all fuel cells are collected
-  const allFuelsCollected = fuels.every(fuel => !fuel.alive)
-
-  // Check if there are any non-generator bunkers in the level
-  const hasNonGeneratorBunkers = bunkers.some(
-    b => b.rot >= 0 && b.kind !== BunkerKind.GENERATOR
-  )
-
-  if (hasNonGeneratorBunkers) {
-    return allNonGeneratorBunkersDestroyed
-  } else {
-    // No regular bunkers, only generators or fuel - check fuel collection
-    return allFuelsCollected
-  }
+  return allNonGeneratorBunkersDestroyed
 }
 
 /**
