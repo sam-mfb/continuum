@@ -1,9 +1,7 @@
 /**
  * @fileoverview Galaxy service for managing galaxy data outside of Redux
  *
- * This service follows the same singleton pattern as the sprite service,
- * providing a centralized way to load and cache galaxy data without
- * storing non-serializable ArrayBuffers in Redux state.
+ * This service provides a centralized way to load and cache galaxy data
  */
 
 import { parsePlanet } from '@core/planet'
@@ -162,7 +160,3 @@ export async function createGalaxyService(
 
   return service
 }
-
-// Note: The galaxy service is now created by the consumer and passed via dependency injection.
-// This follows the same pattern as the sprite and sound services for better testability
-// and explicit dependency management.

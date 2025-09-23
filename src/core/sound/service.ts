@@ -83,9 +83,9 @@ const soundTypeToEngine: Partial<Record<SoundType, GameSoundType>> = {
  * Create a new sound service instance
  * @param initialSettings - Optional initial volume and mute settings
  */
-export async function createSoundService(initialSettings?: {
-  volume?: number
-  muted?: boolean
+export async function createSoundService(initialSettings: {
+  volume: number
+  muted: boolean
 }): Promise<SoundService> {
   // Internal state for this instance
   let soundEngine: SoundEngine | null = null
@@ -101,8 +101,8 @@ export async function createSoundService(initialSettings?: {
     soundEngine = createSoundEngine()
 
     // Apply initial settings (defaults if not provided)
-    currentVolume = initialSettings?.volume ?? 1.0
-    isMuted = initialSettings?.muted ?? false
+    currentVolume = initialSettings.volume
+    isMuted = initialSettings.muted
 
     // Apply initial volume
     if (soundEngine) {

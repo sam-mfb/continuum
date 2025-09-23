@@ -24,83 +24,81 @@ import {
 const app = document.querySelector<HTMLDivElement>('#app')!
 const root = createRoot(app)
 
-async function initGame(): Promise<void> {
-  try {
-    // Initialize services
-    const spriteService = await createSpriteService({
-      spriteResource: ASSET_PATHS.SPRITE_RESOURCE,
-      statusBarResource: ASSET_PATHS.STATUS_BAR_RESOURCE
-    })
-    console.log('Sprite service created')
+try {
+  // Initialize services
+  const spriteService = await createSpriteService({
+    spriteResource: ASSET_PATHS.SPRITE_RESOURCE,
+    statusBarResource: ASSET_PATHS.STATUS_BAR_RESOURCE
+  })
+  console.log('Sprite service created')
 
-    const galaxyService = await createGalaxyService(ASSET_PATHS.GALAXY_DATA)
-    console.log('Galaxy service created')
+  const galaxyService = await createGalaxyService(ASSET_PATHS.GALAXY_DATA)
+  console.log('Galaxy service created')
 
-    const fizzTransitionService = createFizzTransitionService()
-    console.log('Fizz transition service created')
+  const fizzTransitionService = createFizzTransitionService()
+  console.log('Fizz transition service created')
 
-    const soundService = await createSoundService({
-      volume: DEFAULT_SOUND_VOLUME,
-      muted: DEFAULT_SOUND_MUTED
-    })
-    console.log('Sound service created')
+  const soundService = await createSoundService({
+    volume: DEFAULT_SOUND_VOLUME,
+    muted: DEFAULT_SOUND_MUTED
+  })
+  console.log('Sound service created')
 
-    // Create store with services and initial settings
-    const store = createGameStore(
-      {
-        galaxyService,
-        spriteService,
-        fizzTransitionService,
-        soundService
-      },
-      {
-        soundVolume: DEFAULT_SOUND_VOLUME,
-        soundEnabled: !DEFAULT_SOUND_MUTED,
-        initialLives: TOTAL_INITIAL_LIVES
-      }
-    )
-    console.log('Game store created with services')
-
-    // Load level 1
-    loadLevel(store, 1, galaxyService)
-
-    const renderer = createGameRenderer(
-      store,
-      spriteService,
+  // Create store with services and initial settings
+  const store = createGameStore(
+    {
       galaxyService,
+      spriteService,
       fizzTransitionService,
       soundService
-    )
-    const totalLevels = galaxyService.getHeader().planets
+    },
+    {
+      soundVolume: DEFAULT_SOUND_VOLUME,
+      soundEnabled: !DEFAULT_SOUND_MUTED,
+      initialLives: TOTAL_INITIAL_LIVES
+    }
+  )
+  console.log('Game store created with services')
 
-    // Set up alignment mode subscription
-    // Set initial alignment mode from Redux state
-    const initialState = store.getState()
-    setAlignmentMode(initialState.game.alignmentMode)
+  // Load level 1
+  //loadLevel(store, 1, galaxyService)
 
-    // Subscribe to alignment mode changes
-    store.subscribe(() => {
-      const state = store.getState()
-      setAlignmentMode(state.game.alignmentMode)
-    })
+  const renderer = createGameRenderer(
+    store,
+    spriteService,
+    galaxyService,
+    fizzTransitionService,
+    soundService
+  )
+  const totalLevels = galaxyService.getHeader().planets
 
-    root.render(
-      <Provider store={store}>
-        <App
-          renderer={renderer}
-          totalLevels={totalLevels}
-          galaxyService={galaxyService}
-          soundService={soundService}
-        />
-      </Provider>
-    )
+  // Set up alignment mode subscription
+  let currentAlignmentMode = store.getState().game.alignmentMode
+  // Set initial alignment mode from Redux state
+  setAlignmentMode(currentAlignmentMode)
 
-    console.log('Game started!')
-  } catch (error) {
-    console.error('Failed to initialize game:', error)
-    app.innerHTML = `<div style="color: red; padding: 20px;">Failed to initialize game: ${error}</div>`
-  }
+  // Subscribe to alignment mode changes
+  store.subscribe(() => {
+    const newAlignmentMode = store.getState().game.alignmentMode
+    if (newAlignmentMode !== currentAlignmentMode) {
+      setAlignmentMode(newAlignmentMode)
+      currentAlignmentMode = newAlignmentMode
+    }
+  })
+
+  root.render(
+    <Provider store={store}>
+      <App
+        renderer={renderer}
+        totalLevels={totalLevels}
+        galaxyService={galaxyService}
+        soundService={soundService}
+      />
+    </Provider>
+  )
+
+  console.log('Game started!')
+} catch (error) {
+  console.error('Failed to initialize game:', error)
+  app.innerHTML = `<div style="color: red; padding: 20px;">Failed to initialize game: ${error}</div>`
 }
-
-// Start the game
-initGame()

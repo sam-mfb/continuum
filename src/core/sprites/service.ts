@@ -1,11 +1,5 @@
 /**
- * @fileoverview Improved sprite service API with pre-computed format conversions
- *
- * This new API provides:
- * - Explicit variant selection (def, mask, background1, background2)
- * - Pre-computed format conversions (Uint8Array, Uint16Array, MonochromeBitmap)
- * - Type-safe variant requests
- * - Simpler, more consistent interface
+ * @fileoverview Sprite service API with pre-computed format conversions
  */
 
 import { expandTitlePage } from '@dev/art/utils'
@@ -112,17 +106,12 @@ type PrecomputedStorage = {
 /**
  * Creates an improved sprite service with pre-computed format conversions
  */
-export async function createSpriteService(assetPaths?: {
-  spriteResource?: string
-  statusBarResource?: string
+export async function createSpriteService(assetPaths: {
+  spriteResource: string
+  statusBarResource: string
 }): Promise<SpriteService> {
-  // Default paths if not provided
-  const paths = {
-    spriteResource: assetPaths?.spriteResource ?? '/rsrc_260.bin',
-    statusBarResource: assetPaths?.statusBarResource ?? '/rsrc_259.bin'
-  }
   // Load sprite resource file
-  const response = await fetch(paths.spriteResource)
+  const response = await fetch(assetPaths.spriteResource)
   if (!response.ok) {
     throw new Error('Failed to load sprite resource')
   }
@@ -131,7 +120,7 @@ export async function createSpriteService(assetPaths?: {
   const allSprites = extractAllSprites(arrayBuffer)
 
   // Load status bar template
-  const statusBarResponse = await fetch(paths.statusBarResource)
+  const statusBarResponse = await fetch(assetPaths.statusBarResource)
   if (!statusBarResponse.ok) {
     throw new Error('Failed to load status bar resource')
   }

@@ -45,7 +45,11 @@ import {
   TRANSITION_DELAY_FRAMES
 } from '@core/transition'
 
-import { checkLevelComplete, loadLevel, transitionToNextLevel } from '../levelManager'
+import {
+  checkLevelComplete,
+  loadLevel,
+  transitionToNextLevel
+} from '../levelManager'
 import {
   markLevelComplete,
   triggerGameOver,
@@ -67,8 +71,6 @@ export type StateUpdateContext = {
   fizzTransitionService?: FizzTransitionService
   soundService: SoundService
 }
-
-// No longer need StateUpdateResult - all data is in the store
 
 /**
  * Handle death countdown and respawn
@@ -208,7 +210,10 @@ const handleShipMovement = (
     }
 
     // Only handle controls if not in fizz or starmap phase
-    if (state.transition.status === 'inactive' || state.transition.status === 'level-complete') {
+    if (
+      state.transition.status === 'inactive' ||
+      state.transition.status === 'level-complete'
+    ) {
       // shipControl is a thunk - use any cast for dispatch
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(store.dispatch as any)(
@@ -494,7 +499,14 @@ const updateTransitionState = (
  * Main state update function
  */
 export const updateGameState = (context: StateUpdateContext): void => {
-  const { store, frame, keys, galaxyService, fizzTransitionService, soundService } = context
+  const {
+    store,
+    frame,
+    keys,
+    galaxyService,
+    fizzTransitionService,
+    soundService
+  } = context
 
   // Reset sound accumulator for new frame (must happen BEFORE any sounds are dispatched)
   store.dispatch(resetFrame())
