@@ -10,7 +10,7 @@ import type { RootState } from '@dev/store'
 import {
   setVolume,
   toggleSound,
-  initializeSoundService,
+  createSoundService,
   type SoundService
 } from '@core/sound'
 
@@ -28,7 +28,7 @@ export const SoundTestPanel: React.FC = () => {
   useEffect(() => {
     // Initialize sound service on mount
     if (!isInitialized) {
-      initializeSoundService()
+      createSoundService()
         .then(service => {
           setSoundService(service)
           // Sync initial state with Redux

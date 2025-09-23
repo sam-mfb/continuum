@@ -26,10 +26,10 @@ async function initGame(): Promise<void> {
       spriteResource: ASSET_PATHS.SPRITE_RESOURCE,
       statusBarResource: ASSET_PATHS.STATUS_BAR_RESOURCE
     })
-    console.log('Sprite service initialized')
+    console.log('Sprite service created')
 
     const galaxyService = await createGalaxyService(ASSET_PATHS.GALAXY_DATA)
-    console.log('Galaxy service created with initial galaxy loaded')
+    console.log('Galaxy service created')
 
     const fizzTransitionService = createFizzTransitionService()
     console.log('Fizz transition service created')
@@ -40,7 +40,7 @@ async function initGame(): Promise<void> {
       spriteService,
       fizzTransitionService
     })
-    console.log('Store created with services')
+    console.log('Game store created with services')
 
     store.dispatch(initializeGame())
 

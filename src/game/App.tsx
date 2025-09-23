@@ -9,7 +9,7 @@ import { startGame, setMode } from './gameSlice'
 import { setHighScore } from '@/core/highscore'
 import { shipSlice } from '@/core/ship'
 import { invalidateHighScore } from '@/core/status'
-import { initializeSoundService, resetSounds } from '@/core/sound'
+import { createSoundService, resetSounds } from '@/core/sound'
 import type { BitmapRenderer } from '@lib/bitmap'
 import type { GalaxyService } from '@core/galaxy'
 import type { GameStore, RootState } from './store'
@@ -44,7 +44,7 @@ const App: React.FC<AppProps> = ({ renderer, totalLevels, galaxyService }) => {
             }
 
             // Reinitialize sound service for new game
-            initializeSoundService()
+            createSoundService()
 
             // Load the selected level
             loadLevel(store, level, galaxyService)
@@ -103,3 +103,4 @@ const App: React.FC<AppProps> = ({ renderer, totalLevels, galaxyService }) => {
 }
 
 export default App
+

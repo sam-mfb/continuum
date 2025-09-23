@@ -6,21 +6,21 @@
  */
 
 import { createAsyncThunk } from '@reduxjs/toolkit'
-import { initializeSoundService, cleanupSoundService } from '@core/sound'
+import { createSoundService, cleanupSoundService } from '@core/sound'
 import { shipSlice } from '@core/ship'
 import { statusSlice } from '@core/status'
 import { TOTAL_INITIAL_LIVES } from './constants'
-import type { RootState, GameServices } from './store'
+import type { RootState } from './store'
+import type { GalaxyService } from '@/core/galaxy'
 
 /**
  * Initialize the game
  * Sets up sound service and initializes game state
- * @returns The galaxy service for further use
  */
 export const initializeGame = createAsyncThunk<
   undefined,
   void,
-  { state: RootState; extra: GameServices }
+  { state: RootState; extra: { galaxyService: GalaxyService } }
 >(
   'game/initialize',
   async (_, { getState, dispatch, extra }): Promise<undefined> => {
@@ -33,9 +33,9 @@ export const initializeGame = createAsyncThunk<
     try {
       // Get initial sound settings from our store
       const soundState = getState().sound
-      await initializeSoundService({
+      await createSoundService({
         volume: soundState.volume,
-        enabled: soundState.enabled
+        muted: soundState.enabled
       })
       console.log('Sound service initialized successfully')
     } catch (soundError) {
@@ -55,9 +55,6 @@ export const initializeGame = createAsyncThunk<
     // Initialize status (score, bonus, etc.)
     dispatch(statusSlice.actions.initStatus())
 
-    // Note: Level loading will now be done after initialization,
-    // when the galaxy service can be passed to loadLevel
-
     console.log('Game initialization complete')
   }
 )
@@ -72,5 +69,3 @@ export const cleanupGame = createAsyncThunk(
     cleanupSoundService()
   }
 )
-
-// Note: Initialization is now triggered by main.tsx which creates and passes the galaxy service

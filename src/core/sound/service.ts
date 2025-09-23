@@ -37,12 +37,6 @@ export type SoundService = {
   // Alien sounds
   playAlienExplosion(options?: { highPriority?: boolean }): void
 
-  // Direct generator access for all sounds
-  playSound(
-    soundType: GameSoundType,
-    options?: { highPriority?: boolean }
-  ): void
-
   // Control methods
   stopAll(): void
   stopThrust(): void
@@ -215,9 +209,9 @@ function stopAllSounds(): void {
  * Should be called once at game start
  * @param initialSettings - Optional initial volume and mute settings
  */
-export async function initializeSoundService(initialSettings?: {
+export async function createSoundService(initialSettings?: {
   volume?: number
-  enabled?: boolean
+  muted?: boolean
 }): Promise<SoundService> {
   if (serviceInstance) {
     return serviceInstance
@@ -229,7 +223,7 @@ export async function initializeSoundService(initialSettings?: {
 
     // Apply initial settings (defaults if not provided)
     currentVolume = initialSettings?.volume ?? 1.0
-    isMuted = !(initialSettings?.enabled ?? true)
+    isMuted = !(initialSettings?.muted ?? true)
 
     // Apply initial volume
     if (soundEngine) {
@@ -301,10 +295,6 @@ export async function initializeSoundService(initialSettings?: {
       // Alien sounds
       playAlienExplosion: (options?): void =>
         playSound(SoundType.EXP3_SOUND, options),
-
-      // Direct engine access
-      playSound: (soundType: GameSoundType, options?): void =>
-        playSoundByType(soundType, options),
 
       // Control methods
       stopAll: (): void => stopAllSounds(),

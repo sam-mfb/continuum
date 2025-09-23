@@ -11,7 +11,7 @@ export * from './types'
 
 // Sound Service - Primary API for game code
 export {
-  initializeSoundService,
+  createSoundService,
   getSoundService,
   cleanupSoundService,
   type SoundService
