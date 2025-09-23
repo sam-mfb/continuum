@@ -6,7 +6,13 @@
  * After explosions complete, bunkers reset.
  */
 
-import type { BitmapRenderer, MonochromeBitmap } from '@lib/bitmap'
+import {
+  createGameBitmap,
+  type BitmapRenderer,
+  type FrameInfo,
+  type KeyInfo,
+  type MonochromeBitmap
+} from '@lib/bitmap'
 import { planetSlice } from '@core/planet'
 import { screenSlice } from '@core/screen'
 import { buildGameStore } from '@dev/store'
@@ -267,7 +273,7 @@ const triggerBunkerExplosion = (bunker: BunkerConfig): void => {
  */
 export const createExplosionBitmapRenderer =
   (spriteService: SpriteService): BitmapRenderer =>
-  (frame: FrameInfo, keys: KeyInfo) => {
+  (_frame: FrameInfo, keys: KeyInfo) => {
     const bitmap = createGameBitmap()
     // Check initialization status
     if (initializationError) {

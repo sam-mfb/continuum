@@ -15,8 +15,6 @@ export {
 export { updateTransition } from './transitionThunks'
 export type { FizzTransitionService } from './FizzTransitionService'
 export { createFizzTransitionService } from './FizzTransitionService'
-export { starBackgroundWithShip } from './render/starBackgroundWithShip'
-export { starBackground } from './render/starBackground'
 export type { TransitionState } from './types'
 export {
   MICO_DELAY_FRAMES,

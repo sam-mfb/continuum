@@ -16,14 +16,14 @@ import { createGameBitmap } from '@lib/bitmap'
 import { viewClear } from '@core/screen/render'
 import {
   createFizzTransitionService,
-  type FizzTransitionService,
-  starBackground
+  type FizzTransitionService
 } from '@core/transition'
 import { fullFigure } from '@core/ship/render'
 import { SCRWTH, VIEWHT } from '@core/screen'
 import type { SpriteService } from '@core/sprites'
 import { SCENTER } from '@core/figs'
 import { cloneBitmap } from '@lib/bitmap'
+import { starBackground } from '@/core/transition/render'
 
 // State for tracking the transition - persists across render calls
 type TransitionState = {
@@ -54,7 +54,7 @@ const FIZZ_DURATION = 26 // based on measurements of fizz time on a Mac Plus
  */
 export const createStarBackgroundBitmapRenderer =
   (spriteService: SpriteService): BitmapRenderer =>
-  (frame: FrameInfo, keys: KeyInfo) => {
+  (_frame: FrameInfo, keys: KeyInfo) => {
     const bitmap = createGameBitmap()
     // Handle spacebar press to trigger transition
     if (keys.keysDown.has('Space') && state.mode === 'normal') {
@@ -73,7 +73,6 @@ export const createStarBackgroundBitmapRenderer =
       })(clearedFrom)
 
       // Create the "to" bitmap (star background with ship)
-      const toBitmap = cloneBitmap(bitmap)
       const starBg = starBackground({
         starCount: 150,
         additionalRender: screen =>
@@ -83,7 +82,7 @@ export const createStarBackgroundBitmapRenderer =
             def: shipSprite.bitmap,
             mask: shipMaskSprite.bitmap
           })(screen)
-      })(toBitmap)
+      })
 
       // Store bitmaps for potential reuse
       state.fromBitmap = new Uint8Array(withShip.data)

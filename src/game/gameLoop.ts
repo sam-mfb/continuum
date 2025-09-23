@@ -15,14 +15,16 @@ import type { GalaxyService } from '@core/galaxy'
 import type { FizzTransitionService } from '@core/transition'
 import type { SoundService } from '@core/sound'
 import type { GameStore } from './store'
-import type { UnknownAction } from '@reduxjs/toolkit'
 
-import { updateTransition, starBackgroundWithShip } from '@core/transition'
+import { updateTransition } from '@core/transition'
 import { sbarClear, updateSbar } from '@core/status/render'
 import { transitionToNextLevel } from './levelManager'
 import { updateGameState } from './gameLoop/stateUpdates'
 import { renderGame } from './gameLoop/rendering'
 import { playFrameSounds } from './gameLoop/soundManager'
+import { fullFigure } from '@/core/ship/render'
+import { SCENTER } from '@/core/figs'
+import { starBackground } from '@/core/transition/render'
 
 /**
  * Main game renderer with level progression and game over handling
@@ -107,22 +109,25 @@ export const createGameRenderer = (
       shipx: number
       shipy: number
     }): MonochromeBitmap => {
-      const targetBitmap: MonochromeBitmap = {
-        width: 512,
-        height: 342,
-        rowBytes: 64,
-        data: new Uint8Array((512 * 342) / 8)
-      }
+      const STAR_COUNT = 150
 
-      return starBackgroundWithShip({
-        includeShip: shipState.deadCount === 0,
-        shipState: {
-          shiprot: shipState.shiprot,
-          shipx: shipState.shipx,
-          shipy: shipState.shipy
-        },
-        spriteService
-      })(targetBitmap)
+      const shipSprite = spriteService.getShipSprite(shipState.shiprot, {
+        variant: 'def'
+      })
+      const shipMaskSprite = spriteService.getShipSprite(shipState.shiprot, {
+        variant: 'mask'
+      })
+
+      return starBackground({
+        starCount: STAR_COUNT,
+        additionalRender: (screen: MonochromeBitmap): MonochromeBitmap =>
+          fullFigure({
+            x: shipState.shipx - SCENTER,
+            y: shipState.shipy - SCENTER,
+            def: shipSprite.bitmap,
+            mask: shipMaskSprite.bitmap
+          })(screen)
+      })
     }
 
     const transitionFrame = store.dispatch(
@@ -134,8 +139,8 @@ export const createGameRenderer = (
         >[1]['store'],
         fizzTransitionService,
         onTransitionComplete: () => transitionToNextLevel(store, galaxyService)
-      }) as unknown as UnknownAction
-    ) as unknown as MonochromeBitmap | null
+      })
+    )
 
     if (transitionFrame) {
       // Transition is active, use the transition frame
