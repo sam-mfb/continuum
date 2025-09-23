@@ -6,7 +6,8 @@
  * Combines shipMove.ts logic with bitmap rendering like wallDrawing.ts.
  */
 
-import type { BitmapRenderer } from '@lib/bitmap'
+import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
+import { createGameBitmap } from '@lib/bitmap'
 import { fullFigure } from '@core/ship/render'
 import { drawShipShot } from '@core/shots/render'
 import { drawStrafe } from '@core/shots/render'
@@ -209,7 +210,8 @@ const getPressedControls = (keysDown: Set<string>): ShipControl[] => {
  */
 export const createShipMoveBitmapRenderer =
   (spriteService: SpriteService): BitmapRenderer =>
-  (bitmap, frame, _env) => {
+  (frame: FrameInfo, keys: KeyInfo) => {
+    const bitmap = createGameBitmap()
     // Check initialization status
     if (initializationError) {
       console.error('Initialization failed:', initializationError)
@@ -260,7 +262,7 @@ export const createShipMoveBitmapRenderer =
     const state = store.getState()
 
     // Check for ESC key to reset game
-    if (frame.keysDown.has('Escape')) {
+    if (keys.keysDown.has('Escape')) {
       resetGame()
       // Continue with normal rendering after reset
     }
@@ -275,7 +277,7 @@ export const createShipMoveBitmapRenderer =
       // and calculate gravity from generators
       store.dispatch(
         shipControl({
-          controlsPressed: getPressedControls(frame.keysDown)
+          controlsPressed: getPressedControls(keys.keysDown)
         })
       )
 

@@ -5,7 +5,8 @@
  * Shows the ship with shield overlay using eraseFigure to create the white outline effect.
  */
 
-import type { BitmapRenderer } from '@lib/bitmap'
+import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
+import { createGameBitmap } from '@lib/bitmap'
 import { fullFigure } from '@core/ship/render'
 import { eraseFigure } from '@core/ship/render'
 import { grayFigure } from '@core/ship/render'
@@ -33,15 +34,16 @@ let shipRotation = 0
  */
 export const createShieldDemoRenderer =
   (spriteService: SpriteService): BitmapRenderer =>
-  (bitmap, frame, _env) => {
+  (frame: FrameInfo, keys: KeyInfo) => {
+    const bitmap = createGameBitmap()
     // Check if space bar is held for shield
-    const shielding = frame.keysDown.has('Space')
+    const shielding = keys.keysDown.has('Space')
 
     // Allow manual rotation with Z/X keys
-    if (frame.keysDown.has('KeyZ')) {
+    if (keys.keysDown.has('KeyZ')) {
       shipRotation = (shipRotation - 1) & 31
     }
-    if (frame.keysDown.has('KeyX')) {
+    if (keys.keysDown.has('KeyX')) {
       shipRotation = (shipRotation + 1) & 31
     }
 

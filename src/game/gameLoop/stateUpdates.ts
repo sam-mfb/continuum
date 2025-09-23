@@ -8,7 +8,7 @@
 import type { Store, UnknownAction } from '@reduxjs/toolkit'
 import type { GalaxyService } from '@core/galaxy'
 import type { RootState } from '../store'
-import type { MonochromeBitmap, GameFrameInfo } from '@lib/bitmap'
+import type { MonochromeBitmap, FrameInfo, KeyInfo } from '@lib/bitmap'
 
 import { shipSlice, shipControl, CRITFUEL } from '@core/ship'
 import {
@@ -51,7 +51,8 @@ import { cleanupGame } from '../initializationThunks'
 
 export type StateUpdateContext = {
   store: Store<RootState>
-  frame: GameFrameInfo
+  frame: FrameInfo
+  keys: KeyInfo
   bitmap: MonochromeBitmap
   galaxyService: GalaxyService
 }
@@ -172,13 +173,13 @@ const handleGameOver = (
  */
 const handleShipMovement = (
   store: Store<RootState>,
-  frame: GameFrameInfo
+  keys: KeyInfo
 ): { globalx: number; globaly: number } => {
   const state = store.getState()
 
   if (state.ship.deadCount === 0) {
     // Check for self-destruct command (A key)
-    if (frame.keysDown.has('KeyA')) {
+    if (keys.keysDown.has('KeyA')) {
       triggerShipDeath(store)
       return {
         globalx: state.ship.globalx,
@@ -192,7 +193,7 @@ const handleShipMovement = (
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(store.dispatch as any)(
         shipControl({
-          controlsPressed: getPressedControls(frame.keysDown)
+          controlsPressed: getPressedControls(keys.keysDown)
         })
       )
 
@@ -402,7 +403,7 @@ const processBunkerKills = (store: Store<RootState>): void => {
  * Main state update function
  */
 export const updateGameState = (context: StateUpdateContext): void => {
-  const { store, frame, galaxyService } = context
+  const { store, frame, keys, galaxyService } = context
 
   // Handle death countdown and respawn
   handleDeathAndRespawn(store)
@@ -425,7 +426,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
   handleGameOver(store, galaxyService)
 
   // Handle ship movement and controls
-  const { globalx, globaly } = handleShipMovement(store, frame)
+  const { globalx, globaly } = handleShipMovement(store, keys)
 
   // Update bunker rotations for animated bunkers
   store.dispatch(updateBunkerRotations({ globalx, globaly }))

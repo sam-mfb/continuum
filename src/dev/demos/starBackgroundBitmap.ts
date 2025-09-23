@@ -11,7 +11,8 @@
  * 4. Resets back to start
  */
 
-import type { BitmapRenderer } from '@lib/bitmap'
+import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
+import { createGameBitmap } from '@lib/bitmap'
 import { viewClear } from '@core/screen/render'
 import {
   createFizzTransitionService,
@@ -53,9 +54,10 @@ const FIZZ_DURATION = 26 // based on measurements of fizz time on a Mac Plus
  */
 export const createStarBackgroundBitmapRenderer =
   (spriteService: SpriteService): BitmapRenderer =>
-  (bitmap, frame, _env) => {
+  (frame: FrameInfo, keys: KeyInfo) => {
+    const bitmap = createGameBitmap()
     // Handle spacebar press to trigger transition
-    if (frame.keysDown.has('Space') && state.mode === 'normal') {
+    if (keys.keysDown.has('Space') && state.mode === 'normal') {
       // Get ship sprite for rotation 0
       const shipSprite = spriteService.getShipSprite(0, { variant: 'def' })
       const shipMaskSprite = spriteService.getShipSprite(0, { variant: 'mask' })

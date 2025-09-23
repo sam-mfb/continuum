@@ -7,7 +7,8 @@
  * - Flash effect on random fuel cells
  */
 
-import type { BitmapRenderer } from '@lib/bitmap'
+import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
+import { createGameBitmap } from '@lib/bitmap'
 import { drawFuels } from '@core/planet/render'
 import { configureStore } from '@reduxjs/toolkit'
 import { planetSlice, loadPlanet, updateFuelAnimations } from '@core/planet'
@@ -133,7 +134,8 @@ initializeGame()
  */
 export const createFuelDrawBitmapRenderer =
   (spriteService: SpriteService): BitmapRenderer =>
-  (bitmap, frame, _env) => {
+  (frame: FrameInfo, keys: KeyInfo) => {
+    const bitmap = createGameBitmap()
     // Check initialization status
     if (initializationError) {
       console.error('Initialization failed:', initializationError)
@@ -157,16 +159,16 @@ export const createFuelDrawBitmapRenderer =
     // Handle keyboard input for viewport movement
     const moveSpeed = 5
 
-    if (frame.keysDown.has('ArrowUp')) {
+    if (keys.keysDown.has('ArrowUp')) {
       viewportState.y = Math.max(0, viewportState.y - moveSpeed)
     }
-    if (frame.keysDown.has('ArrowDown')) {
+    if (keys.keysDown.has('ArrowDown')) {
       viewportState.y = Math.min(
         WORLD_HEIGHT - bitmap.height,
         viewportState.y + moveSpeed
       )
     }
-    if (frame.keysDown.has('ArrowLeft')) {
+    if (keys.keysDown.has('ArrowLeft')) {
       viewportState.x -= moveSpeed
       if (planetState.worldwrap) {
         // Wrap around if we go negative
@@ -177,7 +179,7 @@ export const createFuelDrawBitmapRenderer =
         viewportState.x = Math.max(0, viewportState.x)
       }
     }
-    if (frame.keysDown.has('ArrowRight')) {
+    if (keys.keysDown.has('ArrowRight')) {
       viewportState.x += moveSpeed
       if (planetState.worldwrap) {
         // Wrap around if we exceed world width

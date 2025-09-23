@@ -10,7 +10,8 @@
  * - Shows how the sprite service provides the status bar template
  */
 
-import type { BitmapRenderer } from '@lib/bitmap'
+import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
+import { createGameBitmap } from '@lib/bitmap'
 import { cloneBitmap } from '@lib/bitmap'
 import { viewClear } from '@core/screen/render'
 import { newSbar } from '@core/status/render'
@@ -88,7 +89,8 @@ function processInput(keysDown: Set<string>): void {
  */
 export const createStatusBarDemo =
   (spriteService: SpriteService): BitmapRenderer =>
-  (bitmap, frame, _env) => {
+  (frame: FrameInfo, keys: KeyInfo) => {
+    const bitmap = createGameBitmap()
     // Initialize on first frame
     if (!state.initialized) {
       state.initialized = true
@@ -96,7 +98,7 @@ export const createStatusBarDemo =
     }
 
     // Process keyboard input
-    processInput(frame.keysDown)
+    processInput(keys.keysDown)
 
     // Update counters every second
     const now = Date.now()

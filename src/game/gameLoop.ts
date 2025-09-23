@@ -9,6 +9,7 @@
  */
 
 import type { BitmapRenderer, MonochromeBitmap } from '@lib/bitmap'
+import { createGameBitmap } from '@lib/bitmap'
 import type { SpriteService } from '@core/sprites'
 import type { GalaxyService } from '@core/galaxy'
 import type { FizzTransitionService } from '@core/transition'
@@ -38,7 +39,10 @@ export const createGameRenderer = (
   fizzTransitionService: FizzTransitionService,
   soundService: SoundService
 ): BitmapRenderer => {
-  return (bitmap, frame, _env) => {
+  return (frame, keys) => {
+    // Create a fresh bitmap for this frame
+    let bitmap = createGameBitmap()
+
     // Check initialization status from Redux state
     const gameState = store.getState().game
     const { initializationStatus, initializationError } = gameState
@@ -60,6 +64,7 @@ export const createGameRenderer = (
     updateGameState({
       store,
       frame,
+      keys,
       bitmap,
       galaxyService
     })

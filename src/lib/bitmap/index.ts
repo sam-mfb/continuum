@@ -6,8 +6,11 @@
 export type {
   MonochromeBitmap,
   BitmapRenderer,
+  LegacyBitmapRenderer,
   BitmapToCanvasOptions,
   Rectangle,
+  FrameInfo,
+  KeyInfo,
   GameFrameInfo,
   GameEnvironment
 } from './types'
@@ -15,6 +18,7 @@ export type {
 // Creation utilities
 export {
   createMonochromeBitmap,
+  createGameBitmap,
   createBitmapFromCanvas,
   cloneBitmap
 } from './create'

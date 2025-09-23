@@ -2,14 +2,18 @@
  * Simple bitmap test game that displays a gray pattern
  */
 
-import type { BitmapRenderer } from '@lib/bitmap'
-import { setPixel, clearPixel } from '@lib/bitmap'
+import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
+import { setPixel, clearPixel, createGameBitmap } from '@lib/bitmap'
 import { viewClear } from '@core/screen/render'
 
 /**
  * Creates a checkerboard pattern that appears gray at normal viewing distance
  */
-export const bitmapTestRenderer: BitmapRenderer = (bitmap, _frame, _env) => {
+export const bitmapTestRenderer: BitmapRenderer = (
+  _frame: FrameInfo,
+  _keys: KeyInfo
+) => {
+  const bitmap = createGameBitmap()
   // Create alternating pixel pattern using viewClear with local coordinates
   let result = viewClear({
     screenX: 0,

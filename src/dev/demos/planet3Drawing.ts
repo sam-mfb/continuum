@@ -6,7 +6,8 @@
  * Use arrow keys to move the viewport.
  */
 
-import type { BitmapRenderer } from '@lib/bitmap'
+import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
+import { createGameBitmap } from '@lib/bitmap'
 import type { PlanetState } from '@core/planet'
 import { whiteTerrain, blackTerrain } from '@core/walls/render'
 import { wallsActions } from '@core/walls'
@@ -72,7 +73,11 @@ let cachedPlanet: PlanetState | null = null
 /**
  * Renderer that displays planet 3's walls using both blackTerrain and whiteTerrain
  */
-export const planet3DrawingRenderer: BitmapRenderer = (bitmap, frame, _env) => {
+export const planet3DrawingRenderer: BitmapRenderer = (
+  frame: FrameInfo,
+  keys: KeyInfo
+) => {
+  const bitmap = createGameBitmap()
   // Initialize planet loading on first render
   if (!planet3DataPromise) {
     planet3DataPromise = loadPlanet3()
@@ -104,19 +109,19 @@ export const planet3DrawingRenderer: BitmapRenderer = (bitmap, frame, _env) => {
 
   // Handle keyboard input for viewport movement
   const moveSpeed = 5
-  if (frame.keysDown.has('ArrowUp')) {
+  if (keys.keysDown.has('ArrowUp')) {
     viewportState.y = Math.max(0, viewportState.y - moveSpeed)
   }
-  if (frame.keysDown.has('ArrowDown')) {
+  if (keys.keysDown.has('ArrowDown')) {
     viewportState.y = Math.min(
       planet.worldheight - VIEWHT,
       viewportState.y + moveSpeed
     )
   }
-  if (frame.keysDown.has('ArrowLeft')) {
+  if (keys.keysDown.has('ArrowLeft')) {
     viewportState.x = Math.max(0, viewportState.x - moveSpeed)
   }
-  if (frame.keysDown.has('ArrowRight')) {
+  if (keys.keysDown.has('ArrowRight')) {
     viewportState.x = Math.min(
       planet.worldwidth - bitmap.width,
       viewportState.x + moveSpeed

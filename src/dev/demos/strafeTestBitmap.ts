@@ -6,7 +6,8 @@
  * Use arrow keys to move the viewport.
  */
 
-import type { BitmapRenderer } from '@lib/bitmap'
+import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
+import { createGameBitmap } from '@lib/bitmap'
 import { drawStrafe } from '@core/shots/render'
 
 // Define a simple world
@@ -42,25 +43,25 @@ for (let i = 0; i < 16; i++) {
  * Renderer that displays all 16 strafe orientations on a white background
  */
 export const strafeTestBitmapRenderer: BitmapRenderer = (
-  bitmap,
-  frame,
-  _env
+  _frame: FrameInfo,
+  keys: KeyInfo
 ) => {
+  const bitmap = createGameBitmap()
   // Handle keyboard input for viewport movement
   const moveSpeed = 5
-  if (frame.keysDown.has('ArrowUp')) {
+  if (keys.keysDown.has('ArrowUp')) {
     viewportState.y = Math.max(0, viewportState.y - moveSpeed)
   }
-  if (frame.keysDown.has('ArrowDown')) {
+  if (keys.keysDown.has('ArrowDown')) {
     viewportState.y = Math.min(
       WORLD_HEIGHT - bitmap.height,
       viewportState.y + moveSpeed
     )
   }
-  if (frame.keysDown.has('ArrowLeft')) {
+  if (keys.keysDown.has('ArrowLeft')) {
     viewportState.x = Math.max(0, viewportState.x - moveSpeed)
   }
-  if (frame.keysDown.has('ArrowRight')) {
+  if (keys.keysDown.has('ArrowRight')) {
     viewportState.x = Math.min(
       WORLD_WIDTH - bitmap.width,
       viewportState.x + moveSpeed

@@ -1,10 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react'
 import type {
   BitmapRenderer,
+  LegacyBitmapRenderer,
   BitmapToCanvasOptions,
   MonochromeBitmap,
   GameFrameInfo,
-  GameEnvironment
+  GameEnvironment,
+  FrameInfo,
+  KeyInfo
 } from '@lib/bitmap'
 import { createMonochromeBitmap, bitmapToCanvas } from '@lib/bitmap'
 import {
@@ -57,7 +60,7 @@ export type CanvasGameDefinition = {
 export type BitmapGameDefinition = {
   type: 'bitmap'
   name: string
-  bitmapRenderer: BitmapRenderer
+  bitmapRenderer: BitmapRenderer | LegacyBitmapRenderer
   bitmapOptions?: BitmapToCanvasOptions
 }
 
@@ -272,11 +275,33 @@ const GameView: React.FC<GameViewProps> = ({
               }
 
               // Call bitmap renderer and get the result
-              const renderedBitmap = game.bitmapRenderer(
-                bitmapRef.current,
-                frameInfo,
-                env
-              )
+              // Check if it's the new or old signature
+              let renderedBitmap: MonochromeBitmap
+              if (game.bitmapRenderer.length === 2) {
+                // New signature: (frame, keys) => bitmap
+                const frame: FrameInfo = {
+                  frameCount: frameInfo.frameCount,
+                  deltaTime: frameInfo.deltaTime,
+                  totalTime: frameInfo.totalTime,
+                  targetDelta: frameInfo.targetDelta
+                }
+                const keys: KeyInfo = {
+                  keysDown: frameInfo.keysDown,
+                  keysPressed: frameInfo.keysPressed,
+                  keysReleased: frameInfo.keysReleased
+                }
+                renderedBitmap = (game.bitmapRenderer as BitmapRenderer)(
+                  frame,
+                  keys
+                )
+              } else {
+                // Old signature: (bitmap, frame, env) => bitmap
+                renderedBitmap = (game.bitmapRenderer as LegacyBitmapRenderer)(
+                  bitmapRef.current,
+                  frameInfo,
+                  env
+                )
+              }
 
               // Update bitmap reference for next frame
               bitmapRef.current = renderedBitmap

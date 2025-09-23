@@ -267,7 +267,8 @@ const triggerBunkerExplosion = (bunker: BunkerConfig): void => {
  */
 export const createExplosionBitmapRenderer =
   (spriteService: SpriteService): BitmapRenderer =>
-  (bitmap, frame, _env) => {
+  (frame: FrameInfo, keys: KeyInfo) => {
+    const bitmap = createGameBitmap()
     // Check initialization status
     if (initializationError) {
       console.error('Initialization failed:', initializationError)
@@ -287,7 +288,7 @@ export const createExplosionBitmapRenderer =
 
     // Handle key presses
     for (const bunker of bunkers) {
-      if (frame.keysDown.has(bunker.key) && bunker.alive) {
+      if (keys.keysDown.has(bunker.key) && bunker.alive) {
         triggerBunkerExplosion(bunker)
       }
     }

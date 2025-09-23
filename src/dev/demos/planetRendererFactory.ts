@@ -6,7 +6,8 @@
 
 import type { PlanetRendererFactory, GameRendererStore } from './types'
 import type { PlanetState } from '@core/planet'
-import type { BitmapRenderer } from '@lib/bitmap'
+import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
+import { createGameBitmap } from '@lib/bitmap'
 import { whiteTerrain, blackTerrain } from '@core/walls/render'
 import { wallsActions } from '@core/walls'
 import { screenSlice } from '@core/screen'
@@ -76,7 +77,8 @@ export const createPlanetRenderer: PlanetRendererFactory = (
   store.dispatch(gameViewActions.setInitialized())
 
   // Return the renderer function
-  const renderer: BitmapRenderer = (bitmap, frame, _env) => {
+  const renderer: BitmapRenderer = (frame: FrameInfo, keys: KeyInfo) => {
+    const bitmap = createGameBitmap()
     const state = store.getState()
     const { walls, gameView, screen } = state
 
@@ -97,16 +99,16 @@ export const createPlanetRenderer: PlanetRendererFactory = (
     let dx = 0
     let dy = 0
 
-    if (frame.keysDown.has('ArrowUp')) {
+    if (keys.keysDown.has('ArrowUp')) {
       dy = -moveSpeed
     }
-    if (frame.keysDown.has('ArrowDown')) {
+    if (keys.keysDown.has('ArrowDown')) {
       dy = moveSpeed
     }
-    if (frame.keysDown.has('ArrowLeft')) {
+    if (keys.keysDown.has('ArrowLeft')) {
       dx = -moveSpeed
     }
-    if (frame.keysDown.has('ArrowRight')) {
+    if (keys.keysDown.has('ArrowRight')) {
       dx = moveSpeed
     }
 

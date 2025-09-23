@@ -1,4 +1,10 @@
-import type { MonochromeBitmap, BitmapRenderer } from '@lib/bitmap'
+import type {
+  MonochromeBitmap,
+  BitmapRenderer,
+  FrameInfo,
+  KeyInfo
+} from '@lib/bitmap'
+import { createGameBitmap } from '@lib/bitmap'
 import type { ShardSpriteSet, ShardSprite } from '@core/figs'
 import { drawShard } from '@core/explosions/render'
 import { SHARDHT } from '@core/figs'
@@ -233,23 +239,24 @@ export function shardTestBitmap(deps: {
  */
 export const createShardTestBitmapRenderer =
   (spriteService: SpriteService): BitmapRenderer =>
-  (bitmap, frame) => {
+  (frame: FrameInfo, keys: KeyInfo) => {
+    const bitmap = createGameBitmap()
     // Handle keyboard input for viewport movement
     const moveSpeed = 1
 
-    if (frame.keysDown.has('ArrowUp')) {
+    if (keys.keysDown.has('ArrowUp')) {
       viewportState.y = Math.max(0, viewportState.y - moveSpeed)
     }
-    if (frame.keysDown.has('ArrowDown')) {
+    if (keys.keysDown.has('ArrowDown')) {
       viewportState.y = Math.min(
         WORLD_HEIGHT - bitmap.height,
         viewportState.y + moveSpeed
       )
     }
-    if (frame.keysDown.has('ArrowLeft')) {
+    if (keys.keysDown.has('ArrowLeft')) {
       viewportState.x = Math.max(0, viewportState.x - moveSpeed)
     }
-    if (frame.keysDown.has('ArrowRight')) {
+    if (keys.keysDown.has('ArrowRight')) {
       viewportState.x = Math.min(
         WORLD_WIDTH - bitmap.width,
         viewportState.x + moveSpeed

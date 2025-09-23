@@ -3,17 +3,17 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { createMonochromeBitmap } from './create'
-import type { BitmapRenderer } from './types'
+import { createGameBitmap } from './create'
+import type { BitmapRenderer, FrameInfo, KeyInfo } from './types'
 
 describe('BitmapRenderer pure function pattern', () => {
-  it('returns a new bitmap without modifying the input', () => {
-    const testRenderer: BitmapRenderer = (bitmap, _frame, _env) => {
-      // Create a new bitmap with modified data
-      const result = {
-        ...bitmap,
-        data: new Uint8Array(bitmap.data)
-      }
+  it('creates and returns a new bitmap', () => {
+    const testRenderer: BitmapRenderer = (
+      _frame: FrameInfo,
+      _keys: KeyInfo
+    ) => {
+      // Create a new bitmap
+      const result = createGameBitmap()
 
       // Modify the result
       result.data[0] = 0xff
@@ -21,80 +21,63 @@ describe('BitmapRenderer pure function pattern', () => {
       return result
     }
 
-    const inputBitmap = createMonochromeBitmap(8, 8)
-    const originalData = new Uint8Array(inputBitmap.data)
+    const frame: FrameInfo = {
+      frameCount: 0,
+      deltaTime: 0,
+      totalTime: 0,
+      targetDelta: 50
+    }
+    const keys: KeyInfo = {
+      keysDown: new Set(),
+      keysPressed: new Set(),
+      keysReleased: new Set()
+    }
 
-    const outputBitmap = testRenderer(
-      inputBitmap,
-      {
-        frameCount: 0,
-        deltaTime: 0,
-        totalTime: 0,
-        targetDelta: 50,
-        keysDown: new Set(),
-        keysPressed: new Set(),
-        keysReleased: new Set()
-      },
-      {
-        width: 512,
-        height: 342,
-        fps: 20
-      }
-    )
-
-    // Input bitmap should be unchanged
-    expect(inputBitmap.data).toEqual(originalData)
+    const outputBitmap = testRenderer(frame, keys)
 
     // Output bitmap should have the modification
     expect(outputBitmap.data[0]).toBe(0xff)
 
-    // Output should be a different object
-    expect(outputBitmap).not.toBe(inputBitmap)
+    // Output should be a proper game bitmap
+    expect(outputBitmap.width).toBe(512)
+    expect(outputBitmap.height).toBe(342)
   })
 
-  it('can chain renderers together', () => {
-    const renderer1: BitmapRenderer = (bitmap, _frame, _env) => {
-      const result = {
-        ...bitmap,
-        data: new Uint8Array(bitmap.data)
-      }
+  it('can compose renderers together', () => {
+    const renderer1: BitmapRenderer = (_frame: FrameInfo, _keys: KeyInfo) => {
+      const result = createGameBitmap()
       result.data[0] = 0x01
       return result
     }
 
-    const renderer2: BitmapRenderer = (bitmap, _frame, _env) => {
-      const result = {
-        ...bitmap,
-        data: new Uint8Array(bitmap.data)
-      }
-      result.data[1] = 0x02
+    const renderer2: BitmapRenderer = (_frame: FrameInfo, _keys: KeyInfo) => {
+      const result = createGameBitmap()
+      result.data[0] = 0x01 // Copy renderer1's change
+      result.data[1] = 0x02 // Add renderer2's change
       return result
     }
 
-    const inputBitmap = createMonochromeBitmap(8, 8)
-    const frame = {
+    const frame: FrameInfo = {
       frameCount: 0,
       deltaTime: 0,
       totalTime: 0,
-      targetDelta: 50,
+      targetDelta: 50
+    }
+    const keys: KeyInfo = {
       keysDown: new Set<string>(),
       keysPressed: new Set<string>(),
       keysReleased: new Set<string>()
     }
-    const env = { width: 512, height: 342, fps: 20 }
 
-    // Chain the renderers
-    const intermediate = renderer1(inputBitmap, frame, env)
-    const final = renderer2(intermediate, frame, env)
+    // Call the renderers
+    const result1 = renderer1(frame, keys)
+    const result2 = renderer2(frame, keys)
 
     // Check the results
-    expect(inputBitmap.data[0]).toBe(0x00)
-    expect(inputBitmap.data[1]).toBe(0x00)
+    expect(result1.data[0]).toBe(0x01)
+    expect(result1.data[1]).toBe(0x00)
 
-    expect(intermediate.data[0]).toBe(0x01)
-    expect(intermediate.data[1]).toBe(0x00)
-
-    expect(final.data[0]).toBe(0x01)
-    expect(final.data[1]).toBe(0x02)
+    expect(result2.data[0]).toBe(0x01)
+    expect(result2.data[1]).toBe(0x02)
   })
 })

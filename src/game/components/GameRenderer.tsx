@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-import type { BitmapRenderer } from '@lib/bitmap'
-import { createMonochromeBitmap } from '@lib/bitmap'
+import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
 
 type GameRendererProps = {
   renderer: BitmapRenderer
@@ -39,9 +38,6 @@ const GameRenderer: React.FC<GameRendererProps> = ({
     // Set up pixel-perfect rendering
     ctx.imageSmoothingEnabled = false
 
-    // Create initial bitmap
-    let bitmap = createMonochromeBitmap(width, height)
-
     // Keyboard handlers
     const handleKeyDown = (e: KeyboardEvent): void => {
       keysDownRef.current.add(e.code)
@@ -72,27 +68,21 @@ const GameRenderer: React.FC<GameRendererProps> = ({
       const deltaTime = currentTime - lastFrameTimeRef.current
 
       if (deltaTime >= frameIntervalMs) {
-        // Render game and get the resulting bitmap
-        const renderedBitmap = renderer(
-          bitmap,
-          {
-            frameCount: frameCountRef.current,
-            deltaTime: deltaTime,
-            totalTime: currentTime - startTimeRef.current,
-            targetDelta: frameIntervalMs,
-            keysDown: keysDownRef.current,
-            keysPressed: new Set(),
-            keysReleased: new Set()
-          },
-          {
-            width: width,
-            height: height,
-            fps: fps
-          }
-        )
+        // Prepare frame and key info
+        const frameInfo: FrameInfo = {
+          frameCount: frameCountRef.current,
+          deltaTime: deltaTime,
+          totalTime: currentTime - startTimeRef.current,
+          targetDelta: frameIntervalMs
+        }
+        const keyInfo: KeyInfo = {
+          keysDown: keysDownRef.current,
+          keysPressed: new Set(),
+          keysReleased: new Set()
+        }
 
-        // Update the bitmap for next frame
-        bitmap = renderedBitmap
+        // Render game and get the resulting bitmap
+        const renderedBitmap = renderer(frameInfo, keyInfo)
 
         // Create offscreen canvas for pixel-perfect scaling
         const offscreen = document.createElement('canvas')
