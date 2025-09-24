@@ -9,6 +9,8 @@ import { createSoundEngine, type GameSoundType } from './soundEngine'
 import { SoundType, SOUND_PRIORITIES, SOUND_PRIORITY_DECAY } from './constants'
 import type { SoundEngine } from './types'
 
+const VBL_SPEED_IPS = 60
+
 /**
  * Sound service interface
  * All methods are synchronous - async operations handled internally
@@ -240,7 +242,7 @@ export async function createSoundService(initialSettings: {
         // VBL on classic Macs runs at 60.15Hz ≈ 16.67ms per tick
         decayIntervalId = setInterval(() => {
           decayPriority()
-        }, 1000 / 60) // ~16.67ms
+        }, 1000 / VBL_SPEED_IPS) // ~16.67ms
       }
     }
 
