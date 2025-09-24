@@ -28,10 +28,6 @@ export const createGameRenderer = (
     // Create a fresh bitmap for this frame
     let bitmap = createGameBitmap()
 
-    // Decay sound priority once per frame (matches VBL timing from Sound.c:92-104)
-    // This allows sounds of the same type to interrupt each other after priority decay
-    soundService.onFrameTick()
-
     // This handles all game logic, physics, and state changes
     // except for ship collisions which use rendering to detect
     updateGameState({

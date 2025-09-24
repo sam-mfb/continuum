@@ -68,36 +68,30 @@ export function setupSoundListener(
       const screenr = screenx + SCRWTH
       const screenb = screeny + VIEWHT
 
-      // Check if ANY new shot is visible on screen
-      const anyOnScreen = result.newShots.some(shot => {
-        if (!shot.origin) return false
+      // Play a sound for each new shot based on its proximity
+      // The sound service's priority system will ensure only the highest priority plays
+      for (const shot of result.newShots) {
+        if (!shot.origin) continue
         const { x: bunkx, y: bunky } = shot.origin
-        return (
+
+        // Check if bunker is visible on screen
+        if (
           bunkx > screenx &&
           bunkx < screenr &&
           bunky > screeny &&
           bunky < screenb
-        )
-      })
-
-      if (anyOnScreen) {
-        // Play bunker sound for on-screen shots
-        soundService.playBunkerShoot()
-      } else {
-        // Check if ANY new shot is within SOFTBORDER
-        const anyNearScreen = result.newShots.some(shot => {
-          if (!shot.origin) return false
-          const { x: bunkx, y: bunky } = shot.origin
-          return (
-            bunkx > screenx - SOFTBORDER &&
-            bunkx < screenr + SOFTBORDER &&
-            bunky > screeny - SOFTBORDER &&
-            bunky < screenb + SOFTBORDER
-          )
-        })
-
-        if (anyNearScreen) {
-          // Play soft sound for shots near screen
+        ) {
+          // Play bunker sound for on-screen shot
+          soundService.playBunkerShoot()
+        }
+        // Check if bunker is within SOFTBORDER of screen
+        else if (
+          bunkx > screenx - SOFTBORDER &&
+          bunkx < screenr + SOFTBORDER &&
+          bunky > screeny - SOFTBORDER &&
+          bunky < screenb + SOFTBORDER
+        ) {
+          // Play soft sound for shot near screen
           soundService.playBunkerSoft()
         }
       }

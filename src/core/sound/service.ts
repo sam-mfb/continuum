@@ -43,9 +43,6 @@ export type SoundService = {
   setVolume(volume: number): void
   setMuted(muted: boolean): void
 
-  // Frame tick for priority decay (matches VBL-based timing from Sound.c:92-104)
-  onFrameTick(): void
-
   // Status methods
   isPlaying(): boolean
   getCurrentSound(): SoundType | null
@@ -94,6 +91,7 @@ export async function createSoundService(initialSettings: {
   let isPlaying = false
   let isMuted = false
   let currentVolume = 1.0
+  let decayIntervalId: NodeJS.Timeout | null = null
 
   try {
     // Create and initialize the sound engine
@@ -161,6 +159,9 @@ export async function createSoundService(initialSettings: {
      * @returns true if sound was played, false if blocked by priority
      */
     function playSound(soundType: SoundType): boolean {
+      // Ensure the decay timer is running when sounds are being played
+      ensureDecayTimer()
+
       const engineType = soundTypeToEngine[soundType]
       if (!engineType) {
         return false
@@ -227,6 +228,19 @@ export async function createSoundService(initialSettings: {
       if (decayRate !== undefined) {
         // Decay the priority by the specified amount (Sound.c:148, 174, 230)
         currentSoundPriority = Math.max(0, currentSoundPriority - decayRate)
+      }
+    }
+
+    /**
+     * Ensure the decay timer is running
+     * Starts a 60Hz timer if not already running (matches VBL timing from Sound.c:92-104)
+     */
+    function ensureDecayTimer(): void {
+      if (decayIntervalId === null) {
+        // VBL on classic Macs runs at 60.15Hz ≈ 16.67ms per tick
+        decayIntervalId = setInterval(() => {
+          decayPriority()
+        }, 1000 / 60) // ~16.67ms
       }
     }
 
@@ -319,11 +333,6 @@ export async function createSoundService(initialSettings: {
         }
       },
 
-      // Frame tick for priority decay (matches VBL-based timing from Sound.c:92-104)
-      onFrameTick: (): void => {
-        decayPriority()
-      },
-
       // Status methods
       isPlaying: (): boolean => isPlaying,
       getCurrentSound: (): SoundType | null => currentSound,
@@ -331,8 +340,14 @@ export async function createSoundService(initialSettings: {
       // Engine access for test panel
       getEngine: (): SoundEngine | null => soundEngine,
 
-      // Cleanup method - stops sounds but keeps engine alive for reuse
+      // Cleanup method - stops sounds and timer but keeps engine alive for reuse
       cleanup: (): void => {
+        // Clear the decay timer
+        if (decayIntervalId) {
+          clearInterval(decayIntervalId)
+          decayIntervalId = null
+        }
+
         if (soundEngine && isPlaying) {
           soundEngine.stop()
         }
