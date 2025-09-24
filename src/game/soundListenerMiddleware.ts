@@ -26,7 +26,7 @@ export function setupSoundListener(
     predicate: () => true,
     effect: async (action, listenerApi) => {
       // Get the current state
-      const state = listenerApi.getState() as RootState
+      const state = listenerApi.getState()
 
       // TODO: Migrate playSounds logic here
       // For now, just log to verify it's working
