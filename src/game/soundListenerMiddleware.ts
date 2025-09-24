@@ -115,18 +115,8 @@ export function setupSoundListener(
       // Trigger when shield transitions from on to off
       return previousState.ship.shielding && !currentState.ship.shielding
     },
-    effect: (_, listenerApi) => {
-      const currentState = listenerApi.getState()
-      if (currentState.ship.thrusting) {
-        // Shield stopped but thrust still active - switch to thrust sound
-        // But we need to clear first or the thrust can't take over because
-        // shield has a higher priority
-        soundService.clearSound()
-        soundService.playShipThrust()
-      } else {
-        // Neither shield nor thrust active - clear sound
-        soundService.clearSound()
-      }
+    effect: () => {
+      soundService.clearSound()
     }
   })
 
@@ -147,15 +137,8 @@ export function setupSoundListener(
       // Trigger when thrust transitions from on to off
       return previousState.ship.thrusting && !currentState.ship.thrusting
     },
-    effect: (_, listenerApi) => {
-      const currentState = listenerApi.getState()
-      if (currentState.ship.shielding) {
-        // Thrust stopped but shield still active - play/ensure shield sound
-        soundService.playShipShield()
-      } else {
-        // Neither shield nor thrust active - clear sound
-        soundService.clearSound()
-      }
+    effect: () => {
+      soundService.clearSound()
     }
   })
 }
