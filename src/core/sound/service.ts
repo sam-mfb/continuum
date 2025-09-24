@@ -6,7 +6,7 @@
  */
 
 import { createSoundEngine, type GameSoundType } from './soundEngine'
-import { SoundType, SOUND_PRIORITIES } from './constants'
+import { SoundType, SOUND_PRIORITIES, SOUND_PRIORITY_DECAY } from './constants'
 import type { SoundEngine } from './types'
 
 /**
@@ -42,6 +42,9 @@ export type SoundService = {
   clearSound(): void // Matches original game's clear_sound()
   setVolume(volume: number): void
   setMuted(muted: boolean): void
+
+  // Frame tick for priority decay (matches VBL-based timing from Sound.c:92-104)
+  onFrameTick(): void
 
   // Status methods
   isPlaying(): boolean
@@ -209,6 +212,24 @@ export async function createSoundService(initialSettings: {
       currentSoundPriority = 0
     }
 
+    /**
+     * Decay the current sound's priority
+     * Matches the VBL-based priority decay from Sound.c do_*_sound() functions
+     */
+    function decayPriority(): void {
+      // Only decay priority if a sound is currently playing
+      if (currentSound === null || currentSoundPriority <= 0) {
+        return
+      }
+
+      // Check if this sound has a decay rate defined
+      const decayRate = SOUND_PRIORITY_DECAY[currentSound]
+      if (decayRate !== undefined) {
+        // Decay the priority by the specified amount (Sound.c:148, 174, 230)
+        currentSoundPriority = Math.max(0, currentSoundPriority - decayRate)
+      }
+    }
+
     // Create the service instance
     const serviceInstance: SoundService = {
       // Ship sounds
@@ -296,6 +317,11 @@ export async function createSoundService(initialSettings: {
         if (muted && isPlaying) {
           stopAllSounds()
         }
+      },
+
+      // Frame tick for priority decay (matches VBL-based timing from Sound.c:92-104)
+      onFrameTick: (): void => {
+        decayPriority()
       },
 
       // Status methods

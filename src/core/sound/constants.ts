@@ -57,3 +57,16 @@ export const EXPLOSION_PARAMS = {
   [SoundType.EXP2_SOUND]: { initialAmp: 1, ampChange: 1 }, // Ship explosion
   [SoundType.EXP3_SOUND]: { initialAmp: 64, ampChange: 3 } // Alien explosion
 }
+
+// Priority decay per frame from orig/Sources/Sound.c
+// These values determine how quickly a playing sound's priority decreases,
+// allowing sounds of the same type to interrupt each other
+export const SOUND_PRIORITY_DECAY: Partial<Record<SoundType, number>> = {
+  [SoundType.FIRE_SOUND]: 5, // Sound.c:148 - priority -= 5
+  [SoundType.BUNK_SOUND]: 1, // Sound.c:230 - priority -= 1
+  [SoundType.SOFT_SOUND]: 1, // Sound.c:230 - priority -= 1 (uses do_bunk_sound)
+  [SoundType.EXP1_SOUND]: 2, // Sound.c:174 - priority -= ampchange (Sound.c:490)
+  [SoundType.EXP3_SOUND]: 3 // Sound.c:174 - priority -= ampchange (Sound.c:500)
+  // Note: EXP2_SOUND excluded per Sound.c:173-174 (ship explosion doesn't decay)
+  // Other sounds (THRU, SHLD, FUEL, CRACK, FIZZ, ECHO) have no decay
+}
