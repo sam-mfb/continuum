@@ -15,9 +15,11 @@ const SNDBUFLEN = 370
 const SHLD_FREQ = 50 // Base frequency of shield sound
 
 // Duration in samples (30ms at 22.2kHz - original game sample rate)
-const DISCRETE_DURATION_SAMPLES = Math.floor(22200 * 0.030) // ~666 samples
+const DISCRETE_DURATION_SAMPLES = Math.floor(22200 * 0.03) // ~666 samples
 
-export const createShieldDiscreteGenerator = (): SampleGenerator & { start: () => void } => {
+export const createShieldDiscreteGenerator = (): SampleGenerator & {
+  start: () => void
+} => {
   // Create 68K emulator context
   const asm = build68kArch()
 

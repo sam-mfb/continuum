@@ -24,106 +24,153 @@ function createShot(overrides: Partial<ShotRec> = {}): ShotRec {
 }
 
 describe('isNewShot', () => {
-  it('returns false when arrays have different lengths', () => {
+  it('returns empty result when arrays have different lengths', () => {
     const prev = [createShot()]
     const curr = [createShot(), createShot()]
-    expect(isNewShot(prev, curr)).toBe(false)
+    const result = isNewShot(prev, curr)
+    expect(result.numShots).toBe(0)
+    expect(result.newShots).toEqual([])
   })
 
-  it('returns false when no shots have changed', () => {
+  it('returns empty result when no shots have changed', () => {
     const shot1 = createShot({ x: 10, y: 20, lifecount: 5 })
     const shot2 = createShot({ x: 30, y: 40, lifecount: 0 })
     const prev = [shot1, shot2]
     const curr = [shot1, shot2]
-    expect(isNewShot(prev, curr)).toBe(false)
+    const result = isNewShot(prev, curr)
+    expect(result.numShots).toBe(0)
+    expect(result.newShots).toEqual([])
   })
 
-  it('returns true when dead shot is replaced with live shot', () => {
+  it('detects when dead shot is replaced with live shot', () => {
     const prev = [
       createShot({ lifecount: 0, x: 0, y: 0 }),
       createShot({ lifecount: 5, x: 50, y: 50 })
     ]
+    const newShot = createShot({
+      lifecount: 10,
+      x: 100,
+      y: 100,
+      origin: { x: 100, y: 100 }
+    })
     const curr = [
-      createShot({ lifecount: 10, x: 100, y: 100, origin: { x: 100, y: 100 } }),
+      newShot,
       createShot({ lifecount: 4, x: 51, y: 51 }) // This one just moved
     ]
-    expect(isNewShot(prev, curr)).toBe(true)
+    const result = isNewShot(prev, curr)
+    expect(result.numShots).toBe(1)
+    expect(result.newShots).toEqual([newShot])
   })
 
-  it('returns true when dead shot is replaced with immediately dead shot', () => {
+  it('detects when dead shot is replaced with immediately dead shot', () => {
     // This happens when a shot hits a wall on spawn
     const prev = [createShot({ lifecount: 0, x: 0, y: 0 })]
-    const curr = [
-      createShot({
-        lifecount: 0, // Still dead
-        x: 100, // But at new position
-        y: 100,
-        x8: 800,
-        y8: 800,
-        h: 5,
-        v: 3,
-        btime: 10, // Has bounce time
-        origin: { x: 100, y: 100 }
-      })
-    ]
-    expect(isNewShot(prev, curr)).toBe(true)
+    const newShot = createShot({
+      lifecount: 0, // Still dead
+      x: 100, // But at new position
+      y: 100,
+      x8: 800,
+      y8: 800,
+      h: 5,
+      v: 3,
+      btime: 10, // Has bounce time
+      origin: { x: 100, y: 100 }
+    })
+    const curr = [newShot]
+    const result = isNewShot(prev, curr)
+    expect(result.numShots).toBe(1)
+    expect(result.newShots).toEqual([newShot])
   })
 
-  it('returns false when active shot just moves', () => {
-    const prev = [
-      createShot({ lifecount: 10, x: 100, y: 100, h: 5, v: 3 })
-    ]
-    const curr = [
-      createShot({ lifecount: 9, x: 105, y: 103, h: 5, v: 3 })
-    ]
-    expect(isNewShot(prev, curr)).toBe(false)
+  it('returns empty result when active shot just moves', () => {
+    const prev = [createShot({ lifecount: 10, x: 100, y: 100, h: 5, v: 3 })]
+    const curr = [createShot({ lifecount: 9, x: 105, y: 103, h: 5, v: 3 })]
+    const result = isNewShot(prev, curr)
+    expect(result.numShots).toBe(0)
+    expect(result.newShots).toEqual([])
   })
 
-  it('returns true for multiple new shots in single update', () => {
+  it('detects multiple new shots in single update', () => {
     const prev = [
       createShot({ lifecount: 0 }),
       createShot({ lifecount: 0 }),
       createShot({ lifecount: 5, x: 50 })
     ]
+    const newShot1 = createShot({ lifecount: 10, x: 10, y: 10 })
     const curr = [
-      createShot({ lifecount: 10, x: 10, y: 10 }), // New shot
+      newShot1, // New shot
       createShot({ lifecount: 0 }), // Still dead, unchanged
       createShot({ lifecount: 4, x: 51 }) // Just moved
     ]
-    expect(isNewShot(prev, curr)).toBe(true)
+    const result = isNewShot(prev, curr)
+    expect(result.numShots).toBe(1)
+    expect(result.newShots).toEqual([newShot1])
   })
 
-  it('returns true when origin changes on dead shot', () => {
+  it('detects when origin changes on dead shot', () => {
     const prev = [createShot({ lifecount: 0, origin: { x: 0, y: 0 } })]
-    const curr = [createShot({ lifecount: 0, origin: { x: 100, y: 100 } })]
-    expect(isNewShot(prev, curr)).toBe(true)
+    const newShot = createShot({ lifecount: 0, origin: { x: 100, y: 100 } })
+    const curr = [newShot]
+    const result = isNewShot(prev, curr)
+    expect(result.numShots).toBe(1)
+    expect(result.newShots).toEqual([newShot])
   })
 
-  it('returns true when velocity changes on dead shot', () => {
+  it('detects when velocity changes on dead shot', () => {
     const prev = [createShot({ lifecount: 0, h: 0, v: 0 })]
-    const curr = [createShot({ lifecount: 0, h: 5, v: 3 })]
-    expect(isNewShot(prev, curr)).toBe(true)
+    const newShot = createShot({ lifecount: 0, h: 5, v: 3 })
+    const curr = [newShot]
+    const result = isNewShot(prev, curr)
+    expect(result.numShots).toBe(1)
+    expect(result.newShots).toEqual([newShot])
   })
 
-  it('returns true when strafedir changes on dead shot', () => {
+  it('detects when strafedir changes on dead shot', () => {
     const prev = [createShot({ lifecount: 0, strafedir: -1 })]
-    const curr = [createShot({ lifecount: 0, strafedir: 2 })]
-    expect(isNewShot(prev, curr)).toBe(true)
+    const newShot = createShot({ lifecount: 0, strafedir: 2 })
+    const curr = [newShot]
+    const result = isNewShot(prev, curr)
+    expect(result.numShots).toBe(1)
+    expect(result.newShots).toEqual([newShot])
   })
 
-  it('returns false when only justDied flag changes', () => {
+  it('returns empty result when only justDied flag changes', () => {
     const prev = [createShot({ lifecount: 0, justDied: false })]
     const curr = [createShot({ lifecount: 0, justDied: true })]
-    expect(isNewShot(prev, curr)).toBe(false)
+    const result = isNewShot(prev, curr)
+    expect(result.numShots).toBe(0)
+    expect(result.newShots).toEqual([])
   })
 
-  it('returns false with empty arrays', () => {
-    expect(isNewShot([], [])).toBe(false)
+  it('returns empty result with empty arrays', () => {
+    const result = isNewShot([], [])
+    expect(result.numShots).toBe(0)
+    expect(result.newShots).toEqual([])
   })
 
   it('handles arrays with null/undefined gracefully', () => {
     const prev = [null as unknown as ShotRec, createShot()]
     const curr = [null as unknown as ShotRec, createShot()]
-    expect(isNewShot(prev, curr)).toBe(false)
+    const result = isNewShot(prev, curr)
+    expect(result.numShots).toBe(0)
+    expect(result.newShots).toEqual([])
+  })
+
+  it('detects multiple new shots and returns them all', () => {
+    const prev = [
+      createShot({ lifecount: 0, x: 0, y: 0 }),
+      createShot({ lifecount: 0, x: 10, y: 10 }),
+      createShot({ lifecount: 5, x: 50, y: 50 })
+    ]
+    const newShot1 = createShot({ lifecount: 10, x: 100, y: 100 })
+    const newShot2 = createShot({ lifecount: 8, x: 200, y: 200 })
+    const curr = [
+      newShot1,
+      newShot2,
+      createShot({ lifecount: 4, x: 51, y: 51 })
+    ]
+    const result = isNewShot(prev, curr)
+    expect(result.numShots).toBe(2)
+    expect(result.newShots).toEqual([newShot1, newShot2])
   })
 })

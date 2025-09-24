@@ -54,7 +54,6 @@ export type SoundService = {
   cleanup(): void
 }
 
-
 /**
  * Map SoundType enum to engine sound types
  */
@@ -137,9 +136,10 @@ export async function createSoundService(initialSettings: {
 
       // Determine if this sound needs a callback to clear state when it ends
       // Continuous sounds (thrust/shield) and silence don't need callbacks
-      const needsCallback = soundType !== 'thruster' &&
-                           soundType !== 'shield' &&
-                           soundType !== 'silence'
+      const needsCallback =
+        soundType !== 'thruster' &&
+        soundType !== 'shield' &&
+        soundType !== 'silence'
 
       if (needsCallback) {
         // Add callback to clear state when sound ends (like original's clear_sound())

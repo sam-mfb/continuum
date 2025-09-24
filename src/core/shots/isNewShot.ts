@@ -1,5 +1,10 @@
 import type { ShotRec } from './types'
 
+export type NewShotResult = {
+  numShots: number
+  newShots: ShotRec[]
+}
+
 /**
  * Detects if a new shot has been created by comparing previous and current shot arrays.
  *
@@ -9,12 +14,17 @@ import type { ShotRec } from './types'
  *
  * @param prevState - Previous array of shots
  * @param currentState - Current array of shots
- * @returns true if any new shot was created, false otherwise
+ * @returns Object with numShots (count of new shots) and newShots (array of the new shot records)
  */
-export function isNewShot(prevState: ShotRec[], currentState: ShotRec[]): boolean {
+export function isNewShot(
+  prevState: ShotRec[],
+  currentState: ShotRec[]
+): NewShotResult {
+  const newShots: ShotRec[] = []
+
   // Arrays must be same length for valid comparison
   if (prevState.length !== currentState.length) {
-    return false
+    return { numShots: 0, newShots }
   }
 
   for (let i = 0; i < prevState.length; i++) {
@@ -43,10 +53,13 @@ export function isNewShot(prevState: ShotRec[], currentState: ShotRec[]): boolea
         prev.btime !== curr.btime
 
       if (hasChanged) {
-        return true
+        newShots.push(curr)
       }
     }
   }
 
-  return false
+  return {
+    numShots: newShots.length,
+    newShots
+  }
 }

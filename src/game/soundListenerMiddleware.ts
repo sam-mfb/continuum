@@ -31,13 +31,13 @@ export function setupSoundListener(
       const currentState = listenerApi.getState()
 
       // Check if a new shot was actually created
-      const hasNewShot = isNewShot(
+      const result = isNewShot(
         prevState.shots.shipshots,
         currentState.shots.shipshots
       )
 
       // Play the ship fire sound if a new shot was created
-      if (hasNewShot) {
+      if (result.numShots > 0) {
         soundService.playShipFire()
       }
     }

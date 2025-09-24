@@ -142,9 +142,7 @@ export const SoundTestPanel: React.FC = () => {
         <div style={styles.priorityGrid}>
           {sortedPriorities.map(({ soundType, priority }) => (
             <div key={soundType} style={styles.priorityItem}>
-              <span style={styles.priorityName}>
-                {SOUND_NAMES[soundType]}:
-              </span>
+              <span style={styles.priorityName}>{SOUND_NAMES[soundType]}:</span>
               <span style={styles.priorityValue}>{priority}</span>
             </div>
           ))}
@@ -159,27 +157,21 @@ export const SoundTestPanel: React.FC = () => {
         <h3>Ship Sounds</h3>
         <div style={styles.soundGrid}>
           <button
-            onClick={() =>
-              playSound(() => soundService?.playShipFire())
-            }
+            onClick={() => playSound(() => soundService?.playShipFire())}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Fire
           </button>
           <button
-            onClick={() =>
-              playSound(() => soundService?.playShipThrust())
-            }
+            onClick={() => playSound(() => soundService?.playShipThrust())}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Thrust
           </button>
           <button
-            onClick={() =>
-              playSound(() => soundService?.playShipShield())
-            }
+            onClick={() => playSound(() => soundService?.playShipShield())}
             style={styles.soundButton}
             disabled={!soundService}
           >
@@ -195,9 +187,7 @@ export const SoundTestPanel: React.FC = () => {
             Shield (Discrete)
           </button>
           <button
-            onClick={() =>
-              playSound(() => soundService?.playShipExplosion())
-            }
+            onClick={() => playSound(() => soundService?.playShipExplosion())}
             style={styles.soundButton}
             disabled={!soundService}
           >
@@ -211,27 +201,21 @@ export const SoundTestPanel: React.FC = () => {
         <h3>Bunker Sounds</h3>
         <div style={styles.soundGrid}>
           <button
-            onClick={() =>
-              playSound(() => soundService?.playBunkerShoot())
-            }
+            onClick={() => playSound(() => soundService?.playBunkerShoot())}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Bunker Shoot
           </button>
           <button
-            onClick={() =>
-              playSound(() => soundService?.playBunkerExplosion())
-            }
+            onClick={() => playSound(() => soundService?.playBunkerExplosion())}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Bunker Explosion
           </button>
           <button
-            onClick={() =>
-              playSound(() => soundService?.playBunkerSoft())
-            }
+            onClick={() => playSound(() => soundService?.playBunkerSoft())}
             style={styles.soundButton}
             disabled={!soundService}
           >
@@ -245,36 +229,28 @@ export const SoundTestPanel: React.FC = () => {
         <h3>Other Game Sounds</h3>
         <div style={styles.soundGrid}>
           <button
-            onClick={() =>
-              playSound(() => soundService?.playFuelCollect())
-            }
+            onClick={() => playSound(() => soundService?.playFuelCollect())}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Fuel Collect
           </button>
           <button
-            onClick={() =>
-              playSound(() => soundService?.playAlienExplosion())
-            }
+            onClick={() => playSound(() => soundService?.playAlienExplosion())}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Alien Explosion
           </button>
           <button
-            onClick={() =>
-              playSound(() => soundService?.playLevelComplete())
-            }
+            onClick={() => playSound(() => soundService?.playLevelComplete())}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Level Complete
           </button>
           <button
-            onClick={() =>
-              playSound(() => soundService?.playLevelTransition())
-            }
+            onClick={() => playSound(() => soundService?.playLevelTransition())}
             style={styles.soundButton}
             disabled={!soundService}
           >
@@ -297,36 +273,42 @@ export const SoundTestPanel: React.FC = () => {
           <li>Click any button to play the corresponding game sound</li>
           <li>Use the volume slider to adjust the master volume</li>
           <li>Check the mute checkbox to disable all sounds</li>
-          <li>Click <strong>Stop Sound</strong> to immediately stop any playing sound (equivalent to original game's clear_sound)</li>
           <li>
-            <strong>All Sounds:</strong> Click any button to play that sound. Thrust and Shield will
-            continue playing until interrupted or stopped.
+            Click <strong>Stop Sound</strong> to immediately stop any playing
+            sound (equivalent to original game's clear_sound)
           </li>
           <li>
-            <strong>Priority System:</strong> Sounds with higher priority
-            values will interrupt sounds with lower priority. For example, Ship
+            <strong>All Sounds:</strong> Click any button to play that sound.
+            Thrust and Shield will continue playing until interrupted or
+            stopped.
+          </li>
+          <li>
+            <strong>Priority System:</strong> Sounds with higher priority values
+            will interrupt sounds with lower priority. For example, Ship
             Explosion (100) will interrupt any other sound, while Bunker Soft
             (30) can be interrupted by almost any other sound.
           </li>
           <li>
             <strong>Testing Scenarios:</strong>
             <ul>
-              <li>Play Thrust, then click Shield - Shield (70) interrupts Thrust (35)</li>
+              <li>
+                Play Thrust, then click Shield - Shield (70) interrupts Thrust
+                (35)
+              </li>
               <li>
                 Play a low priority sound (e.g., Bunker Soft), then a high
-                priority sound (e.g., Ship Explosion) - the high priority
-                should interrupt
+                priority sound (e.g., Ship Explosion) - the high priority should
+                interrupt
               </li>
               <li>
                 Try to play a low priority sound while a high priority is
                 playing - it should be blocked
               </li>
               <li>
-                Test that sounds do NOT resume after being interrupted (matches original game)
+                Test that sounds do NOT resume after being interrupted (matches
+                original game)
               </li>
-              <li>
-                Use Stop Sound button to clear any playing sound
-              </li>
+              <li>Use Stop Sound button to clear any playing sound</li>
             </ul>
           </li>
         </ul>
