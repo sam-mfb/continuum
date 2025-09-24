@@ -14,6 +14,7 @@ import {
 } from './generators-asm/explosionGenerator'
 import { createThrusterGenerator } from './generators-asm/thrusterGenerator'
 import { createShieldGenerator } from './generators-asm/shieldGenerator'
+import { createShieldDiscreteGenerator } from './generators-asm/shieldDiscreteGenerator'
 import { createBunkerGenerator } from './generators-asm/bunkerGenerator'
 import { createSoftGenerator } from './generators-asm/softGenerator'
 import { createFuelGenerator } from './generators-asm/fuelGenerator'
@@ -29,6 +30,7 @@ export type GameSoundType =
   | 'fire'
   | 'thruster'
   | 'shield'
+  | 'shieldDiscrete'
   | 'explosionBunker'
   | 'explosionShip'
   | 'explosionAlien'
@@ -52,6 +54,7 @@ export const createSoundEngine = (): SoundEngine => {
     fire: createFireGenerator(),
     thruster: createThrusterGenerator(),
     shield: createShieldGenerator(),
+    shieldDiscrete: createShieldDiscreteGenerator(),
     explosionBunker: createExplosionGenerator(ExplosionType.BUNKER),
     explosionShip: createExplosionGenerator(ExplosionType.SHIP),
     explosionAlien: createExplosionGenerator(ExplosionType.ALIEN),

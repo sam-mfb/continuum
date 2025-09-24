@@ -122,8 +122,8 @@ describe('isNewShot', () => {
   })
 
   it('handles arrays with null/undefined gracefully', () => {
-    const prev = [null as any, createShot()]
-    const curr = [null as any, createShot()]
+    const prev = [null as unknown as ShotRec, createShot()]
+    const curr = [null as unknown as ShotRec, createShot()]
     expect(isNewShot(prev, curr)).toBe(false)
   })
 })

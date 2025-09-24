@@ -74,6 +74,9 @@ const soundTypeToEngine: Partial<Record<SoundType, GameSoundType>> = {
   [SoundType.ECHO_SOUND]: 'echo'
 }
 
+// Special mapping for shield discrete - uses same priority as regular shield
+const SHLD_DISCRETE_ENGINE: GameSoundType = 'shieldDiscrete'
+
 /**
  * Create a new sound service instance
  * @param initialSettings - Optional initial volume and mute settings
@@ -219,17 +222,27 @@ export async function createSoundService(initialSettings: {
         playSound(SoundType.SHLD_SOUND)
       },
       playShipShieldDiscrete: (): void => {
-        // Play shield sound but for a very short duration (30ms)
-        // Used for auto-triggered shield (like self-hit feedback)
-        if (playSound(SoundType.SHLD_SOUND)) {
-          // Only set timeout if sound actually played
-          setTimeout(() => {
-            // Only clear if shield is still the current sound
-            if (currentSound === SoundType.SHLD_SOUND) {
-              clearCurrentSound()
-            }
-          }, 30)
+        // Play discrete (30ms) shield sound for auto-triggered shield events
+        // The shieldDiscrete generator automatically ends after 30ms
+        // and the callback will clear the sound state when it completes
+
+        // Check priority using regular SHLD_SOUND priority
+        const requestedPriority = SOUND_PRIORITIES[SoundType.SHLD_SOUND] || 0
+
+        // Check priority for ALL sounds uniformly
+        if (currentSound !== null && currentSoundPriority > 0) {
+          // Only play if new sound has higher priority
+          if (requestedPriority <= currentSoundPriority) {
+            return // Don't play lower or equal priority sounds
+          }
         }
+
+        // Play the discrete shield sound
+        playSoundByType(SHLD_DISCRETE_ENGINE)
+
+        // Track as regular shield sound for priority purposes
+        currentSound = SoundType.SHLD_SOUND
+        currentSoundPriority = requestedPriority
       },
       playShipExplosion: (): void => {
         playSound(SoundType.EXP2_SOUND)
