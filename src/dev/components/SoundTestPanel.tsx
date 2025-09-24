@@ -40,8 +40,6 @@ export const SoundTestPanel: React.FC = () => {
   )
   const [soundService, setSoundService] = useState<SoundService | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
-  const [isThrustActive, setIsThrustActive] = useState(false)
-  const [isShieldActive, setIsShieldActive] = useState(false)
 
   useEffect(() => {
     // Initialize sound service on mount
@@ -78,40 +76,14 @@ export const SoundTestPanel: React.FC = () => {
     }
   }
 
-  // Helper to play a discrete sound
-  const playDiscreteSound = (playFunc: () => void): void => {
+  // Helper to play a sound
+  const playSound = (playFunc: () => void): void => {
     playFunc()
   }
 
-  const handleThrustToggle = (): void => {
+  const handleStopSound = (): void => {
     if (!soundService) return
-
-    if (isThrustActive) {
-      // Stop thrust using the new stopThrust method
-      soundService.stopThrust()
-      setIsThrustActive(false)
-    } else {
-      soundService.playShipThrust()
-      setIsThrustActive(true)
-      // Shield takes priority, so thrust won't actually play if shield is on
-      // but we still set the state to show user intent
-      setIsShieldActive(false)
-    }
-  }
-
-  const handleShieldToggle = (): void => {
-    if (!soundService) return
-
-    if (isShieldActive) {
-      // Stop shield using the new stopShield method
-      soundService.stopShield()
-      setIsShieldActive(false)
-    } else {
-      soundService.playShipShield()
-      setIsShieldActive(true)
-      // Shield takes priority over thrust
-      setIsThrustActive(false)
-    }
+    soundService.clearSound()
   }
 
   // Sort sounds by priority (highest first)
@@ -139,6 +111,13 @@ export const SoundTestPanel: React.FC = () => {
             />
             Muted
           </label>
+          <button
+            onClick={handleStopSound}
+            style={styles.stopButton}
+            disabled={!soundService}
+          >
+            Stop Sound
+          </button>
         </div>
 
         <div style={styles.volumeControl}>
@@ -175,40 +154,13 @@ export const SoundTestPanel: React.FC = () => {
         </p>
       </div>
 
-      {/* Continuous Sounds */}
-      <div style={styles.section}>
-        <h3>Continuous Sounds (Independent Toggles)</h3>
-        <div style={styles.soundGrid}>
-          <button
-            onClick={handleThrustToggle}
-            style={{
-              ...styles.soundButton,
-              backgroundColor: isThrustActive ? '#ff9800' : '#4CAF50'
-            }}
-            disabled={!soundService}
-          >
-            Thrust {isThrustActive ? '(ON)' : '(OFF)'}
-          </button>
-          <button
-            onClick={handleShieldToggle}
-            style={{
-              ...styles.soundButton,
-              backgroundColor: isShieldActive ? '#2196F3' : '#4CAF50'
-            }}
-            disabled={!soundService}
-          >
-            Shield {isShieldActive ? '(ON)' : '(OFF)'}
-          </button>
-        </div>
-      </div>
-
       {/* Ship Sounds */}
       <div style={styles.section}>
         <h3>Ship Sounds</h3>
         <div style={styles.soundGrid}>
           <button
             onClick={() =>
-              playDiscreteSound(() => soundService?.playShipFire())
+              playSound(() => soundService?.playShipFire())
             }
             style={styles.soundButton}
             disabled={!soundService}
@@ -217,7 +169,25 @@ export const SoundTestPanel: React.FC = () => {
           </button>
           <button
             onClick={() =>
-              playDiscreteSound(() => soundService?.playShipShieldDiscrete())
+              playSound(() => soundService?.playShipThrust())
+            }
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Thrust
+          </button>
+          <button
+            onClick={() =>
+              playSound(() => soundService?.playShipShield())
+            }
+            style={styles.soundButton}
+            disabled={!soundService}
+          >
+            Shield
+          </button>
+          <button
+            onClick={() =>
+              playSound(() => soundService?.playShipShieldDiscrete())
             }
             style={styles.soundButton}
             disabled={!soundService}
@@ -226,7 +196,7 @@ export const SoundTestPanel: React.FC = () => {
           </button>
           <button
             onClick={() =>
-              playDiscreteSound(() => soundService?.playShipExplosion())
+              playSound(() => soundService?.playShipExplosion())
             }
             style={styles.soundButton}
             disabled={!soundService}
@@ -242,7 +212,7 @@ export const SoundTestPanel: React.FC = () => {
         <div style={styles.soundGrid}>
           <button
             onClick={() =>
-              playDiscreteSound(() => soundService?.playBunkerShoot())
+              playSound(() => soundService?.playBunkerShoot())
             }
             style={styles.soundButton}
             disabled={!soundService}
@@ -251,7 +221,7 @@ export const SoundTestPanel: React.FC = () => {
           </button>
           <button
             onClick={() =>
-              playDiscreteSound(() => soundService?.playBunkerExplosion())
+              playSound(() => soundService?.playBunkerExplosion())
             }
             style={styles.soundButton}
             disabled={!soundService}
@@ -260,7 +230,7 @@ export const SoundTestPanel: React.FC = () => {
           </button>
           <button
             onClick={() =>
-              playDiscreteSound(() => soundService?.playBunkerSoft())
+              playSound(() => soundService?.playBunkerSoft())
             }
             style={styles.soundButton}
             disabled={!soundService}
@@ -276,7 +246,7 @@ export const SoundTestPanel: React.FC = () => {
         <div style={styles.soundGrid}>
           <button
             onClick={() =>
-              playDiscreteSound(() => soundService?.playFuelCollect())
+              playSound(() => soundService?.playFuelCollect())
             }
             style={styles.soundButton}
             disabled={!soundService}
@@ -285,7 +255,7 @@ export const SoundTestPanel: React.FC = () => {
           </button>
           <button
             onClick={() =>
-              playDiscreteSound(() => soundService?.playAlienExplosion())
+              playSound(() => soundService?.playAlienExplosion())
             }
             style={styles.soundButton}
             disabled={!soundService}
@@ -294,7 +264,7 @@ export const SoundTestPanel: React.FC = () => {
           </button>
           <button
             onClick={() =>
-              playDiscreteSound(() => soundService?.playLevelComplete())
+              playSound(() => soundService?.playLevelComplete())
             }
             style={styles.soundButton}
             disabled={!soundService}
@@ -303,7 +273,7 @@ export const SoundTestPanel: React.FC = () => {
           </button>
           <button
             onClick={() =>
-              playDiscreteSound(() => soundService?.playLevelTransition())
+              playSound(() => soundService?.playLevelTransition())
             }
             style={styles.soundButton}
             disabled={!soundService}
@@ -311,7 +281,7 @@ export const SoundTestPanel: React.FC = () => {
             Level Transition
           </button>
           <button
-            onClick={() => playDiscreteSound(() => soundService?.playEcho())}
+            onClick={() => playSound(() => soundService?.playEcho())}
             style={styles.soundButton}
             disabled={!soundService}
           >
@@ -327,9 +297,10 @@ export const SoundTestPanel: React.FC = () => {
           <li>Click any button to play the corresponding game sound</li>
           <li>Use the volume slider to adjust the master volume</li>
           <li>Check the mute checkbox to disable all sounds</li>
+          <li>Click <strong>Stop Sound</strong> to immediately stop any playing sound (equivalent to original game's clear_sound)</li>
           <li>
-            <strong>Continuous Sounds:</strong> Thrust and Shield can be toggled
-            independently. They maintain their state through interruptions.
+            <strong>All Sounds:</strong> Click any button to play that sound. Thrust and Shield will
+            continue playing until interrupted or stopped.
           </li>
           <li>
             <strong>Priority System:</strong> Sounds with higher priority
@@ -340,7 +311,7 @@ export const SoundTestPanel: React.FC = () => {
           <li>
             <strong>Testing Scenarios:</strong>
             <ul>
-              <li>Start thrust, then shield - observe switching behavior</li>
+              <li>Play Thrust, then click Shield - Shield (70) interrupts Thrust (35)</li>
               <li>
                 Play a low priority sound (e.g., Bunker Soft), then a high
                 priority sound (e.g., Ship Explosion) - the high priority
@@ -351,7 +322,10 @@ export const SoundTestPanel: React.FC = () => {
                 playing - it should be blocked
               </li>
               <li>
-                Test continuous sounds resuming after discrete sounds complete
+                Test that sounds do NOT resume after being interrupted (matches original game)
+              </li>
+              <li>
+                Use Stop Sound button to clear any playing sound
               </li>
             </ul>
           </li>
@@ -418,6 +392,16 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '4px',
     cursor: 'pointer',
     backgroundColor: '#4CAF50',
+    color: 'white',
+    fontWeight: 'bold',
+    transition: 'all 0.2s'
+  },
+  stopButton: {
+    padding: '10px 20px',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    backgroundColor: '#f44336',
     color: 'white',
     fontWeight: 'bold',
     transition: 'all 0.2s'
