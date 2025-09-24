@@ -178,15 +178,6 @@ export const SoundTestPanel: React.FC = () => {
             Shield
           </button>
           <button
-            onClick={() =>
-              playSound(() => soundService?.playShipShieldDiscrete())
-            }
-            style={styles.soundButton}
-            disabled={!soundService}
-          >
-            Shield (Discrete)
-          </button>
-          <button
             onClick={() => playSound(() => soundService?.playShipExplosion())}
             style={styles.soundButton}
             disabled={!soundService}

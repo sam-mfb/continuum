@@ -20,7 +20,6 @@ export type SoundService = {
   playShipFire(): void
   playShipThrust(): void
   playShipShield(): void
-  playShipShieldDiscrete(): void // Short discrete version for auto-trigger
   playShipExplosion(): void
 
   // Bunker sounds
@@ -75,8 +74,6 @@ const soundTypeToEngine: Partial<Record<SoundType, GameSoundType>> = {
   [SoundType.ECHO_SOUND]: 'echo'
 }
 
-// Special mapping for shield discrete - uses same priority as regular shield
-const SHLD_DISCRETE_ENGINE: GameSoundType = 'shieldDiscrete'
 
 /**
  * Create a new sound service instance
@@ -257,29 +254,6 @@ export async function createSoundService(initialSettings: {
       },
       playShipShield: (): void => {
         playSound(SoundType.SHLD_SOUND)
-      },
-      playShipShieldDiscrete: (): void => {
-        // Play discrete (30ms) shield sound for auto-triggered shield events
-        // The shieldDiscrete generator automatically ends after 30ms
-        // and the callback will clear the sound state when it completes
-
-        // Check priority using regular SHLD_SOUND priority
-        const requestedPriority = SOUND_PRIORITIES[SoundType.SHLD_SOUND] || 0
-
-        // Check priority for ALL sounds uniformly
-        if (currentSound !== null && currentSoundPriority > 0) {
-          // Only play if new sound has higher priority
-          if (requestedPriority <= currentSoundPriority) {
-            return // Don't play lower or equal priority sounds
-          }
-        }
-
-        // Play the discrete shield sound
-        playSoundByType(SHLD_DISCRETE_ENGINE)
-
-        // Track as regular shield sound for priority purposes
-        currentSound = SoundType.SHLD_SOUND
-        currentSoundPriority = requestedPriority
       },
       playShipExplosion: (): void => {
         playSound(SoundType.EXP2_SOUND)
