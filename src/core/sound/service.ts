@@ -6,7 +6,7 @@
  */
 
 import { createSoundEngine, type GameSoundType } from './soundEngine'
-import { SoundType } from './constants'
+import { SoundType, SOUND_PRIORITIES } from './constants'
 import type { SoundEngine } from './types'
 
 /**
@@ -15,27 +15,27 @@ import type { SoundEngine } from './types'
  */
 export type SoundService = {
   // Ship sounds
-  playShipFire(options?: { highPriority?: boolean }): void
-  playShipThrust(options?: { highPriority?: boolean }): void
-  playShipShield(options?: { highPriority?: boolean }): void
-  playShipShieldDiscrete(options?: { highPriority?: boolean }): void // Short discrete version for auto-trigger
-  playShipExplosion(options?: { highPriority?: boolean }): void
+  playShipFire(): void
+  playShipThrust(): void
+  playShipShield(): void
+  playShipShieldDiscrete(): void // Short discrete version for auto-trigger
+  playShipExplosion(): void
 
   // Bunker sounds
-  playBunkerShoot(options?: { highPriority?: boolean }): void
-  playBunkerExplosion(options?: { highPriority?: boolean }): void
-  playBunkerSoft(options?: { highPriority?: boolean }): void
+  playBunkerShoot(): void
+  playBunkerExplosion(): void
+  playBunkerSoft(): void
 
   // Pickup sounds
-  playFuelCollect(options?: { highPriority?: boolean }): void
+  playFuelCollect(): void
 
   // Level sounds
-  playLevelComplete(options?: { highPriority?: boolean }): void // Crack sound
-  playLevelTransition(options?: { highPriority?: boolean }): void // Fizz sound
-  playEcho(options?: { highPriority?: boolean }): void
+  playLevelComplete(): void // Crack sound
+  playLevelTransition(): void // Fizz sound
+  playEcho(): void
 
   // Alien sounds
-  playAlienExplosion(options?: { highPriority?: boolean }): void
+  playAlienExplosion(): void
 
   // Control methods
   stopAll(): void
@@ -47,7 +47,6 @@ export type SoundService = {
   // Status methods
   isPlaying(): boolean
   getCurrentSound(): SoundType | null
-  isHighPriorityPlaying(): boolean
   getCurrentContinuous(): ContinuousSound
 
   // Engine access for test panel
@@ -90,10 +89,10 @@ export async function createSoundService(initialSettings: {
   // Internal state for this instance
   let soundEngine: SoundEngine | null = null
   let currentSound: SoundType | null = null
+  let currentSoundPriority = 0
   let isPlaying = false
   let isMuted = false
   let currentVolume = 1.0
-  let highPriorityPlaying = false
   let currentContinuous: ContinuousSound = 'none'
 
   try {
@@ -121,10 +120,7 @@ export async function createSoundService(initialSettings: {
     /**
      * Internal helper to play a sound by engine type
      */
-    function playSoundByType(
-      soundType: GameSoundType,
-      options?: { highPriority?: boolean }
-    ): void {
+    function playSoundByType(soundType: GameSoundType): void {
       if (!soundEngine) return
 
       // Try to resume audio context on any play attempt (in case it's suspended)
@@ -144,22 +140,6 @@ export async function createSoundService(initialSettings: {
         currentContinuous = 'none'
       }
 
-      // Check if high-priority sound is blocking
-      // High-priority sounds block normal sounds but can be interrupted by other high-priority sounds
-      // Exception: 'silence' is always allowed (used to stop sounds)
-      if (
-        highPriorityPlaying &&
-        soundType !== 'silence' &&
-        !options?.highPriority
-      ) {
-        return
-      }
-
-      // If playing silence, clear the high-priority flag since we're stopping whatever was playing
-      if (soundType === 'silence' && highPriorityPlaying) {
-        highPriorityPlaying = false
-      }
-
       // Start the engine first if not already playing
       if (!isPlaying) {
         soundEngine.start()
@@ -171,20 +151,12 @@ export async function createSoundService(initialSettings: {
       const isDiscrete = !isContinuous && soundType !== 'silence'
 
       // Play the sound with appropriate callback
-      if (options?.highPriority) {
-        // If interrupting another high-priority sound, the old one won't get its callback
-        // so we manage the flag here
-        highPriorityPlaying = true
+      if (isDiscrete) {
+        // For discrete sounds, add callback to clear current sound and resume continuous
         soundEngine.play(soundType, () => {
-          highPriorityPlaying = false
-          // After high-priority discrete sound completes, resume continuous if needed
-          if (isDiscrete && currentContinuous !== 'none' && soundEngine) {
-            soundEngine.play(currentContinuous)
-          }
-        })
-      } else if (isDiscrete) {
-        // For non-high-priority discrete sounds, add callback to resume continuous
-        soundEngine.play(soundType, () => {
+          // Clear current sound when it completes
+          currentSound = null
+          currentSoundPriority = 0
           // After discrete sound completes, resume whatever continuous should be playing
           if (currentContinuous !== 'none' && soundEngine) {
             soundEngine.play(currentContinuous)
@@ -199,19 +171,34 @@ export async function createSoundService(initialSettings: {
     /**
      * Internal helper to play a sound by SoundType enum
      */
-    function playSound(
-      soundType: SoundType,
-      options?: { highPriority?: boolean }
-    ): void {
+    function playSound(soundType: SoundType): void {
       const engineType = soundTypeToEngine[soundType]
       if (!engineType) {
         return
       }
 
-      playSoundByType(engineType, options)
+      // Get the priority of the requested sound
+      const requestedPriority = SOUND_PRIORITIES[soundType] || 0
 
-      // Track current sound
-      currentSound = soundType
+      // Check if this is a discrete sound (not continuous)
+      const isContinuous = soundType === SoundType.THRU_SOUND || soundType === SoundType.SHLD_SOUND
+
+      // For discrete sounds, check priority
+      if (!isContinuous && currentSound !== null && currentSoundPriority > 0) {
+        // Only play if new sound has equal or higher priority
+        if (requestedPriority < currentSoundPriority) {
+          return // Don't play lower priority sounds
+        }
+      }
+
+      // Play the sound
+      playSoundByType(engineType)
+
+      // Track current sound and priority for discrete sounds
+      if (!isContinuous) {
+        currentSound = soundType
+        currentSoundPriority = requestedPriority
+      }
     }
 
     /**
@@ -223,37 +210,45 @@ export async function createSoundService(initialSettings: {
       soundEngine.stop()
       isPlaying = false
       currentSound = null
-      highPriorityPlaying = false
+      currentSoundPriority = 0
       currentContinuous = 'none'
     }
 
     // Create the service instance
     const serviceInstance: SoundService = {
       // Ship sounds
-      playShipFire: (options?): void =>
-        playSound(SoundType.FIRE_SOUND, options),
-      playShipThrust: (options?): void =>
-        playSound(SoundType.THRU_SOUND, options),
-      playShipShield: (options?): void =>
-        playSound(SoundType.SHLD_SOUND, options),
-      playShipShieldDiscrete: (options?): void => {
+      playShipFire: (): void => playSound(SoundType.FIRE_SOUND),
+      playShipThrust: (): void => playSound(SoundType.THRU_SOUND),
+      playShipShield: (): void => playSound(SoundType.SHLD_SOUND),
+      playShipShieldDiscrete: (): void => {
         // Play shield sound but for a very short duration (30ms)
         // Used for auto-triggered shield (like self-hit feedback)
         if (!soundEngine) return
 
+        // Check priority like a normal discrete sound
+        const requestedPriority = SOUND_PRIORITIES[SoundType.SHLD_SOUND] || 0
+        if (currentSound !== null && currentSoundPriority > 0) {
+          if (requestedPriority < currentSoundPriority) {
+            return // Don't play lower priority sounds
+          }
+        }
+
         // Save the current continuous state
         const savedContinuous = currentContinuous
 
-        // Play shield as a "continuous" sound using existing logic
-        playSoundByType('shield', options)
+        // Play shield as a "continuous" sound
+        playSoundByType('shield')
+
+        // Track as current sound
+        currentSound = SoundType.SHLD_SOUND
+        currentSoundPriority = requestedPriority
 
         // Stop it after 30ms and restore previous continuous state
         setTimeout(() => {
           if (soundEngine) {
-            // If this was high-priority, clear the flag since we're ending it early
-            if (options?.highPriority) {
-              highPriorityPlaying = false
-            }
+            // Clear current sound
+            currentSound = null
+            currentSoundPriority = 0
 
             // Restore the previous continuous state
             currentContinuous = savedContinuous
@@ -267,31 +262,23 @@ export async function createSoundService(initialSettings: {
           }
         }, 30)
       },
-      playShipExplosion: (options?): void =>
-        playSound(SoundType.EXP2_SOUND, options),
+      playShipExplosion: (): void => playSound(SoundType.EXP2_SOUND),
 
       // Bunker sounds
-      playBunkerShoot: (options?): void =>
-        playSound(SoundType.BUNK_SOUND, options),
-      playBunkerExplosion: (options?): void =>
-        playSound(SoundType.EXP1_SOUND, options),
-      playBunkerSoft: (options?): void =>
-        playSound(SoundType.SOFT_SOUND, options),
+      playBunkerShoot: (): void => playSound(SoundType.BUNK_SOUND),
+      playBunkerExplosion: (): void => playSound(SoundType.EXP1_SOUND),
+      playBunkerSoft: (): void => playSound(SoundType.SOFT_SOUND),
 
       // Pickup sounds
-      playFuelCollect: (options?): void =>
-        playSound(SoundType.FUEL_SOUND, options),
+      playFuelCollect: (): void => playSound(SoundType.FUEL_SOUND),
 
       // Level sounds
-      playLevelComplete: (options?): void =>
-        playSound(SoundType.CRACK_SOUND, options),
-      playLevelTransition: (options?): void =>
-        playSound(SoundType.FIZZ_SOUND, options),
-      playEcho: (options?): void => playSound(SoundType.ECHO_SOUND, options),
+      playLevelComplete: (): void => playSound(SoundType.CRACK_SOUND),
+      playLevelTransition: (): void => playSound(SoundType.FIZZ_SOUND),
+      playEcho: (): void => playSound(SoundType.ECHO_SOUND),
 
       // Alien sounds
-      playAlienExplosion: (options?): void =>
-        playSound(SoundType.EXP3_SOUND, options),
+      playAlienExplosion: (): void => playSound(SoundType.EXP3_SOUND),
 
       // Control methods
       stopAll: (): void => stopAllSounds(),
@@ -299,7 +286,8 @@ export async function createSoundService(initialSettings: {
       stopThrust: (): void => {
         if (currentContinuous === 'thruster') {
           currentContinuous = 'none'
-          if (!highPriorityPlaying) {
+          // Only stop if no discrete sound is playing
+          if (currentSoundPriority === 0) {
             playSoundByType('silence')
           }
         }
@@ -308,7 +296,8 @@ export async function createSoundService(initialSettings: {
       stopShield: (): void => {
         if (currentContinuous === 'shield') {
           currentContinuous = 'none'
-          if (!highPriorityPlaying) {
+          // Only stop if no discrete sound is playing
+          if (currentSoundPriority === 0) {
             playSoundByType('silence')
           }
         }
@@ -331,7 +320,6 @@ export async function createSoundService(initialSettings: {
       // Status methods
       isPlaying: (): boolean => isPlaying,
       getCurrentSound: (): SoundType | null => currentSound,
-      isHighPriorityPlaying: (): boolean => highPriorityPlaying,
       getCurrentContinuous: (): ContinuousSound => currentContinuous,
 
       // Engine access for test panel
@@ -344,8 +332,8 @@ export async function createSoundService(initialSettings: {
         }
         // Don't null out soundEngine - keep it alive for next game
         currentSound = null
+        currentSoundPriority = 0
         isPlaying = false
-        highPriorityPlaying = false
         currentContinuous = 'none'
       }
     }
