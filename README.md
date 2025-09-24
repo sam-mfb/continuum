@@ -100,7 +100,6 @@ There was a lot of LLM-assisted coding in this project. More than I would do--or
 
 ## Still TODO
 
-- The high score table. Of course.
 - Planet editor
 
 ## Future Work

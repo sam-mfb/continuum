@@ -7,12 +7,16 @@ export type {
   MonochromeBitmap,
   BitmapRenderer,
   BitmapToCanvasOptions,
-  Rectangle
+  Rectangle,
+  FrameInfo,
+  KeyInfo,
+  GameEnvironment
 } from './types'
 
 // Creation utilities
 export {
   createMonochromeBitmap,
+  createGameBitmap,
   createBitmapFromCanvas,
   cloneBitmap
 } from './create'
@@ -30,6 +34,3 @@ export {
 
 // Conversion
 export { bitmapToImageData, bitmapToCanvas, canvasToBitmap } from './conversion'
-
-// Adapter
-export { createBitmapGameLoop, wrapBitmapRenderer } from './adapter'

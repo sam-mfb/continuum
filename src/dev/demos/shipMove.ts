@@ -52,7 +52,7 @@ const initializeGame = (): void => {
 
 initializeGame()
 
-export const shipMoveGameLoop: GameLoopFunction = (ctx, frame, _env) => {
+export const shipMoveGameLoop: GameLoopFunction = (ctx, _frame, keys, _env) => {
   const state = store.getState()
 
   const getPressedControls = (keysDown: Set<string>): ShipControl[] => {
@@ -70,7 +70,7 @@ export const shipMoveGameLoop: GameLoopFunction = (ctx, frame, _env) => {
   // Handle controls - gravity is now calculated internally from generators
   store.dispatch(
     shipControl({
-      controlsPressed: getPressedControls(frame.keysDown)
+      controlsPressed: getPressedControls(keys.keysDown)
     })
   )
 

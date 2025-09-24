@@ -7,10 +7,11 @@ export * from './types'
 export * from './types/line'
 
 // Type re-exports for convenience
-export type { Alignment } from './alignment'
+export type { Alignment, AlignmentMode } from './alignment'
 
 // Utility functions
-export { getAlignment } from './alignment'
+export { getAlignment, setAlignmentMode, getAlignmentMode } from './alignment'
 export { getBackgroundPattern } from './backgroundPattern'
 export { ptToAngle } from './ptToAngle'
 export { rint } from './rint'
+export { containShip } from './containShip'

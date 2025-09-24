@@ -11,7 +11,7 @@ import {
   setStrafeFrame,
   setDigitChar
 } from '../store/spritesSlice'
-import type { BunkerKind } from '@core/figs/types'
+import type { BunkerKind } from '@core/figs'
 
 export const SpritesControls: React.FC = () => {
   const dispatch = useAppDispatch()

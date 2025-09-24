@@ -6,17 +6,18 @@
  * Use arrow keys to move the viewport.
  */
 
-import type { BitmapRenderer } from '@lib/bitmap'
+import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
+import { createGameBitmap } from '@lib/bitmap'
 import type { PlanetState } from '@core/planet'
-import { whiteTerrain, blackTerrain } from '@core/walls'
+import { whiteTerrain, blackTerrain } from '@core/walls/render'
 import { wallsActions } from '@core/walls'
 import { buildGameStore } from '@dev/store'
 import { LINE_KIND } from '@core/walls'
 import { Galaxy } from '@core/galaxy'
 import { parsePlanet } from '@core/planet'
 import { VIEWHT } from '@core/screen'
-import { viewClear } from '@core/screen'
-import { ASSET_PATHS } from '@core/constants'
+import { viewClear } from '@core/screen/render'
+import { ASSET_PATHS } from '@/dev/constants'
 
 // Create store instance
 const store = buildGameStore()
@@ -72,7 +73,11 @@ let cachedPlanet: PlanetState | null = null
 /**
  * Renderer that displays planet 3's walls using both blackTerrain and whiteTerrain
  */
-export const planet3DrawingRenderer: BitmapRenderer = (bitmap, frame, _env) => {
+export const planet3DrawingRenderer: BitmapRenderer = (
+  _frame: FrameInfo,
+  keys: KeyInfo
+) => {
+  const bitmap = createGameBitmap()
   // Initialize planet loading on first render
   if (!planet3DataPromise) {
     planet3DataPromise = loadPlanet3()
@@ -95,27 +100,28 @@ export const planet3DrawingRenderer: BitmapRenderer = (bitmap, frame, _env) => {
       })
 
     // Show loading state
-    bitmap.data.fill(0)
-    return
+    const loadingBitmap = { ...bitmap }
+    loadingBitmap.data.fill(0)
+    return loadingBitmap
   }
 
   const planet = cachedPlanet
 
   // Handle keyboard input for viewport movement
   const moveSpeed = 5
-  if (frame.keysDown.has('ArrowUp')) {
+  if (keys.keysDown.has('ArrowUp')) {
     viewportState.y = Math.max(0, viewportState.y - moveSpeed)
   }
-  if (frame.keysDown.has('ArrowDown')) {
+  if (keys.keysDown.has('ArrowDown')) {
     viewportState.y = Math.min(
       planet.worldheight - VIEWHT,
       viewportState.y + moveSpeed
     )
   }
-  if (frame.keysDown.has('ArrowLeft')) {
+  if (keys.keysDown.has('ArrowLeft')) {
     viewportState.x = Math.max(0, viewportState.x - moveSpeed)
   }
-  if (frame.keysDown.has('ArrowRight')) {
+  if (keys.keysDown.has('ArrowRight')) {
     viewportState.x = Math.min(
       planet.worldwidth - bitmap.width,
       viewportState.x + moveSpeed
@@ -123,11 +129,10 @@ export const planet3DrawingRenderer: BitmapRenderer = (bitmap, frame, _env) => {
   }
 
   // First, create a crosshatch gray background
-  const clearedBitmap = viewClear({
+  let resultBitmap = viewClear({
     screenX: viewportState.x,
     screenY: viewportState.y
   })(bitmap)
-  bitmap.data.set(clearedBitmap.data)
 
   // Get wall data from Redux state
   const wallState = store.getState().walls
@@ -141,14 +146,14 @@ export const planet3DrawingRenderer: BitmapRenderer = (bitmap, frame, _env) => {
   }
 
   // First render white terrain (undersides, patches, junctions)
-  let renderedBitmap = whiteTerrain({
+  resultBitmap = whiteTerrain({
     whites: wallState.whites,
     junctions: wallState.junctions,
     firstWhite: wallState.firstWhite,
     organizedWalls: wallState.organizedWalls,
     viewport: viewport,
     worldwidth: planet.worldwidth
-  })(bitmap)
+  })(resultBitmap)
 
   // Then render black terrain (top surfaces) for each wall type
   // Render in order: NORMAL, BOUNCE, GHOST, XPLODE
@@ -160,15 +165,14 @@ export const planet3DrawingRenderer: BitmapRenderer = (bitmap, frame, _env) => {
   ]
 
   for (const kind of wallKinds) {
-    renderedBitmap = blackTerrain({
+    resultBitmap = blackTerrain({
       thekind: kind,
       kindPointers: wallState.kindPointers,
       organizedWalls: wallState.organizedWalls,
       viewport: viewport,
       worldwidth: planet.worldwidth
-    })(renderedBitmap)
+    })(resultBitmap)
   }
 
-  // Copy rendered bitmap data back to original
-  bitmap.data.set(renderedBitmap.data)
+  return resultBitmap
 }

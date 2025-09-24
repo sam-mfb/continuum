@@ -7,7 +7,7 @@
 
 import { type MonochromeBitmap } from '@lib/bitmap'
 import { drawDigit } from './drawDigit'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 
 /**
  * Writes a text string on the status bar.
@@ -29,7 +29,7 @@ export function writeStr(deps: {
   x: number
   y: number
   text: string
-  spriteService: SpriteServiceV2
+  spriteService: SpriteService
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
     const { x, y, text, spriteService } = deps

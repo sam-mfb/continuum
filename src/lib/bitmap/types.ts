@@ -2,8 +2,6 @@
  * Core types for bitmap manipulation and rendering
  */
 
-import type { GameFrameInfo, GameEnvironment } from '@dev/components/GameView'
-
 /**
  * Represents a monochrome screen bitmap
  * Each byte holds 8 pixels (1 bit per pixel)
@@ -34,13 +32,54 @@ export type MonochromeBitmap = {
 }
 
 /**
- * Function that renders to a monochrome bitmap
+ * Frame timing information
+ * Contains only timing data for the current frame
+ */
+export type FrameInfo = {
+  /** Total frames since start */
+  frameCount: number
+  /** Milliseconds since last frame */
+  deltaTime: number
+  /** Total milliseconds since start */
+  totalTime: number
+  /** Expected ms between frames (1000/fps) */
+  targetDelta: number
+}
+
+/**
+ * Keyboard input state
+ * Contains keyboard state for the current frame
+ */
+export type KeyInfo = {
+  /** Currently pressed keys */
+  keysDown: Set<string>
+  /** Keys pressed this frame */
+  keysPressed: Set<string>
+  /** Keys released this frame */
+  keysReleased: Set<string>
+}
+
+/**
+ * Environment information for the game
+ * Contains display dimensions and target framerate
+ */
+export type GameEnvironment = {
+  /** Display width in pixels */
+  width: number
+  /** Display height in pixels */
+  height: number
+  /** Target frames per second */
+  fps: number
+}
+
+/**
+ * Function that renders a monochrome bitmap
+ * Creates and returns a new bitmap for each frame
  */
 export type BitmapRenderer = (
-  bitmap: MonochromeBitmap,
-  frame: GameFrameInfo,
-  env: GameEnvironment
-) => void
+  frame: FrameInfo,
+  keys: KeyInfo
+) => MonochromeBitmap
 
 /**
  * Options for converting bitmap to canvas

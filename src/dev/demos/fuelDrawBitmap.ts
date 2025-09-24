@@ -7,15 +7,16 @@
  * - Flash effect on random fuel cells
  */
 
-import type { BitmapRenderer } from '@lib/bitmap'
-import { drawFuels } from '@core/planet'
+import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
+import { createGameBitmap } from '@lib/bitmap'
+import { drawFuels } from '@core/planet/render'
 import { configureStore } from '@reduxjs/toolkit'
 import { planetSlice, loadPlanet, updateFuelAnimations } from '@core/planet'
 import type { Fuel, PlanetState } from '@core/planet'
 import { isOnRightSide } from '@core/shared/viewport'
-import { FUELFRAMES } from '@core/figs/types'
-import type { SpriteServiceV2 } from '@core/sprites'
-import { viewClear } from '@core/screen'
+import { FUELFRAMES } from '@core/figs'
+import type { SpriteService } from '@core/sprites'
+import { viewClear } from '@core/screen/render'
 
 // Create store with planet slice
 const store = configureStore({
@@ -132,19 +133,22 @@ initializeGame()
  * Factory function to create bitmap renderer for fuel drawing game
  */
 export const createFuelDrawBitmapRenderer =
-  (spriteService: SpriteServiceV2): BitmapRenderer =>
-  (bitmap, frame, _env) => {
+  (spriteService: SpriteService): BitmapRenderer =>
+  (_frame: FrameInfo, keys: KeyInfo) => {
+    const bitmap = createGameBitmap()
     // Check initialization status
     if (initializationError) {
       console.error('Initialization failed:', initializationError)
-      bitmap.data.fill(0)
-      return
+      const errorBitmap = { ...bitmap }
+      errorBitmap.data.fill(0)
+      return errorBitmap
     }
 
     if (!initializationComplete) {
       // Still loading
-      bitmap.data.fill(0)
-      return
+      const loadingBitmap = { ...bitmap }
+      loadingBitmap.data.fill(0)
+      return loadingBitmap
     }
 
     const state = store.getState()
@@ -155,16 +159,16 @@ export const createFuelDrawBitmapRenderer =
     // Handle keyboard input for viewport movement
     const moveSpeed = 5
 
-    if (frame.keysDown.has('ArrowUp')) {
+    if (keys.keysDown.has('ArrowUp')) {
       viewportState.y = Math.max(0, viewportState.y - moveSpeed)
     }
-    if (frame.keysDown.has('ArrowDown')) {
+    if (keys.keysDown.has('ArrowDown')) {
       viewportState.y = Math.min(
         WORLD_HEIGHT - bitmap.height,
         viewportState.y + moveSpeed
       )
     }
-    if (frame.keysDown.has('ArrowLeft')) {
+    if (keys.keysDown.has('ArrowLeft')) {
       viewportState.x -= moveSpeed
       if (planetState.worldwrap) {
         // Wrap around if we go negative
@@ -175,7 +179,7 @@ export const createFuelDrawBitmapRenderer =
         viewportState.x = Math.max(0, viewportState.x)
       }
     }
-    if (frame.keysDown.has('ArrowRight')) {
+    if (keys.keysDown.has('ArrowRight')) {
       viewportState.x += moveSpeed
       if (planetState.worldwrap) {
         // Wrap around if we exceed world width
@@ -187,11 +191,10 @@ export const createFuelDrawBitmapRenderer =
     }
 
     // First, create a crosshatch gray background
-    const clearedBitmap = viewClear({
+    let resultBitmap = viewClear({
       screenX: viewportState.x,
       screenY: viewportState.y
     })(bitmap)
-    bitmap.data.set(clearedBitmap.data)
 
     // Update fuel animation state using the reducer
     store.dispatch(updateFuelAnimations())
@@ -255,7 +258,7 @@ export const createFuelDrawBitmapRenderer =
     })
 
     // Apply fuel drawing to the bitmap
-    let renderedBitmap = drawFuelsFunc(bitmap)
+    resultBitmap = drawFuelsFunc(resultBitmap)
 
     // Handle world wrapping - call drawFuels again with wrapped coordinates
     if (onRightSide) {
@@ -265,13 +268,15 @@ export const createFuelDrawBitmapRenderer =
         scrny: viewportState.y,
         fuelSprites: fuelSprites
       })
-      renderedBitmap = drawFuelsWrapped(renderedBitmap)
+      resultBitmap = drawFuelsWrapped(resultBitmap)
     }
 
-    // Copy rendered bitmap data back to original
-    bitmap.data.set(renderedBitmap.data)
-
     // Draw a position marker in corner to show viewport is updating
+    const finalBitmap = {
+      ...resultBitmap,
+      data: new Uint8Array(resultBitmap.data)
+    }
+
     for (let i = 0; i < 3; i++) {
       for (let j = 0; j < 3; j++) {
         const pixelX = 10 + i
@@ -279,8 +284,10 @@ export const createFuelDrawBitmapRenderer =
         if (pixelX < bitmap.width && pixelY < bitmap.height) {
           const byteIndex = Math.floor(pixelY * bitmap.rowBytes + pixelX / 8)
           const bitIndex = 7 - (pixelX % 8)
-          bitmap.data[byteIndex]! |= 1 << bitIndex
+          finalBitmap.data[byteIndex]! |= 1 << bitIndex
         }
       }
     }
+
+    return finalBitmap
   }

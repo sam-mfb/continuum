@@ -2,13 +2,12 @@ import React, { useEffect, useRef, useState } from 'react'
 import type {
   BitmapRenderer,
   BitmapToCanvasOptions,
-  MonochromeBitmap
+  MonochromeBitmap,
+  GameEnvironment,
+  FrameInfo,
+  KeyInfo
 } from '@lib/bitmap'
-import {
-  createMonochromeBitmap,
-  clearBitmap,
-  bitmapToCanvas
-} from '@lib/bitmap'
+import { createMonochromeBitmap, bitmapToCanvas } from '@lib/bitmap'
 import {
   StatsOverlay,
   type StatsConfig,
@@ -41,28 +40,13 @@ import {
  */
 
 // Types
-export type GameFrameInfo = {
-  // Timing
-  frameCount: number // Total frames since start
-  deltaTime: number // Milliseconds since last frame
-  totalTime: number // Total milliseconds since start
-  targetDelta: number // Expected ms between frames (1000/fps)
-
-  // Input
-  keysDown: Set<string> // Currently pressed keys
-  keysPressed: Set<string> // Keys pressed this frame
-  keysReleased: Set<string> // Keys released this frame
-}
-
-export type GameEnvironment = {
-  width: number
-  height: number
-  fps: number
-}
+// Re-export for backward compatibility
+export type { FrameInfo, KeyInfo, GameEnvironment } from '@lib/bitmap'
 
 export type GameLoopFunction = (
   ctx: CanvasRenderingContext2D,
-  frame: GameFrameInfo,
+  frame: FrameInfo,
+  keys: KeyInfo,
   env: GameEnvironment
 ) => void
 
@@ -94,10 +78,7 @@ export type GameViewProps = {
 
   // Stats overlay
   statsConfig?: StatsConfig
-  getCustomStats?: (
-    frameInfo: GameFrameInfo,
-    env: GameEnvironment
-  ) => CustomStats
+  getCustomStats?: (frameInfo: FrameInfo, env: GameEnvironment) => CustomStats
 
   // Game logic
   games: GameDefinition[]
@@ -132,11 +113,13 @@ const GameView: React.FC<GameViewProps> = ({
   const animationFrameRef = useRef<number>(0)
   const [selectedGameIndex, setSelectedGameIndex] = useState(defaultGameIndex)
   const [currentFps, setCurrentFps] = useState(0)
-  const [currentFrameInfo, setCurrentFrameInfo] = useState<GameFrameInfo>({
+  const [currentFrameInfo, setCurrentFrameInfo] = useState<FrameInfo>({
     frameCount: 0,
     deltaTime: 0,
     totalTime: 0,
-    targetDelta: 1000 / fps,
+    targetDelta: 1000 / fps
+  })
+  const [currentKeyInfo, setCurrentKeyInfo] = useState<KeyInfo>({
     keysDown: new Set(),
     keysPressed: new Set(),
     keysReleased: new Set()
@@ -251,18 +234,21 @@ const GameView: React.FC<GameViewProps> = ({
         }
 
         // Create frame info
-        const frameInfo: GameFrameInfo = {
+        const frameInfo: FrameInfo = {
           frameCount: frameCountRef.current,
           deltaTime,
           totalTime,
-          targetDelta,
+          targetDelta
+        }
+        const keyInfo: KeyInfo = {
           keysDown: new Set(keysDownRef.current),
           keysPressed: new Set(keysPressedRef.current),
           keysReleased: new Set(keysReleasedRef.current)
         }
 
-        // Update frame info state for overlay
+        // Update frame and key info state for overlay
         setCurrentFrameInfo(frameInfo)
+        setCurrentKeyInfo(keyInfo)
 
         // Clear background
         ctx.fillStyle = backgroundColor
@@ -275,7 +261,7 @@ const GameView: React.FC<GameViewProps> = ({
           switch (game.type) {
             case 'canvas':
               // Direct canvas rendering
-              game.gameLoop(ctx, frameInfo, env)
+              game.gameLoop(ctx, frameInfo, keyInfo, env)
               break
 
             case 'bitmap':
@@ -289,14 +275,14 @@ const GameView: React.FC<GameViewProps> = ({
                 bitmapRef.current = createMonochromeBitmap(width, height)
               }
 
-              // Clear bitmap
-              clearBitmap(bitmapRef.current)
+              // Call bitmap renderer and get the result
+              const renderedBitmap = game.bitmapRenderer(frameInfo, keyInfo)
 
-              // Call bitmap renderer
-              game.bitmapRenderer(bitmapRef.current, frameInfo, env)
+              // Update bitmap reference for next frame
+              bitmapRef.current = renderedBitmap
 
               // Convert to canvas
-              bitmapToCanvas(bitmapRef.current, ctx, game.bitmapOptions)
+              bitmapToCanvas(renderedBitmap, ctx, game.bitmapOptions)
               break
           }
         }
@@ -450,6 +436,7 @@ const GameView: React.FC<GameViewProps> = ({
           <StatsOverlay
             config={statsConfig}
             frameInfo={currentFrameInfo}
+            keyInfo={currentKeyInfo}
             customStats={
               getCustomStats
                 ? getCustomStats(currentFrameInfo, { width, height, fps })

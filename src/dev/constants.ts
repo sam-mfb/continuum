@@ -1,11 +1,8 @@
 /**
- * @fileoverview Asset path constants
- * Centralized location for all asset paths used throughout the application
+ * @fileoverview Dev tools specific constants
  */
 
-/**
- * Asset paths for binary data files and graphics resources
- */
+// Asset paths for dev tools
 export const ASSET_PATHS = {
   // Galaxy data files
   GALAXY_DATA: '/release_galaxy.bin',

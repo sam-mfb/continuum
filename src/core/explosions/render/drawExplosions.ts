@@ -5,7 +5,7 @@ import type { ExplosionsState } from '../types'
 import { SHARDHT, NUMSHARDS, NUMSPARKS } from '../constants'
 import { drawShard } from './drawShard'
 import { drawSparkSafe } from './drawSparkSafe'
-import type { ShardSpriteSet } from '@core/figs/types'
+import type { ShardSpriteSet } from '@core/figs'
 import { getAlignment } from '@core/shared'
 
 /**

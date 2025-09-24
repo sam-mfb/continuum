@@ -1,5 +1,5 @@
 import React from 'react'
-import type { GameFrameInfo } from './GameView'
+import type { FrameInfo, KeyInfo } from '@lib/bitmap'
 
 export type StatsPosition =
   | 'top-left'
@@ -24,7 +24,8 @@ export type CustomStats = Record<string, string | number>
 
 type StatsOverlayProps = {
   config: StatsConfig
-  frameInfo: GameFrameInfo
+  frameInfo: FrameInfo
+  keyInfo: KeyInfo
   customStats?: CustomStats
   width: number
   height: number
@@ -34,6 +35,7 @@ type StatsOverlayProps = {
 export const StatsOverlay: React.FC<StatsOverlayProps> = ({
   config,
   frameInfo,
+  keyInfo,
   customStats,
   width: _width,
   height: _height,
@@ -89,8 +91,8 @@ export const StatsOverlay: React.FC<StatsOverlayProps> = ({
     })
   }
 
-  if (showKeys && frameInfo.keysDown.size > 0) {
-    const keys = Array.from(frameInfo.keysDown)
+  if (showKeys && keyInfo.keysDown.size > 0) {
+    const keys = Array.from(keyInfo.keysDown)
     // Limit to first 3 keys and add "..." if more
     const displayKeys =
       keys.length > 3 ? keys.slice(0, 3).join(', ') + '...' : keys.join(', ')

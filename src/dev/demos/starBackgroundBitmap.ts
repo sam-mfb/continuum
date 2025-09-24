@@ -11,23 +11,24 @@
  * 4. Resets back to start
  */
 
-import type { BitmapRenderer } from '@lib/bitmap'
-import { viewClear } from '@core/screen'
-import { starBackground } from '@core/screen/render/starBackground'
+import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
+import { createGameBitmap } from '@lib/bitmap'
+import { viewClear } from '@core/screen/render'
 import {
-  createFizzTransition,
-  type FizzTransition
-} from '@core/screen/render/fizz'
-import { fullFigure } from '@core/ship'
+  createFizzTransitionService,
+  type FizzTransitionService
+} from '@core/transition'
+import { fullFigure } from '@core/ship/render'
 import { SCRWTH, VIEWHT } from '@core/screen'
-import type { SpriteServiceV2 } from '@core/sprites'
-import { SCENTER } from '@core/figs/types'
+import type { SpriteService } from '@core/sprites'
+import { SCENTER } from '@core/figs'
 import { cloneBitmap } from '@lib/bitmap'
+import { starBackground } from '@/core/transition/render'
 
 // State for tracking the transition - persists across render calls
 type TransitionState = {
   mode: 'normal' | 'fizzing' | 'complete'
-  fizzTransition: FizzTransition | null
+  fizzTransitionService: FizzTransitionService
   fromBitmap: Uint8Array | null
   toBitmap: Uint8Array | null
   delayFrames: number
@@ -35,7 +36,7 @@ type TransitionState = {
 
 const state: TransitionState = {
   mode: 'normal',
-  fizzTransition: null,
+  fizzTransitionService: createFizzTransitionService(),
   fromBitmap: null,
   toBitmap: null,
   delayFrames: 0
@@ -52,10 +53,11 @@ const FIZZ_DURATION = 26 // based on measurements of fizz time on a Mac Plus
  * Factory function to create bitmap renderer for star background demo
  */
 export const createStarBackgroundBitmapRenderer =
-  (spriteService: SpriteServiceV2): BitmapRenderer =>
-  (bitmap, frame, _env) => {
+  (spriteService: SpriteService): BitmapRenderer =>
+  (_frame: FrameInfo, keys: KeyInfo) => {
+    const bitmap = createGameBitmap()
     // Handle spacebar press to trigger transition
-    if (frame.keysDown.has('Space') && state.mode === 'normal') {
+    if (keys.keysDown.has('Space') && state.mode === 'normal') {
       // Get ship sprite for rotation 0
       const shipSprite = spriteService.getShipSprite(0, { variant: 'def' })
       const shipMaskSprite = spriteService.getShipSprite(0, { variant: 'mask' })
@@ -71,7 +73,6 @@ export const createStarBackgroundBitmapRenderer =
       })(clearedFrom)
 
       // Create the "to" bitmap (star background with ship)
-      const toBitmap = cloneBitmap(bitmap)
       const starBg = starBackground({
         starCount: 150,
         additionalRender: screen =>
@@ -81,18 +82,14 @@ export const createStarBackgroundBitmapRenderer =
             def: shipSprite.bitmap,
             mask: shipMaskSprite.bitmap
           })(screen)
-      })(toBitmap)
+      })
 
       // Store bitmaps for potential reuse
       state.fromBitmap = new Uint8Array(withShip.data)
       state.toBitmap = new Uint8Array(starBg.data)
 
-      // Initialize fizz transition with progressive implementation
-      state.fizzTransition = createFizzTransition({
-        from: withShip,
-        to: starBg,
-        durationFrames: FIZZ_DURATION
-      })
+      // Initialize fizz transition service
+      state.fizzTransitionService.initialize(withShip, starBg, FIZZ_DURATION)
       state.mode = 'fizzing'
       // Don't return - fall through to render the first frame
     }
@@ -120,34 +117,30 @@ export const createStarBackgroundBitmapRenderer =
           mask: shipMaskSprite.bitmap
         })(clearedBitmap)
 
-        bitmap.data.set(withShip.data)
-        break
+        return withShip
       }
 
       case 'fizzing': {
-        if (state.fizzTransition) {
+        if (state.fizzTransitionService.isInitialized) {
           // Get next frame of the transition
           // This advances the internal LFSR and returns the current state
-          const fizzFrame = state.fizzTransition.nextFrame()
-          bitmap.data.set(fizzFrame.data)
+          const fizzFrame = state.fizzTransitionService.nextFrame()
 
           // Check if complete
-          if (state.fizzTransition.isComplete) {
+          if (state.fizzTransitionService.isComplete) {
             state.mode = 'complete'
-            // Clean up the transition object
-            state.fizzTransition = null
+            // Reset the service for next use
+            state.fizzTransitionService.reset()
             state.delayFrames = 0
           }
+
+          return fizzFrame
         }
-        break
+        return bitmap
       }
 
       case 'complete': {
         // Show final star background during delay
-        if (state.toBitmap) {
-          bitmap.data.set(state.toBitmap)
-        }
-
         state.delayFrames++
 
         // Reset after delay
@@ -155,10 +148,16 @@ export const createStarBackgroundBitmapRenderer =
           state.mode = 'normal'
           state.fromBitmap = null
           state.toBitmap = null
-          state.fizzTransition = null
           state.delayFrames = 0
         }
-        break
+
+        if (state.toBitmap) {
+          bitmap.data.set(state.toBitmap)
+        }
+        return bitmap
       }
+
+      default:
+        return bitmap
     }
   }

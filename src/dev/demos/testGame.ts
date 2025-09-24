@@ -1,6 +1,6 @@
 import type { GameLoopFunction } from '../components/GameView'
 
-export const testGameLoop: GameLoopFunction = (ctx, frame, env) => {
+export const testGameLoop: GameLoopFunction = (ctx, frame, _keys, env) => {
   // Simple test pattern - draw a circle that moves based on time
   const centerX = env.width / 2
   const centerY = env.height / 2

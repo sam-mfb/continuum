@@ -27,9 +27,3 @@ export { xyindist } from './xyindist'
 export { xyindistance } from './xyindistance'
 export { startStrafe } from './startStrafe'
 export { setLife } from './setLife'
-
-// Rendering functions
-export { blackSmall } from './render/blackSmall'
-export { drawDotSafe } from './render/drawDotSafe'
-export { drawShipShot } from './render/drawShipShot'
-export { drawStrafe } from './render/drawStrafe'

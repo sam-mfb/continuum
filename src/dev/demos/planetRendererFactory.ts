@@ -6,8 +6,9 @@
 
 import type { PlanetRendererFactory, GameRendererStore } from './types'
 import type { PlanetState } from '@core/planet'
-import type { BitmapRenderer } from '@lib/bitmap'
-import { whiteTerrain, blackTerrain } from '@core/walls'
+import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
+import { createGameBitmap } from '@lib/bitmap'
+import { whiteTerrain, blackTerrain } from '@core/walls/render'
 import { wallsActions } from '@core/walls'
 import { screenSlice } from '@core/screen'
 import { gameViewSlice } from '@dev/store'
@@ -15,7 +16,7 @@ const gameViewActions = gameViewSlice.actions
 import { LINE_KIND } from '@core/walls'
 import { VIEWHT } from '@core/screen'
 import { isOnRightSide } from '@core/shared/viewport'
-import { doBunks } from '@core/planet'
+import { doBunks } from '@core/planet/render'
 import { configureStore } from '@reduxjs/toolkit'
 import {
   planetSlice,
@@ -24,9 +25,9 @@ import {
   initializeFuels,
   updateFuelAnimations
 } from '@core/planet'
-import { drawFuels } from '@core/planet'
-import { drawCraters } from '@core/planet'
-import { viewClear } from '@core/screen'
+import { drawFuels } from '@core/planet/render'
+import { drawCraters } from '@core/planet/render'
+import { viewClear } from '@core/screen/render'
 
 // Create store with planet slice
 const bunkerStore = configureStore({
@@ -76,7 +77,8 @@ export const createPlanetRenderer: PlanetRendererFactory = (
   store.dispatch(gameViewActions.setInitialized())
 
   // Return the renderer function
-  const renderer: BitmapRenderer = (bitmap, frame, _env) => {
+  const renderer: BitmapRenderer = (_frame: FrameInfo, keys: KeyInfo) => {
+    const bitmap = createGameBitmap()
     const state = store.getState()
     const { walls, gameView, screen } = state
 
@@ -86,7 +88,10 @@ export const createPlanetRenderer: PlanetRendererFactory = (
         screenSlice.actions.setPosition({ x: initialX, y: initialY })
       )
       store.dispatch(gameViewActions.setInitialized())
-      return // Skip this frame to avoid jump
+      // Return empty bitmap for first frame to avoid jump
+      const emptyBitmap = { ...bitmap }
+      emptyBitmap.data.fill(0)
+      return emptyBitmap
     }
 
     // Handle keyboard input for viewport movement
@@ -94,16 +99,16 @@ export const createPlanetRenderer: PlanetRendererFactory = (
     let dx = 0
     let dy = 0
 
-    if (frame.keysDown.has('ArrowUp')) {
+    if (keys.keysDown.has('ArrowUp')) {
       dy = -moveSpeed
     }
-    if (frame.keysDown.has('ArrowDown')) {
+    if (keys.keysDown.has('ArrowDown')) {
       dy = moveSpeed
     }
-    if (frame.keysDown.has('ArrowLeft')) {
+    if (keys.keysDown.has('ArrowLeft')) {
       dx = -moveSpeed
     }
-    if (frame.keysDown.has('ArrowRight')) {
+    if (keys.keysDown.has('ArrowRight')) {
       dx = moveSpeed
     }
 
@@ -174,8 +179,8 @@ export const createPlanetRenderer: PlanetRendererFactory = (
       })(renderedBitmap)
     }
 
-    // Copy rendered bitmap data back to original
-    bitmap.data.set(renderedBitmap.data)
+    // Keep track of the result
+    let resultBitmap = renderedBitmap
 
     // Draw bunkers and other sprites
     {
@@ -189,7 +194,7 @@ export const createPlanetRenderer: PlanetRendererFactory = (
       const planetState = bunkerStore.getState().planet
 
       // Draw bunkers at normal position (Bunkers.c:46 - "do_bunks(screenx, screeny);")
-      let bunkerBitmap = doBunks({
+      resultBitmap = doBunks({
         bunkrec: planetState.bunkers,
         scrnx: currentScreen.screenx,
         scrny: currentScreen.screeny,
@@ -215,7 +220,7 @@ export const createPlanetRenderer: PlanetRendererFactory = (
             }
           }
         }
-      })(bitmap)
+      })(resultBitmap)
 
       // Second pass - wrapped position (Bunkers.c:47-48)
       // "if (on_right_side) do_bunks(screenx-worldwidth, screeny);"
@@ -227,7 +232,7 @@ export const createPlanetRenderer: PlanetRendererFactory = (
       )
 
       if (onRightSide) {
-        bunkerBitmap = doBunks({
+        resultBitmap = doBunks({
           bunkrec: planetState.bunkers,
           scrnx: currentScreen.screenx - planet.worldwidth,
           scrny: currentScreen.screeny,
@@ -253,11 +258,10 @@ export const createPlanetRenderer: PlanetRendererFactory = (
               }
             }
           }
-        })(bunkerBitmap) // Pass already-rendered bitmap
+        })(resultBitmap) // Pass already-rendered bitmap
       }
 
-      // Copy bunker bitmap data back to original
-      bitmap.data.set(bunkerBitmap.data)
+      // Continue with fuel rendering
 
       // Update fuel cell animations
       bunkerStore.dispatch(updateFuelAnimations())
@@ -266,7 +270,7 @@ export const createPlanetRenderer: PlanetRendererFactory = (
       const updatedPlanetState = bunkerStore.getState().planet
 
       // Draw fuels at normal position
-      let fuelBitmap = drawFuels({
+      resultBitmap = drawFuels({
         fuels: updatedPlanetState.fuels,
         scrnx: currentScreen.screenx,
         scrny: currentScreen.screeny,
@@ -311,11 +315,11 @@ export const createPlanetRenderer: PlanetRendererFactory = (
             }
           }
         }
-      })(bitmap)
+      })(resultBitmap)
 
       // If wrapping world and near right edge, draw wrapped fuels
       if (onRightSide) {
-        fuelBitmap = drawFuels({
+        resultBitmap = drawFuels({
           fuels: updatedPlanetState.fuels,
           scrnx: currentScreen.screenx - planet.worldwidth,
           scrny: currentScreen.screeny,
@@ -362,14 +366,11 @@ export const createPlanetRenderer: PlanetRendererFactory = (
               }
             }
           }
-        })(fuelBitmap)
+        })(resultBitmap)
       }
 
-      // Copy fuel bitmap data back to original
-      bitmap.data.set(fuelBitmap.data)
-
       // Draw craters (world wrapping is handled internally by drawCraters)
-      const craterBitmap = drawCraters({
+      resultBitmap = drawCraters({
         craters: updatedPlanetState.craters,
         numcraters: updatedPlanetState.numcraters,
         scrnx: currentScreen.screenx,
@@ -382,11 +383,10 @@ export const createPlanetRenderer: PlanetRendererFactory = (
           background2: spriteService.getCraterSprite({ variant: 'background2' })
             .uint8
         }
-      })(bitmap)
-
-      // Copy crater bitmap data back to original
-      bitmap.data.set(craterBitmap.data)
+      })(resultBitmap)
     }
+
+    return resultBitmap
   }
 
   return renderer

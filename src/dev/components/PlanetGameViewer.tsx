@@ -1,21 +1,17 @@
 import { useEffect, useRef, useState, type JSX } from 'react'
 import { useAppSelector, useAppDispatch, store } from '../store/store'
-import {
-  createMonochromeBitmap,
-  clearBitmap,
-  bitmapToCanvas
-} from '@lib/bitmap'
+import { bitmapToCanvas } from '@lib/bitmap'
 import { createPlanetRenderer } from '../demos/planetRendererFactory'
 import { wallsActions } from '@core/walls'
 import { gameViewActions } from '../store/gameViewSlice'
 import { screenSlice } from '@core/screen'
 import type { PlanetState } from '@core/planet'
-import type { BitmapRenderer, MonochromeBitmap } from '@lib/bitmap'
+import type { BitmapRenderer } from '@lib/bitmap'
 import type { GameRendererStore } from '../demos/types'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 
 type PlanetGameViewerProps = {
-  spriteService: SpriteServiceV2
+  spriteService: SpriteService
 }
 
 export const PlanetGameViewer = ({
@@ -28,7 +24,6 @@ export const PlanetGameViewer = ({
   const planets = useAppSelector(state => state.galaxy.planets)
   const [renderer, setRenderer] = useState<BitmapRenderer | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const bitmapRef = useRef<MonochromeBitmap | null>(null)
   const animationFrameRef = useRef<number>(0)
   const keysDownRef = useRef<Set<string>>(new Set())
   const frameCountRef = useRef<number>(0)
@@ -80,11 +75,6 @@ export const PlanetGameViewer = ({
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Initialize bitmap
-    if (!bitmapRef.current) {
-      bitmapRef.current = createMonochromeBitmap(512, 342)
-    }
-
     // Set up keyboard event handlers
     const handleKeyDown = (e: KeyboardEvent): void => {
       keysDownRef.current.add(e.code)
@@ -113,29 +103,26 @@ export const PlanetGameViewer = ({
         const deltaTime = now - lastFrameTimeRef.current
         const totalTime = now - lastFrameTimeRef.current
 
-        // Clear bitmap
-        clearBitmap(bitmapRef.current!)
-
         // Create frame info
         const frameInfo = {
           frameCount: frameCountRef.current,
           deltaTime,
           totalTime,
-          targetDelta,
+          targetDelta
+        }
+
+        // Create key info
+        const keyInfo = {
           keysDown: new Set(keysDownRef.current),
           keysPressed: new Set<string>(),
           keysReleased: new Set<string>()
         }
 
-        // Call renderer
-        renderer(bitmapRef.current!, frameInfo, {
-          width: 512,
-          height: 342,
-          fps: 20
-        })
+        // Call renderer and get the result
+        const renderedBitmap = renderer(frameInfo, keyInfo)
 
         // Convert bitmap to canvas
-        bitmapToCanvas(bitmapRef.current!, ctx)
+        bitmapToCanvas(renderedBitmap, ctx)
 
         // Update timing
         lastFrameTimeRef.current = now

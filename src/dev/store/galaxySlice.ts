@@ -1,7 +1,7 @@
 import type { PayloadAction } from '@reduxjs/toolkit'
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import type { GalaxyHeader } from '@core/galaxy'
-import { getGalaxyService } from '@core/galaxy'
+import { createGalaxyService } from '@core/galaxy'
 import type { PlanetState } from '@core/planet'
 
 type GalaxyState = {
@@ -25,10 +25,11 @@ const initialState: GalaxyState = {
 export const loadGalaxyFile = createAsyncThunk(
   'galaxy/loadFile',
   async (fileName: 'continuum_galaxy.bin' | 'release_galaxy.bin') => {
-    const galaxyService = getGalaxyService()
+    // Create a new galaxy service instance for dev tools with initial galaxy
+    const galaxyService = await createGalaxyService(`/art/${fileName}`)
 
-    // Load galaxy using the service
-    const galaxyHeader = await galaxyService.loadGalaxy(`/art/${fileName}`)
+    // Get the loaded galaxy header
+    const galaxyHeader = galaxyService.getHeader()
 
     // Get all planets for dev display
     const planets = galaxyService.getAllPlanets()

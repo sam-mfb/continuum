@@ -3,7 +3,7 @@
  * Based on score values from orig/Sources/Play.c:354-355
  */
 
-import { BunkerKind } from '@core/figs/types'
+import { BunkerKind } from '@core/figs'
 
 // Score values for bunker destruction (Play.c:354)
 // static int kindscores[5] = {100, 0, 100, 400, 500}

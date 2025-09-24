@@ -23,9 +23,3 @@ export const { loadPlanet } = _planetSlice.actions
 // Planet functions
 export { parsePlanet } from './parsePlanet'
 export { legalAngle } from './legalAngle'
-
-// Rendering functions
-export { doBunks, drawBunker, fullBunker } from './render/bunker'
-export { drawCraters } from './render/drawCraters'
-export { drawFuels } from './render/drawFuels'
-export { drawMedium } from './render/drawMedium'

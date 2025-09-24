@@ -3,6 +3,7 @@ export const DEAD_TIME = 60 // Frames of death animation (GW.h:89)
 export const SKILLBRADIUS = 30 // Radius for bunker death blast when ship dies (GW.h:90)
 export const SCOREBUNK = 50 // Points for destroying bunker
 export const FUELSTART = 10000 // Starting amount of fuel (GW.h:136)
+export const SHIPSTART = 2 // Number of spare ships to start with (GW.h:135)
 
 // Shield-related constants from GW.h
 export const FUELBURN = 16 // Fuel consumed per frame while thrusting (GW.h:138)

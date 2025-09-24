@@ -7,7 +7,7 @@
 
 import { type MonochromeBitmap } from '@lib/bitmap'
 import { drawDigit } from './drawDigit'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 
 /**
  * Writes a long integer right-aligned at the specified position.
@@ -28,7 +28,7 @@ export function writeLong(deps: {
   x: number
   y: number
   value: number
-  spriteService: SpriteServiceV2
+  spriteService: SpriteService
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
     const { x, y, value, spriteService } = deps

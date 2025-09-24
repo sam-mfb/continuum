@@ -8,7 +8,7 @@
 import { type MonochromeBitmap } from '@lib/bitmap'
 import { writeInt } from './writeInt'
 import { FUEL_X, FUEL_Y } from '@core/status'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 
 /**
  * Writes the fuel value at its fixed position on the status bar.
@@ -24,7 +24,7 @@ import type { SpriteServiceV2 } from '@core/sprites'
  */
 export function writeFuel(deps: {
   fuel: number
-  spriteService: SpriteServiceV2
+  spriteService: SpriteService
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
     const { fuel, spriteService } = deps

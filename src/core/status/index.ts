@@ -11,5 +11,6 @@ export * from './scoring'
 // State management
 export { statusSlice } from './statusSlice'
 
-// Rendering functions
-export { updateSbar, sbarClear, newSbar } from './render'
+// Import and re-export actions
+import { statusSlice as _statusSlice } from './statusSlice'
+export const { setMessage, invalidateHighScore } = _statusSlice.actions

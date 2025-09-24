@@ -4,45 +4,96 @@
 
 import './style.css'
 import { createRoot } from 'react-dom/client'
-import App from './App'
-import { createSpriteServiceV2 } from '@core/sprites'
-import { createGameRenderer, getGalaxyHeader } from './gameLoop'
-import { setAlignmentMode } from '@/core/shared/alignment'
-import { store } from './store'
+import { Provider } from 'react-redux'
+import { App } from './App'
+import { createSpriteService } from '@core/sprites'
+import { createGalaxyService } from '@core/galaxy'
+import { createFizzTransitionService } from '@core/transition'
+import { createSoundService } from '@core/sound'
+import { createGameRenderer } from './gameLoop'
+import { setAlignmentMode } from '@/core/shared'
+import { createGameStore } from './store'
+import {
+  ASSET_PATHS,
+  DEFAULT_SOUND_VOLUME,
+  DEFAULT_SOUND_MUTED,
+  TOTAL_INITIAL_LIVES
+} from './constants'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 const root = createRoot(app)
 
-async function initGame(): Promise<void> {
-  try {
-    // Initialize sprite service
-    const spriteService = await createSpriteServiceV2()
-    console.log('Sprite service initialized')
+try {
+  // Initialize services
+  const spriteService = await createSpriteService({
+    spriteResource: ASSET_PATHS.SPRITE_RESOURCE,
+    statusBarResource: ASSET_PATHS.STATUS_BAR_RESOURCE
+  })
+  console.log('Sprite service created')
 
-    const renderer = createGameRenderer(spriteService)
-    const galaxyHeader = getGalaxyHeader()
-    const totalLevels = galaxyHeader?.planets || 30
+  const galaxyService = await createGalaxyService(ASSET_PATHS.GALAXY_DATA)
+  console.log('Galaxy service created')
 
-    // Set up alignment mode subscription
-    // Set initial alignment mode from Redux state
-    const initialState = store.getState()
-    setAlignmentMode(initialState.game.alignmentMode)
+  const fizzTransitionService = createFizzTransitionService()
+  console.log('Fizz transition service created')
 
-    // Subscribe to alignment mode changes
-    store.subscribe(() => {
-      const state = store.getState()
-      setAlignmentMode(state.game.alignmentMode)
-    })
+  const soundService = await createSoundService({
+    volume: DEFAULT_SOUND_VOLUME,
+    muted: DEFAULT_SOUND_MUTED
+  })
+  console.log('Sound service created')
 
-    // Render the App component with JSX
-    root.render(<App renderer={renderer} totalLevels={totalLevels} />)
+  // Create store with services and initial settings
+  const store = createGameStore(
+    {
+      galaxyService,
+      spriteService,
+      fizzTransitionService,
+      soundService
+    },
+    {
+      soundVolume: DEFAULT_SOUND_VOLUME,
+      soundEnabled: !DEFAULT_SOUND_MUTED,
+      initialLives: TOTAL_INITIAL_LIVES
+    }
+  )
+  console.log('Game store created with services')
 
-    console.log('Game started!')
-  } catch (error) {
-    console.error('Failed to initialize game:', error)
-    app.innerHTML = `<div style="color: red; padding: 20px;">Failed to initialize game: ${error}</div>`
-  }
+  const renderer = createGameRenderer(
+    store,
+    spriteService,
+    galaxyService,
+    fizzTransitionService,
+    soundService
+  )
+  const totalLevels = galaxyService.getHeader().planets
+
+  // Set up alignment mode subscription
+  let currentAlignmentMode = store.getState().game.alignmentMode
+  // Set initial alignment mode from Redux state
+  setAlignmentMode(currentAlignmentMode)
+
+  // Subscribe to alignment mode changes
+  store.subscribe(() => {
+    const newAlignmentMode = store.getState().game.alignmentMode
+    if (newAlignmentMode !== currentAlignmentMode) {
+      setAlignmentMode(newAlignmentMode)
+      currentAlignmentMode = newAlignmentMode
+    }
+  })
+
+  root.render(
+    <Provider store={store}>
+      <App
+        renderer={renderer}
+        totalLevels={totalLevels}
+        soundService={soundService}
+      />
+    </Provider>
+  )
+
+  console.log('Game started!')
+} catch (error) {
+  console.error('Failed to initialize game:', error)
+  app.innerHTML = `<div style="color: red; padding: 20px;">Failed to initialize game: ${error}</div>`
 }
-
-// Start the game
-initGame()

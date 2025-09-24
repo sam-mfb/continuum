@@ -4,7 +4,7 @@ import type { WallsState } from '@core/walls'
 import type { GameViewState } from '@dev/store'
 import type { ScreenState } from '@core/screen'
 import type { AppDispatch } from '@dev/store'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 
 /**
  * Narrow store interface for game renderers.
@@ -25,5 +25,5 @@ export type GameRendererStore = {
 export type PlanetRendererFactory = (
   planet: PlanetState,
   store: GameRendererStore,
-  spriteService: SpriteServiceV2
+  spriteService: SpriteService
 ) => BitmapRenderer

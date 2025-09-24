@@ -3,7 +3,10 @@ export type ExplosionsState = {
   sparks: SparkRec[]
   totalsparks: number
   sparksalive: number
-  shipDeathFlash: boolean // White screen flash on ship death (orig: set_screen in Terrain.c:413)
+  // White screen flash on ship death (orig: set_screen in Terrain.c:413)
+  // Note it needs to be set to one more than what is desired because the
+  // first one gets consume in the final "death frame" of the ship
+  shipDeathFlashFrames: number
 }
 
 /**

@@ -15,11 +15,3 @@ export { shipControl } from './shipControl'
 
 // Physics
 export { checkForBounce } from './physics/checkForBounce'
-
-// Rendering functions
-export { drawFigure } from './render/drawFigure'
-export { eraseFigure } from './render/eraseFigure'
-export { flameOn } from './render/flameOn'
-export { fullFigure } from './render/fullFigure'
-export { grayFigure } from './render/grayFigure'
-export { shiftFigure } from './render/shiftFigure'

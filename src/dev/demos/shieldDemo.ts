@@ -5,15 +5,16 @@
  * Shows the ship with shield overlay using eraseFigure to create the white outline effect.
  */
 
-import type { BitmapRenderer } from '@lib/bitmap'
-import { fullFigure } from '@core/ship'
-import { eraseFigure } from '@core/ship'
-import { grayFigure } from '@core/ship'
-import { shiftFigure } from '@core/ship'
-import type { SpriteServiceV2 } from '@core/sprites'
-import { SCENTER } from '@core/figs/types'
+import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
+import { createGameBitmap } from '@lib/bitmap'
+import { fullFigure } from '@core/ship/render'
+import { eraseFigure } from '@core/ship/render'
+import { grayFigure } from '@core/ship/render'
+import { shiftFigure } from '@core/ship/render'
+import type { SpriteService } from '@core/sprites'
+import { SCENTER } from '@core/figs'
 import { SCRWTH, VIEWHT } from '@core/screen'
-import { viewClear } from '@core/screen'
+import { viewClear } from '@core/screen/render'
 import { getAlignment } from '@core/shared'
 import { getBackgroundPattern } from '@core/shared'
 
@@ -32,16 +33,17 @@ let shipRotation = 0
  * Shield demo renderer
  */
 export const createShieldDemoRenderer =
-  (spriteService: SpriteServiceV2): BitmapRenderer =>
-  (bitmap, frame, _env) => {
+  (spriteService: SpriteService): BitmapRenderer =>
+  (_frame: FrameInfo, keys: KeyInfo) => {
+    const bitmap = createGameBitmap()
     // Check if space bar is held for shield
-    const shielding = frame.keysDown.has('Space')
+    const shielding = keys.keysDown.has('Space')
 
     // Allow manual rotation with Z/X keys
-    if (frame.keysDown.has('KeyZ')) {
+    if (keys.keysDown.has('KeyZ')) {
       shipRotation = (shipRotation - 1) & 31
     }
-    if (frame.keysDown.has('KeyX')) {
+    if (keys.keysDown.has('KeyX')) {
       shipRotation = (shipRotation + 1) & 31
     }
 
@@ -58,11 +60,10 @@ export const createShieldDemoRenderer =
     const shipMaskBitmap = shipMaskSprite.bitmap
 
     // Clear screen with crosshatch pattern
-    const clearedBitmap = viewClear({
+    let resultBitmap = viewClear({
       screenX: 0,
       screenY: 0
     })(bitmap)
-    bitmap.data.set(clearedBitmap.data)
 
     // Compute background patterns for gray figure
     const align0 = getAlignment({
@@ -83,27 +84,27 @@ export const createShieldDemoRenderer =
     ]
 
     // 1. Draw ship shadow background using grayFigure
-    let renderedBitmap = grayFigure({
+    resultBitmap = grayFigure({
       x: SHIP_X - (SCENTER - SHADOW_OFFSET_X),
       y: SHIP_Y - (SCENTER - SHADOW_OFFSET_Y),
       def: shipMaskBitmap,
       background
-    })(bitmap)
+    })(resultBitmap)
 
     // 2. Draw ship shadow using shiftFigure
-    renderedBitmap = shiftFigure({
+    resultBitmap = shiftFigure({
       x: SHIP_X - (SCENTER - SHADOW_OFFSET_X),
       y: SHIP_Y - (SCENTER - SHADOW_OFFSET_Y),
       def: shipMaskBitmap
-    })(renderedBitmap)
+    })(resultBitmap)
 
     // 3. Draw the ship itself using fullFigure
-    renderedBitmap = fullFigure({
+    resultBitmap = fullFigure({
       x: SHIP_X - SCENTER,
       y: SHIP_Y - SCENTER,
       def: shipDefBitmap,
       mask: shipMaskBitmap
-    })(renderedBitmap)
+    })(resultBitmap)
 
     // 4. If shielding, draw the shield effect
     if (shielding) {
@@ -113,18 +114,21 @@ export const createShieldDemoRenderer =
 
       // Use eraseFigure to create the white outline effect
       // This mimics Play.c:254 - erase_figure(shipx-SCENTER, shipy-SCENTER, shield_def, SHIPHT)
-      renderedBitmap = eraseFigure({
+      resultBitmap = eraseFigure({
         x: SHIP_X - SCENTER,
         y: SHIP_Y - SCENTER,
         def: shieldBitmap
-      })(renderedBitmap)
+      })(resultBitmap)
     }
-
-    // Copy rendered bitmap back to original
-    bitmap.data.set(renderedBitmap.data)
 
     // Simple text indicator (draw a pattern to show shield state)
     if (shielding) {
+      // Create a copy for modification
+      const finalBitmap = {
+        ...resultBitmap,
+        data: new Uint8Array(resultBitmap.data)
+      }
+
       // Draw a simple indicator pattern in the top-left corner
       // This is just a visual cue that shield is active
       for (let y = 2; y < 6; y++) {
@@ -132,11 +136,15 @@ export const createShieldDemoRenderer =
           if ((x + y) % 4 === 0) {
             const byteIndex = y * 64 + Math.floor(x / 8)
             const bitIndex = 7 - (x % 8)
-            if (bitmap.data[byteIndex] !== undefined) {
-              bitmap.data[byteIndex] |= 1 << bitIndex
+            if (finalBitmap.data[byteIndex] !== undefined) {
+              finalBitmap.data[byteIndex] |= 1 << bitIndex
             }
           }
         }
       }
+
+      return finalBitmap
     }
+
+    return resultBitmap
   }

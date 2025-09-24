@@ -6,23 +6,29 @@
  * After explosions complete, bunkers reset.
  */
 
-import type { BitmapRenderer, MonochromeBitmap } from '@lib/bitmap'
+import {
+  createGameBitmap,
+  type BitmapRenderer,
+  type FrameInfo,
+  type KeyInfo,
+  type MonochromeBitmap
+} from '@lib/bitmap'
 import { planetSlice } from '@core/planet'
 import { screenSlice } from '@core/screen'
 import { buildGameStore } from '@dev/store'
-import type { SpriteServiceV2 } from '@core/sprites'
-import type { ShardSprite, ShardSpriteSet } from '@core/figs/types'
+import type { SpriteService } from '@core/sprites'
+import type { ShardSprite, ShardSpriteSet } from '@core/figs'
 import { xbcenter, ybcenter } from '@core/planet'
 import {
   explosionsSlice,
   startExplosion,
   updateExplosions
 } from '@core/explosions'
-import { drawExplosions } from '@core/explosions'
+import { drawExplosions } from '@core/explosions/render'
 import type { ExplosionsState } from '@core/explosions'
-import { drawBunker } from '@core/planet'
-import { viewClear } from '@core/screen'
-import { ASSET_PATHS } from '@core/constants'
+import { drawBunker } from '@core/planet/render'
+import { viewClear } from '@core/screen/render'
+import { ASSET_PATHS } from '@/dev/constants'
 
 // Configure store with explosions slice
 const store = buildGameStore({
@@ -266,28 +272,29 @@ const triggerBunkerExplosion = (bunker: BunkerConfig): void => {
  * Factory function to create bitmap renderer for explosion game
  */
 export const createExplosionBitmapRenderer =
-  (spriteService: SpriteServiceV2): BitmapRenderer =>
-  (bitmap, frame, _env) => {
-    // Clear the bitmap each frame
-    bitmap.data.fill(0)
-
+  (spriteService: SpriteService): BitmapRenderer =>
+  (_frame: FrameInfo, keys: KeyInfo) => {
+    const bitmap = createGameBitmap()
     // Check initialization status
     if (initializationError) {
       console.error('Initialization failed:', initializationError)
-      bitmap.data.fill(0)
-      return
+      const errorBitmap = { ...bitmap }
+      errorBitmap.data.fill(0)
+      return errorBitmap
     }
 
     if (!initializationComplete) {
       // Still loading
-      return
+      const loadingBitmap = { ...bitmap }
+      loadingBitmap.data.fill(0)
+      return loadingBitmap
     }
 
     const state = store.getState()
 
     // Handle key presses
     for (const bunker of bunkers) {
-      if (frame.keysDown.has(bunker.key) && bunker.alive) {
+      if (keys.keysDown.has(bunker.key) && bunker.alive) {
         triggerBunkerExplosion(bunker)
       }
     }
@@ -323,13 +330,10 @@ export const createExplosionBitmapRenderer =
     const finalState = store.getState()
 
     // Create a crosshatch gray background
-    const clearedBitmap = viewClear({
+    let renderedBitmap = viewClear({
       screenX: finalState.screen.screenx,
       screenY: finalState.screen.screeny
     })(bitmap)
-    bitmap.data.set(clearedBitmap.data)
-
-    let renderedBitmap = bitmap
 
     // Draw all bunkers
     for (const bunker of bunkers) {
@@ -404,6 +408,5 @@ export const createExplosionBitmapRenderer =
     // P: FOLLOW (omnidirectional)
     // L: GENERATOR (omnidirectional)
 
-    // Copy rendered bitmap data back to original
-    bitmap.data.set(renderedBitmap.data)
+    return renderedBitmap
   }

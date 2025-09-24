@@ -5,7 +5,7 @@ import { uiReducer } from './uiSlice'
 import galaxyReducer from './galaxySlice'
 import graphicsReducer from './graphicsSlice'
 import spritesReducer from './spritesSlice'
-import soundReducer from '@core/sound/soundSlice'
+import { soundSlice } from '@core/sound'
 import { wallsSlice } from '@core/walls'
 import gameViewReducer from './gameViewSlice'
 import { screenSlice } from '@core/screen'
@@ -16,7 +16,7 @@ const store = configureStore({
     galaxy: galaxyReducer,
     graphics: graphicsReducer,
     sprites: spritesReducer,
-    sound: soundReducer,
+    sound: soundSlice.reducer,
     walls: wallsSlice.reducer,
     gameView: gameViewReducer,
     screen: screenSlice.reducer

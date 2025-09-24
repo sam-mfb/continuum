@@ -8,7 +8,7 @@
 import { type MonochromeBitmap } from '@lib/bitmap'
 import { writeInt } from './writeInt'
 import { BONUS_X, BONUS_Y } from '@core/status'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 
 /**
  * Writes the planet bonus value at its fixed position on the status bar.
@@ -24,7 +24,7 @@ import type { SpriteServiceV2 } from '@core/sprites'
  */
 export function writeBonus(deps: {
   bonus: number
-  spriteService: SpriteServiceV2
+  spriteService: SpriteService
 }): (screen: MonochromeBitmap) => MonochromeBitmap {
   return screen => {
     const { bonus, spriteService } = deps

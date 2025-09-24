@@ -6,14 +6,15 @@
  * Use arrow keys to move the viewport.
  */
 
-import type { BitmapRenderer } from '@lib/bitmap'
+import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
+import { createGameBitmap } from '@lib/bitmap'
 import type { LineRec } from '@core/walls'
-import { whiteTerrain, blackTerrain } from '@core/walls'
+import { whiteTerrain, blackTerrain } from '@core/walls/render'
 import { wallsActions } from '@core/walls'
 import { buildGameStore } from '@dev/store'
 import { LINE_KIND, NEW_TYPE } from '@core/walls'
 import { createWall } from '@core/walls'
-import { viewClear } from '@core/screen'
+import { viewClear } from '@core/screen/render'
 
 // Create store instance
 const store = buildGameStore()
@@ -57,22 +58,26 @@ const viewportState = {
 /**
  * Renderer that displays complete walls using both blackTerrain and whiteTerrain
  */
-export const wallDrawingRenderer: BitmapRenderer = (bitmap, frame, _env) => {
+export const wallDrawingRenderer: BitmapRenderer = (
+  _frame: FrameInfo,
+  keys: KeyInfo
+) => {
+  const bitmap = createGameBitmap()
   // Handle keyboard input for viewport movement
   const moveSpeed = 5
-  if (frame.keysDown.has('ArrowUp')) {
+  if (keys.keysDown.has('ArrowUp')) {
     viewportState.y = Math.max(0, viewportState.y - moveSpeed)
   }
-  if (frame.keysDown.has('ArrowDown')) {
+  if (keys.keysDown.has('ArrowDown')) {
     viewportState.y = Math.min(
       WORLD_HEIGHT - bitmap.height,
       viewportState.y + moveSpeed
     )
   }
-  if (frame.keysDown.has('ArrowLeft')) {
+  if (keys.keysDown.has('ArrowLeft')) {
     viewportState.x = Math.max(0, viewportState.x - moveSpeed)
   }
-  if (frame.keysDown.has('ArrowRight')) {
+  if (keys.keysDown.has('ArrowRight')) {
     viewportState.x = Math.min(
       WORLD_WIDTH - bitmap.width,
       viewportState.x + moveSpeed
@@ -80,11 +85,10 @@ export const wallDrawingRenderer: BitmapRenderer = (bitmap, frame, _env) => {
   }
 
   // First, create a crosshatch gray background
-  const clearedBitmap = viewClear({
+  let resultBitmap = viewClear({
     screenX: viewportState.x,
     screenY: viewportState.y
   })(bitmap)
-  bitmap.data.set(clearedBitmap.data)
 
   // Get wall data from Redux state
   const wallState = store.getState().walls
@@ -98,26 +102,25 @@ export const wallDrawingRenderer: BitmapRenderer = (bitmap, frame, _env) => {
   }
 
   // First render white terrain (undersides, patches, junctions) on top
-  let renderedBitmap = whiteTerrain({
+  resultBitmap = whiteTerrain({
     whites: wallState.whites,
     junctions: wallState.junctions,
     firstWhite: wallState.firstWhite,
     organizedWalls: wallState.organizedWalls,
     viewport: viewport,
     worldwidth: WORLD_WIDTH
-  })(bitmap)
+  })(resultBitmap)
 
   // Then render black terrain (top surfaces) for normal lines
-  renderedBitmap = blackTerrain({
+  resultBitmap = blackTerrain({
     thekind: LINE_KIND.NORMAL, // Draw only normal lines
     kindPointers: wallState.kindPointers,
     organizedWalls: wallState.organizedWalls,
     viewport: viewport,
     worldwidth: WORLD_WIDTH
-  })(renderedBitmap)
+  })(resultBitmap)
 
-  // Copy rendered bitmap data back to original
-  bitmap.data.set(renderedBitmap.data)
+  return resultBitmap
 
   // Note: This complete render shows:
   // - Black tops of all walls (from blackTerrain)

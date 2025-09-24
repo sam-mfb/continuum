@@ -28,6 +28,7 @@ export type SoundUIState = {
   currentSound: SoundType // For UI display only
 }
 
+// Default values - can be overridden via preloadedState when creating store
 const initialState: SoundUIState = {
   discrete: [],
   continuous: {
@@ -38,12 +39,12 @@ const initialState: SoundUIState = {
     thrusting: false,
     shielding: false
   },
-  enabled: true,
-  volume: 0.5,
+  enabled: true, // Will be overridden by preloadedState in production
+  volume: 0.5, // Will be overridden by preloadedState in production
   currentSound: SoundType.NO_SOUND
 }
 
-const soundSlice = createSlice({
+export const soundSlice = createSlice({
   name: 'sound',
   initialState,
   reducers: {
@@ -160,4 +161,3 @@ export const {
   stopSound,
   resetSounds
 } = soundSlice.actions
-export default soundSlice.reducer

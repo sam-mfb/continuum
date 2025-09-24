@@ -8,9 +8,9 @@ import type { MonochromeBitmap, LineRec } from '@core/walls'
 import type { ShipState } from '@core/ship'
 import type { Point } from '@core/shared/pt2xy'
 import { blackTerrain } from '@core/walls/render/blackTerrain'
-import { checkFigure } from '@core/ship'
-import { eraseFigure } from '@core/ship'
-import { SCENTER } from '@core/figs/types'
+import { checkFigure, shipSlice } from '@core/ship'
+import { eraseFigure } from '@core/ship/render'
+import { SCENTER } from '@core/figs'
 import { LINE_KIND } from '@core/shared'
 import { pt2line } from '@core/shared/pt2line'
 import { getstrafedir } from '@core/shared/getstrafedir'
@@ -88,12 +88,7 @@ export function checkForBounce(deps: CheckForBounceDeps): MonochromeBitmap {
 
     if (result !== null) {
       // Dispatch with the norm value (0-15 direction index)
-      store.dispatch({
-        type: 'ship/bounceShip',
-        payload: {
-          norm: result.norm
-        }
-      })
+      store.dispatch(shipSlice.actions.bounceShip({ norm: result.norm }))
     }
 
     // CRITICAL: Erase the ship from the screen after bounce detection!
@@ -109,13 +104,12 @@ export function checkForBounce(deps: CheckForBounceDeps): MonochromeBitmap {
   } else {
     // No collision - update last safe position
     // Corresponds to Play.c:283-285
-    store.dispatch({
-      type: 'ship/noBounce',
-      payload: {
+    store.dispatch(
+      shipSlice.actions.noBounce({
         globalx: globalx,
         globaly: globaly
-      }
-    })
+      })
+    )
 
     // Return the screen with bounce walls rendered (ship not erased)
     return screenWithBounceWalls

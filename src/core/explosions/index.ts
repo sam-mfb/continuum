@@ -12,12 +12,7 @@ export {
   startShipDeath,
   startExplosion,
   updateExplosions,
-  clearShipDeathFlash,
+  decrementShipDeathFlash,
   resetSparksAlive,
   clearShards
 } from './explosionsSlice'
-
-// Rendering functions
-export { drawExplosions } from './render/drawExplosions'
-export { drawShard } from './render/drawShard'
-export { drawSparkSafe } from './render/drawSparkSafe'

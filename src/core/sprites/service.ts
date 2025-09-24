@@ -1,21 +1,13 @@
 /**
- * @fileoverview Improved sprite service API with pre-computed format conversions
- *
- * This new API provides:
- * - Explicit variant selection (def, mask, background1, background2)
- * - Pre-computed format conversions (Uint8Array, Uint16Array, MonochromeBitmap)
- * - Type-safe variant requests
- * - Simpler, more consistent interface
+ * @fileoverview Sprite service API with pre-computed format conversions
  */
 
 import { expandTitlePage } from '@dev/art/utils'
 
-import { extractAllSprites } from '@core/figs'
-import { BunkerKind } from '@core/figs/types'
-import type { AllSprites } from '@core/figs/types'
+import { extractAllSprites, BunkerKind } from '@core/figs'
+import type { AllSprites } from '@core/figs'
 import { createMonochromeBitmap } from '@lib/bitmap'
 import type { MonochromeBitmap } from '@lib/bitmap/types'
-import { ASSET_PATHS } from '@core/constants'
 
 // Sprite variants - explicit background selection
 export type ShipVariant = 'def' | 'mask'
@@ -33,7 +25,7 @@ export type ShipOptions = { variant: ShipVariant }
 export type FullOptions = { variant: FullVariant }
 
 // New sprite service interface
-export type SpriteServiceV2 = {
+export type SpriteService = {
   // Ship only has def and mask
   getShipSprite(rotation: number, options: ShipOptions): SpriteData
 
@@ -114,9 +106,12 @@ type PrecomputedStorage = {
 /**
  * Creates an improved sprite service with pre-computed format conversions
  */
-export async function createSpriteServiceV2(): Promise<SpriteServiceV2> {
+export async function createSpriteService(assetPaths: {
+  spriteResource: string
+  statusBarResource: string
+}): Promise<SpriteService> {
   // Load sprite resource file
-  const response = await fetch(ASSET_PATHS.SPRITE_RESOURCE)
+  const response = await fetch(assetPaths.spriteResource)
   if (!response.ok) {
     throw new Error('Failed to load sprite resource')
   }
@@ -125,7 +120,7 @@ export async function createSpriteServiceV2(): Promise<SpriteServiceV2> {
   const allSprites = extractAllSprites(arrayBuffer)
 
   // Load status bar template
-  const statusBarResponse = await fetch(ASSET_PATHS.STATUS_BAR_RESOURCE)
+  const statusBarResponse = await fetch(assetPaths.statusBarResource)
   if (!statusBarResponse.ok) {
     throw new Error('Failed to load status bar resource')
   }

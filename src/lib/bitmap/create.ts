@@ -76,3 +76,11 @@ export const cloneBitmap = (source: MonochromeBitmap): MonochromeBitmap => {
     rowBytes: source.rowBytes
   }
 }
+
+/**
+ * Create a standard game bitmap (512x342)
+ * This matches the original Macintosh screen dimensions
+ */
+export const createGameBitmap = (): MonochromeBitmap => {
+  return createMonochromeBitmap(512, 342)
+}

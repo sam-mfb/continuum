@@ -1,9 +1,9 @@
 import React, { useRef, useEffect } from 'react'
 import { useAppSelector } from '../store/store'
-import type { SpriteServiceV2 } from '@core/sprites'
+import type { SpriteService } from '@core/sprites'
 
 type SpritesViewerProps = {
-  spriteService: SpriteServiceV2
+  spriteService: SpriteService
 }
 
 export const SpritesViewer: React.FC<SpritesViewerProps> = ({

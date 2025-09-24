@@ -10,11 +10,12 @@
  * - Shows how the sprite service provides the status bar template
  */
 
-import type { BitmapRenderer } from '@lib/bitmap'
+import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
+import { createGameBitmap } from '@lib/bitmap'
 import { cloneBitmap } from '@lib/bitmap'
-import { viewClear } from '@core/screen'
-import { newSbar } from '@core/status'
-import type { SpriteServiceV2 } from '@core/sprites'
+import { viewClear } from '@core/screen/render'
+import { newSbar } from '@core/status/render'
+import type { SpriteService } from '@core/sprites'
 
 // State for the demo - persists across render calls
 type StatusBarState = {
@@ -87,8 +88,9 @@ function processInput(keysDown: Set<string>): void {
  * Factory function to create the status bar demo renderer
  */
 export const createStatusBarDemo =
-  (spriteService: SpriteServiceV2): BitmapRenderer =>
-  (bitmap, frame, _env) => {
+  (spriteService: SpriteService): BitmapRenderer =>
+  (_frame: FrameInfo, keys: KeyInfo) => {
+    const bitmap = createGameBitmap()
     // Initialize on first frame
     if (!state.initialized) {
       state.initialized = true
@@ -96,7 +98,7 @@ export const createStatusBarDemo =
     }
 
     // Process keyboard input
-    processInput(frame.keysDown)
+    processInput(keys.keysDown)
 
     // Update counters every second
     const now = Date.now()
@@ -124,7 +126,9 @@ export const createStatusBarDemo =
     }
 
     // Create screen with gray background
-    let screen = viewClear({ screenX: 0, screenY: 0 })(cloneBitmap(bitmap))
+    let resultBitmap = viewClear({ screenX: 0, screenY: 0 })(
+      cloneBitmap(bitmap)
+    )
 
     // Use newSbar to draw the complete status bar
     // For the demo, show typed text as a message, or show fuel status
@@ -137,7 +141,7 @@ export const createStatusBarDemo =
       message = 'OUT OF FUEL'
     }
 
-    screen = newSbar({
+    resultBitmap = newSbar({
       lives: state.ships,
       message,
       level: state.level,
@@ -145,8 +149,7 @@ export const createStatusBarDemo =
       fuel: state.fuel,
       bonus: state.bonus,
       spriteService
-    })(screen)
+    })(resultBitmap)
 
-    // Copy result back to bitmap
-    bitmap.data.set(screen.data)
+    return resultBitmap
   }
