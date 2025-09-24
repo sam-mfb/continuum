@@ -19,6 +19,7 @@ export default defineConfig({
     }
   },
   build: {
+    target: 'es2022',
     outDir: resolve(__dirname, isGameMode ? 'dist-game' : 'dist-dev'),
     emptyOutDir: true
   },
