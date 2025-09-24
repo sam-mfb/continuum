@@ -454,11 +454,6 @@ const handleBunkerShooting = (
     const screenr = state.screen.screenx + SCRWTH
     const screenb = state.screen.screeny + VIEWHT
 
-    // Store current shot count to detect if a bunker fired
-    const prevShotCount = state.shots.bunkshots.filter(
-      s => s.lifecount > 0
-    ).length
-
     store.dispatch(
       bunkShoot({
         screenx: state.screen.screenx,
@@ -473,46 +468,6 @@ const handleBunkerShooting = (
         globaly: globaly
       })
     )
-
-    // Check if a bunker actually fired by comparing shot counts
-    const newState = store.getState()
-    const newShotCount = newState.shots.bunkshots.filter(
-      s => s.lifecount > 0
-    ).length
-
-    if (newShotCount > prevShotCount) {
-      // A bunker fired - find the new shot for sound proximity
-      const newShot = newState.shots.bunkshots.find(
-        (s, i) =>
-          s.lifecount > 0 &&
-          (!state.shots.bunkshots[i] ||
-            state.shots.bunkshots[i]!.lifecount === 0)
-      )
-
-      if (newShot && newShot.origin) {
-        const SOFTBORDER = 200
-        const { x: bunkx, y: bunky } = newShot.origin
-
-        // Check if bunker is visible on screen
-        if (
-          bunkx > state.screen.screenx &&
-          bunkx < screenr &&
-          bunky > state.screen.screeny &&
-          bunky < screenb
-        ) {
-          store.dispatch(playDiscrete(SoundType.BUNK_SOUND))
-        }
-        // Check if bunker is within SOFTBORDER of screen
-        else if (
-          bunkx > state.screen.screenx - SOFTBORDER &&
-          bunkx < screenr + SOFTBORDER &&
-          bunky > state.screen.screeny - SOFTBORDER &&
-          bunky < screenb + SOFTBORDER
-        ) {
-          store.dispatch(playDiscrete(SoundType.SOFT_SOUND))
-        }
-      }
-    }
   }
 }
 
