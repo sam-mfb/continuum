@@ -9,6 +9,7 @@ export * from './constants'
 // State management and actions
 export {
   shotsSlice,
+  initShipshot,
   clearAllShots,
   doStrafes,
   bunkShoot,
