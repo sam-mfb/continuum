@@ -5,9 +5,8 @@
  * level progression, and entity updates
  */
 
-import type { Store } from '@reduxjs/toolkit'
 import type { GalaxyService } from '@core/galaxy'
-import type { RootState } from '../store'
+import type { GameStore, RootState } from '../store'
 import type { MonochromeBitmap, FrameInfo, KeyInfo } from '@lib/bitmap'
 import type { FizzTransitionService } from '@core/transition'
 import type { SoundService } from '@core/sound'
@@ -66,7 +65,7 @@ import { triggerShipDeath } from '../shipDeath'
 import { BunkerKind } from '@core/figs'
 
 export type StateUpdateContext = {
-  store: Store<RootState>
+  store: GameStore
   frame: FrameInfo
   keys: KeyInfo
   bitmap: MonochromeBitmap
@@ -217,7 +216,7 @@ function checkLevelComplete(state: RootState): boolean {
 /**
  * Handle death countdown and respawn
  */
-const handleDeathAndRespawn = (store: Store<RootState>): void => {
+const handleDeathAndRespawn = (store: GameStore): void => {
   const prelimState = store.getState()
   if (prelimState.ship.deadCount > 0) {
     // Ship is dead - decrement counter and check for respawn
@@ -247,7 +246,7 @@ const handleDeathAndRespawn = (store: Store<RootState>): void => {
  * Handle level completion checks
  */
 const handleLevelCompletion = (
-  store: Store<RootState>,
+  store: GameStore,
   fizzTransitionService?: FizzTransitionService
 ): void => {
   const state = store.getState()
@@ -282,10 +281,7 @@ const handleLevelCompletion = (
 /**
  * Handle game over condition
  */
-const handleGameOver = (
-  store: Store<RootState>,
-  soundService: SoundService
-): void => {
+const handleGameOver = (store: GameStore, soundService: SoundService): void => {
   const state = store.getState()
 
   if (
@@ -327,8 +323,7 @@ const handleGameOver = (
     store.dispatch(resetGame())
     store.dispatch(shipSlice.actions.setLives(TOTAL_INITIAL_LIVES))
     store.dispatch(statusSlice.actions.initStatus())
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(store.dispatch as any)(loadLevel(1))
+    store.dispatch(loadLevel(1))
   }
 }
 
@@ -336,7 +331,7 @@ const handleGameOver = (
  * Handle ship controls and movement
  */
 const handleShipMovement = (
-  store: Store<RootState>,
+  store: GameStore,
   keys: KeyInfo
 ): { globalx: number; globaly: number } => {
   const state = store.getState()
@@ -447,7 +442,7 @@ const handleShipMovement = (
  * Handle bunker shooting logic
  */
 const handleBunkerShooting = (
-  store: Store<RootState>,
+  store: GameStore,
   globalx: number,
   globaly: number
 ): void => {
@@ -524,7 +519,7 @@ const handleBunkerShooting = (
 /**
  * Process bunker kills from shot collisions
  */
-const processBunkerKills = (store: Store<RootState>): void => {
+const processBunkerKills = (store: GameStore): void => {
   const state = store.getState()
   const shotsState = store.getState().shots
 
@@ -568,7 +563,7 @@ const processBunkerKills = (store: Store<RootState>): void => {
  * Called when transition state changes
  */
 const handleTransitionSounds = (
-  store: Store<RootState>,
+  store: GameStore,
   prevState: RootState['transition'],
   currState: RootState['transition']
 ): void => {
@@ -593,7 +588,7 @@ const handleTransitionSounds = (
  * Handle transitioning to the next level
  */
 const transitionToNextLevel = (
-  store: Store<RootState>,
+  store: GameStore,
   galaxyService: GalaxyService
 ): void => {
   const state = store.getState()
@@ -619,7 +614,7 @@ const transitionToNextLevel = (
  * Returns true if transition completed this frame
  */
 const updateTransitionState = (
-  store: Store<RootState>,
+  store: GameStore,
   galaxyService: GalaxyService,
   fizzTransitionService?: FizzTransitionService
 ): boolean => {
