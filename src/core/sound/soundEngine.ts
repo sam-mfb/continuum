@@ -142,8 +142,8 @@ export const createSoundEngine = (): SoundEngine => {
     }
 
     // Reset the previous generator when switching to a new sound
-    // This ensures interrupted sounds start from the beginning next time
-    if (currentGenerator && currentGenerator !== generator) {
+    // OR when restarting the same sound (for priority-based interruption)
+    if (currentGenerator) {
       if (
         'stop' in currentGenerator &&
         typeof currentGenerator.stop === 'function'
@@ -157,7 +157,7 @@ export const createSoundEngine = (): SoundEngine => {
       }
     }
 
-    // Reset/restart the new generator
+    // Reset/restart the generator
     if ('start' in generator && typeof generator.start === 'function') {
       generator.start()
     } else if ('reset' in generator && typeof generator.reset === 'function') {

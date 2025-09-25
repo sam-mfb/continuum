@@ -228,8 +228,6 @@ For bunker sounds on a level with many bunkers:
 
 This decay system is crucial for creating the intense audio feedback during combat, particularly on levels with many bunkers where the rapid-fire sound effect enhances the feeling of being under heavy fire.
 
-NB: I think there may be a bug in the original game -- or more specifically, it's interaction with the hardware. If you start a level with a ton of bunker fire (e.g., Level 9 in the release levels), on a Mac Plus you hear this incredibly rapid fire sound. As if shots are starting one on top of the other almost, and interrupting one another. I'm not sure why that doesn't happen in this implementaiton, and I can't find a bug in the logic. I guess it's possible something about Redux timing is slowing it down, but I think it's also possible that somehow the original Mac sound hardware was getting "overloaded". Not sure.
-
 ### Machine-Specific Handling
 
 - Mac Plus: Uses hard-coded memory addresses and direct hardware control
