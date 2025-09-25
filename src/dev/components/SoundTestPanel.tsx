@@ -5,11 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import type { RootState } from '../store/store'
 import {
-  setVolume,
-  toggleSound,
   createSoundService,
   type SoundService,
   SOUND_PRIORITIES,
@@ -34,12 +30,10 @@ const SOUND_NAMES: Record<SoundType, string> = {
 }
 
 export const SoundTestPanel: React.FC = () => {
-  const dispatch = useDispatch()
-  const { volume: masterVolume, enabled } = useSelector(
-    (state: RootState) => state.sound
-  )
   const [soundService, setSoundService] = useState<SoundService | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
+  const [masterVolume, setMasterVolume] = useState(1.0)
+  const [enabled, setEnabled] = useState(true)
 
   useEffect(() => {
     // Initialize sound service on mount
@@ -47,7 +41,7 @@ export const SoundTestPanel: React.FC = () => {
       createSoundService({ volume: masterVolume, muted: !enabled })
         .then(service => {
           setSoundService(service)
-          // Sync initial state with Redux
+          // Sync initial state
           service.setVolume(masterVolume)
           service.setMuted(!enabled) // enabled=true means not muted
           setIsInitialized(true)
@@ -56,19 +50,19 @@ export const SoundTestPanel: React.FC = () => {
           console.error('Failed to initialize sound service:', error)
         })
     }
-  }, [isInitialized, masterVolume, enabled])
+  }, [isInitialized]) // Only depend on isInitialized, not volume/enabled
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const volume = parseFloat(e.target.value)
-    dispatch(setVolume(volume))
+    setMasterVolume(volume)
     if (soundService) {
       soundService.setVolume(volume)
     }
   }
 
   const handleMuteToggle = (): void => {
-    const newEnabled = !enabled // Calculate the new state
-    dispatch(toggleSound())
+    const newEnabled = !enabled
+    setEnabled(newEnabled)
     if (soundService) {
       // If sound is enabled (newEnabled = true), then muted = false
       // If sound is disabled (newEnabled = false), then muted = true

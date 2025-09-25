@@ -16,7 +16,6 @@ import { planetSlice } from '@core/planet'
 import { screenSlice } from '@core/screen'
 import { statusSlice } from '@core/status'
 import { explosionsSlice } from '@core/explosions'
-import { soundSlice } from '@core/sound'
 import { wallsSlice } from '@core/walls'
 import { transitionSlice } from '@core/transition'
 import {
@@ -60,11 +59,6 @@ const createStoreAndListeners = (
   // Build preloaded state with initial settings
   const preloadedState = {
     highscore: persistedHighScores,
-    sound: {
-      ...soundSlice.getInitialState(),
-      volume: initialSettings.soundVolume,
-      enabled: initialSettings.soundEnabled
-    },
     ship: {
       ...shipSlice.getInitialState(),
       lives: initialSettings.initialLives
@@ -80,7 +74,6 @@ const createStoreAndListeners = (
       screen: screenSlice.reducer,
       status: statusSlice.reducer,
       explosions: explosionsSlice.reducer,
-      sound: soundSlice.reducer,
       walls: wallsSlice.reducer,
       highscore: highscoreSlice.reducer,
       transition: transitionSlice.reducer

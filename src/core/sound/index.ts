@@ -12,9 +12,6 @@ export * from './types'
 // Sound Service - Primary API for game code
 export { createSoundService, type SoundService } from './service'
 
-// Redux slice - For UI settings only
-export * from './soundSlice'
-
 // Sound engine - Internal, exposed for test panel
 export * from './soundEngine'
 

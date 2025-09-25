@@ -4,7 +4,6 @@ Recreates the original Continuum sound system using Web Audio API. Manages real-
 
 ## Key Files
 
-- `soundSlice.ts` - Redux slice for sound state management
 - `service.ts` - Top-level sound service interface for the game
 - `soundEngine.ts` - Central coordinator for audio pipeline
 - `audioOutput.ts` - Web Audio API interface and format conversion

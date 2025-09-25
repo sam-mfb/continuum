@@ -7,12 +7,6 @@ import { ShipControl } from '@core/ship'
 import { FUELSHIELD, FRADIUS } from '@core/ship'
 import { xyindist } from '@core/shots'
 import { gravityVector } from '@core/shared/gravityVector'
-import {
-  playDiscrete,
-  setThrusting,
-  setShielding,
-  SoundType
-} from '@core/sound'
 import { wallsSlice } from '../walls'
 
 type ControlAction = {
@@ -70,9 +64,6 @@ export const shipControl =
     const updatedShip = updatedState.ship
     const updatedPlanet = updatedState.planet
 
-    // Determine which continuous sounds should be playing
-    // Priority: Shield takes precedence over thrust when both are pressed
-    const isThrusting = pressed.has(ShipControl.THRUST) && updatedShip.fuel > 0
     const isShielding = pressed.has(ShipControl.SHIELD) && updatedShip.fuel > 0
 
     // Use global position from updated ship state (set by previous frame's containShip)
@@ -114,25 +105,10 @@ export const shipControl =
         for (let i = 0; i < collectedFuels.length; i++) {
           dispatch(statusSlice.actions.scoreFuel())
         }
-        // Play FUEL_SOUND (Play.c:522)
-        dispatch(playDiscrete(SoundType.FUEL_SOUND))
       }
     } else {
       // Deactivate shield when key released or out of fuel
       dispatch(shipSlice.actions.shieldDeactivate())
-    }
-
-    // Update continuous sound states
-    // Shield has priority over thrust - if both are active, only shield sound plays
-    if (isShielding) {
-      dispatch(setShielding(true))
-      dispatch(setThrusting(false))
-    } else if (isThrusting) {
-      dispatch(setThrusting(true))
-      dispatch(setShielding(false))
-    } else {
-      dispatch(setThrusting(false))
-      dispatch(setShielding(false))
     }
 
     // Handle firing logic - from original shipControl lines 107-132
@@ -153,10 +129,6 @@ export const shipControl =
             worldwrap: updatedPlanet.worldwrap
           })
         )
-        // Play fire sound only if not shielding - Play.c:551
-        if (!updatedShip.shielding) {
-          dispatch(playDiscrete(SoundType.FIRE_SOUND))
-        }
       }
     } else {
       dispatch(shipSlice.actions.setFiring(false))

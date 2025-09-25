@@ -161,6 +161,14 @@ export function setupSoundListener(
     }
   })
 
+  // Listen for fuel collection
+  soundStartListening({
+    actionCreator: shipSlice.actions.collectFuel,
+    effect: () => {
+      soundService.playFuelCollect()
+    }
+  })
+
   // Listen for starmap transition
   soundStartListening({
     actionCreator: transitionSlice.actions.decrementPreFizz,
@@ -179,5 +187,3 @@ export function setupSoundListener(
     }
   })
 }
-
-// Listen for bunker explosion
