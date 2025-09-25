@@ -10,12 +10,6 @@ import { shipSlice, SKILLBRADIUS } from '@core/ship'
 import { xyindist } from '@core/shots'
 import { killBunker, legalAngle } from '@core/planet'
 import { startShipDeath, startExplosion } from '@core/explosions'
-import {
-  playDiscrete,
-  setThrusting,
-  setShielding,
-  SoundType
-} from '@core/sound'
 import { statusSlice } from '@core/status'
 import type { RootState } from './store'
 
@@ -62,9 +56,6 @@ export const triggerShipDeath = (store: Store<RootState>): void => {
       // Check if bunker was actually destroyed (difficult bunkers might survive)
       const updatedBunker = store.getState().planet.bunkers[index]
       if (!updatedBunker || !updatedBunker.alive) {
-        // Play bunker explosion sound - Play.c:368
-        store.dispatch(playDiscrete(SoundType.EXP1_SOUND))
-
         // Award score for bunker destruction (Play.c:365-366)
         store.dispatch(
           statusSlice.actions.scoreBunker({
@@ -89,11 +80,4 @@ export const triggerShipDeath = (store: Store<RootState>): void => {
 
   // (c) Start ship explosion
   store.dispatch(startShipDeath({ x: deathGlobalX, y: deathGlobalY }))
-
-  // (d) Play ship explosion sound (high priority) - Terrain.c:414
-  store.dispatch(playDiscrete(SoundType.EXP2_SOUND))
-
-  // (e) Stop any continuous sounds when ship dies
-  store.dispatch(setThrusting(false))
-  store.dispatch(setShielding(false))
 }

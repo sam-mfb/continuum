@@ -12,6 +12,7 @@ import type { AppDispatch, RootState } from './store'
 import type { TypedStartListening } from '@reduxjs/toolkit'
 import { explosionsSlice } from '@/core/explosions'
 import { transitionSlice } from '@/core/transition'
+import { shipSlice } from '@/core/ship'
 
 type SoundStartListening = TypedStartListening<RootState, AppDispatch>
 
@@ -141,6 +142,14 @@ export function setupSoundListener(
     },
     effect: () => {
       soundService.clearSound()
+    }
+  })
+
+  // Listen for ship death
+  soundStartListening({
+    actionCreator: explosionsSlice.actions.startShipDeath,
+    effect: () => {
+      soundService.playShipExplosion()
     }
   })
 
