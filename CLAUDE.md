@@ -6,6 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a recreation of the 68000 Mac game "Continuum" for the web, maintaining the original code structure and game mechanics. The goal is to stay as close to the original source code as possible while making it playable in a browser.
 
+## Coding Practices - HIGHLY IMPORTANT
+
+- Typecheck, lint, and format after you finish editing a file
+- Don't forget to format!!
+- Commit changes to version control when you finish a task
+- Only run a background server or other background task if EXPLICITLY asked to by the user
+
 ## Architecture
 
 ### Core Structure
@@ -42,12 +49,6 @@ The port makes several adaptations to modern javascript/coding practices:
 - `npm run lint:fix`: Fix linting issues
 - `npm run format`: Format code with Prettier
 - `npm run typecheck`: Run TypeScript type checking
-
-## Coding Practices
-
-- Typecheck, lint, and format after you finish editing a file
-- Commit changes to version control when you finish a task
-- Only run a background server or other background task if EXPLICITLY asked to by the user
 
 ## Typescript
 
