@@ -282,7 +282,10 @@ export const shipSlice = createSlice({
       state.dy = 0
       state.xslow = 0
       state.yslow = 0
-      // Keep rotation as-is (ship should still face same direction)
+
+      // turn off thrust and shield
+      state.shielding = false
+      state.thrusting = false
     },
 
     /**
