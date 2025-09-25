@@ -21,6 +21,8 @@ export type SoundService = {
   playShipThrust(): void
   playShipShield(): void
   playShipExplosion(): void
+  stopShipThrust(): void
+  stopShipShield(): void
 
   // Bunker sounds
   playBunkerShoot(): void
@@ -73,7 +75,6 @@ const soundTypeToEngine: Partial<Record<SoundType, GameSoundType>> = {
   [SoundType.FIZZ_SOUND]: 'fizz',
   [SoundType.ECHO_SOUND]: 'echo'
 }
-
 
 /**
  * Create a new sound service instance
@@ -252,8 +253,18 @@ export async function createSoundService(initialSettings: {
       playShipThrust: (): void => {
         playSound(SoundType.THRU_SOUND)
       },
+      stopShipThrust: (): void => {
+        if (currentSound === SoundType.THRU_SOUND) {
+          clearCurrentSound()
+        }
+      },
       playShipShield: (): void => {
         playSound(SoundType.SHLD_SOUND)
+      },
+      stopShipShield: (): void => {
+        if (currentSound === SoundType.SHLD_SOUND) {
+          clearCurrentSound()
+        }
       },
       playShipExplosion: (): void => {
         playSound(SoundType.EXP2_SOUND)

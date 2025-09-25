@@ -112,14 +112,10 @@ export function setupSoundListener(
     }
   })
 
-  // Listen for shield deactivation
   soundStartListening({
-    predicate: (_, currentState, previousState) => {
-      // Trigger when shield transitions from on to off
-      return previousState.ship.shielding && !currentState.ship.shielding
-    },
+    predicate: (_, currentState) => !currentState.ship.shielding,
     effect: () => {
-      soundService.clearSound()
+      soundService.stopShipShield()
     }
   })
 
@@ -133,15 +129,10 @@ export function setupSoundListener(
       soundService.playShipThrust()
     }
   })
-
-  // Listen for thrust deactivation
   soundStartListening({
-    predicate: (_, currentState, previousState) => {
-      // Trigger when thrust transitions from on to off
-      return previousState.ship.thrusting && !currentState.ship.thrusting
-    },
+    predicate: (_, currentState) => !currentState.ship.thrusting,
     effect: () => {
-      soundService.clearSound()
+      soundService.stopShipThrust()
     }
   })
 
