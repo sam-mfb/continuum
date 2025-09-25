@@ -9,7 +9,8 @@ import { createSoundEngine, type GameSoundType } from './soundEngine'
 import { SoundType, SOUND_PRIORITIES, SOUND_PRIORITY_DECAY } from './constants'
 import type { SoundEngine } from './types'
 
-const VBL_SPEED_IPS = 60
+// Vertical blanking interval for screen interrupts on original Mac
+const VERT_BLANK_PER_SEC = 60
 
 /**
  * Sound service interface
@@ -44,13 +45,6 @@ export type SoundService = {
   clearSound(): void // Matches original game's clear_sound()
   setVolume(volume: number): void
   setMuted(muted: boolean): void
-
-  // Status methods
-  isPlaying(): boolean
-  getCurrentSound(): SoundType | null
-
-  // Engine access for test panel
-  getEngine(): SoundEngine | null
 
   // Cleanup method
   cleanup(): void
@@ -87,18 +81,14 @@ export async function createSoundService(initialSettings: {
   let soundEngine: SoundEngine | null = null
   let currentSound: SoundType | null = null
   let currentSoundPriority = 0
-  let isPlaying = false
-  let isMuted = false
-  let currentVolume = 1.0
+  let isEngineRunning = false
+  let isMuted = initialSettings.muted
+  let currentVolume = Math.max(0, Math.min(1, initialSettings.volume))
   let decayIntervalId: NodeJS.Timeout | null = null
 
   try {
     // Create and initialize the sound engine
     soundEngine = createSoundEngine()
-
-    // Apply initial settings (defaults if not provided)
-    currentVolume = initialSettings.volume
-    isMuted = initialSettings.muted
 
     // Apply initial volume
     if (soundEngine) {
@@ -128,10 +118,10 @@ export async function createSoundService(initialSettings: {
         return
       }
 
-      // Start the engine first if not already playing
-      if (!isPlaying) {
+      // Start the engine first if not already running
+      if (!isEngineRunning) {
         soundEngine.start()
-        isPlaying = true
+        isEngineRunning = true
       }
 
       // Determine if this sound needs a callback to clear state when it ends
@@ -186,7 +176,6 @@ export async function createSoundService(initialSettings: {
       return true // Sound played successfully
     }
 
-
     /**
      * Clear the current sound (matches original game's clear_sound())
      */
@@ -228,7 +217,7 @@ export async function createSoundService(initialSettings: {
         // VBL on classic Macs runs at 60.15Hz ≈ 16.67ms per tick
         decayIntervalId = setInterval(() => {
           decayPriority()
-        }, 1000 / VBL_SPEED_IPS) // ~16.67ms
+        }, 1000 / VERT_BLANK_PER_SEC) // ~16.67ms
       }
     }
 
@@ -302,23 +291,16 @@ export async function createSoundService(initialSettings: {
 
       setMuted: (muted: boolean): void => {
         isMuted = muted
-        if (muted && isPlaying) {
+        if (muted && isEngineRunning) {
           // Stop all sounds when muting
           if (soundEngine) {
             soundEngine.stop()
           }
-          isPlaying = false
+          isEngineRunning = false
           currentSound = null
           currentSoundPriority = 0
         }
       },
-
-      // Status methods
-      isPlaying: (): boolean => isPlaying,
-      getCurrentSound: (): SoundType | null => currentSound,
-
-      // Engine access for test panel
-      getEngine: (): SoundEngine | null => soundEngine,
 
       // Cleanup method - stops sounds and timer but keeps engine alive for reuse
       cleanup: (): void => {
@@ -328,13 +310,13 @@ export async function createSoundService(initialSettings: {
           decayIntervalId = null
         }
 
-        if (soundEngine && isPlaying) {
+        if (soundEngine && isEngineRunning) {
           soundEngine.stop()
         }
         // Don't null out soundEngine - keep it alive for next game
         currentSound = null
         currentSoundPriority = 0
-        isPlaying = false
+        isEngineRunning = false
       }
     }
 
