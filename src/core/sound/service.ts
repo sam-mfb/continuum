@@ -6,8 +6,11 @@
  */
 
 import { createSoundEngine, type GameSoundType } from './soundEngine'
-import { SoundType } from './constants'
+import { SoundType, SOUND_PRIORITIES, SOUND_PRIORITY_DECAY } from './constants'
 import type { SoundEngine } from './types'
+
+// Vertical blanking interval for screen interrupts on original Mac
+const VERT_BLANK_PER_SEC = 60
 
 /**
  * Sound service interface
@@ -15,50 +18,37 @@ import type { SoundEngine } from './types'
  */
 export type SoundService = {
   // Ship sounds
-  playShipFire(options?: { highPriority?: boolean }): void
-  playShipThrust(options?: { highPriority?: boolean }): void
-  playShipShield(options?: { highPriority?: boolean }): void
-  playShipShieldDiscrete(options?: { highPriority?: boolean }): void // Short discrete version for auto-trigger
-  playShipExplosion(options?: { highPriority?: boolean }): void
+  playShipFire(): void
+  playShipThrust(): void
+  playShipShield(): void
+  playShipExplosion(): void
+  stopShipThrust(): void
+  stopShipShield(): void
 
   // Bunker sounds
-  playBunkerShoot(options?: { highPriority?: boolean }): void
-  playBunkerExplosion(options?: { highPriority?: boolean }): void
-  playBunkerSoft(options?: { highPriority?: boolean }): void
+  playBunkerShoot(): void
+  playBunkerExplosion(): void
+  playBunkerSoft(): void
 
   // Pickup sounds
-  playFuelCollect(options?: { highPriority?: boolean }): void
+  playFuelCollect(): void
 
   // Level sounds
-  playLevelComplete(options?: { highPriority?: boolean }): void // Crack sound
-  playLevelTransition(options?: { highPriority?: boolean }): void // Fizz sound
-  playEcho(options?: { highPriority?: boolean }): void
+  playLevelComplete(): void // Crack sound
+  playLevelTransition(): void // Fizz sound
+  playEcho(): void
 
   // Alien sounds
-  playAlienExplosion(options?: { highPriority?: boolean }): void
+  playAlienExplosion(): void
 
   // Control methods
-  stopAll(): void
-  stopThrust(): void
-  stopShield(): void
+  clearSound(): void // Matches original game's clear_sound()
   setVolume(volume: number): void
   setMuted(muted: boolean): void
-
-  // Status methods
-  isPlaying(): boolean
-  getCurrentSound(): SoundType | null
-  isHighPriorityPlaying(): boolean
-  getCurrentContinuous(): ContinuousSound
-
-  // Engine access for test panel
-  getEngine(): SoundEngine | null
 
   // Cleanup method
   cleanup(): void
 }
-
-// Track continuous sounds for resumption after interruption
-export type ContinuousSound = 'thruster' | 'shield' | 'none'
 
 /**
  * Map SoundType enum to engine sound types
@@ -90,19 +80,15 @@ export async function createSoundService(initialSettings: {
   // Internal state for this instance
   let soundEngine: SoundEngine | null = null
   let currentSound: SoundType | null = null
-  let isPlaying = false
-  let isMuted = false
-  let currentVolume = 1.0
-  let highPriorityPlaying = false
-  let currentContinuous: ContinuousSound = 'none'
+  let currentSoundPriority = 0
+  let isEngineRunning = false
+  let isMuted = initialSettings.muted
+  let currentVolume = Math.max(0, Math.min(1, initialSettings.volume))
+  let decayIntervalId: NodeJS.Timeout | null = null
 
   try {
     // Create and initialize the sound engine
     soundEngine = createSoundEngine()
-
-    // Apply initial settings (defaults if not provided)
-    currentVolume = initialSettings.volume
-    isMuted = initialSettings.muted
 
     // Apply initial volume
     if (soundEngine) {
@@ -121,10 +107,7 @@ export async function createSoundService(initialSettings: {
     /**
      * Internal helper to play a sound by engine type
      */
-    function playSoundByType(
-      soundType: GameSoundType,
-      options?: { highPriority?: boolean }
-    ): void {
+    function playSoundByType(soundType: GameSoundType): void {
       if (!soundEngine) return
 
       // Try to resume audio context on any play attempt (in case it's suspended)
@@ -135,184 +118,169 @@ export async function createSoundService(initialSettings: {
         return
       }
 
-      // Update continuous sound state
-      if (soundType === 'thruster') {
-        currentContinuous = 'thruster'
-      } else if (soundType === 'shield') {
-        currentContinuous = 'shield'
-      } else if (soundType === 'silence') {
-        currentContinuous = 'none'
-      }
-
-      // Check if high-priority sound is blocking
-      // High-priority sounds block normal sounds but can be interrupted by other high-priority sounds
-      // Exception: 'silence' is always allowed (used to stop sounds)
-      if (
-        highPriorityPlaying &&
-        soundType !== 'silence' &&
-        !options?.highPriority
-      ) {
-        return
-      }
-
-      // If playing silence, clear the high-priority flag since we're stopping whatever was playing
-      if (soundType === 'silence' && highPriorityPlaying) {
-        highPriorityPlaying = false
-      }
-
-      // Start the engine first if not already playing
-      if (!isPlaying) {
+      // Start the engine first if not already running
+      if (!isEngineRunning) {
         soundEngine.start()
-        isPlaying = true
+        isEngineRunning = true
       }
 
-      // Determine if this is a discrete (interrupting) sound
-      const isContinuous = soundType === 'thruster' || soundType === 'shield'
-      const isDiscrete = !isContinuous && soundType !== 'silence'
+      // Determine if this sound needs a callback to clear state when it ends
+      // Continuous sounds (thrust/shield) and silence don't need callbacks
+      const needsCallback =
+        soundType !== 'thruster' &&
+        soundType !== 'shield' &&
+        soundType !== 'silence'
 
-      // Play the sound with appropriate callback
-      if (options?.highPriority) {
-        // If interrupting another high-priority sound, the old one won't get its callback
-        // so we manage the flag here
-        highPriorityPlaying = true
+      if (needsCallback) {
+        // Add callback to clear state when sound ends (like original's clear_sound())
         soundEngine.play(soundType, () => {
-          highPriorityPlaying = false
-          // After high-priority discrete sound completes, resume continuous if needed
-          if (isDiscrete && currentContinuous !== 'none' && soundEngine) {
-            soundEngine.play(currentContinuous)
-          }
-        })
-      } else if (isDiscrete) {
-        // For non-high-priority discrete sounds, add callback to resume continuous
-        soundEngine.play(soundType, () => {
-          // After discrete sound completes, resume whatever continuous should be playing
-          if (currentContinuous !== 'none' && soundEngine) {
-            soundEngine.play(currentContinuous)
-          }
+          currentSound = null
+          currentSoundPriority = 0
         })
       } else {
-        // Continuous sounds and silence don't need callbacks
+        // Continuous sounds and silence play without callbacks
         soundEngine.play(soundType)
       }
     }
 
     /**
      * Internal helper to play a sound by SoundType enum
+     * @returns true if sound was played, false if blocked by priority
      */
-    function playSound(
-      soundType: SoundType,
-      options?: { highPriority?: boolean }
-    ): void {
+    function playSound(soundType: SoundType): boolean {
+      // Ensure the decay timer is running when sounds are being played
+      ensureDecayTimer()
+
       const engineType = soundTypeToEngine[soundType]
       if (!engineType) {
-        return
+        return false
       }
 
-      playSoundByType(engineType, options)
+      // Get the priority of the requested sound
+      const requestedPriority = SOUND_PRIORITIES[soundType] || 0
 
-      // Track current sound
+      // Check priority for ALL sounds uniformly
+      if (currentSound !== null && currentSoundPriority > 0) {
+        // Only play if new sound has higher priority (matches original's > check)
+        if (requestedPriority <= currentSoundPriority) {
+          return false // Don't play lower or equal priority sounds
+        }
+      }
+
+      // Play the sound
+      playSoundByType(engineType)
+
+      // Track current sound and priority for ALL sounds
       currentSound = soundType
+      currentSoundPriority = requestedPriority
+      return true // Sound played successfully
     }
 
     /**
-     * Stop all sounds
+     * Clear the current sound (matches original game's clear_sound())
      */
-    function stopAllSounds(): void {
-      if (!soundEngine || !isPlaying) return
+    function clearCurrentSound(): void {
+      if (!soundEngine) return
 
-      soundEngine.stop()
-      isPlaying = false
+      // Play silence to stop current sound
+      playSoundByType('silence')
+
+      // Reset state
       currentSound = null
-      highPriorityPlaying = false
-      currentContinuous = 'none'
+      currentSoundPriority = 0
+    }
+
+    /**
+     * Decay the current sound's priority
+     * Matches the VBL-based priority decay from Sound.c do_*_sound() functions
+     */
+    function decayPriority(): void {
+      // Only decay priority if a sound is currently playing
+      if (currentSound === null || currentSoundPriority <= 0) {
+        return
+      }
+
+      // Check if this sound has a decay rate defined
+      const decayRate = SOUND_PRIORITY_DECAY[currentSound]
+      if (decayRate !== undefined) {
+        // Decay the priority by the specified amount (Sound.c:148, 174, 230)
+        currentSoundPriority = Math.max(0, currentSoundPriority - decayRate)
+      }
+    }
+
+    /**
+     * Ensure the decay timer is running
+     * Starts a 60Hz timer if not already running (matches VBL timing from Sound.c:92-104)
+     */
+    function ensureDecayTimer(): void {
+      if (decayIntervalId === null) {
+        // VBL on classic Macs runs at 60.15Hz ≈ 16.67ms per tick
+        decayIntervalId = setInterval(() => {
+          decayPriority()
+        }, 1000 / VERT_BLANK_PER_SEC) // ~16.67ms
+      }
     }
 
     // Create the service instance
     const serviceInstance: SoundService = {
       // Ship sounds
-      playShipFire: (options?): void =>
-        playSound(SoundType.FIRE_SOUND, options),
-      playShipThrust: (options?): void =>
-        playSound(SoundType.THRU_SOUND, options),
-      playShipShield: (options?): void =>
-        playSound(SoundType.SHLD_SOUND, options),
-      playShipShieldDiscrete: (options?): void => {
-        // Play shield sound but for a very short duration (30ms)
-        // Used for auto-triggered shield (like self-hit feedback)
-        if (!soundEngine) return
-
-        // Save the current continuous state
-        const savedContinuous = currentContinuous
-
-        // Play shield as a "continuous" sound using existing logic
-        playSoundByType('shield', options)
-
-        // Stop it after 30ms and restore previous continuous state
-        setTimeout(() => {
-          if (soundEngine) {
-            // If this was high-priority, clear the flag since we're ending it early
-            if (options?.highPriority) {
-              highPriorityPlaying = false
-            }
-
-            // Restore the previous continuous state
-            currentContinuous = savedContinuous
-            if (savedContinuous !== 'none') {
-              // Resume the previous continuous sound
-              soundEngine.play(savedContinuous)
-            } else {
-              // Stop playing
-              soundEngine.play('silence')
-            }
-          }
-        }, 30)
+      playShipFire: (): void => {
+        playSound(SoundType.FIRE_SOUND)
       },
-      playShipExplosion: (options?): void =>
-        playSound(SoundType.EXP2_SOUND, options),
+      playShipThrust: (): void => {
+        playSound(SoundType.THRU_SOUND)
+      },
+      stopShipThrust: (): void => {
+        if (currentSound === SoundType.THRU_SOUND) {
+          clearCurrentSound()
+        }
+      },
+      playShipShield: (): void => {
+        playSound(SoundType.SHLD_SOUND)
+      },
+      stopShipShield: (): void => {
+        if (currentSound === SoundType.SHLD_SOUND) {
+          clearCurrentSound()
+        }
+      },
+      playShipExplosion: (): void => {
+        playSound(SoundType.EXP2_SOUND)
+      },
 
       // Bunker sounds
-      playBunkerShoot: (options?): void =>
-        playSound(SoundType.BUNK_SOUND, options),
-      playBunkerExplosion: (options?): void =>
-        playSound(SoundType.EXP1_SOUND, options),
-      playBunkerSoft: (options?): void =>
-        playSound(SoundType.SOFT_SOUND, options),
+      playBunkerShoot: (): void => {
+        playSound(SoundType.BUNK_SOUND)
+      },
+      playBunkerExplosion: (): void => {
+        playSound(SoundType.EXP1_SOUND)
+      },
+      playBunkerSoft: (): void => {
+        playSound(SoundType.SOFT_SOUND)
+      },
 
       // Pickup sounds
-      playFuelCollect: (options?): void =>
-        playSound(SoundType.FUEL_SOUND, options),
+      playFuelCollect: (): void => {
+        playSound(SoundType.FUEL_SOUND)
+      },
 
       // Level sounds
-      playLevelComplete: (options?): void =>
-        playSound(SoundType.CRACK_SOUND, options),
-      playLevelTransition: (options?): void =>
-        playSound(SoundType.FIZZ_SOUND, options),
-      playEcho: (options?): void => playSound(SoundType.ECHO_SOUND, options),
+      playLevelComplete: (): void => {
+        playSound(SoundType.CRACK_SOUND)
+      },
+      playLevelTransition: (): void => {
+        playSound(SoundType.FIZZ_SOUND)
+      },
+      playEcho: (): void => {
+        playSound(SoundType.ECHO_SOUND)
+      },
 
       // Alien sounds
-      playAlienExplosion: (options?): void =>
-        playSound(SoundType.EXP3_SOUND, options),
+      playAlienExplosion: (): void => {
+        playSound(SoundType.EXP3_SOUND)
+      },
 
       // Control methods
-      stopAll: (): void => stopAllSounds(),
-
-      stopThrust: (): void => {
-        if (currentContinuous === 'thruster') {
-          currentContinuous = 'none'
-          if (!highPriorityPlaying) {
-            playSoundByType('silence')
-          }
-        }
-      },
-
-      stopShield: (): void => {
-        if (currentContinuous === 'shield') {
-          currentContinuous = 'none'
-          if (!highPriorityPlaying) {
-            playSoundByType('silence')
-          }
-        }
-      },
+      clearSound: (): void => clearCurrentSound(),
 
       setVolume: (volume: number): void => {
         currentVolume = Math.max(0, Math.min(1, volume))
@@ -323,30 +291,32 @@ export async function createSoundService(initialSettings: {
 
       setMuted: (muted: boolean): void => {
         isMuted = muted
-        if (muted && isPlaying) {
-          stopAllSounds()
+        if (muted && isEngineRunning) {
+          // Stop all sounds when muting
+          if (soundEngine) {
+            soundEngine.stop()
+          }
+          isEngineRunning = false
+          currentSound = null
+          currentSoundPriority = 0
         }
       },
 
-      // Status methods
-      isPlaying: (): boolean => isPlaying,
-      getCurrentSound: (): SoundType | null => currentSound,
-      isHighPriorityPlaying: (): boolean => highPriorityPlaying,
-      getCurrentContinuous: (): ContinuousSound => currentContinuous,
-
-      // Engine access for test panel
-      getEngine: (): SoundEngine | null => soundEngine,
-
-      // Cleanup method - stops sounds but keeps engine alive for reuse
+      // Cleanup method - stops sounds and timer but keeps engine alive for reuse
       cleanup: (): void => {
-        if (soundEngine && isPlaying) {
+        // Clear the decay timer
+        if (decayIntervalId) {
+          clearInterval(decayIntervalId)
+          decayIntervalId = null
+        }
+
+        if (soundEngine && isEngineRunning) {
           soundEngine.stop()
         }
         // Don't null out soundEngine - keep it alive for next game
         currentSound = null
-        isPlaying = false
-        highPriorityPlaying = false
-        currentContinuous = 'none'
+        currentSoundPriority = 0
+        isEngineRunning = false
       }
     }
 

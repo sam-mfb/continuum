@@ -15,7 +15,6 @@ import type { GameStore } from '../store'
 
 import { updateGameState } from './stateUpdates'
 import { renderGame } from './rendering'
-import { playSounds } from '@core/sound'
 
 export const createGameRenderer = (
   store: GameStore,
@@ -51,15 +50,6 @@ export const createGameRenderer = (
       spriteService,
       store,
       fizzTransitionService
-    })
-
-    // Get fresh state because currently render does cause some state modifications
-    const finalState = store.getState()
-
-    // This plays all sounds that were triggered during this frame
-    playSounds(finalState.sound, soundService, {
-      fizzActive: finalState.transition.status === 'fizz',
-      shipDeadCount: finalState.ship.deadCount
     })
 
     // Return the final rendered bitmap

@@ -9,6 +9,7 @@ export * from './constants'
 // State management and actions
 export {
   shotsSlice,
+  initShipshot,
   clearAllShots,
   doStrafes,
   bunkShoot,
@@ -27,3 +28,4 @@ export { xyindist } from './xyindist'
 export { xyindistance } from './xyindistance'
 export { startStrafe } from './startStrafe'
 export { setLife } from './setLife'
+export { isNewShot, type NewShotResult } from './isNewShot'

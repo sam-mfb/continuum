@@ -21,6 +21,10 @@ export type GameState = {
   // Display settings
   alignmentMode: AlignmentMode
 
+  // Sound settings
+  volume: number
+  enabled: boolean
+
   // Game flow
   mode: GameMode
   pendingHighScore: PendingHighScore | null
@@ -30,6 +34,8 @@ const initialState: GameState = {
   gameOver: false,
   levelComplete: false,
   alignmentMode: 'screen-fixed', // Default to screen-fixed (not original)
+  volume: 40,
+  enabled: true,
   mode: 'start',
   pendingHighScore: null
 }
@@ -65,6 +71,17 @@ export const gameSlice = createSlice({
     toggleAlignmentMode: state => {
       state.alignmentMode =
         state.alignmentMode === 'world-fixed' ? 'screen-fixed' : 'world-fixed'
+    },
+
+    // Sound settings
+    setVolume: (state, action: PayloadAction<number>) => {
+      state.volume = action.payload
+    },
+    enableSound: state => {
+      state.enabled = true
+    },
+    disableSound: state => {
+      state.enabled = false
     },
 
     // Game flow management

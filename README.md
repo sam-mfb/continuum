@@ -40,6 +40,10 @@ The game's entire state is managed in Redux. I think Redux is one of those thing
 
 The net result is that the game's state is fully managed by Redux and fully separate from sound, rendering, controls, etc. So you could easily add new graphics and sound to it if you wanted. (And maybe make it work with a game controller?)
 
+OK, actually, this isn't not entirely true -- the one place that state is NOT disentangled for rendering is ship collisions. This is for a pretty cool reason. In the original game, the way it determined if your ship collided with a bullet, bunker, or wall, was by checking at drawing time if a ship's black pixel was being drawn over an existing, non-background, black pixel. In other words, it didn't use collision boxes or proximity checks (other game collisions use proximity checks -- like fuel pickups and bunker deaths), it literally gave you what-you-see-is-what-you-get for ship collisions. If any part of your ship was touching a black pixel -- BOOM (or bounce if it was a bouncy wall). That was both precise and efficient, but it means that ship rendering and ship collisions are inextricably tied together. At least if you keep the original implementation, which we do.
+
+To full extract collision state from rendering we'd have to do something like separately maintain a collision map in state. To match the original game's behavior that collision state would need to be pixel perfect. That's probably not a big deal on a modern machine, but it means that you are still going to have an implicit tie between the rendering and the collision because your collision map needs to map your image pixels exactly. That's just how it is. If you wanted to decouple it a little, you could have an image/collision format that packages an image and its collision map as one resource. (Historical note, this is basically what Dark Castle does with PPCT and PSCR resources as I understand it - images and collisions maps are stored together.)
+
 ### 2. Rendering
 
 The basic premise of rendering is to have a data structure that represents the Mac's black and white screen, pass that through a series of pure rendering functions that change the pixels and return a new screen, and then when everything is ready, just dump the screen onto a 2D Canvas. The original game synced to the Mac's V-Sync which was 20fps so that's what I use here. I put in a little logic to let me increase the framerate if I wanted to but I haven't done that yet. This overall system is fairly consistent with the original game's double-buffering -- where it wrote to a buffer and then blitted it onto the screen, I write to a data structure and then render that at the end. This similarity allowed me to make a series of render functions that pretty much map one-to-one to the original game's.
@@ -52,11 +56,15 @@ Rendering sprites was pretty easy. There's some decoding and masking to deal wit
 
 This was probably the hardest part of the project, and I almost threw in the towel. The original game had a very esoteric (and performant!) way of drawing walls in assembly. Even with LLM help it took me forever to get this pixel perfect (but I think it is now!). At the end of the day I found the easiest way was to write a mini 68k/asm emulation layer (nothing fancy, just the instructions mimicked in javascript) and then writing the renderers as basically line for line copies of the original. That was honestly the only way (short of becoming a 68k assembly expert) I could replicate the exact drawing of the game.
 
+If you are reading the code, something that confused me for a bit (and that ALWAYS confuses the LLMs) is that the various routines routines for drawing walls that have "black" in their title, e.g., "ne_black()", "sse_black()", etc., don't JUST draw black. They also draw some white sections. Some of Randy's notes on the game explain this a little. I think what happened was he originally had the game draw white sections and black sections of walls in two passes, and then realized that wasn't performant and so added some of the white drawing into the black drawing routines, but never changed the name.
+
 #### THE BACKGROUND PATTERN
 
 The most annoying thing about running Continuum on a modern computer is the gray cross-hatch pattern. It looks awful when it scrolls on a modern LCD. However, it's no simple matter to swap in some other background since the original drawing routines rely (heavily) on XOR'ing against the background pattern. But it turns out there's a pretty easy fix which is just to not scroll the background. That does make the edges of the walls and the sprites "shimmer" a little when things are moving, but I think that's a better outcome than the scrolling gray cross-hatch, and still looks pretty much like the original.
 
 There's an option for you to do it either way, so you _can_ still use the original moving background.
+
+It's not a totally easy matter to swap in a "real" grayscale background because a number of places in the game rendering relying on XORing bits against the cross-hatch background. Not the hardest thing in the world to overcome, but would require a little more surgery than just simply drawing gray underneath the game screen.
 
 #### Animations
 
@@ -68,11 +76,17 @@ The original game just wrote its sounds directly to the sound buffer of the Mac,
 
 A problem I had--which still isn't perfect--is getting the right "generator" routines to generate the 8bit sound samples. These were all algorithmic in the original game and in assembly. I ended up using the same asm/68k assembly harness trick here as with graphics, but there are still a few glitches (at least to my ear). I think the ship explosion is a little too high pitched and the shield might be a little too low. I'm not sure.
 
-The other thing with sound was separating it out from state management. The original game essentially played sounds _wherever_ which meant they didn't always play in sync with animation frames. This, coupled with the fact that new sounds interrupt old sounds, meant that sounds cut each other off at intervals that didn't correspond to a frame break. To implement sound with proper separation of concerns I basically accumulate sound "requests" in Redux and then play them at frame intervals -- with some priority ordering to determine which sounds should win if multiple ones play at the same time. The net result is that my sound timing isn't quite like the original game because all my sounds play at exact frame intervals. I think it's pretty good -- I could even argue my timing is better than the original -- but the purist in me can't help being bothered by the fact that my sound is definitely not EXACTLY like the original game.
+The other thing with sound was separating it out from state management. The original game essentially played sounds _wherever_ which meant they didn't always play in sync with animation frames. This, coupled with the fact that new sounds interrupt old sounds, meant that sounds cut each other off at intervals that didn't correspond to a frame break.
+
+This is implemented with a Redux listener that listens for the relevant events in Redux and plays sounds accordingly. Similar to the original game, this is not synced to a frame. Sounds fire whenever the redux event occurs -- however the timing may not be exactly the same largely because I can't really control how fast Redux runs vs the original Mac hardware or how our sound service plays vis a vis the timing of the original Mac sounds. (Or to be more precise, I'm not spending the time to figure things out at that level of granularity). But I think it's pretty close regardless. The one place I'm not sure, however, is when bunker shots fire super rapidly (e.g., Level 9). In the original game (on a Mac Plus) you would get this burst of extremely rapid fire sound. In this implementation you get more measure firing (relatively, it still sounds pretty hectic). I'm not positive what the source of the discrepancy is. I believe I properly implemented the original games priority-with-decay sound system, and I tied the priority decay to a facsimile of the Macs VBS interrupt at 1/60th of a second. Maybe this was actually some weird interaction in the old hardware? Or maybe it's the timing of Redux middleware listeners? I'm not sure.
+
+Interesting thing about the original game is that it didn't "mix" sounds, even though sometimes it sounds like they are. Instead, it implemented a "priority" system for determining which sounds could "override" other sounds. These priorities for certain sounds also decayed every VBS interval allowing in theory for multiple sounds of the same kind to override each other. This is all implemented in our sound service. An interesting project would be to move to a true multi-channel sound system.
 
 ### 4. File Parsing
 
 We parse the original galaxy files and resources from the original game. I got the resources out using ResEdit and Resourcer. Yes, copy and paste -- thank you [infinite mac](https://infinitemac.org).
+
+BTW, at some point _after_ i did this, I learned about (resource_dasm)[https://github.com/fuzziqersoftware/resource_dasm] which is a much friendlier way to get old 68k resources in a modern dev environment. Next time ;)
 
 At some point I should add an interface to let you use arbitrary galaxy files.
 
@@ -97,11 +111,3 @@ npm run dev
 ```
 
 There was a lot of LLM-assisted coding in this project. More than I would do--or at least allow to be unchecked--in a real production codebase. But everything is fairly organized and is well cited back to the original code. I'd like to clean it up a little more at some point...
-
-## Still TODO
-
-- Planet editor
-
-## Future Work
-
-Better graphics and sound? Color? More levels? Fork it, and mess around!

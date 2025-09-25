@@ -8,7 +8,7 @@ import { startGame, setMode } from './gameSlice'
 import { setHighScore } from '@/core/highscore'
 import { shipSlice } from '@/core/ship'
 import { invalidateHighScore } from '@/core/status'
-import { resetSounds, type SoundService } from '@/core/sound'
+import { type SoundService } from '@/core/sound'
 import type { BitmapRenderer } from '@lib/bitmap'
 import { useAppDispatch, useAppSelector } from './store'
 
@@ -25,7 +25,8 @@ export const App: React.FC<AppProps> = ({
 }) => {
   const dispatch = useAppDispatch()
   const gameMode = useAppSelector(state => state.game.mode)
-  const soundState = useAppSelector(state => state.sound)
+  const volume = useAppSelector(state => state.game.volume)
+  const soundMuted = useAppSelector(state => !state.game.enabled)
   const pendingHighScore = useAppSelector(state => state.game.pendingHighScore)
 
   // Handle different game modes
@@ -36,7 +37,6 @@ export const App: React.FC<AppProps> = ({
           onStartGame={(level: number) => {
             // Reset ship and sound to clean state
             dispatch(shipSlice.actions.resetShip())
-            dispatch(resetSounds())
 
             // Invalidate high score if starting at level > 1
             if (level > 1) {
@@ -44,8 +44,8 @@ export const App: React.FC<AppProps> = ({
             }
 
             // Reset sound service state for new game
-            soundService.setVolume(soundState.volume)
-            soundService.setMuted(!soundState.enabled)
+            soundService.setVolume(volume)
+            soundService.setMuted(soundMuted)
 
             // Load the selected level
             dispatch(loadLevel(level))

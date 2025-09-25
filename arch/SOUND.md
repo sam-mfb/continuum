@@ -188,6 +188,48 @@ Priority values defined in Sound.c:19-31:
 - `ECHO_PRIOR`: 94
 - `EXP2_PRIOR`: 100 (ship explosion - highest priority)
 
+### Priority Decay System
+
+The sound system implements a priority decay mechanism that allows sounds of the same type to interrupt each other after a brief delay. This creates the rapid-fire sound effects characteristic of intense combat.
+
+**How it works:**
+
+- When a sound starts playing, it has its initial priority (e.g., BUNK_PRIOR = 40)
+- Each VBL interrupt (60Hz), certain sounds decay their priority
+- New sounds can only play if their priority is **greater than** the current priority (Sound.c:465)
+- This means after one VBL tick, a decayed sound can be interrupted by the same sound type
+
+**Sounds with priority decay:**
+
+- **FIRE_SOUND**: Decays by 5 per VBL (Sound.c:148) - allows rapid ship firing sounds
+- **BUNK_SOUND**: Decays by 1 per VBL (Sound.c:230) - enables machine-gun effect
+- **SOFT_SOUND**: Decays by 1 per VBL (Sound.c:230) - uses same function as BUNK_SOUND
+- **EXP1_SOUND**: Decays by 2 per VBL (Sound.c:174 with ampchange from Sound.c:490)
+- **EXP3_SOUND**: Decays by 3 per VBL (Sound.c:174 with ampchange from Sound.c:500)
+
+**Sounds WITHOUT decay (stay at constant priority):**
+
+- **EXP2_SOUND**: Ship explosion never decays (Sound.c:173-174 checks for this specifically)
+- **THRU_SOUND**: Continuous thrust sound (Sound.c:179-206 has no decay)
+- **SHLD_SOUND**: Shield sound (Sound.c:236-246 has no decay)
+- **FUEL_SOUND**: Fuel pickup beeps (Sound.c:248-256 has no decay)
+- **CRACK_SOUND**: Mission complete (Sound.c:271-296 has no decay)
+- **FIZZ_SOUND**: Level transition (Sound.c:299-326 has no decay)
+- **ECHO_SOUND**: Echo effect (Sound.c:330-365 has no decay)
+
+**Example timing:**
+
+For bunker sounds on a level with many bunkers:
+
+- Frame 0: Bunker fires, BUNK_SOUND plays at priority 40
+- VBL tick 1 (1/60 second): Priority decays to 39
+- Frame 1 (1/20 second): New bunker fires, BUNK_SOUND at priority 40 interrupts (40 > 39)
+- Result: Up to 40 bunker sounds per second can be heard (limited by decay rate)
+
+This decay system is crucial for creating the intense audio feedback during combat, particularly on levels with many bunkers where the rapid-fire sound effect enhances the feeling of being under heavy fire.
+
+NB: I think there may be a bug in the original game -- or more specifically, it's interaction with the hardware. If you start a level with a ton of bunker fire (e.g., Level 9 in the release levels), on a Mac Plus you hear this incredibly rapid fire sound. As if shots are starting one on top of the other almost, and interrupting one another. I'm not sure why that doesn't happen in this implementaiton, and I can't find a bug in the logic. I guess it's possible something about Redux timing is slowing it down, but I think it's also possible that somehow the original Mac sound hardware was getting "overloaded". Not sure.
+
 ### Machine-Specific Handling
 
 - Mac Plus: Uses hard-coded memory addresses and direct hardware control

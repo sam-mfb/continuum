@@ -3,7 +3,7 @@ import { BunkerKind } from '@core/planet'
 import type { ShotRec } from './types'
 import type { LineRec } from '@core/shared'
 import { SHOT, xbshotstart, ybshotstart } from './constants'
-import { SCRWTH, SOFTBORDER } from '@core/screen'
+import { SCRWTH } from '@core/screen'
 import { PLANET } from '@core/planet'
 import { aimBunk } from './aimBunk'
 import { aimDir } from './aimDir'
@@ -225,25 +225,6 @@ export function bunkShoot(deps: {
     // Update the shot in the array immutably
     const newBunkshots = [...bunkshots]
     newBunkshots[shotIndex] = newShot
-
-    // Play sound based on bunker position
-    for (let bunkx = bp.x; bunkx < worldwidth << 1; bunkx += worldwidth) {
-      if (
-        bunkx > screenx &&
-        bunkx < screenr &&
-        bp.y > screeny &&
-        bp.y < screenb
-      ) {
-        //    startSound('BUNK_SOUND')
-      } else if (
-        bunkx > screenx - SOFTBORDER &&
-        bunkx < screenr + SOFTBORDER &&
-        bp.y > screeny - SOFTBORDER &&
-        bp.y < screenb + SOFTBORDER
-      ) {
-        //   startSound('SOFT_SOUND')
-      }
-    }
 
     return newBunkshots
   }

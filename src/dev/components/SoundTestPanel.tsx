@@ -5,25 +5,35 @@
  */
 
 import React, { useState, useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import type { RootState } from '../store/store'
 import {
-  setVolume,
-  toggleSound,
   createSoundService,
-  type SoundService
+  type SoundService,
+  SOUND_PRIORITIES,
+  SoundType
 } from '@core/sound'
 
+// Map SoundType enum values to display names
+const SOUND_NAMES: Record<SoundType, string> = {
+  [SoundType.NO_SOUND]: 'No Sound',
+  [SoundType.FIRE_SOUND]: 'Ship Fire',
+  [SoundType.EXP1_SOUND]: 'Bunker Explosion',
+  [SoundType.THRU_SOUND]: 'Thruster',
+  [SoundType.BUNK_SOUND]: 'Bunker Shot',
+  [SoundType.SOFT_SOUND]: 'Bunker Soft',
+  [SoundType.SHLD_SOUND]: 'Shield',
+  [SoundType.FUEL_SOUND]: 'Fuel Collect',
+  [SoundType.EXP2_SOUND]: 'Ship Explosion',
+  [SoundType.EXP3_SOUND]: 'Alien Explosion',
+  [SoundType.CRACK_SOUND]: 'Level Complete',
+  [SoundType.FIZZ_SOUND]: 'Level Transition',
+  [SoundType.ECHO_SOUND]: 'Echo'
+}
+
 export const SoundTestPanel: React.FC = () => {
-  const dispatch = useDispatch()
-  const { volume: masterVolume, enabled } = useSelector(
-    (state: RootState) => state.sound
-  )
   const [soundService, setSoundService] = useState<SoundService | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
-  const [isHighPriorityActive, setIsHighPriorityActive] = useState(false)
-  const [isThrustActive, setIsThrustActive] = useState(false)
-  const [isShieldActive, setIsShieldActive] = useState(false)
+  const [masterVolume, setMasterVolume] = useState(1.0)
+  const [enabled, setEnabled] = useState(true)
 
   useEffect(() => {
     // Initialize sound service on mount
@@ -31,7 +41,7 @@ export const SoundTestPanel: React.FC = () => {
       createSoundService({ volume: masterVolume, muted: !enabled })
         .then(service => {
           setSoundService(service)
-          // Sync initial state with Redux
+          // Sync initial state
           service.setVolume(masterVolume)
           service.setMuted(!enabled) // enabled=true means not muted
           setIsInitialized(true)
@@ -40,30 +50,20 @@ export const SoundTestPanel: React.FC = () => {
           console.error('Failed to initialize sound service:', error)
         })
     }
-  }, [isInitialized, masterVolume, enabled])
-
-  // Poll for high-priority state
-  useEffect(() => {
-    if (!soundService) return
-
-    const interval = setInterval(() => {
-      setIsHighPriorityActive(soundService.isHighPriorityPlaying())
-    }, 100)
-
-    return (): void => clearInterval(interval)
-  }, [soundService])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isInitialized]) // Only depend on isInitialized, not volume/enabled
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const volume = parseFloat(e.target.value)
-    dispatch(setVolume(volume))
+    setMasterVolume(volume)
     if (soundService) {
       soundService.setVolume(volume)
     }
   }
 
   const handleMuteToggle = (): void => {
-    const newEnabled = !enabled // Calculate the new state
-    dispatch(toggleSound())
+    const newEnabled = !enabled
+    setEnabled(newEnabled)
     if (soundService) {
       // If sound is enabled (newEnabled = true), then muted = false
       // If sound is disabled (newEnabled = false), then muted = true
@@ -71,41 +71,24 @@ export const SoundTestPanel: React.FC = () => {
     }
   }
 
-  // Helper to play a discrete sound
-  const playDiscreteSound = (playFunc: () => void): void => {
+  // Helper to play a sound
+  const playSound = (playFunc: () => void): void => {
     playFunc()
   }
 
-  const handleThrustToggle = (): void => {
+  const handleStopSound = (): void => {
     if (!soundService) return
-
-    if (isThrustActive) {
-      // Stop thrust using the new stopThrust method
-      soundService.stopThrust()
-      setIsThrustActive(false)
-    } else {
-      soundService.playShipThrust()
-      setIsThrustActive(true)
-      // Shield takes priority, so thrust won't actually play if shield is on
-      // but we still set the state to show user intent
-      setIsShieldActive(false)
-    }
+    soundService.clearSound()
   }
 
-  const handleShieldToggle = (): void => {
-    if (!soundService) return
-
-    if (isShieldActive) {
-      // Stop shield using the new stopShield method
-      soundService.stopShield()
-      setIsShieldActive(false)
-    } else {
-      soundService.playShipShield()
-      setIsShieldActive(true)
-      // Shield takes priority over thrust
-      setIsThrustActive(false)
-    }
-  }
+  // Sort sounds by priority (highest first)
+  const sortedPriorities = Object.entries(SOUND_PRIORITIES)
+    .filter(([key]) => Number(key) !== SoundType.NO_SOUND)
+    .sort(([, a], [, b]) => b - a)
+    .map(([key, priority]) => ({
+      soundType: Number(key) as SoundType,
+      priority
+    }))
 
   return (
     <div style={styles.container}>
@@ -123,11 +106,13 @@ export const SoundTestPanel: React.FC = () => {
             />
             Muted
           </label>
-          {isHighPriorityActive && (
-            <span style={styles.highPriorityIndicator}>
-              🔒 HIGH PRIORITY ACTIVE
-            </span>
-          )}
+          <button
+            onClick={handleStopSound}
+            style={styles.stopButton}
+            disabled={!soundService}
+          >
+            Stop Sound
+          </button>
         </div>
 
         <div style={styles.volumeControl}>
@@ -146,31 +131,20 @@ export const SoundTestPanel: React.FC = () => {
         </div>
       </div>
 
-      {/* Continuous Sounds */}
+      {/* Sound Priorities */}
       <div style={styles.section}>
-        <h3>Continuous Sounds (Independent Toggles)</h3>
-        <div style={styles.soundGrid}>
-          <button
-            onClick={handleThrustToggle}
-            style={{
-              ...styles.soundButton,
-              backgroundColor: isThrustActive ? '#ff9800' : '#4CAF50'
-            }}
-            disabled={!soundService}
-          >
-            Thrust {isThrustActive ? '(ON)' : '(OFF)'}
-          </button>
-          <button
-            onClick={handleShieldToggle}
-            style={{
-              ...styles.soundButton,
-              backgroundColor: isShieldActive ? '#2196F3' : '#4CAF50'
-            }}
-            disabled={!soundService}
-          >
-            Shield {isShieldActive ? '(ON)' : '(OFF)'}
-          </button>
+        <h3>Sound Priorities</h3>
+        <div style={styles.priorityGrid}>
+          {sortedPriorities.map(({ soundType, priority }) => (
+            <div key={soundType} style={styles.priorityItem}>
+              <span style={styles.priorityName}>{SOUND_NAMES[soundType]}:</span>
+              <span style={styles.priorityValue}>{priority}</span>
+            </div>
+          ))}
         </div>
+        <p style={styles.priorityNote}>
+          Higher priority sounds will interrupt lower priority sounds
+        </p>
       </div>
 
       {/* Ship Sounds */}
@@ -178,64 +152,32 @@ export const SoundTestPanel: React.FC = () => {
         <h3>Ship Sounds</h3>
         <div style={styles.soundGrid}>
           <button
-            onClick={() =>
-              playDiscreteSound(() => soundService?.playShipFire())
-            }
+            onClick={() => playSound(() => soundService?.playShipFire())}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Fire
           </button>
           <button
-            onClick={() =>
-              playDiscreteSound(() =>
-                soundService?.playShipFire({ highPriority: true })
-              )
-            }
-            style={styles.highPriorityButton}
-            disabled={!soundService}
-          >
-            Fire (HP)
-          </button>
-          <button
-            onClick={() =>
-              playDiscreteSound(() => soundService?.playShipShieldDiscrete())
-            }
+            onClick={() => playSound(() => soundService?.playShipThrust())}
             style={styles.soundButton}
             disabled={!soundService}
           >
-            Shield (Discrete)
+            Thrust
           </button>
           <button
-            onClick={() =>
-              playDiscreteSound(() =>
-                soundService?.playShipShieldDiscrete({ highPriority: true })
-              )
-            }
-            style={styles.highPriorityButton}
+            onClick={() => playSound(() => soundService?.playShipShield())}
+            style={styles.soundButton}
             disabled={!soundService}
           >
-            Shield Discrete (HP)
+            Shield
           </button>
           <button
-            onClick={() =>
-              playDiscreteSound(() => soundService?.playShipExplosion())
-            }
+            onClick={() => playSound(() => soundService?.playShipExplosion())}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Ship Explosion
-          </button>
-          <button
-            onClick={() =>
-              playDiscreteSound(() =>
-                soundService?.playShipExplosion({ highPriority: true })
-              )
-            }
-            style={styles.highPriorityButton}
-            disabled={!soundService}
-          >
-            Ship Explosion (HP)
           </button>
         </div>
       </div>
@@ -245,64 +187,25 @@ export const SoundTestPanel: React.FC = () => {
         <h3>Bunker Sounds</h3>
         <div style={styles.soundGrid}>
           <button
-            onClick={() =>
-              playDiscreteSound(() => soundService?.playBunkerShoot())
-            }
+            onClick={() => playSound(() => soundService?.playBunkerShoot())}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Bunker Shoot
           </button>
           <button
-            onClick={() =>
-              playDiscreteSound(() =>
-                soundService?.playBunkerShoot({ highPriority: true })
-              )
-            }
-            style={styles.highPriorityButton}
-            disabled={!soundService}
-          >
-            Bunker Shoot (HP)
-          </button>
-          <button
-            onClick={() =>
-              playDiscreteSound(() => soundService?.playBunkerExplosion())
-            }
+            onClick={() => playSound(() => soundService?.playBunkerExplosion())}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Bunker Explosion
           </button>
           <button
-            onClick={() =>
-              playDiscreteSound(() =>
-                soundService?.playBunkerExplosion({ highPriority: true })
-              )
-            }
-            style={styles.highPriorityButton}
-            disabled={!soundService}
-          >
-            Bunker Explosion (HP)
-          </button>
-          <button
-            onClick={() =>
-              playDiscreteSound(() => soundService?.playBunkerSoft())
-            }
+            onClick={() => playSound(() => soundService?.playBunkerSoft())}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Bunker Soft
-          </button>
-          <button
-            onClick={() =>
-              playDiscreteSound(() =>
-                soundService?.playBunkerSoft({ highPriority: true })
-              )
-            }
-            style={styles.highPriorityButton}
-            disabled={!soundService}
-          >
-            Bunker Soft (HP)
           </button>
         </div>
       </div>
@@ -312,102 +215,39 @@ export const SoundTestPanel: React.FC = () => {
         <h3>Other Game Sounds</h3>
         <div style={styles.soundGrid}>
           <button
-            onClick={() =>
-              playDiscreteSound(() => soundService?.playFuelCollect())
-            }
+            onClick={() => playSound(() => soundService?.playFuelCollect())}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Fuel Collect
           </button>
           <button
-            onClick={() =>
-              playDiscreteSound(() =>
-                soundService?.playFuelCollect({ highPriority: true })
-              )
-            }
-            style={styles.highPriorityButton}
-            disabled={!soundService}
-          >
-            Fuel Collect (HP)
-          </button>
-          <button
-            onClick={() =>
-              playDiscreteSound(() => soundService?.playAlienExplosion())
-            }
+            onClick={() => playSound(() => soundService?.playAlienExplosion())}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Alien Explosion
           </button>
           <button
-            onClick={() =>
-              playDiscreteSound(() =>
-                soundService?.playAlienExplosion({ highPriority: true })
-              )
-            }
-            style={styles.highPriorityButton}
-            disabled={!soundService}
-          >
-            Alien Explosion (HP)
-          </button>
-          <button
-            onClick={() =>
-              playDiscreteSound(() => soundService?.playLevelComplete())
-            }
+            onClick={() => playSound(() => soundService?.playLevelComplete())}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Level Complete
           </button>
           <button
-            onClick={() =>
-              playDiscreteSound(() =>
-                soundService?.playLevelComplete({ highPriority: true })
-              )
-            }
-            style={styles.highPriorityButton}
-            disabled={!soundService}
-          >
-            Level Complete (HP)
-          </button>
-          <button
-            onClick={() =>
-              playDiscreteSound(() => soundService?.playLevelTransition())
-            }
+            onClick={() => playSound(() => soundService?.playLevelTransition())}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Level Transition
           </button>
           <button
-            onClick={() =>
-              playDiscreteSound(() =>
-                soundService?.playLevelTransition({ highPriority: true })
-              )
-            }
-            style={styles.highPriorityButton}
-            disabled={!soundService}
-          >
-            Level Transition (HP)
-          </button>
-          <button
-            onClick={() => playDiscreteSound(() => soundService?.playEcho())}
+            onClick={() => playSound(() => soundService?.playEcho())}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Echo
-          </button>
-          <button
-            onClick={() =>
-              playDiscreteSound(() =>
-                soundService?.playEcho({ highPriority: true })
-              )
-            }
-            style={styles.highPriorityButton}
-            disabled={!soundService}
-          >
-            Echo (HP)
           </button>
         </div>
       </div>
@@ -420,31 +260,41 @@ export const SoundTestPanel: React.FC = () => {
           <li>Use the volume slider to adjust the master volume</li>
           <li>Check the mute checkbox to disable all sounds</li>
           <li>
-            <strong>Continuous Sounds:</strong> Thrust and Shield can be toggled
-            independently. They maintain their state through interruptions.
+            Click <strong>Stop Sound</strong> to immediately stop any playing
+            sound (equivalent to original game's clear_sound)
           </li>
           <li>
-            <strong>High Priority (HP) Sounds:</strong> Orange buttons play
-            high-priority versions. These block normal sounds but can interrupt
-            each other.
+            <strong>All Sounds:</strong> Click any button to play that sound.
+            Thrust and Shield will continue playing until interrupted or
+            stopped.
           </li>
           <li>
-            <strong>Priority Indicator:</strong> When a high-priority sound is
-            playing, the 🔒 indicator shows that normal sounds are blocked.
+            <strong>Priority System:</strong> Sounds with higher priority values
+            will interrupt sounds with lower priority. For example, Ship
+            Explosion (100) will interrupt any other sound, while Bunker Soft
+            (30) can be interrupted by almost any other sound.
           </li>
           <li>
             <strong>Testing Scenarios:</strong>
             <ul>
-              <li>Start thrust, then shield - observe switching behavior</li>
               <li>
-                Play a normal sound while thrust is on - thrust should resume
-                after
+                Play Thrust, then click Shield - Shield (70) interrupts Thrust
+                (35)
               </li>
               <li>
-                Play an HP sound - it blocks normal sounds but not other HP
-                sounds
+                Play a low priority sound (e.g., Bunker Soft), then a high
+                priority sound (e.g., Ship Explosion) - the high priority should
+                interrupt
               </li>
-              <li>Test fuel collection (HP) while shield is active</li>
+              <li>
+                Try to play a low priority sound while a high priority is
+                playing - it should be blocked
+              </li>
+              <li>
+                Test that sounds do NOT resume after being interrupted (matches
+                original game)
+              </li>
+              <li>Use Stop Sound button to clear any playing sound</li>
             </ul>
           </li>
         </ul>
@@ -514,12 +364,12 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 'bold',
     transition: 'all 0.2s'
   },
-  highPriorityButton: {
-    padding: '15px',
+  stopButton: {
+    padding: '10px 20px',
     border: 'none',
     borderRadius: '4px',
     cursor: 'pointer',
-    backgroundColor: '#ff6b6b',
+    backgroundColor: '#f44336',
     color: 'white',
     fontWeight: 'bold',
     transition: 'all 0.2s'
@@ -528,14 +378,31 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: '1.8',
     paddingLeft: '20px'
   },
-  highPriorityIndicator: {
-    marginLeft: '20px',
-    padding: '5px 10px',
-    backgroundColor: '#ff6b6b',
-    color: 'white',
-    borderRadius: '4px',
+  priorityGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+    gap: '8px',
+    marginBottom: '10px'
+  },
+  priorityItem: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    padding: '4px 8px',
+    backgroundColor: '#f0f0f0',
+    borderRadius: '3px',
+    fontSize: '14px'
+  },
+  priorityName: {
+    fontWeight: 'normal'
+  },
+  priorityValue: {
     fontWeight: 'bold',
+    color: '#2196F3'
+  },
+  priorityNote: {
     fontSize: '12px',
-    animation: 'pulse 1s infinite'
+    fontStyle: 'italic',
+    color: '#666',
+    marginTop: '10px'
   }
 }
