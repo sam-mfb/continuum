@@ -157,7 +157,7 @@ export async function createSoundService(initialSettings: {
       }
 
       // Get the priority of the requested sound
-      const requestedPriority = SOUND_PRIORITIES[soundType] || 0
+      const requestedPriority = SOUND_PRIORITIES[soundType] ?? 0
 
       // Check priority for ALL sounds uniformly
       if (currentSound !== null && currentSoundPriority > 0) {
