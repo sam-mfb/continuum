@@ -50,6 +50,7 @@ export const SoundTestPanel: React.FC = () => {
           console.error('Failed to initialize sound service:', error)
         })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isInitialized]) // Only depend on isInitialized, not volume/enabled
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>): void => {

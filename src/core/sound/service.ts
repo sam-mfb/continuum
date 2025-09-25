@@ -41,7 +41,6 @@ export type SoundService = {
   playAlienExplosion(): void
 
   // Control methods
-  stopAll(): void
   clearSound(): void // Matches original game's clear_sound()
   setVolume(volume: number): void
   setMuted(muted: boolean): void
@@ -187,17 +186,6 @@ export async function createSoundService(initialSettings: {
       return true // Sound played successfully
     }
 
-    /**
-     * Stop all sounds
-     */
-    function stopAllSounds(): void {
-      if (!soundEngine || !isPlaying) return
-
-      soundEngine.stop()
-      isPlaying = false
-      currentSound = null
-      currentSoundPriority = 0
-    }
 
     /**
      * Clear the current sound (matches original game's clear_sound())
@@ -303,7 +291,6 @@ export async function createSoundService(initialSettings: {
       },
 
       // Control methods
-      stopAll: (): void => stopAllSounds(),
       clearSound: (): void => clearCurrentSound(),
 
       setVolume: (volume: number): void => {
@@ -316,7 +303,13 @@ export async function createSoundService(initialSettings: {
       setMuted: (muted: boolean): void => {
         isMuted = muted
         if (muted && isPlaying) {
-          stopAllSounds()
+          // Stop all sounds when muting
+          if (soundEngine) {
+            soundEngine.stop()
+          }
+          isPlaying = false
+          currentSound = null
+          currentSoundPriority = 0
         }
       },
 
