@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import type { RootState } from '../store'
 import type { HighScoreState } from '@/core/highscore'
 import { resetHighScores } from '@/core/highscore'
-import { setAlignmentMode } from '../gameSlice'
+import { setAlignmentMode } from '../appSlice'
 import type { AlignmentMode } from '@/core/shared'
 
 type StartScreenProps = {
@@ -18,7 +18,7 @@ const StartScreen: React.FC<StartScreenProps> = ({
   const dispatch = useDispatch()
   const highScores = useSelector((state: RootState) => state.highscore)
   const alignmentMode = useSelector(
-    (state: RootState) => state.game.alignmentMode
+    (state: RootState) => state.app.alignmentMode
   )
   const [showConfirm, setShowConfirm] = useState(false)
   const [selectedLevel, setSelectedLevel] = useState(1)

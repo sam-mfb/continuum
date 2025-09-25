@@ -10,6 +10,7 @@ import type { SoundService } from '@core/sound'
 
 // Import all reducers
 import { gameSlice } from './gameSlice'
+import { appSlice } from './appSlice'
 import { shipSlice } from '@core/ship'
 import { shotsSlice } from '@core/shots'
 import { planetSlice } from '@core/planet'
@@ -68,6 +69,7 @@ const createStoreAndListeners = (
   const store = configureStore({
     reducer: {
       game: gameSlice.reducer,
+      app: appSlice.reducer,
       ship: shipSlice.reducer,
       shots: shotsSlice.reducer,
       planet: planetSlice.reducer,

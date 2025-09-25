@@ -48,9 +48,10 @@ import {
   markLevelComplete,
   triggerGameOver,
   resetGame,
-  setMode,
-  setPendingHighScore
+  pause,
+  unpause
 } from '../gameSlice'
+import { setMode, setPendingHighScore } from '../appSlice'
 import { TOTAL_INITIAL_LIVES } from '../constants'
 import { getPressedControls } from '../controls'
 import { triggerShipDeath } from '../shipDeath'

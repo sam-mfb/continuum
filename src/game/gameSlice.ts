@@ -1,43 +1,21 @@
 /**
  * @fileoverview Game state management slice
+ * Handles core game state like game over and level completion
  */
 
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
-import type { AlignmentMode } from '@/core/shared'
-
-export type GameMode = 'start' | 'playing' | 'highScoreEntry' | 'gameOver'
-
-export type PendingHighScore = {
-  score: number
-  planet: number
-  fuel: number
-}
+import { createSlice } from '@reduxjs/toolkit'
 
 export type GameState = {
   // Game status
   gameOver: boolean
   levelComplete: boolean
-
-  // Display settings
-  alignmentMode: AlignmentMode
-
-  // Sound settings
-  volume: number
-  enabled: boolean
-
-  // Game flow
-  mode: GameMode
-  pendingHighScore: PendingHighScore | null
+  paused: boolean
 }
 
 const initialState: GameState = {
   gameOver: false,
   levelComplete: false,
-  alignmentMode: 'screen-fixed', // Default to screen-fixed (not original)
-  volume: 40,
-  enabled: true,
-  mode: 'start',
-  pendingHighScore: null
+  paused: false
 }
 
 export const gameSlice = createSlice({
@@ -62,50 +40,14 @@ export const gameSlice = createSlice({
       state.gameOver = false
       state.levelComplete = false
     },
-
-    // Display settings
-    setAlignmentMode: (state, action: PayloadAction<AlignmentMode>) => {
-      state.alignmentMode = action.payload
+    pause: state => {
+      state.paused = true
     },
-
-    toggleAlignmentMode: state => {
-      state.alignmentMode =
-        state.alignmentMode === 'world-fixed' ? 'screen-fixed' : 'world-fixed'
+    unpause: state => {
+      state.paused = false
     },
-
-    // Sound settings
-    setVolume: (state, action: PayloadAction<number>) => {
-      state.volume = action.payload
-    },
-    enableSound: state => {
-      state.enabled = true
-    },
-    disableSound: state => {
-      state.enabled = false
-    },
-
-    // Game flow management
-    setMode: (state, action: PayloadAction<GameMode>) => {
-      state.mode = action.payload
-      if (action.payload === 'start') {
-        state.pendingHighScore = null
-      }
-    },
-
-    startGame: state => {
-      state.mode = 'playing'
-      state.gameOver = false
-      state.levelComplete = false
-      state.pendingHighScore = null
-    },
-
-    setPendingHighScore: (state, action: PayloadAction<PendingHighScore>) => {
-      state.pendingHighScore = action.payload
-      state.mode = 'highScoreEntry'
-    },
-
-    clearPendingHighScore: state => {
-      state.pendingHighScore = null
+    togglePause: state => {
+      state.paused = !state.paused
     }
   }
 })
@@ -115,10 +57,7 @@ export const {
   clearLevelComplete,
   triggerGameOver,
   resetGame,
-  setAlignmentMode,
-  toggleAlignmentMode,
-  setMode,
-  startGame,
-  setPendingHighScore,
-  clearPendingHighScore
+  pause,
+  unpause,
+  togglePause
 } = gameSlice.actions

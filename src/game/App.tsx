@@ -4,7 +4,7 @@ import StartScreen from './components/StartScreen'
 import HighScoreEntry from './components/HighScoreEntry'
 import GameOverScreen from './components/GameOverScreen'
 import { loadLevel } from './levelThunks'
-import { startGame, setMode } from './gameSlice'
+import { startGame, setMode } from './appSlice'
 import { setHighScore } from '@/core/highscore'
 import { shipSlice } from '@/core/ship'
 import { invalidateHighScore } from '@/core/status'
@@ -24,10 +24,10 @@ export const App: React.FC<AppProps> = ({
   soundService
 }) => {
   const dispatch = useAppDispatch()
-  const gameMode = useAppSelector(state => state.game.mode)
-  const volume = useAppSelector(state => state.game.volume)
-  const soundMuted = useAppSelector(state => !state.game.enabled)
-  const pendingHighScore = useAppSelector(state => state.game.pendingHighScore)
+  const gameMode = useAppSelector(state => state.app.mode)
+  const volume = useAppSelector(state => state.app.volume)
+  const soundMuted = useAppSelector(state => !state.app.enabled)
+  const pendingHighScore = useAppSelector(state => state.app.pendingHighScore)
 
   // Handle different game modes
   switch (gameMode) {

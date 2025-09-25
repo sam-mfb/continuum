@@ -69,13 +69,13 @@ try {
   const totalLevels = galaxyService.getHeader().planets
 
   // Set up alignment mode subscription
-  let currentAlignmentMode = store.getState().game.alignmentMode
+  let currentAlignmentMode = store.getState().app.alignmentMode
   // Set initial alignment mode from Redux state
   setAlignmentMode(currentAlignmentMode)
 
   // Subscribe to alignment mode changes
   store.subscribe(() => {
-    const newAlignmentMode = store.getState().game.alignmentMode
+    const newAlignmentMode = store.getState().app.alignmentMode
     if (newAlignmentMode !== currentAlignmentMode) {
       setAlignmentMode(newAlignmentMode)
       currentAlignmentMode = newAlignmentMode

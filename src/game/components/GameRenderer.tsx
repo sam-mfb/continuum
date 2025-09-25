@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
+import { useAppDispatch, useAppSelector } from '../store'
+import { togglePause } from '../gameSlice'
 
 type GameRendererProps = {
   renderer: BitmapRenderer
@@ -28,6 +30,9 @@ const GameRenderer: React.FC<GameRendererProps> = ({
   const frameCountRef = useRef<number>(0)
   const startTimeRef = useRef<number>(0)
 
+  const paused = useAppSelector(state => state.game.paused)
+  const dispatch = useAppDispatch()
+
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -51,6 +56,9 @@ const GameRenderer: React.FC<GameRendererProps> = ({
       ) {
         e.preventDefault()
       }
+      if (e.code === 'KeyP') {
+        dispatch(togglePause())
+      }
     }
 
     const handleKeyUp = (e: KeyboardEvent): void => {
@@ -65,6 +73,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
 
     // Game loop
     const gameLoop = (currentTime: number): void => {
+      if (paused) return
       const deltaTime = currentTime - lastFrameTimeRef.current
 
       if (deltaTime >= frameIntervalMs) {
@@ -144,7 +153,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [renderer, width, height, scale, fps, frameIntervalMs])
+  }, [renderer, width, height, scale, fps, frameIntervalMs, paused])
 
   return (
     <canvas
