@@ -35,13 +35,6 @@ import { statusSlice } from '@core/status'
 import { screenSlice, SCRWTH, VIEWHT } from '@core/screen'
 import { containShip, rint } from '@core/shared'
 import {
-  resetFrame,
-  playDiscrete,
-  SoundType,
-  setThrusting,
-  setShielding
-} from '@core/sound'
-import {
   startLevelTransition,
   decrementPreFizz,
   transitionToStarmap,
@@ -86,9 +79,6 @@ export const updateGameState = (context: StateUpdateContext): void => {
     fizzTransitionService,
     soundService
   } = context
-
-  // Reset sound accumulator for new frame (must happen BEFORE any sounds are dispatched)
-  store.dispatch(resetFrame())
 
   // decrement death flash at start of state update
   store.dispatch(decrementShipDeathFlash())
@@ -148,7 +138,6 @@ export const updateGameState = (context: StateUpdateContext): void => {
   const shotsState = store.getState().shots
   if (shotsState.selfHitShield) {
     store.dispatch(shipSlice.actions.activateShieldFeedback())
-    store.dispatch(playDiscrete(SoundType.SHLD_SOUND))
   }
 
   // Move bunker shots with shield protection
@@ -488,9 +477,6 @@ const processBunkerKills = (store: GameStore): void => {
         // Start explosion for destroyed bunker
         const updatedBunker = store.getState().planet.bunkers[bunkerIndex]
         if (updatedBunker && !updatedBunker.alive) {
-          // Play bunker explosion sound
-          store.dispatch(playDiscrete(SoundType.EXP1_SOUND))
-
           // Award score for bunker destruction
           store.dispatch(
             statusSlice.actions.scoreBunker({
@@ -510,32 +496,6 @@ const processBunkerKills = (store: GameStore): void => {
         }
       }
     }
-  }
-}
-
-/**
- * Handle transition-specific sound triggers
- * Called when transition state changes
- */
-const handleTransitionSounds = (
-  store: GameStore,
-  prevState: RootState['transition'],
-  currState: RootState['transition']
-): void => {
-  // Check if transitioning from 'level-complete' to 'fizz'
-  if (prevState.status === 'level-complete' && currState.status === 'fizz') {
-    // Play fizz start sound
-    store.dispatch(playDiscrete(SoundType.FIZZ_SOUND))
-
-    // Stop any continuous sounds
-    store.dispatch(setThrusting(false))
-    store.dispatch(setShielding(false))
-  }
-
-  // Check if transitioning from 'fizz' to 'starmap'
-  if (prevState.status === 'fizz' && currState.status === 'starmap') {
-    // Play echo sound
-    store.dispatch(playDiscrete(SoundType.ECHO_SOUND))
   }
 }
 
@@ -591,9 +551,6 @@ const updateTransitionState = (
       if (prevFrames > 0 && newState.preFizzFrames === 0) {
         store.dispatch(shipSlice.actions.stopShipMovement())
         // Status automatically transitions to 'fizz' in reducer
-
-        // Handle sounds for fizz start
-        handleTransitionSounds(store, prevState, store.getState().transition)
       }
     }
     return false
@@ -608,9 +565,6 @@ const updateTransitionState = (
       fizzTransitionService.isComplete
     ) {
       store.dispatch(transitionToStarmap())
-
-      // Handle sounds for transition to starmap
-      handleTransitionSounds(store, prevState, store.getState().transition)
     }
     return false
   }

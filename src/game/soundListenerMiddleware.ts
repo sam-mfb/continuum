@@ -10,6 +10,8 @@ import { shotsSlice, isNewShot } from '@/core/shots'
 import { SCRWTH, VIEWHT, SOFTBORDER } from '@/core/screen'
 import type { AppDispatch, RootState } from './store'
 import type { TypedStartListening } from '@reduxjs/toolkit'
+import { explosionsSlice } from '@/core/explosions'
+import { transitionSlice } from '@/core/transition'
 
 type SoundStartListening = TypedStartListening<RootState, AppDispatch>
 
@@ -141,4 +143,32 @@ export function setupSoundListener(
       soundService.clearSound()
     }
   })
+
+  // Listen for bunker explosion
+  soundStartListening({
+    actionCreator: explosionsSlice.actions.startExplosion,
+    effect: () => {
+      soundService.playBunkerExplosion()
+    }
+  })
+
+  // Listen for starmap transition
+  soundStartListening({
+    actionCreator: transitionSlice.actions.decrementPreFizz,
+    effect: (_, listenerApi) => {
+      if (listenerApi.getState().transition.preFizzFrames === 0) {
+        soundService.playLevelTransition()
+      }
+    }
+  })
+
+  // Listen for starmap transition
+  soundStartListening({
+    actionCreator: transitionSlice.actions.transitionToStarmap,
+    effect: () => {
+      soundService.playEcho()
+    }
+  })
 }
+
+// Listen for bunker explosion
