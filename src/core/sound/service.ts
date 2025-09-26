@@ -83,7 +83,6 @@ export async function createSoundService(initialSettings: {
   let currentSoundPriority = 0
   let isEngineRunning = false
   let isMuted = initialSettings.muted
-  let currentVolume = Math.max(0, Math.min(1, initialSettings.volume))
   let decayIntervalId: NodeJS.Timeout | null = null
 
   try {
@@ -92,7 +91,7 @@ export async function createSoundService(initialSettings: {
 
     // Apply initial volume
     if (soundEngine) {
-      soundEngine.setVolume(currentVolume)
+      soundEngine.setVolume(initialSettings.volume)
     }
 
     /**
@@ -283,9 +282,8 @@ export async function createSoundService(initialSettings: {
       clearSound: (): void => clearCurrentSound(),
 
       setVolume: (volume: number): void => {
-        currentVolume = Math.max(0, Math.min(1, volume))
         if (soundEngine) {
-          soundEngine.setVolume(currentVolume)
+          soundEngine.setVolume(volume)
         }
       },
 

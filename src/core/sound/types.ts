@@ -21,16 +21,17 @@ import type { GameSoundType } from './soundEngine'
 
 /**
  * The main sound engine interface
+ * Exposes only the methods needed by external consumers
  */
 export type SoundEngine = {
-  audioContext: AudioContext // Web Audio API context
-  masterGain: GainNode // Master volume control
-  setVolume: (volume: number) => void // Set master volume
+  /**
+   * Set the master volume level
+   * @param volume - Volume level between 0.0 (muted) and 1.0 (full volume)
+   * @throws Logs an error if volume is not a valid number between 0.0 and 1.0
+   */
+  setVolume: (volume: number) => void
   start: () => void // Start audio playback
   stop: () => void // Stop audio playback
   play: (soundType: GameSoundType, onEnded?: () => void) => void // Play a sound
-  playTestSound?: (soundType: string) => void // Legacy method for compatibility
-  getCurrentSoundType?: () => GameSoundType // Get current sound type
-  isPlaying?: () => boolean // Check if playing
-  resumeContext?: () => Promise<void> // Resume suspended audio context
+  resumeContext: () => Promise<void> // Resume suspended audio context
 }

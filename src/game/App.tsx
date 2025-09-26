@@ -26,7 +26,7 @@ export const App: React.FC<AppProps> = ({
   const dispatch = useAppDispatch()
   const gameMode = useAppSelector(state => state.app.mode)
   const volume = useAppSelector(state => state.app.volume)
-  const soundMuted = useAppSelector(state => !state.app.enabled)
+  const soundMuted = useAppSelector(state => !state.app.soundOn)
   const pendingHighScore = useAppSelector(state => state.app.pendingHighScore)
 
   // Handle different game modes

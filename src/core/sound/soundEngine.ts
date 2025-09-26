@@ -74,27 +74,27 @@ export const createSoundEngine = (): SoundEngine => {
     start?: () => void
     stop?: () => void
   } = generators.silence
-  let currentSoundType: GameSoundType = 'silence'
-
-  /**
-   * Get audio context from the audio output
-   */
-  const getAudioContext = (): AudioContext | null => {
-    return audioOutput.getContext()
-  }
-
-  /**
-   * Get the master gain node from audio output
-   */
-  const getMasterGain = (): GainNode | null => {
-    return audioOutput.getGainNode()
-  }
 
   /**
    * Set the master volume
-   * @param volume - Volume level from 0 to 1
+   * @param volume - Volume level between 0.0 (muted) and 1.0 (full volume)
    */
   const setVolume = (volume: number): void => {
+    // Validate input
+    if (typeof volume !== 'number' || isNaN(volume)) {
+      console.error(
+        `[SoundEngine] Invalid volume value: ${volume}. Volume must be a number between 0.0 and 1.0`
+      )
+      return
+    }
+
+    if (volume < 0 || volume > 1) {
+      console.error(
+        `[SoundEngine] Volume out of range: ${volume}. Volume must be between 0.0 and 1.0`
+      )
+    }
+
+    console.log(`Setting volume to: ${volume}`)
     audioOutput.setVolume(volume)
   }
 
@@ -120,7 +120,6 @@ export const createSoundEngine = (): SoundEngine => {
 
     // Reset to silence
     currentGenerator = generators.silence
-    currentSoundType = 'silence'
     bufferManager.setGenerator(currentGenerator)
   }
 
@@ -161,15 +160,7 @@ export const createSoundEngine = (): SoundEngine => {
     }
 
     currentGenerator = generator
-    currentSoundType = soundType
     bufferManager.setGenerator(currentGenerator, onEnded)
-  }
-
-  /**
-   * Get the current sound type
-   */
-  const getCurrentSoundType = (): GameSoundType => {
-    return currentSoundType
   }
 
   /**
@@ -180,18 +171,11 @@ export const createSoundEngine = (): SoundEngine => {
   }
 
   // Return public interface
-  const ctx = getAudioContext()
   const engine: SoundEngine = {
-    audioContext: ctx || new AudioContext(),
-    masterGain:
-      getMasterGain() ||
-      (ctx ? ctx.createGain() : new AudioContext().createGain()),
     setVolume,
     start,
     stop,
     play,
-    getCurrentSoundType,
-    isPlaying: audioOutput.isPlaying,
     resumeContext
   }
 

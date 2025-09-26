@@ -43,7 +43,7 @@ export type AudioOutput = {
 
   /**
    * Set the master volume
-   * @param volume - Volume level from 0 to 1
+   * @param volume - Volume level between 0.0 (muted) and 1.0 (full volume)
    */
   setVolume(volume: number): void
 
@@ -244,11 +244,25 @@ export const createAudioOutput = (
 
   /**
    * Set the master volume
-   * @param volume - Volume level from 0 to 1
+   * @param volume - Volume level between 0.0 (muted) and 1.0 (full volume)
    */
   const setVolume = (volume: number): void => {
+    // Validate input
+    if (typeof volume !== 'number' || isNaN(volume)) {
+      console.error(
+        `[AudioOutput] Invalid volume value: ${volume}. Volume must be a number between 0.0 and 1.0`
+      )
+      return
+    }
+
+    if (volume < 0 || volume > 1) {
+      console.error(
+        `[AudioOutput] Volume out of range: ${volume}. Volume must be between 0.0 and 1.0`
+      )
+    }
+
     if (gainNode) {
-      // Clamp volume between 0 and 1
+      // Clamp volume between 0 and 1 (still clamp in case of out-of-range values)
       const clampedVolume = Math.max(0, Math.min(1, volume))
       gainNode.gain.value = clampedVolume
     }

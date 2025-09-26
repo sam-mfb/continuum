@@ -92,14 +92,10 @@ describe('createSoundEngine', () => {
   it('creates sound engine with required properties', () => {
     const engine = createSoundEngine()
 
-    expect(engine).toHaveProperty('audioContext')
-    expect(engine).toHaveProperty('masterGain')
     expect(engine).toHaveProperty('setVolume')
     expect(engine).toHaveProperty('start')
     expect(engine).toHaveProperty('stop')
     expect(engine).toHaveProperty('play')
-    expect(engine).toHaveProperty('getCurrentSoundType')
-    expect(engine).toHaveProperty('isPlaying')
     expect(engine).toHaveProperty('resumeContext')
   })
 
@@ -107,20 +103,9 @@ describe('createSoundEngine', () => {
     const engine = createSoundEngine()
 
     // Should not throw when playing valid sounds
-    expect(() => engine.play?.('fire')).not.toThrow()
-    expect(() => engine.play?.('thruster')).not.toThrow()
-    expect(() => engine.play?.('silence')).not.toThrow()
-  })
-
-  it('tracks current sound type', () => {
-    const engine = createSoundEngine()
-
-    // Should start with silence
-    expect(engine.getCurrentSoundType?.()).toBe('silence')
-
-    // After playing a sound, should return that sound type
-    engine.play?.('fire')
-    expect(engine.getCurrentSoundType?.()).toBe('fire')
+    expect(() => engine.play('fire')).not.toThrow()
+    expect(() => engine.play('thruster')).not.toThrow()
+    expect(() => engine.play('silence')).not.toThrow()
   })
 
   it('has start method that can be called', () => {

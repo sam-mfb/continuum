@@ -66,6 +66,11 @@ const createStoreAndListeners = (
 
   // Build preloaded state with initial settings
   const preloadedState = {
+    app: {
+      ...appSlice.getInitialState(),
+      volume: initialSettings.soundVolume,
+      soundOn: initialSettings.soundEnabled
+    },
     highscore: persistedHighScores,
     controls: {
       bindings: persistedControls

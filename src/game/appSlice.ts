@@ -20,7 +20,7 @@ export type AppState = {
 
   // Sound settings
   volume: number
-  enabled: boolean
+  soundOn: boolean
 
   // Game flow
   mode: GameMode
@@ -29,8 +29,8 @@ export type AppState = {
 
 const initialState: AppState = {
   alignmentMode: 'screen-fixed', // Default to screen-fixed (not original)
-  volume: 40,
-  enabled: true,
+  volume: 0,
+  soundOn: true,
   mode: 'start',
   pendingHighScore: null
 }
@@ -54,10 +54,10 @@ export const appSlice = createSlice({
       state.volume = action.payload
     },
     enableSound: state => {
-      state.enabled = true
+      state.soundOn = true
     },
     disableSound: state => {
-      state.enabled = false
+      state.soundOn = false
     },
 
     // Game flow management
