@@ -9,7 +9,7 @@ import { drawBackground } from './drawBackground'
 import { shipControl } from '@core/ship'
 import { buildGameStore } from '@dev/store'
 import { SCRWTH, VIEWHT } from '@core/screen'
-import { ControlAction } from '@core/controls'
+import { getControls } from '@core/controls'
 
 // Configure store with all slices and containment middleware
 const store = buildGameStore()
@@ -55,33 +55,13 @@ initializeGame()
 export const shipMoveGameLoop: GameLoopFunction = (ctx, _frame, keys, _env) => {
   const state = store.getState()
 
-  const getPressedControls = (keysDown: Set<string>): ControlAction[] => {
-    const controls: ControlAction[] = []
-    const bindings = state.controls.bindings
-
-    if (keysDown.has(bindings[ControlAction.LEFT])) {
-      controls.push(ControlAction.LEFT)
-    }
-    if (keysDown.has(bindings[ControlAction.RIGHT])) {
-      controls.push(ControlAction.RIGHT)
-    }
-    if (keysDown.has(bindings[ControlAction.THRUST])) {
-      controls.push(ControlAction.THRUST)
-    }
-    if (keysDown.has(bindings[ControlAction.FIRE])) {
-      controls.push(ControlAction.FIRE)
-    }
-    if (keysDown.has(bindings[ControlAction.SHIELD])) {
-      controls.push(ControlAction.SHIELD)
-    }
-
-    return controls
-  }
+  // Get control matrix from keyboard input
+  const controls = getControls(keys, state.controls.bindings)
 
   // Handle controls - gravity is now calculated internally from generators
   store.dispatch(
     shipControl({
-      controlsPressed: getPressedControls(keys.keysDown)
+      controlsPressed: controls
     })
   )
 

@@ -3,7 +3,11 @@
  */
 
 import type { KeyInfo } from '@lib/bitmap'
-import { ControlAction, type ControlBindings, type ControlMatrix } from './types'
+import {
+  ControlAction,
+  type ControlBindings,
+  type ControlMatrix
+} from './types'
 
 /**
  * Convert keyboard input to a control matrix based on current bindings

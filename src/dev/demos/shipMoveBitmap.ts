@@ -30,7 +30,7 @@ import {
   moveBullets,
   clearBunkShots
 } from '@core/shots'
-import { ControlAction } from '@core/controls'
+import { getControls } from '@core/controls'
 import { shipControl } from '@core/ship'
 import { buildGameStore } from '@dev/store'
 import { containShip } from '@core/shared/containShip'
@@ -193,30 +193,7 @@ const resetGame = (): void => {
   store.dispatch(clearAllShots())
 }
 
-const getPressedControls = (
-  keysDown: Set<string>,
-  bindings: Record<ControlAction, string>
-): ControlAction[] => {
-  const controls: ControlAction[] = []
-
-  if (keysDown.has(bindings[ControlAction.LEFT])) {
-    controls.push(ControlAction.LEFT)
-  }
-  if (keysDown.has(bindings[ControlAction.RIGHT])) {
-    controls.push(ControlAction.RIGHT)
-  }
-  if (keysDown.has(bindings[ControlAction.THRUST])) {
-    controls.push(ControlAction.THRUST)
-  }
-  if (keysDown.has(bindings[ControlAction.FIRE])) {
-    controls.push(ControlAction.FIRE)
-  }
-  if (keysDown.has(bindings[ControlAction.SHIELD])) {
-    controls.push(ControlAction.SHIELD)
-  }
-
-  return controls
-}
+// Removed - now using getControls from @core/controls
 
 /**
  * Bitmap renderer for ship movement game
@@ -288,12 +265,10 @@ export const createShipMoveBitmapRenderer =
       // Only handle controls and move ship if alive
       // shipControl will read globalx/globaly from ship state (set by previous frame's containShip)
       // and calculate gravity from generators
+      const controls = getControls(keys, state.controls.bindings)
       store.dispatch(
         shipControl({
-          controlsPressed: getPressedControls(
-            keys.keysDown,
-            state.controls.bindings
-          )
+          controlsPressed: controls
         })
       )
 
