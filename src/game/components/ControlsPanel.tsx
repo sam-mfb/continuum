@@ -198,6 +198,19 @@ const ControlsPanel: React.FC = () => {
               <span style={labelStyle}>Quit:</span>
               <span style={keyStyle}>{formatKey(bindings.quit)}</span>
             </div>
+            <div style={{ marginTop: '5px', paddingTop: '5px', borderTop: '1px solid #333' }}>
+              <div style={{ fontSize: '9px', color: '#888', marginBottom: '3px' }}>
+                CHEATS (disable high scores):
+              </div>
+              <div style={controlItemStyle}>
+                <span style={{ ...labelStyle, color: '#888' }}>Next Level:</span>
+                <span style={{ ...keyStyle, color: '#888' }}>{formatKey(bindings.nextLevel)}</span>
+              </div>
+              <div style={controlItemStyle}>
+                <span style={{ ...labelStyle, color: '#888' }}>Extra Life:</span>
+                <span style={{ ...keyStyle, color: '#888' }}>{formatKey(bindings.extraLife)}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

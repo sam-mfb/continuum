@@ -30,7 +30,7 @@ import {
   clearShards,
   decrementShipDeathFlash
 } from '@core/explosions'
-import { statusSlice } from '@core/status'
+import { invalidateHighScore, statusSlice } from '@core/status'
 import { screenSlice, SCRWTH, VIEWHT, TOPMARG, BOTMARG } from '@core/screen'
 import { containShip, rint } from '@core/shared'
 import {
@@ -39,7 +39,8 @@ import {
   transitionToStarmap,
   incrementStarmap,
   resetTransition,
-  TRANSITION_DELAY_FRAMES
+  TRANSITION_DELAY_FRAMES,
+  skipToNextLevel
 } from '@core/transition'
 
 import { loadLevel } from '../levelThunks'
@@ -67,6 +68,28 @@ export const updateGameState = (context: StateUpdateContext): void => {
   const { store, frame, controls, galaxyService, fizzTransitionService } =
     context
 
+  if (controls.quit) {
+    handleGameOver(store)
+  }
+
+  if (controls.extraLife) {
+    store.dispatch(invalidateHighScore())
+    store.dispatch(shipSlice.actions.extraLife())
+  }
+
+  if (controls.nextLevel) {
+    store.dispatch(invalidateHighScore())
+    store.dispatch(markLevelComplete())
+
+    // Start transition directly using the reducer action
+    store.dispatch(skipToNextLevel())
+
+    // Reset fizz service to ensure clean state for new level
+    if (fizzTransitionService) {
+      fizzTransitionService.reset()
+    }
+  }
+
   // decrement death flash at start of state update
   store.dispatch(decrementShipDeathFlash())
 
@@ -88,7 +111,13 @@ export const updateGameState = (context: StateUpdateContext): void => {
   handleLevelCompletion(store, fizzTransitionService)
 
   // Check for game over
-  handleGameOver(store)
+  if (
+    !state.game.gameOver &&
+    state.ship.lives <= 0 &&
+    state.ship.deadCount === 0
+  ) {
+    handleGameOver(store)
+  }
 
   // Handle ship movement and controls
   const { globalx, globaly } = handleShipMovement(store, controls)
@@ -279,44 +308,37 @@ const handleLevelCompletion = (
 const handleGameOver = (store: GameStore): void => {
   const state = store.getState()
 
-  if (
-    !state.game.gameOver &&
-    state.ship.lives <= 0 &&
-    state.ship.deadCount === 0
-  ) {
-    console.log('Game Over - All lives lost')
-    store.dispatch(triggerGameOver())
+  store.dispatch(triggerGameOver())
 
-    // Check if score qualifies for high score table
-    const fullState = store.getState()
-    const { status, highscore } = fullState
+  // Check if score qualifies for high score table
+  const fullState = store.getState()
+  const { status, highscore } = fullState
 
-    // Find the lowest high score
-    const lowestScore = Math.min(
-      ...Object.values(highscore).map(hs => hs.score || 0)
+  // Find the lowest high score
+  const lowestScore = Math.min(
+    ...Object.values(highscore).map(hs => hs.score || 0)
+  )
+
+  // Check if eligible and qualifies for high score
+  if (status.highScoreEligible && status.score > lowestScore) {
+    // Set pending high score and switch to entry mode
+    store.dispatch(
+      setPendingHighScore({
+        score: status.score,
+        planet: status.currentlevel,
+        fuel: state.ship.fuel
+      })
     )
-
-    // Check if eligible and qualifies for high score
-    if (status.highScoreEligible && status.score > lowestScore) {
-      // Set pending high score and switch to entry mode
-      store.dispatch(
-        setPendingHighScore({
-          score: status.score,
-          planet: status.currentlevel,
-          fuel: state.ship.fuel
-        })
-      )
-    } else {
-      // Just show game over screen
-      store.dispatch(setMode('gameOver'))
-    }
-
-    // Reset everything for a new game
-    store.dispatch(resetGame())
-    store.dispatch(shipSlice.actions.setLives(TOTAL_INITIAL_LIVES))
-    store.dispatch(statusSlice.actions.initStatus())
-    store.dispatch(loadLevel(1))
+  } else {
+    // Just show game over screen
+    store.dispatch(setMode('gameOver'))
   }
+
+  // Reset everything for a new game
+  store.dispatch(resetGame())
+  store.dispatch(shipSlice.actions.setLives(TOTAL_INITIAL_LIVES))
+  store.dispatch(statusSlice.actions.initStatus())
+  store.dispatch(loadLevel(1))
 }
 
 /**

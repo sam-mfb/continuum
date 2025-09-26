@@ -198,6 +198,11 @@ const StartScreen: React.FC<StartScreenProps> = ({
                   )
                 )}
               </select>
+              {selectedLevel > 1 && (
+                <span style={{ color: '#888', fontSize: '11px', fontStyle: 'italic' }}>
+                  (disables high score)
+                </span>
+              )}
             </div>
           </div>
 
