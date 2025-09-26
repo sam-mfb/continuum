@@ -84,14 +84,10 @@ export const createSoundEngine = (): SoundEngine => {
   }
 
   /**
-   * Create a dummy gain node for compatibility
+   * Get the master gain node from audio output
    */
-  const createMasterGain = (): GainNode | null => {
-    const ctx = getAudioContext()
-    if (!ctx) return null
-    const gain = ctx.createGain()
-    gain.connect(ctx.destination)
-    return gain
+  const getMasterGain = (): GainNode | null => {
+    return audioOutput.getGainNode()
   }
 
   /**
@@ -99,7 +95,7 @@ export const createSoundEngine = (): SoundEngine => {
    * @param volume - Volume level from 0 to 1
    */
   const setVolume = (volume: number): void => {
-    bufferManager.setVolume(volume)
+    audioOutput.setVolume(volume)
   }
 
   /**
@@ -188,7 +184,7 @@ export const createSoundEngine = (): SoundEngine => {
   const engine: SoundEngine = {
     audioContext: ctx || new AudioContext(),
     masterGain:
-      createMasterGain() ||
+      getMasterGain() ||
       (ctx ? ctx.createGain() : new AudioContext().createGain()),
     setVolume,
     start,

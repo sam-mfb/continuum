@@ -48,6 +48,12 @@ vi.mock('../audioOutput', () => ({
     stop: vi.fn(),
     isPlaying: vi.fn(() => false),
     getContext: vi.fn(() => null),
+    getGainNode: vi.fn(() => ({
+      gain: { value: 1 },
+      connect: vi.fn(),
+      disconnect: vi.fn()
+    })),
+    setVolume: vi.fn(),
     getStats: vi.fn(() => ({
       underruns: 0,
       totalCallbacks: 0,

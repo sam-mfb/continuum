@@ -37,6 +37,17 @@ export type AudioOutput = {
   getContext(): AudioContext | null
 
   /**
+   * Get the gain node for volume control
+   */
+  getGainNode(): GainNode | null
+
+  /**
+   * Set the master volume
+   * @param volume - Volume level from 0 to 1
+   */
+  setVolume(volume: number): void
+
+  /**
    * Get performance statistics
    */
   getStats(): {
@@ -54,6 +65,7 @@ export const createAudioOutput = (
 ): AudioOutput => {
   let audioContext: AudioContext | null = null
   let scriptProcessor: ScriptProcessorNode | null = null
+  let gainNode: GainNode | null = null
   let isPlaying = false
 
   // Performance tracking
@@ -146,11 +158,16 @@ export const createAudioOutput = (
         audioContext.destination.channelCount // match output channels
       )
 
+      // Create gain node for volume control
+      gainNode = audioContext.createGain()
+      gainNode.gain.value = 1.0 // Default to full volume
+
       // Connect audio processing callback
       scriptProcessor.onaudioprocess = processAudio
 
-      // Connect to speakers
-      scriptProcessor.connect(audioContext.destination)
+      // Connect chain: ScriptProcessor -> GainNode -> Destination
+      scriptProcessor.connect(gainNode)
+      gainNode.connect(audioContext.destination)
 
       isPlaying = true
 
@@ -175,6 +192,11 @@ export const createAudioOutput = (
       scriptProcessor.disconnect()
       scriptProcessor.onaudioprocess = null
       scriptProcessor = null
+    }
+
+    if (gainNode) {
+      gainNode.disconnect()
+      gainNode = null
     }
 
     isPlaying = false
@@ -214,6 +236,25 @@ export const createAudioOutput = (
   }
 
   /**
+   * Get the gain node for volume control
+   */
+  const getGainNode = (): GainNode | null => {
+    return gainNode
+  }
+
+  /**
+   * Set the master volume
+   * @param volume - Volume level from 0 to 1
+   */
+  const setVolume = (volume: number): void => {
+    if (gainNode) {
+      // Clamp volume between 0 and 1
+      const clampedVolume = Math.max(0, Math.min(1, volume))
+      gainNode.gain.value = clampedVolume
+    }
+  }
+
+  /**
    * Get performance statistics
    */
   const getStats = (): {
@@ -234,6 +275,8 @@ export const createAudioOutput = (
     stop,
     isPlaying: getIsPlaying,
     getContext,
+    getGainNode,
+    setVolume,
     resumeContext,
     getStats
   }
