@@ -11,13 +11,15 @@ export type GameState = {
   levelComplete: boolean
   paused: boolean
   showMap: boolean
+  highScoreEligible: boolean // Whether this game is eligible for a highscore
 }
 
 const initialState: GameState = {
   gameOver: false,
   levelComplete: false,
   paused: false,
-  showMap: false
+  showMap: false,
+  highScoreEligible: true
 }
 
 export const gameSlice = createSlice({
@@ -41,6 +43,7 @@ export const gameSlice = createSlice({
     resetGame: state => {
       state.gameOver = false
       state.levelComplete = false
+      state.highScoreEligible = true
     },
     pause: state => {
       state.paused = true
@@ -56,6 +59,10 @@ export const gameSlice = createSlice({
     },
     hideMap: state => {
       state.showMap = false
+    },
+    // Make game high score ineligible
+    invalidateHighScore: state => {
+      state.highScoreEligible = false
     }
   }
 })
@@ -69,5 +76,6 @@ export const {
   unpause,
   togglePause,
   showMap,
-  hideMap
+  hideMap,
+  invalidateHighScore
 } = gameSlice.actions

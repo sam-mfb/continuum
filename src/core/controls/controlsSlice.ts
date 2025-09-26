@@ -21,8 +21,8 @@ export const getDefaultBindings = (): ControlBindings => ({
   [ControlAction.SELF_DESTRUCT]: 'KeyA',
   [ControlAction.PAUSE]: 'KeyP',
   [ControlAction.QUIT]: 'KeyQ',
-  [ControlAction.NEXT_LEVEL]: 'KeyN',
-  [ControlAction.EXTRA_LIFE]: 'KeyL',
+  [ControlAction.NEXT_LEVEL]: 'KeyU',
+  [ControlAction.EXTRA_LIFE]: 'KeyE',
   [ControlAction.MAP]: 'KeyM'
 })
 

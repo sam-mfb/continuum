@@ -30,7 +30,7 @@ import {
   clearShards,
   decrementShipDeathFlash
 } from '@core/explosions'
-import { invalidateHighScore, statusSlice } from '@core/status'
+import { statusSlice } from '@core/status'
 import { screenSlice, SCRWTH, VIEWHT, TOPMARG, BOTMARG } from '@core/screen'
 import { containShip, rint } from '@core/shared'
 import {
@@ -44,7 +44,12 @@ import {
 } from '@core/transition'
 
 import { loadLevel } from '../levelThunks'
-import { markLevelComplete, triggerGameOver, resetGame } from '../gameSlice'
+import {
+  markLevelComplete,
+  triggerGameOver,
+  resetGame,
+  invalidateHighScore
+} from '../gameSlice'
 import { setMode, setPendingHighScore } from '../appSlice'
 import { TOTAL_INITIAL_LIVES } from '../constants'
 import { triggerShipDeath } from '../shipDeath'
@@ -312,7 +317,7 @@ const handleGameOver = (store: GameStore): void => {
 
   // Check if score qualifies for high score table
   const fullState = store.getState()
-  const { status, highscore } = fullState
+  const { status, highscore, game } = fullState
 
   // Find the lowest high score
   const lowestScore = Math.min(
@@ -320,7 +325,7 @@ const handleGameOver = (store: GameStore): void => {
   )
 
   // Check if eligible and qualifies for high score
-  if (status.highScoreEligible && status.score > lowestScore) {
+  if (game.highScoreEligible && status.score > lowestScore) {
     // Set pending high score and switch to entry mode
     store.dispatch(
       setPendingHighScore({

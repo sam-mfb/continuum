@@ -13,4 +13,4 @@ export { statusSlice } from './statusSlice'
 
 // Import and re-export actions
 import { statusSlice as _statusSlice } from './statusSlice'
-export const { setMessage, invalidateHighScore } = _statusSlice.actions
+export const { setMessage } = _statusSlice.actions
