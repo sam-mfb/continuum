@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react'
 import type { FrameInfo, KeyInfo, MonochromeBitmap } from '@lib/bitmap'
 import { useAppDispatch, useAppSelector } from '../store'
-import { togglePause } from '../gameSlice'
+import { togglePause, showMap, hideMap, pause, unpause } from '../gameSlice'
 import { getControls, type ControlMatrix } from '@core/controls'
+import { Map } from './Map'
 
 type GameRendererProps = {
   renderer: (frame: FrameInfo, controls: ControlMatrix) => MonochromeBitmap
@@ -32,8 +33,10 @@ const GameRenderer: React.FC<GameRendererProps> = ({
   const startTimeRef = useRef<number>(0)
 
   const paused = useAppSelector(state => state.game.paused)
+  const showMapState = useAppSelector(state => state.game.showMap)
   const bindings = useAppSelector(state => state.controls.bindings)
   const pauseKey = useAppSelector(state => state.controls.bindings.pause)
+  const mapKey = useAppSelector(state => state.controls.bindings.map)
   const dispatch = useAppDispatch()
 
   // Separate effect for pause key handling
@@ -48,6 +51,27 @@ const GameRenderer: React.FC<GameRendererProps> = ({
     window.addEventListener('keydown', handlePauseKey)
     return (): void => window.removeEventListener('keydown', handlePauseKey)
   }, [pauseKey, dispatch])
+
+  // Separate effect for map key handling
+  useEffect(() => {
+    const handleMapKeyDown = (e: KeyboardEvent): void => {
+      if (e.code === mapKey) {
+        if (showMapState) {
+          dispatch(hideMap())
+          dispatch(unpause())
+        } else {
+          dispatch(showMap())
+          dispatch(pause())
+        }
+        e.preventDefault()
+      }
+    }
+
+    window.addEventListener('keydown', handleMapKeyDown)
+    return (): void => {
+      window.removeEventListener('keydown', handleMapKeyDown)
+    }
+  }, [mapKey, showMapState, dispatch])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -165,19 +189,22 @@ const GameRenderer: React.FC<GameRendererProps> = ({
   }, [renderer, width, height, scale, fps, frameIntervalMs, bindings, paused])
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={width * scale}
-      height={height * scale}
-      style={{
-        imageRendering: 'pixelated',
-        // @ts-ignore - vendor prefixes
-        WebkitImageRendering: 'pixelated',
-        MozImageRendering: 'crisp-edges',
-        border: '2px solid #666',
-        display: 'block'
-      }}
-    />
+    <div style={{ position: 'relative', display: 'inline-block' }}>
+      <canvas
+        ref={canvasRef}
+        width={width * scale}
+        height={height * scale}
+        style={{
+          imageRendering: 'pixelated',
+          // @ts-ignore - vendor prefixes
+          WebkitImageRendering: 'pixelated',
+          MozImageRendering: 'crisp-edges',
+          border: '2px solid #666',
+          display: 'block'
+        }}
+      />
+      {showMapState && <Map scale={scale} />}
+    </div>
   )
 }
 

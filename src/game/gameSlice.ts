@@ -10,12 +10,14 @@ export type GameState = {
   gameOver: boolean
   levelComplete: boolean
   paused: boolean
+  showMap: boolean
 }
 
 const initialState: GameState = {
   gameOver: false,
   levelComplete: false,
-  paused: false
+  paused: false,
+  showMap: false
 }
 
 export const gameSlice = createSlice({
@@ -48,6 +50,12 @@ export const gameSlice = createSlice({
     },
     togglePause: state => {
       state.paused = !state.paused
+    },
+    showMap: state => {
+      state.showMap = true
+    },
+    hideMap: state => {
+      state.showMap = false
     }
   }
 })
@@ -59,5 +67,7 @@ export const {
   resetGame,
   pause,
   unpause,
-  togglePause
+  togglePause,
+  showMap,
+  hideMap
 } = gameSlice.actions
