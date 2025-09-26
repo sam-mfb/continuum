@@ -42,7 +42,8 @@ const GameRenderer: React.FC<GameRendererProps> = ({
   // Separate effect for pause key handling
   useEffect(() => {
     const handlePauseKey = (e: KeyboardEvent): void => {
-      if (e.code === pauseKey) {
+      // Don't allow pause toggle when map is showing
+      if (e.code === pauseKey && !showMapState) {
         dispatch(togglePause())
         e.preventDefault()
       }
@@ -50,7 +51,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
 
     window.addEventListener('keydown', handlePauseKey)
     return (): void => window.removeEventListener('keydown', handlePauseKey)
-  }, [pauseKey, dispatch])
+  }, [pauseKey, showMapState, dispatch])
 
   // Separate effect for map key handling
   useEffect(() => {
@@ -121,7 +122,22 @@ const GameRenderer: React.FC<GameRendererProps> = ({
         }
         // Skip rendering when paused but keep the loop running
         if (!paused) {
-          const controls = getControls(keyInfo, bindings)
+          // If map is showing, use blank controls (all false) to prevent game input
+          const controls = showMapState
+            ? {
+                thrust: false,
+                left: false,
+                right: false,
+                fire: false,
+                shield: false,
+                selfDestruct: false,
+                pause: false,
+                quit: false,
+                nextLevel: false,
+                extraLife: false,
+                map: false
+              }
+            : getControls(keyInfo, bindings)
           // Render game and get the resulting bitmap
           const renderedBitmap = renderer(frameInfo, controls)
 
