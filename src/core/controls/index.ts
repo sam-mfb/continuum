@@ -16,5 +16,8 @@ export { controlsMiddleware, loadControlBindings } from './controlsMiddleware'
 export {
   ControlAction,
   type ControlBindings,
-  type ControlsState
+  type ControlsState,
+  type ControlMatrix
 } from './types'
+
+export { getControls } from './getControls'

@@ -38,3 +38,10 @@ export type ControlBindings = {
 export type ControlsState = {
   bindings: ControlBindings
 }
+
+/**
+ * Represents controls' active/inactive states
+ */
+export type ControlMatrix = {
+  [key in ControlAction]: boolean
+}

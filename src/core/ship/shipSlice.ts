@@ -1,6 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { ShipState } from './types'
-import { ControlAction } from '@core/controls'
 import {
   SHIP,
   DEAD_TIME,
@@ -9,6 +8,7 @@ import {
   FUELBURN,
   SHIPSTART
 } from './constants'
+import type { ControlMatrix } from '../controls'
 
 // Note: TOTAL_INITIAL_LIVES will be set via preloadedState when creating the store
 // Default to 3 here for tests and development
@@ -40,7 +40,7 @@ const initialState: ShipState = {
 }
 
 type ControlActionPayload = {
-  controlsPressed: ControlAction[]
+  controlsPressed: ControlMatrix
   gravity: { x: number; y: number }
 }
 
@@ -114,19 +114,16 @@ export const shipSlice = createSlice({
       action: PayloadAction<ControlActionPayload>
     ) => {
       const { controlsPressed, gravity } = action.payload
-      const pressed = new Set(controlsPressed)
       // if (cartooning)
       // 	pressed = read_cartoon();
       // else
       // 	pressed = read_keyboard();
 
-      if (pressed.has(ControlAction.LEFT))
-        state.shiprot = (state.shiprot - 1) & 31
-      if (pressed.has(ControlAction.RIGHT))
-        state.shiprot = (state.shiprot + 1) & 31
+      if (controlsPressed.left) state.shiprot = (state.shiprot - 1) & 31
+      if (controlsPressed.right) state.shiprot = (state.shiprot + 1) & 31
 
       state.flaming = false
-      if (pressed.has(ControlAction.THRUST) && state.fuel) {
+      if (controlsPressed.thrust && state.fuel) {
         /* if bouncing, make weaker to avoid flying through */
         state.dx += (state.bouncing ? 1 : 2) * SHIP.thrustx[state.shiprot]!
         state.dy +=

@@ -15,6 +15,7 @@ import type { GameStore } from '../store'
 
 import { updateGameState } from './stateUpdates'
 import { renderGame } from './rendering'
+import { getControls } from '@/core/controls'
 
 export const createGameRenderer = (
   store: GameStore,
@@ -27,12 +28,14 @@ export const createGameRenderer = (
     // Create a fresh bitmap for this frame
     let bitmap = createGameBitmap()
 
+    const controls = getControls(keys, store.getState().controls.bindings)
+
     // This handles all game logic, physics, and state changes
     // except for ship collisions which use rendering to detect
     updateGameState({
       store,
       frame,
-      keys,
+      controls,
       bitmap,
       galaxyService,
       fizzTransitionService,

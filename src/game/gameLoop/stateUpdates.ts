@@ -7,7 +7,7 @@
 
 import type { GalaxyService } from '@core/galaxy'
 import type { GameStore, RootState } from '../store'
-import type { MonochromeBitmap, FrameInfo, KeyInfo } from '@lib/bitmap'
+import type { MonochromeBitmap, FrameInfo } from '@lib/bitmap'
 import type { FizzTransitionService } from '@core/transition'
 import type { SoundService } from '@core/sound'
 
@@ -47,16 +47,15 @@ import { loadLevel } from '../levelThunks'
 import { markLevelComplete, triggerGameOver, resetGame } from '../gameSlice'
 import { setMode, setPendingHighScore } from '../appSlice'
 import { TOTAL_INITIAL_LIVES } from '../constants'
-import { getPressedControls } from '../controls'
-import { ControlAction } from '@core/controls'
 import { triggerShipDeath } from '../shipDeath'
 
 import { BunkerKind } from '@core/figs'
+import type { ControlMatrix } from '@/core/controls'
 
 export type StateUpdateContext = {
   store: GameStore
   frame: FrameInfo
-  keys: KeyInfo
+  controls: ControlMatrix
   bitmap: MonochromeBitmap
   galaxyService: GalaxyService
   fizzTransitionService?: FizzTransitionService
@@ -70,7 +69,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
   const {
     store,
     frame,
-    keys,
+    controls,
     galaxyService,
     fizzTransitionService,
     soundService
@@ -100,7 +99,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
   handleGameOver(store, soundService)
 
   // Handle ship movement and controls
-  const { globalx, globaly } = handleShipMovement(store, keys)
+  const { globalx, globaly } = handleShipMovement(store, controls)
 
   // Update bunker rotations for animated bunkers
   store.dispatch(updateBunkerRotations({ globalx, globaly }))
@@ -317,15 +316,13 @@ const handleGameOver = (store: GameStore, soundService: SoundService): void => {
  */
 const handleShipMovement = (
   store: GameStore,
-  keys: KeyInfo
+  controls: ControlMatrix
 ): { globalx: number; globaly: number } => {
   const state = store.getState()
 
   if (state.ship.deadCount === 0) {
     // Check for self-destruct command
-    if (
-      keys.keysDown.has(state.controls.bindings[ControlAction.SELF_DESTRUCT])
-    ) {
+    if (controls.selfDestruct) {
       triggerShipDeath(store)
       return {
         globalx: state.ship.globalx,
@@ -342,7 +339,7 @@ const handleShipMovement = (
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(store.dispatch as any)(
         shipControl({
-          controlsPressed: getPressedControls(keys.keysDown, state)
+          controlsPressed: controls
         })
       )
 

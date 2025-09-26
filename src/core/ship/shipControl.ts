@@ -3,14 +3,14 @@ import { shipSlice } from '@core/ship'
 import { shotsSlice } from '@core/shots'
 import { planetSlice } from '@core/planet'
 import { statusSlice } from '@core/status'
-import { ControlAction } from '@core/controls'
+import { type ControlMatrix } from '@core/controls'
 import { FUELSHIELD, FRADIUS } from '@core/ship'
 import { xyindist } from '@core/shots'
 import { gravityVector } from '@core/shared/gravityVector'
 import { wallsSlice } from '../walls'
 
 type ControlActionPayload = {
-  controlsPressed: ControlAction[]
+  controlsPressed: ControlMatrix
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/no-unused-vars
@@ -34,7 +34,6 @@ export const shipControl =
   ): ThunkAction<void, BaseState, unknown, Action> =>
   (dispatch, getState) => {
     const { controlsPressed } = action
-    const pressed = new Set(controlsPressed)
 
     // Get current state to calculate gravity
     const state = getState()
@@ -66,8 +65,7 @@ export const shipControl =
     const updatedShip = updatedState.ship
     const updatedPlanet = updatedState.planet
 
-    const isShielding =
-      pressed.has(ControlAction.SHIELD) && updatedShip.fuel > 0
+    const isShielding = controlsPressed.shield && updatedShip.fuel > 0
 
     // Use global position from updated ship state (set by previous frame's containShip)
     // This matches the original game where ship_control uses globals set by previous frame
@@ -116,7 +114,7 @@ export const shipControl =
 
     // Handle firing logic - from original shipControl lines 107-132
     /* check for fire */
-    if (pressed.has(ControlAction.FIRE)) {
+    if (controlsPressed.fire) {
       if (!updatedShip.firing) {
         dispatch(shipSlice.actions.setFiring(true))
         dispatch(
