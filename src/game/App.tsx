@@ -3,7 +3,7 @@ import GameRenderer from './components/GameRenderer'
 import StartScreen from './components/StartScreen'
 import HighScoreEntry from './components/HighScoreEntry'
 import GameOverScreen from './components/GameOverScreen'
-import VolumeControls from './components/VolumeControls'
+import ControlsPanel from './components/ControlsPanel'
 import { loadLevel } from './levelThunks'
 import { startGame, setMode } from './appSlice'
 import { setHighScore } from '@/core/highscore'
@@ -107,10 +107,19 @@ export const App: React.FC<AppProps> = ({
 
   return (
     <div
-      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        background: '#1a1a1a',
+        minHeight: '100vh',
+        padding: '20px 0'
+      }}
     >
-      {renderGameContent()}
-      <VolumeControls />
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {renderGameContent()}
+        <ControlsPanel />
+      </div>
     </div>
   )
 }

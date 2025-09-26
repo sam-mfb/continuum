@@ -19,43 +19,66 @@ const VolumeControls: React.FC = () => {
     }
   }
 
+  const sectionStyle: React.CSSProperties = {
+    border: '1px solid #666',
+    padding: '8px',
+    background: '#000',
+    color: '#fff',
+    fontFamily: 'monospace',
+    fontSize: '11px'
+  }
+
+  const toggleButtonStyle: React.CSSProperties = {
+    background: soundOn ? '#000' : '#000',
+    color: soundOn ? '#fff' : '#666',
+    border: soundOn ? '1px solid #fff' : '1px solid #666',
+    padding: '4px 8px',
+    cursor: 'pointer',
+    fontFamily: 'monospace',
+    fontSize: '11px',
+    minWidth: '50px'
+  }
+
+  const sliderContainerStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    marginTop: '5px'
+  }
+
+  const sliderStyle: React.CSSProperties = {
+    width: '150px',
+    cursor: soundOn ? 'pointer' : 'not-allowed',
+    opacity: soundOn ? 1 : 0.3,
+    background: '#000',
+    height: '4px',
+    outline: 'none'
+  }
+
   return (
-    <div
-      style={{
-        marginTop: '20px',
-        background: 'rgba(0, 0, 0, 0.8)',
-        border: '2px solid #333',
-        padding: '15px',
-        borderRadius: '8px',
-        color: '#fff',
-        fontFamily: 'monospace',
-        fontSize: '14px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px',
-        minWidth: '200px'
-      }}
-    >
+    <div style={sectionStyle}>
+      <div style={{ marginBottom: '5px', fontWeight: 'bold' }}>AUDIO</div>
+
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <label style={{ minWidth: '50px' }}>Sound:</label>
+        <span style={{ minWidth: '50px' }}>SOUND:</span>
         <button
           onClick={handleSoundToggle}
-          style={{
-            padding: '5px 10px',
-            background: soundOn ? '#4CAF50' : '#f44336',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            minWidth: '60px'
+          style={toggleButtonStyle}
+          onMouseEnter={e => {
+            if (soundOn) {
+              e.currentTarget.style.background = '#333'
+            }
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = '#000'
           }}
         >
           {soundOn ? 'ON' : 'OFF'}
         </button>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <label style={{ minWidth: '50px' }}>Volume:</label>
+      <div style={sliderContainerStyle}>
+        <span style={{ minWidth: '50px' }}>VOLUME:</span>
         <input
           type="range"
           min="0"
@@ -64,13 +87,15 @@ const VolumeControls: React.FC = () => {
           value={volume}
           onChange={e => handleVolumeChange(parseFloat(e.target.value))}
           disabled={!soundOn}
-          style={{
-            flex: 1,
-            cursor: soundOn ? 'pointer' : 'not-allowed',
-            opacity: soundOn ? 1 : 0.5
-          }}
+          style={sliderStyle}
         />
-        <span style={{ minWidth: '40px', textAlign: 'right' }}>
+        <span
+          style={{
+            minWidth: '40px',
+            textAlign: 'right',
+            color: soundOn ? '#fff' : '#666'
+          }}
+        >
           {Math.round(volume * 100)}%
         </span>
       </div>

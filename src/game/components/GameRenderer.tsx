@@ -226,6 +226,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
           WebkitImageRendering: 'pixelated',
           MozImageRendering: 'crisp-edges',
           border: '2px solid #666',
+          borderBottom: 'none',
           display: 'block'
         }}
       />

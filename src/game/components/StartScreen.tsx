@@ -3,8 +3,6 @@ import { useSelector, useDispatch } from 'react-redux'
 import type { RootState } from '../store'
 import type { HighScoreState } from '@/core/highscore'
 import { resetHighScores } from '@/core/highscore'
-import { setAlignmentMode } from '../appSlice'
-import type { AlignmentMode } from '@/core/shared'
 
 type StartScreenProps = {
   onStartGame: (level: number) => void
@@ -17,9 +15,6 @@ const StartScreen: React.FC<StartScreenProps> = ({
 }) => {
   const dispatch = useDispatch()
   const highScores = useSelector((state: RootState) => state.highscore)
-  const alignmentMode = useSelector(
-    (state: RootState) => state.app.alignmentMode
-  )
   const [showConfirm, setShowConfirm] = useState(false)
   const [selectedLevel, setSelectedLevel] = useState(1)
 
@@ -93,12 +88,6 @@ const StartScreen: React.FC<StartScreenProps> = ({
       // Auto-cancel confirmation after 3 seconds
       setTimeout(() => setShowConfirm(false), 3000)
     }
-  }
-
-  const handleAlignmentToggle = (): void => {
-    const newMode: AlignmentMode =
-      alignmentMode === 'world-fixed' ? 'screen-fixed' : 'world-fixed'
-    dispatch(setAlignmentMode(newMode))
   }
 
   return (
@@ -210,28 +199,6 @@ const StartScreen: React.FC<StartScreenProps> = ({
                 )}
               </select>
             </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <input
-                type="checkbox"
-                id="originalBackground"
-                checked={alignmentMode === 'world-fixed'}
-                onChange={handleAlignmentToggle}
-                style={{
-                  cursor: 'pointer'
-                }}
-              />
-              <label
-                htmlFor="originalBackground"
-                style={{
-                  color: 'white',
-                  fontSize: '14px',
-                  cursor: 'pointer'
-                }}
-              >
-                Original Background
-              </label>
-            </div>
           </div>
 
           <div
@@ -272,20 +239,6 @@ const StartScreen: React.FC<StartScreenProps> = ({
               {showConfirm ? 'Confirm Reset' : 'Reset Scores'}
             </button>
           </div>
-        </div>
-
-        <div
-          style={{
-            fontSize: '11px',
-            color: 'white',
-            textAlign: 'center',
-            lineHeight: '1.3',
-            opacity: 0.8
-          }}
-        >
-          <div>Controls:</div>
-          <div>Z/X - Rotate | . - Thrust | / - Fire | Space - Shield</div>
-          <div>A - Self destruct (use when stuck)</div>
         </div>
       </div>
     </div>

@@ -63,8 +63,7 @@ try {
     store,
     spriteService,
     galaxyService,
-    fizzTransitionService,
-    soundService
+    fizzTransitionService
   )
   const totalLevels = galaxyService.getHeader().planets
 
