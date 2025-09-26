@@ -3,6 +3,7 @@ import GameRenderer from './components/GameRenderer'
 import StartScreen from './components/StartScreen'
 import HighScoreEntry from './components/HighScoreEntry'
 import GameOverScreen from './components/GameOverScreen'
+import VolumeControls from './components/VolumeControls'
 import { loadLevel } from './levelThunks'
 import { startGame, setMode } from './appSlice'
 import { setHighScore } from '@/core/highscore'
@@ -59,13 +60,16 @@ export const App: React.FC<AppProps> = ({
 
     case 'playing':
       return (
-        <GameRenderer
-          renderer={renderer}
-          width={512}
-          height={342}
-          scale={2} // Pixel-doubled
-          fps={20} // Original Continuum runs at 20 FPS
-        />
+        <>
+          <GameRenderer
+            renderer={renderer}
+            width={512}
+            height={342}
+            scale={2} // Pixel-doubled
+            fps={20} // Original Continuum runs at 20 FPS
+          />
+          <VolumeControls />
+        </>
       )
 
     case 'highScoreEntry':
