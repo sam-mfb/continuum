@@ -202,7 +202,17 @@ const GameRenderer: React.FC<GameRendererProps> = ({
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [renderer, width, height, scale, fps, frameIntervalMs, bindings, paused])
+  }, [
+    renderer,
+    width,
+    height,
+    scale,
+    fps,
+    frameIntervalMs,
+    bindings,
+    paused,
+    showMapState
+  ])
 
   return (
     <div style={{ position: 'relative', display: 'inline-block' }}>
