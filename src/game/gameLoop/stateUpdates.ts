@@ -199,6 +199,10 @@ const handleDeathAndRespawn = (store: GameStore): void => {
     store.dispatch(shipSlice.actions.decrementDeadCount())
     const newDeadCount = store.getState().ship.deadCount
     if (newDeadCount === 0) {
+      // early return if game over because no need to reset ship position
+      if (store.getState().ship.lives === 0) {
+        return
+      }
       // Get planet state for respawn coordinates
       const planetState = store.getState().planet
 
