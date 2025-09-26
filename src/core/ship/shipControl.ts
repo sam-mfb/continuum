@@ -3,14 +3,14 @@ import { shipSlice } from '@core/ship'
 import { shotsSlice } from '@core/shots'
 import { planetSlice } from '@core/planet'
 import { statusSlice } from '@core/status'
-import { ShipControl } from '@core/ship'
+import { ControlAction } from '@core/controls'
 import { FUELSHIELD, FRADIUS } from '@core/ship'
 import { xyindist } from '@core/shots'
 import { gravityVector } from '@core/shared/gravityVector'
 import { wallsSlice } from '../walls'
 
-type ControlAction = {
-  controlsPressed: ShipControl[]
+type ControlActionPayload = {
+  controlsPressed: ControlAction[]
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type, @typescript-eslint/no-unused-vars
@@ -29,7 +29,9 @@ function buildBaseStore() {
 type BaseState = ReturnType<ReturnType<typeof buildBaseStore>['getState']>
 
 export const shipControl =
-  (action: ControlAction): ThunkAction<void, BaseState, unknown, Action> =>
+  (
+    action: ControlActionPayload
+  ): ThunkAction<void, BaseState, unknown, Action> =>
   (dispatch, getState) => {
     const { controlsPressed } = action
     const pressed = new Set(controlsPressed)
@@ -64,7 +66,8 @@ export const shipControl =
     const updatedShip = updatedState.ship
     const updatedPlanet = updatedState.planet
 
-    const isShielding = pressed.has(ShipControl.SHIELD) && updatedShip.fuel > 0
+    const isShielding =
+      pressed.has(ControlAction.SHIELD) && updatedShip.fuel > 0
 
     // Use global position from updated ship state (set by previous frame's containShip)
     // This matches the original game where ship_control uses globals set by previous frame
@@ -113,7 +116,7 @@ export const shipControl =
 
     // Handle firing logic - from original shipControl lines 107-132
     /* check for fire */
-    if (pressed.has(ShipControl.FIRE)) {
+    if (pressed.has(ControlAction.FIRE)) {
       if (!updatedShip.firing) {
         dispatch(shipSlice.actions.setFiring(true))
         dispatch(

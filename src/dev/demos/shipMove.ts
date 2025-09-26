@@ -5,7 +5,6 @@ import { shipSlice } from '@core/ship'
 import { planetSlice } from '@core/planet'
 import { screenSlice } from '@core/screen'
 import { shotsSlice } from '@core/shots'
-import { ShipControl } from '@core/ship'
 import { drawBackground } from './drawBackground'
 import { shipControl } from '@core/ship'
 import { buildGameStore } from '@dev/store'
@@ -56,24 +55,24 @@ initializeGame()
 export const shipMoveGameLoop: GameLoopFunction = (ctx, _frame, keys, _env) => {
   const state = store.getState()
 
-  const getPressedControls = (keysDown: Set<string>): ShipControl[] => {
-    const controls: ShipControl[] = []
+  const getPressedControls = (keysDown: Set<string>): ControlAction[] => {
+    const controls: ControlAction[] = []
     const bindings = state.controls.bindings
 
     if (keysDown.has(bindings[ControlAction.LEFT])) {
-      controls.push(ShipControl.LEFT)
+      controls.push(ControlAction.LEFT)
     }
     if (keysDown.has(bindings[ControlAction.RIGHT])) {
-      controls.push(ShipControl.RIGHT)
+      controls.push(ControlAction.RIGHT)
     }
     if (keysDown.has(bindings[ControlAction.THRUST])) {
-      controls.push(ShipControl.THRUST)
+      controls.push(ControlAction.THRUST)
     }
     if (keysDown.has(bindings[ControlAction.FIRE])) {
-      controls.push(ShipControl.FIRE)
+      controls.push(ControlAction.FIRE)
     }
     if (keysDown.has(bindings[ControlAction.SHIELD])) {
-      controls.push(ShipControl.SHIELD)
+      controls.push(ControlAction.SHIELD)
     }
 
     return controls

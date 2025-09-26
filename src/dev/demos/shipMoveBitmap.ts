@@ -30,7 +30,6 @@ import {
   moveBullets,
   clearBunkShots
 } from '@core/shots'
-import { ShipControl } from '@core/ship'
 import { ControlAction } from '@core/controls'
 import { shipControl } from '@core/ship'
 import { buildGameStore } from '@dev/store'
@@ -197,23 +196,23 @@ const resetGame = (): void => {
 const getPressedControls = (
   keysDown: Set<string>,
   bindings: Record<ControlAction, string>
-): ShipControl[] => {
-  const controls: ShipControl[] = []
+): ControlAction[] => {
+  const controls: ControlAction[] = []
 
   if (keysDown.has(bindings[ControlAction.LEFT])) {
-    controls.push(ShipControl.LEFT)
+    controls.push(ControlAction.LEFT)
   }
   if (keysDown.has(bindings[ControlAction.RIGHT])) {
-    controls.push(ShipControl.RIGHT)
+    controls.push(ControlAction.RIGHT)
   }
   if (keysDown.has(bindings[ControlAction.THRUST])) {
-    controls.push(ShipControl.THRUST)
+    controls.push(ControlAction.THRUST)
   }
   if (keysDown.has(bindings[ControlAction.FIRE])) {
-    controls.push(ShipControl.FIRE)
+    controls.push(ControlAction.FIRE)
   }
   if (keysDown.has(bindings[ControlAction.SHIELD])) {
-    controls.push(ShipControl.SHIELD)
+    controls.push(ControlAction.SHIELD)
   }
 
   return controls

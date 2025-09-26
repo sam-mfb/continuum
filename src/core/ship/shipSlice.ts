@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { ShipState } from './types'
-import { ShipControl } from './types'
+import { ControlAction } from '@core/controls'
 import {
   SHIP,
   DEAD_TIME,
@@ -39,8 +39,8 @@ const initialState: ShipState = {
   globaly: 0
 }
 
-type ControlAction = {
-  controlsPressed: ShipControl[]
+type ControlActionPayload = {
+  controlsPressed: ControlAction[]
   gravity: { x: number; y: number }
 }
 
@@ -109,7 +109,10 @@ export const shipSlice = createSlice({
       if (action.payload.globaly !== undefined)
         state.globaly = action.payload.globaly
     },
-    shipControlMovement: (state, action: PayloadAction<ControlAction>) => {
+    shipControlMovement: (
+      state,
+      action: PayloadAction<ControlActionPayload>
+    ) => {
       const { controlsPressed, gravity } = action.payload
       const pressed = new Set(controlsPressed)
       // if (cartooning)
@@ -117,13 +120,13 @@ export const shipSlice = createSlice({
       // else
       // 	pressed = read_keyboard();
 
-      if (pressed.has(ShipControl.LEFT))
+      if (pressed.has(ControlAction.LEFT))
         state.shiprot = (state.shiprot - 1) & 31
-      if (pressed.has(ShipControl.RIGHT))
+      if (pressed.has(ControlAction.RIGHT))
         state.shiprot = (state.shiprot + 1) & 31
 
       state.flaming = false
-      if (pressed.has(ShipControl.THRUST) && state.fuel) {
+      if (pressed.has(ControlAction.THRUST) && state.fuel) {
         /* if bouncing, make weaker to avoid flying through */
         state.dx += (state.bouncing ? 1 : 2) * SHIP.thrustx[state.shiprot]!
         state.dy +=
