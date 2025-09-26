@@ -138,8 +138,7 @@ export const App: React.FC<AppProps> = ({
               right: '20px',
               color: '#AA0000',
               fontSize: '28px',
-              opacity: 0.8,
-              title: 'High scores disabled'
+              opacity: 0.8
             }}
             title="High scores disabled"
           >
