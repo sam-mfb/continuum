@@ -44,16 +44,11 @@ import {
 } from '@core/transition'
 
 import { loadLevel } from '../levelThunks'
-import {
-  markLevelComplete,
-  triggerGameOver,
-  resetGame,
-  pause,
-  unpause
-} from '../gameSlice'
+import { markLevelComplete, triggerGameOver, resetGame } from '../gameSlice'
 import { setMode, setPendingHighScore } from '../appSlice'
 import { TOTAL_INITIAL_LIVES } from '../constants'
 import { getPressedControls } from '../controls'
+import { ControlAction } from '@core/controls'
 import { triggerShipDeath } from '../shipDeath'
 
 import { BunkerKind } from '@core/figs'
@@ -327,8 +322,10 @@ const handleShipMovement = (
   const state = store.getState()
 
   if (state.ship.deadCount === 0) {
-    // Check for self-destruct command (A key)
-    if (keys.keysDown.has('KeyA')) {
+    // Check for self-destruct command
+    if (
+      keys.keysDown.has(state.controls.bindings[ControlAction.SELF_DESTRUCT])
+    ) {
       triggerShipDeath(store)
       return {
         globalx: state.ship.globalx,
@@ -345,7 +342,7 @@ const handleShipMovement = (
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(store.dispatch as any)(
         shipControl({
-          controlsPressed: getPressedControls(keys.keysDown)
+          controlsPressed: getPressedControls(keys.keysDown, state)
         })
       )
 

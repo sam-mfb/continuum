@@ -10,6 +10,7 @@ import { drawBackground } from './drawBackground'
 import { shipControl } from '@core/ship'
 import { buildGameStore } from '@dev/store'
 import { SCRWTH, VIEWHT } from '@core/screen'
+import { ControlAction } from '@core/controls'
 
 // Configure store with all slices and containment middleware
 const store = buildGameStore()
@@ -57,12 +58,23 @@ export const shipMoveGameLoop: GameLoopFunction = (ctx, _frame, keys, _env) => {
 
   const getPressedControls = (keysDown: Set<string>): ShipControl[] => {
     const controls: ShipControl[] = []
+    const bindings = state.controls.bindings
 
-    if (keysDown.has('KeyZ')) controls.push(ShipControl.LEFT)
-    if (keysDown.has('KeyX')) controls.push(ShipControl.RIGHT)
-    if (keysDown.has('Period')) controls.push(ShipControl.THRUST)
-    if (keysDown.has('Slash')) controls.push(ShipControl.FIRE)
-    if (keysDown.has('Space')) controls.push(ShipControl.SHIELD)
+    if (keysDown.has(bindings[ControlAction.LEFT])) {
+      controls.push(ShipControl.LEFT)
+    }
+    if (keysDown.has(bindings[ControlAction.RIGHT])) {
+      controls.push(ShipControl.RIGHT)
+    }
+    if (keysDown.has(bindings[ControlAction.THRUST])) {
+      controls.push(ShipControl.THRUST)
+    }
+    if (keysDown.has(bindings[ControlAction.FIRE])) {
+      controls.push(ShipControl.FIRE)
+    }
+    if (keysDown.has(bindings[ControlAction.SHIELD])) {
+      controls.push(ShipControl.SHIELD)
+    }
 
     return controls
   }

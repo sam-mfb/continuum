@@ -31,6 +31,7 @@ import {
   clearBunkShots
 } from '@core/shots'
 import { ShipControl } from '@core/ship'
+import { ControlAction } from '@core/controls'
 import { shipControl } from '@core/ship'
 import { buildGameStore } from '@dev/store'
 import { containShip } from '@core/shared/containShip'
@@ -193,14 +194,27 @@ const resetGame = (): void => {
   store.dispatch(clearAllShots())
 }
 
-const getPressedControls = (keysDown: Set<string>): ShipControl[] => {
+const getPressedControls = (
+  keysDown: Set<string>,
+  bindings: Record<ControlAction, string>
+): ShipControl[] => {
   const controls: ShipControl[] = []
 
-  if (keysDown.has('KeyZ')) controls.push(ShipControl.LEFT)
-  if (keysDown.has('KeyX')) controls.push(ShipControl.RIGHT)
-  if (keysDown.has('Period')) controls.push(ShipControl.THRUST)
-  if (keysDown.has('Slash')) controls.push(ShipControl.FIRE)
-  if (keysDown.has('Space')) controls.push(ShipControl.SHIELD)
+  if (keysDown.has(bindings[ControlAction.LEFT])) {
+    controls.push(ShipControl.LEFT)
+  }
+  if (keysDown.has(bindings[ControlAction.RIGHT])) {
+    controls.push(ShipControl.RIGHT)
+  }
+  if (keysDown.has(bindings[ControlAction.THRUST])) {
+    controls.push(ShipControl.THRUST)
+  }
+  if (keysDown.has(bindings[ControlAction.FIRE])) {
+    controls.push(ShipControl.FIRE)
+  }
+  if (keysDown.has(bindings[ControlAction.SHIELD])) {
+    controls.push(ShipControl.SHIELD)
+  }
 
   return controls
 }
@@ -277,7 +291,10 @@ export const createShipMoveBitmapRenderer =
       // and calculate gravity from generators
       store.dispatch(
         shipControl({
-          controlsPressed: getPressedControls(keys.keysDown)
+          controlsPressed: getPressedControls(
+            keys.keysDown,
+            state.controls.bindings
+          )
         })
       )
 

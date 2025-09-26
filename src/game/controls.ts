@@ -5,20 +5,37 @@
  */
 
 import { ShipControl } from '@core/ship'
+import { ControlAction } from '@core/controls'
+import type { RootState } from './store'
 
 /**
- * Map keyboard input to ship controls
+ * Map keyboard input to ship controls using control bindings from Redux
  * @param keysDown Set of currently pressed keys
+ * @param state The current Redux state containing control bindings
  * @returns Array of active ship controls
  */
-export const getPressedControls = (keysDown: Set<string>): ShipControl[] => {
+export const getPressedControls = (
+  keysDown: Set<string>,
+  state: RootState
+): ShipControl[] => {
   const controls: ShipControl[] = []
+  const bindings = state.controls.bindings
 
-  if (keysDown.has('KeyZ')) controls.push(ShipControl.LEFT)
-  if (keysDown.has('KeyX')) controls.push(ShipControl.RIGHT)
-  if (keysDown.has('Period')) controls.push(ShipControl.THRUST)
-  if (keysDown.has('Slash')) controls.push(ShipControl.FIRE)
-  if (keysDown.has('Space')) controls.push(ShipControl.SHIELD)
+  if (keysDown.has(bindings[ControlAction.LEFT])) {
+    controls.push(ShipControl.LEFT)
+  }
+  if (keysDown.has(bindings[ControlAction.RIGHT])) {
+    controls.push(ShipControl.RIGHT)
+  }
+  if (keysDown.has(bindings[ControlAction.THRUST])) {
+    controls.push(ShipControl.THRUST)
+  }
+  if (keysDown.has(bindings[ControlAction.FIRE])) {
+    controls.push(ShipControl.FIRE)
+  }
+  if (keysDown.has(bindings[ControlAction.SHIELD])) {
+    controls.push(ShipControl.SHIELD)
+  }
 
   return controls
 }

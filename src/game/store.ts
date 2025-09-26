@@ -25,6 +25,11 @@ import {
   loadHighScores
 } from '@/core/highscore'
 import {
+  controlsSlice,
+  controlsMiddleware,
+  loadControlBindings
+} from '@/core/controls'
+import {
   useDispatch,
   useSelector,
   type TypedUseSelectorHook
@@ -56,10 +61,15 @@ const createStoreAndListeners = (
   const soundListenerMiddleware = createListenerMiddleware()
   // Load persisted high scores
   const persistedHighScores = loadHighScores()
+  // Load persisted control bindings
+  const persistedControls = loadControlBindings()
 
   // Build preloaded state with initial settings
   const preloadedState = {
     highscore: persistedHighScores,
+    controls: {
+      bindings: persistedControls
+    },
     ship: {
       ...shipSlice.getInitialState(),
       lives: initialSettings.initialLives
@@ -70,6 +80,7 @@ const createStoreAndListeners = (
     reducer: {
       game: gameSlice.reducer,
       app: appSlice.reducer,
+      controls: controlsSlice.reducer,
       ship: shipSlice.reducer,
       shots: shotsSlice.reducer,
       planet: planetSlice.reducer,
@@ -87,7 +98,8 @@ const createStoreAndListeners = (
         }
       })
         .prepend(soundListenerMiddleware.middleware)
-        .concat(highscoreMiddleware),
+        .concat(highscoreMiddleware)
+        .concat(controlsMiddleware),
     preloadedState
   })
 
