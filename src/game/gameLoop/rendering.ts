@@ -88,14 +88,9 @@ export const renderGame = (context: RenderContext): MonochromeBitmap => {
     // Handle starmap phase - show target bitmap
     if (state.transition.status === 'starmap') {
       // Check if we're about to transition to next level
-      if (state.transition.starmapFrames >= TRANSITION_DELAY_FRAMES) {
-        fizzTransitionService.reset()
-        // Continue with normal rendering
-      } else {
-        // Show starmap (target bitmap)
-        const images = fizzTransitionService.getImages()
-        return images.to ? addStatusBar(images.to) : bitmap
-      }
+      // Show starmap (target bitmap)
+      const images = fizzTransitionService.getImages()
+      return images.to ? addStatusBar(images.to) : bitmap
     }
   }
 

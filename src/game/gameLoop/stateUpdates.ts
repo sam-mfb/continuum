@@ -539,13 +539,11 @@ const transitionToNextLevel = (
     // Game won! For now, just loop back to level 1
     console.log('Game completed! Restarting from level 1')
     store.dispatch(resetGame())
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(store.dispatch as any)(loadLevel(1))
+    store.dispatch(loadLevel(1))
   } else {
     // Load next level
     const nextLevelNum = state.status.currentlevel + 1
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(store.dispatch as any)(loadLevel(nextLevelNum))
+    store.dispatch(loadLevel(nextLevelNum))
   }
 }
 
@@ -557,12 +555,12 @@ const updateTransitionState = (
   store: GameStore,
   galaxyService: GalaxyService,
   fizzTransitionService?: FizzTransitionService
-): boolean => {
+): void => {
   const prevState = store.getState().transition
   const { status, preFizzFrames, starmapFrames } = prevState
 
   if (status === 'inactive') {
-    return false
+    return
   }
 
   // Handle level-complete phase (countdown to fizz)
@@ -578,7 +576,7 @@ const updateTransitionState = (
         // Status automatically transitions to 'fizz' in reducer
       }
     }
-    return false
+    return
   }
 
   // Handle fizz phase
@@ -591,7 +589,7 @@ const updateTransitionState = (
     ) {
       store.dispatch(transitionToStarmap())
     }
-    return false
+    return
   }
 
   // Handle starmap phase
@@ -607,9 +605,7 @@ const updateTransitionState = (
       // Trigger the actual level load
       transitionToNextLevel(store, galaxyService)
 
-      return true
+      return
     }
   }
-
-  return false
 }
