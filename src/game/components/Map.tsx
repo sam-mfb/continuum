@@ -41,8 +41,8 @@ const drawMapLines = (
       const length = Math.sqrt(dx * dx + dy * dy)
 
       // Dash and gap size (scaled)
-      const dashSize = 2 * Math.max(scaleX, scaleY)
-      const gapSize = 2 * Math.max(scaleX, scaleY)
+      const dashSize = 1 * Math.max(scaleX, scaleY)
+      const gapSize = 1 * Math.max(scaleX, scaleY)
       const patternLength = dashSize + gapSize
 
       // Normalize direction
@@ -133,6 +133,7 @@ const drawBunkers = (
 ): void => {
   ctx.save()
   ctx.fillStyle = 'black'
+  ctx.imageSmoothingEnabled = false
 
   for (const bunker of bunkers) {
     // Check for end marker
@@ -140,13 +141,65 @@ const drawBunkers = (
     // Skip dead bunkers
     if (!bunker.alive) continue
 
-    // Draw 4x4 filled circle at scaled position (multiply radius by display scale)
-    const x = bunker.x * scaleX
-    const y = bunker.y * scaleY
-    const radius = 2 * displayScale // radius of 2 for 4x4 circle, scaled
-    ctx.beginPath()
-    ctx.arc(x, y, radius, 0, Math.PI * 2)
-    ctx.fill()
+    if (displayScale === 1) {
+      // Draw directly at 1x scale
+      const x = bunker.x * scaleX
+      const y = bunker.y * scaleY
+      const radius = 2
+      ctx.beginPath()
+      ctx.arc(x, y, radius, 0, Math.PI * 2)
+      ctx.fill()
+    } else {
+      // For scales > 1, draw at 1x then scale up for pixel-doubling effect
+      const offscreen = document.createElement('canvas')
+      offscreen.width = 4
+      offscreen.height = 4
+      const offCtx = offscreen.getContext('2d')!
+
+      // Get image data to draw pixels directly
+      const imageData = offCtx.createImageData(4, 4)
+      const data = imageData.data
+
+      // Manually draw a 4x4 circle pattern (no anti-aliasing)
+      // Pattern for a small filled circle:
+      //  .XX.
+      //  XXXX
+      //  XXXX
+      //  .XX.
+      const circlePattern = [
+        [0, 1, 1, 0],
+        [1, 1, 1, 1],
+        [1, 1, 1, 1],
+        [0, 1, 1, 0]
+      ]
+
+      // Set pixels based on pattern
+      for (let y = 0; y < 4; y++) {
+        for (let x = 0; x < 4; x++) {
+          const idx = (y * 4 + x) * 4
+          const isBlack = circlePattern[y]![x] === 1
+          const color = isBlack ? 0 : 255
+          data[idx] = color // R
+          data[idx + 1] = color // G
+          data[idx + 2] = color // B
+          data[idx + 3] = 255 // A
+        }
+      }
+
+      offCtx.putImageData(imageData, 0, 0)
+
+      // Scale up with pixel-perfect scaling (no smoothing)
+      const x = bunker.x * scaleX - 2 * displayScale
+      const y = bunker.y * scaleY - 2 * displayScale
+      ctx.imageSmoothingEnabled = false
+      // @ts-ignore - vendor prefixes for better browser support
+      ctx.webkitImageSmoothingEnabled = false
+      // @ts-ignore
+      ctx.mozImageSmoothingEnabled = false
+      // @ts-ignore
+      ctx.msImageSmoothingEnabled = false
+      ctx.drawImage(offscreen, x, y, 4 * displayScale, 4 * displayScale)
+    }
   }
 
   ctx.restore()
@@ -166,6 +219,7 @@ const drawShipPosition = (
   inverted: boolean = false
 ): void => {
   ctx.save()
+  ctx.imageSmoothingEnabled = false
 
   // Transform ship coordinates to map coordinates
   const mapX = shipX * scaleX
@@ -176,24 +230,105 @@ const drawShipPosition = (
   const middleColor = inverted ? 'black' : 'white'
   const innerColor = inverted ? 'white' : 'black'
 
-  // Draw from largest to smallest (multiply radii by display scale)
-  // Outermost circle (12px diameter)
-  ctx.fillStyle = outerColor
-  ctx.beginPath()
-  ctx.arc(mapX, mapY, 6 * displayScale, 0, Math.PI * 2)
-  ctx.fill()
+  if (displayScale === 1) {
+    // Draw directly at 1x scale
+    // Outermost circle (12px diameter)
+    ctx.fillStyle = outerColor
+    ctx.beginPath()
+    ctx.arc(mapX, mapY, 6, 0, Math.PI * 2)
+    ctx.fill()
 
-  // Middle circle (8px diameter) - creates a ring effect
-  ctx.fillStyle = middleColor
-  ctx.beginPath()
-  ctx.arc(mapX, mapY, 4 * displayScale, 0, Math.PI * 2)
-  ctx.fill()
+    // Middle circle (8px diameter) - creates a ring effect
+    ctx.fillStyle = middleColor
+    ctx.beginPath()
+    ctx.arc(mapX, mapY, 4, 0, Math.PI * 2)
+    ctx.fill()
 
-  // Center circle (4px diameter)
-  ctx.fillStyle = innerColor
-  ctx.beginPath()
-  ctx.arc(mapX, mapY, 2 * displayScale, 0, Math.PI * 2)
-  ctx.fill()
+    // Center circle (4px diameter)
+    ctx.fillStyle = innerColor
+    ctx.beginPath()
+    ctx.arc(mapX, mapY, 2, 0, Math.PI * 2)
+    ctx.fill()
+  } else {
+    // For scales > 1, draw at 1x then scale up for pixel-doubling effect
+    const offscreen = document.createElement('canvas')
+    offscreen.width = 12
+    offscreen.height = 12
+    const offCtx = offscreen.getContext('2d')!
+
+    // Get image data to draw pixels directly
+    const imageData = offCtx.createImageData(12, 12)
+    const data = imageData.data
+
+    // Manually draw concentric circles pattern (no anti-aliasing)
+    // 0 = transparent, 1 = outer (12px), 2 = middle (8px), 3 = inner (4px)
+    const pattern = [
+      [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0],
+      [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+      [0, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 0],
+      [0, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 0],
+      [1, 1, 2, 2, 2, 3, 3, 2, 2, 2, 1, 1],
+      [1, 1, 2, 2, 3, 3, 3, 3, 2, 2, 1, 1],
+      [1, 1, 2, 2, 3, 3, 3, 3, 2, 2, 1, 1],
+      [1, 1, 2, 2, 2, 3, 3, 2, 2, 2, 1, 1],
+      [0, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 0],
+      [0, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 0],
+      [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+      [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0]
+    ]
+
+    // Set pixels based on pattern
+    for (let y = 0; y < 12; y++) {
+      for (let x = 0; x < 12; x++) {
+        const idx = (y * 12 + x) * 4
+        const patternValue = pattern[y]![x]
+
+        let color: number
+        if (patternValue === 0) {
+          // Transparent/white background
+          data[idx] = 255
+          data[idx + 1] = 255
+          data[idx + 2] = 255
+          data[idx + 3] = 255
+        } else if (patternValue === 1) {
+          // Outer circle
+          color = outerColor === 'black' ? 0 : 255
+          data[idx] = color
+          data[idx + 1] = color
+          data[idx + 2] = color
+          data[idx + 3] = 255
+        } else if (patternValue === 2) {
+          // Middle circle
+          color = middleColor === 'black' ? 0 : 255
+          data[idx] = color
+          data[idx + 1] = color
+          data[idx + 2] = color
+          data[idx + 3] = 255
+        } else {
+          // Inner circle
+          color = innerColor === 'black' ? 0 : 255
+          data[idx] = color
+          data[idx + 1] = color
+          data[idx + 2] = color
+          data[idx + 3] = 255
+        }
+      }
+    }
+
+    offCtx.putImageData(imageData, 0, 0)
+
+    // Scale up with pixel-perfect scaling (no smoothing)
+    const x = mapX - 6 * displayScale
+    const y = mapY - 6 * displayScale
+    ctx.imageSmoothingEnabled = false
+    // @ts-ignore - vendor prefixes for better browser support
+    ctx.webkitImageSmoothingEnabled = false
+    // @ts-ignore
+    ctx.mozImageSmoothingEnabled = false
+    // @ts-ignore
+    ctx.msImageSmoothingEnabled = false
+    ctx.drawImage(offscreen, x, y, 12 * displayScale, 12 * displayScale)
+  }
 
   ctx.restore()
 }
@@ -353,6 +488,10 @@ export const Map: React.FC<MinimapProps> = ({ scale }) => {
         transform: 'translate(-50%, -50%)',
         border: '2px solid black',
         imageRendering: 'pixelated',
+        // @ts-ignore - vendor prefixes
+        WebkitImageRendering: 'pixelated',
+        MozImageRendering: 'crisp-edges',
+        msImageRendering: 'pixelated',
         zIndex: 1000
       }}
     />
