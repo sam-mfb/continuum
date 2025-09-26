@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from 'react'
-import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
+import type { FrameInfo, KeyInfo, MonochromeBitmap } from '@lib/bitmap'
 import { useAppDispatch, useAppSelector } from '../store'
 import { togglePause } from '../gameSlice'
-import { ControlAction } from '@core/controls'
+import { getControls, type ControlMatrix } from '@core/controls'
 
 type GameRendererProps = {
-  renderer: BitmapRenderer
+  renderer: (frame: FrameInfo, controls: ControlMatrix) => MonochromeBitmap
   width: number
   height: number
   scale: number
@@ -32,10 +32,22 @@ const GameRenderer: React.FC<GameRendererProps> = ({
   const startTimeRef = useRef<number>(0)
 
   const paused = useAppSelector(state => state.game.paused)
-  const pauseKey = useAppSelector(
-    state => state.controls.bindings[ControlAction.PAUSE]
-  )
+  const bindings = useAppSelector(state => state.controls.bindings)
+  const pauseKey = useAppSelector(state => state.controls.bindings.pause)
   const dispatch = useAppDispatch()
+
+  // Separate effect for pause key handling
+  useEffect(() => {
+    const handlePauseKey = (e: KeyboardEvent): void => {
+      if (e.code === pauseKey) {
+        dispatch(togglePause())
+        e.preventDefault()
+      }
+    }
+
+    window.addEventListener('keydown', handlePauseKey)
+    return (): void => window.removeEventListener('keydown', handlePauseKey)
+  }, [pauseKey, dispatch])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -60,9 +72,6 @@ const GameRenderer: React.FC<GameRendererProps> = ({
       ) {
         e.preventDefault()
       }
-      if (e.code === pauseKey) {
-        dispatch(togglePause())
-      }
     }
 
     const handleKeyUp = (e: KeyboardEvent): void => {
@@ -77,7 +86,6 @@ const GameRenderer: React.FC<GameRendererProps> = ({
 
     // Game loop
     const gameLoop = (currentTime: number): void => {
-      if (paused) return
       const deltaTime = currentTime - lastFrameTimeRef.current
 
       if (deltaTime >= frameIntervalMs) {
@@ -93,55 +101,58 @@ const GameRenderer: React.FC<GameRendererProps> = ({
           keysPressed: new Set(),
           keysReleased: new Set()
         }
+        // Skip rendering when paused but keep the loop running
+        if (!paused) {
+          const controls = getControls(keyInfo, bindings)
+          // Render game and get the resulting bitmap
+          const renderedBitmap = renderer(frameInfo, controls)
 
-        // Render game and get the resulting bitmap
-        const renderedBitmap = renderer(frameInfo, keyInfo)
+          // Create offscreen canvas for pixel-perfect scaling
+          const offscreen = document.createElement('canvas')
+          offscreen.width = renderedBitmap.width
+          offscreen.height = renderedBitmap.height
+          const offCtx = offscreen.getContext('2d')!
 
-        // Create offscreen canvas for pixel-perfect scaling
-        const offscreen = document.createElement('canvas')
-        offscreen.width = renderedBitmap.width
-        offscreen.height = renderedBitmap.height
-        const offCtx = offscreen.getContext('2d')!
+          // Convert bitmap to ImageData
+          const imageData = new ImageData(
+            renderedBitmap.width,
+            renderedBitmap.height
+          )
+          const pixels = imageData.data
 
-        // Convert bitmap to ImageData
-        const imageData = new ImageData(
-          renderedBitmap.width,
-          renderedBitmap.height
-        )
-        const pixels = imageData.data
+          // Convert monochrome bitmap to RGBA
+          for (let y = 0; y < renderedBitmap.height; y++) {
+            for (let x = 0; x < renderedBitmap.width; x++) {
+              const byteIndex = y * renderedBitmap.rowBytes + Math.floor(x / 8)
+              const bitMask = 0x80 >> x % 8
+              const isSet = (renderedBitmap.data[byteIndex]! & bitMask) !== 0
 
-        // Convert monochrome bitmap to RGBA
-        for (let y = 0; y < renderedBitmap.height; y++) {
-          for (let x = 0; x < renderedBitmap.width; x++) {
-            const byteIndex = y * renderedBitmap.rowBytes + Math.floor(x / 8)
-            const bitMask = 0x80 >> x % 8
-            const isSet = (renderedBitmap.data[byteIndex]! & bitMask) !== 0
+              const pixelIndex = (y * renderedBitmap.width + x) * 4
+              const value = isSet ? 0 : 255 // Black on white
 
-            const pixelIndex = (y * renderedBitmap.width + x) * 4
-            const value = isSet ? 0 : 255 // Black on white
-
-            pixels[pixelIndex] = value // R
-            pixels[pixelIndex + 1] = value // G
-            pixels[pixelIndex + 2] = value // B
-            pixels[pixelIndex + 3] = 255 // A
+              pixels[pixelIndex] = value // R
+              pixels[pixelIndex + 1] = value // G
+              pixels[pixelIndex + 2] = value // B
+              pixels[pixelIndex + 3] = 255 // A
+            }
           }
+
+          // Draw to offscreen canvas
+          offCtx.putImageData(imageData, 0, 0)
+
+          // Draw scaled to main canvas
+          ctx.imageSmoothingEnabled = false
+          ctx.drawImage(
+            offscreen,
+            0,
+            0,
+            renderedBitmap.width * scale,
+            renderedBitmap.height * scale
+          )
+
+          lastFrameTimeRef.current = currentTime
+          frameCountRef.current++
         }
-
-        // Draw to offscreen canvas
-        offCtx.putImageData(imageData, 0, 0)
-
-        // Draw scaled to main canvas
-        ctx.imageSmoothingEnabled = false
-        ctx.drawImage(
-          offscreen,
-          0,
-          0,
-          renderedBitmap.width * scale,
-          renderedBitmap.height * scale
-        )
-
-        lastFrameTimeRef.current = currentTime
-        frameCountRef.current++
       }
 
       animationRef.current = requestAnimationFrame(gameLoop)
@@ -157,17 +168,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [
-    renderer,
-    width,
-    height,
-    scale,
-    fps,
-    frameIntervalMs,
-    paused,
-    pauseKey,
-    dispatch
-  ])
+  }, [renderer, width, height, scale, fps, frameIntervalMs, bindings, paused])
 
   return (
     <canvas

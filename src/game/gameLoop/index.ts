@@ -5,7 +5,7 @@
  * rendering, and sound playback through specialized submodules.
  */
 
-import type { BitmapRenderer } from '@lib/bitmap'
+import type { FrameInfo, MonochromeBitmap } from '@lib/bitmap'
 import { createGameBitmap } from '@lib/bitmap'
 import type { SpriteService } from '@core/sprites'
 import type { GalaxyService } from '@core/galaxy'
@@ -15,7 +15,7 @@ import type { GameStore } from '../store'
 
 import { updateGameState } from './stateUpdates'
 import { renderGame } from './rendering'
-import { getControls } from '@/core/controls'
+import type { ControlMatrix } from '@/core/controls'
 
 export const createGameRenderer = (
   store: GameStore,
@@ -23,12 +23,10 @@ export const createGameRenderer = (
   galaxyService: GalaxyService,
   fizzTransitionService: FizzTransitionService,
   soundService: SoundService
-): BitmapRenderer => {
-  return (frame, keys) => {
+): ((frame: FrameInfo, controls: ControlMatrix) => MonochromeBitmap) => {
+  return (frame, controls) => {
     // Create a fresh bitmap for this frame
     let bitmap = createGameBitmap()
-
-    const controls = getControls(keys, store.getState().controls.bindings)
 
     // This handles all game logic, physics, and state changes
     // except for ship collisions which use rendering to detect
