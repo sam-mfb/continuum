@@ -63,13 +63,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
     const handleKeyDown = (e: KeyboardEvent): void => {
       keysDownRef.current.add(e.code)
       // Prevent default browser behavior for game control keys
-      if (
-        e.code === bindings.shield ||
-        e.code === bindings.left ||
-        e.code === bindings.right ||
-        e.code === bindings.thrust ||
-        e.code === bindings.fire
-      ) {
+      if (Object.values(bindings).includes(e.code)) {
         e.preventDefault()
       }
     }
