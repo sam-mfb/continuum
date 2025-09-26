@@ -410,7 +410,7 @@ export const Map: React.FC<MinimapProps> = ({ scale }) => {
       const now = Date.now()
 
       // Toggle one random fuel cell visibility every ~16.67ms (60fps)
-      if (now - lastToggleTime >= 1000 / 3) {
+      if (now - lastToggleTime >= 1000 / 4) {
         const aliveFuelIndices = Array.from(visibleFuelsRef.current.keys())
         if (aliveFuelIndices.length > 0) {
           const randomIdx = Math.floor(Math.random() * aliveFuelIndices.length)
