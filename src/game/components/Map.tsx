@@ -20,26 +20,68 @@ const drawMapLines = (
   scaleY: number
 ): void => {
   ctx.save()
-  ctx.lineWidth = 1
-  ctx.strokeStyle = 'black'
+  ctx.lineWidth = 1 * scaleX
 
   for (const line of lines) {
     // Skip ghost and explode lines
     if (line.kind === LINE_KIND.GHOST || line.kind === LINE_KIND.EXPLODE)
       continue
 
-    // Set line style based on type
-    if (line.kind === LINE_KIND.BOUNCE) {
-      ctx.setLineDash([2, 2]) // Dotted line for bounce
-    } else {
-      ctx.setLineDash([]) // Solid line for normal
-    }
-
     // Draw the line with scaling applied
-    ctx.beginPath()
-    ctx.moveTo(line.startx * scaleX, line.starty * scaleY)
-    ctx.lineTo(line.endx * scaleX, line.endy * scaleY)
-    ctx.stroke()
+    if (line.kind === LINE_KIND.BOUNCE) {
+      // For bounce lines, manually draw dashed pattern with opaque white gaps
+      const x1 = line.startx * scaleX
+      const y1 = line.starty * scaleY
+      const x2 = line.endx * scaleX
+      const y2 = line.endy * scaleY
+
+      // Calculate line length and direction
+      const dx = x2 - x1
+      const dy = y2 - y1
+      const length = Math.sqrt(dx * dx + dy * dy)
+
+      // Dash and gap size (scaled)
+      const dashSize = 2 * Math.max(scaleX, scaleY)
+      const gapSize = 2 * Math.max(scaleX, scaleY)
+      const patternLength = dashSize + gapSize
+
+      // Normalize direction
+      const dirX = dx / length
+      const dirY = dy / length
+
+      // Draw dashes along the line
+      let currentPos = 0
+      while (currentPos < length) {
+        // Draw dash (black)
+        const dashEnd = Math.min(currentPos + dashSize, length)
+        ctx.strokeStyle = 'black'
+        ctx.setLineDash([])
+        ctx.beginPath()
+        ctx.moveTo(x1 + dirX * currentPos, y1 + dirY * currentPos)
+        ctx.lineTo(x1 + dirX * dashEnd, y1 + dirY * dashEnd)
+        ctx.stroke()
+
+        // Draw gap (white) if not at the end
+        const gapEnd = Math.min(currentPos + patternLength, length)
+        if (dashEnd < length && gapEnd > dashEnd) {
+          ctx.strokeStyle = 'white'
+          ctx.beginPath()
+          ctx.moveTo(x1 + dirX * dashEnd, y1 + dirY * dashEnd)
+          ctx.lineTo(x1 + dirX * gapEnd, y1 + dirY * gapEnd)
+          ctx.stroke()
+        }
+
+        currentPos += patternLength
+      }
+    } else {
+      // Solid line for normal
+      ctx.strokeStyle = 'black'
+      ctx.setLineDash([])
+      ctx.beginPath()
+      ctx.moveTo(line.startx * scaleX, line.starty * scaleY)
+      ctx.lineTo(line.endx * scaleX, line.endy * scaleY)
+      ctx.stroke()
+    }
   }
 
   ctx.restore()
@@ -255,14 +297,14 @@ export const Map: React.FC<MinimapProps> = ({ scale }) => {
       ctx.fillStyle = 'white'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-      // Draw the planet lines
-      drawMapLines(ctx, lines, scaleX, scaleY)
-
       // Draw the fuel cells with visibility map
       drawFuelCells(ctx, fuels, scaleX, scaleY, visibleFuelsRef.current, scale)
 
       // Draw the bunkers
       drawBunkers(ctx, bunkers, scaleX, scaleY, scale)
+
+      // Draw the planet lines
+      drawMapLines(ctx, lines, scaleX, scaleY)
 
       // Draw the ship position with current inverted state
       drawShipPosition(
