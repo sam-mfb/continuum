@@ -20,7 +20,7 @@ export const getDefaultBindings = (): ControlBindings => ({
   [ControlAction.SHIELD]: 'Space',
   [ControlAction.SELF_DESTRUCT]: 'KeyA',
   [ControlAction.PAUSE]: 'KeyP',
-  [ControlAction.QUIT]: 'Escape',
+  [ControlAction.QUIT]: 'KeyQ',
   [ControlAction.NEXT_LEVEL]: 'KeyN',
   [ControlAction.EXTRA_LIFE]: 'KeyL',
   [ControlAction.MAP]: 'KeyM'
