@@ -9,7 +9,6 @@ import { createGameBitmap } from '@lib/bitmap'
 import type { SpriteService } from '@core/sprites'
 import type { GalaxyService } from '@core/galaxy'
 import type { FizzTransitionService } from '@core/transition'
-import type { SoundService } from '@core/sound'
 import type { GameStore } from '../store'
 
 import { updateGameState } from './stateUpdates'
@@ -20,8 +19,7 @@ export const createGameRenderer = (
   store: GameStore,
   spriteService: SpriteService,
   galaxyService: GalaxyService,
-  fizzTransitionService: FizzTransitionService,
-  soundService: SoundService
+  fizzTransitionService: FizzTransitionService
 ): GameRenderLoop => {
   return (frame, controls) => {
     // Create a fresh bitmap for this frame
@@ -35,8 +33,7 @@ export const createGameRenderer = (
       controls,
       bitmap,
       galaxyService,
-      fizzTransitionService,
-      soundService
+      fizzTransitionService
     })
 
     // Get current state after updates

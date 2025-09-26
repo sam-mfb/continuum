@@ -14,6 +14,7 @@ import { explosionsSlice } from '@/core/explosions'
 import { transitionSlice } from '@/core/transition'
 import { shipSlice } from '@/core/ship'
 import { appSlice } from './appSlice'
+import { gameSlice } from './gameSlice'
 
 type SoundStartListening = TypedStartListening<RootState, AppDispatch>
 
@@ -197,6 +198,14 @@ export function setupSoundListener(
     actionCreator: transitionSlice.actions.transitionToStarmap,
     effect: () => {
       soundService.playEcho()
+    }
+  })
+
+  // Handle cleanup on game over
+  soundStartListening({
+    actionCreator: gameSlice.actions.triggerGameOver,
+    effect: () => {
+      soundService.cleanup()
     }
   })
 }

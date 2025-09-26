@@ -9,7 +9,6 @@ import type { GalaxyService } from '@core/galaxy'
 import type { GameStore, RootState } from '../store'
 import type { MonochromeBitmap, FrameInfo } from '@lib/bitmap'
 import type { FizzTransitionService } from '@core/transition'
-import type { SoundService } from '@core/sound'
 
 import { shipSlice, shipControl, CRITFUEL } from '@core/ship'
 import {
@@ -59,21 +58,14 @@ export type StateUpdateContext = {
   bitmap: MonochromeBitmap
   galaxyService: GalaxyService
   fizzTransitionService?: FizzTransitionService
-  soundService: SoundService
 }
 
 /**
  * Main state update function
  */
 export const updateGameState = (context: StateUpdateContext): void => {
-  const {
-    store,
-    frame,
-    controls,
-    galaxyService,
-    fizzTransitionService,
-    soundService
-  } = context
+  const { store, frame, controls, galaxyService, fizzTransitionService } =
+    context
 
   // decrement death flash at start of state update
   store.dispatch(decrementShipDeathFlash())
@@ -96,7 +88,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
   handleLevelCompletion(store, fizzTransitionService)
 
   // Check for game over
-  handleGameOver(store, soundService)
+  handleGameOver(store)
 
   // Handle ship movement and controls
   const { globalx, globaly } = handleShipMovement(store, controls)
@@ -280,7 +272,7 @@ const handleLevelCompletion = (
 /**
  * Handle game over condition
  */
-const handleGameOver = (store: GameStore, soundService: SoundService): void => {
+const handleGameOver = (store: GameStore): void => {
   const state = store.getState()
 
   if (
@@ -292,16 +284,13 @@ const handleGameOver = (store: GameStore, soundService: SoundService): void => {
     store.dispatch(triggerGameOver())
 
     // Check if score qualifies for high score table
-    const fullState = store.getState() as RootState
+    const fullState = store.getState()
     const { status, highscore } = fullState
 
     // Find the lowest high score
     const lowestScore = Math.min(
       ...Object.values(highscore).map(hs => hs.score || 0)
     )
-
-    // Stop all sounds when game ends
-    soundService.cleanup()
 
     // Check if eligible and qualifies for high score
     if (status.highScoreEligible && status.score > lowestScore) {
