@@ -10,6 +10,8 @@ import type { SoundService } from '@core/sound'
 
 // Import all reducers
 import { gameSlice } from './gameSlice'
+import { appSlice } from './appSlice'
+import { appMiddleware, loadAppSettings } from './appMiddleware'
 import { shipSlice } from '@core/ship'
 import { shotsSlice } from '@core/shots'
 import { planetSlice } from '@core/planet'
@@ -23,6 +25,11 @@ import {
   highscoreMiddleware,
   loadHighScores
 } from '@/core/highscore'
+import {
+  controlsSlice,
+  controlsMiddleware,
+  loadControlBindings
+} from '@/core/controls'
 import {
   useDispatch,
   useSelector,
@@ -55,10 +62,26 @@ const createStoreAndListeners = (
   const soundListenerMiddleware = createListenerMiddleware()
   // Load persisted high scores
   const persistedHighScores = loadHighScores()
+  // Load persisted control bindings
+  const persistedControls = loadControlBindings()
+  // Load persisted app settings
+  const persistedAppSettings = loadAppSettings()
 
   // Build preloaded state with initial settings
   const preloadedState = {
+    app: {
+      ...appSlice.getInitialState(),
+      // Use persisted settings if available, otherwise use initial settings
+      volume: persistedAppSettings.volume ?? initialSettings.soundVolume,
+      soundOn: persistedAppSettings.soundOn ?? initialSettings.soundEnabled,
+      alignmentMode:
+        persistedAppSettings.alignmentMode ??
+        appSlice.getInitialState().alignmentMode
+    },
     highscore: persistedHighScores,
+    controls: {
+      bindings: persistedControls
+    },
     ship: {
       ...shipSlice.getInitialState(),
       lives: initialSettings.initialLives
@@ -68,6 +91,8 @@ const createStoreAndListeners = (
   const store = configureStore({
     reducer: {
       game: gameSlice.reducer,
+      app: appSlice.reducer,
+      controls: controlsSlice.reducer,
       ship: shipSlice.reducer,
       shots: shotsSlice.reducer,
       planet: planetSlice.reducer,
@@ -85,7 +110,9 @@ const createStoreAndListeners = (
         }
       })
         .prepend(soundListenerMiddleware.middleware)
-        .concat(highscoreMiddleware),
+        .concat(appMiddleware)
+        .concat(highscoreMiddleware)
+        .concat(controlsMiddleware),
     preloadedState
   })
 

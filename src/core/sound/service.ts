@@ -78,12 +78,12 @@ export async function createSoundService(initialSettings: {
   muted: boolean
 }): Promise<SoundService> {
   // Internal state for this instance
-  let soundEngine: SoundEngine | null = null
+  let soundEngine: SoundEngine
   let currentSound: SoundType | null = null
   let currentSoundPriority = 0
   let isEngineRunning = false
   let isMuted = initialSettings.muted
-  let currentVolume = Math.max(0, Math.min(1, initialSettings.volume))
+  let currentVolume = initialSettings.volume
   let decayIntervalId: NodeJS.Timeout | null = null
 
   try {
@@ -91,18 +91,7 @@ export async function createSoundService(initialSettings: {
     soundEngine = createSoundEngine()
 
     // Apply initial volume
-    if (soundEngine) {
-      soundEngine.setVolume(currentVolume)
-    }
-
-    /**
-     * Resume audio context on user interaction
-     */
-    async function resumeAudioContext(): Promise<void> {
-      if (soundEngine?.resumeContext) {
-        await soundEngine.resumeContext()
-      }
-    }
+    soundEngine.setVolume(currentVolume)
 
     /**
      * Internal helper to play a sound by engine type
@@ -111,36 +100,37 @@ export async function createSoundService(initialSettings: {
       if (!soundEngine) return
 
       // Try to resume audio context on any play attempt (in case it's suspended)
-      resumeAudioContext()
+      soundEngine.resumeContext().then(() => {
+        // Check if muted
+        if (isMuted) {
+          return
+        }
 
-      // Check if muted
-      if (isMuted) {
-        return
-      }
+        // Start the engine first if not already running
+        if (!isEngineRunning) {
+          soundEngine.start()
+          soundEngine.setVolume(currentVolume)
+          isEngineRunning = true
+        }
 
-      // Start the engine first if not already running
-      if (!isEngineRunning) {
-        soundEngine.start()
-        isEngineRunning = true
-      }
+        // Determine if this sound needs a callback to clear state when it ends
+        // Continuous sounds (thrust/shield) and silence don't need callbacks
+        const needsCallback =
+          soundType !== 'thruster' &&
+          soundType !== 'shield' &&
+          soundType !== 'silence'
 
-      // Determine if this sound needs a callback to clear state when it ends
-      // Continuous sounds (thrust/shield) and silence don't need callbacks
-      const needsCallback =
-        soundType !== 'thruster' &&
-        soundType !== 'shield' &&
-        soundType !== 'silence'
-
-      if (needsCallback) {
-        // Add callback to clear state when sound ends (like original's clear_sound())
-        soundEngine.play(soundType, () => {
-          currentSound = null
-          currentSoundPriority = 0
-        })
-      } else {
-        // Continuous sounds and silence play without callbacks
-        soundEngine.play(soundType)
-      }
+        if (needsCallback) {
+          // Add callback to clear state when sound ends (like original's clear_sound())
+          soundEngine.play(soundType, () => {
+            currentSound = null
+            currentSoundPriority = 0
+          })
+        } else {
+          // Continuous sounds and silence play without callbacks
+          soundEngine.play(soundType)
+        }
+      })
     }
 
     /**
@@ -180,8 +170,6 @@ export async function createSoundService(initialSettings: {
      * Clear the current sound (matches original game's clear_sound())
      */
     function clearCurrentSound(): void {
-      if (!soundEngine) return
-
       // Play silence to stop current sound
       playSoundByType('silence')
 
@@ -283,19 +271,15 @@ export async function createSoundService(initialSettings: {
       clearSound: (): void => clearCurrentSound(),
 
       setVolume: (volume: number): void => {
-        currentVolume = Math.max(0, Math.min(1, volume))
-        if (soundEngine) {
-          soundEngine.setVolume(currentVolume)
-        }
+        currentVolume = volume
+        soundEngine.setVolume(volume)
       },
 
       setMuted: (muted: boolean): void => {
         isMuted = muted
         if (muted && isEngineRunning) {
           // Stop all sounds when muting
-          if (soundEngine) {
-            soundEngine.stop()
-          }
+          soundEngine.stop()
           isEngineRunning = false
           currentSound = null
           currentSoundPriority = 0
@@ -310,7 +294,7 @@ export async function createSoundService(initialSettings: {
           decayIntervalId = null
         }
 
-        if (soundEngine && isEngineRunning) {
+        if (isEngineRunning) {
           soundEngine.stop()
         }
         // Don't null out soundEngine - keep it alive for next game

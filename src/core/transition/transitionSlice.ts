@@ -25,6 +25,14 @@ export const transitionSlice = createSlice({
       state.preFizzFrames = MICO_DELAY_FRAMES
       state.starmapFrames = 0
     },
+    /**
+     * Skip to next level without delay
+     */
+    skipToNextLevel: state => {
+      state.status = 'level-complete'
+      state.preFizzFrames = 1
+      state.starmapFrames = 0
+    },
 
     /**
      * Decrement the pre-fizz countdown
@@ -76,6 +84,7 @@ export const transitionSlice = createSlice({
 
 export const {
   startLevelTransition,
+  skipToNextLevel,
   decrementPreFizz,
   transitionToStarmap,
   incrementStarmap,

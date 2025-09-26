@@ -1,11 +1,3 @@
-export enum ShipControl {
-  LEFT = 0,
-  RIGHT,
-  THRUST,
-  SHIELD,
-  FIRE
-}
-
 export type ShipState = {
   /** between 0 and 31 */
   shiprot: number

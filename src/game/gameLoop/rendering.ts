@@ -30,7 +30,7 @@ import { whiteTerrain, blackTerrain } from '@core/walls/render'
 import { LINE_KIND } from '@core/walls'
 import { getAlignment, getBackgroundPattern } from '@core/shared'
 import { triggerShipDeath } from '../shipDeath'
-import { FIZZ_DURATION, TRANSITION_DELAY_FRAMES } from '@core/transition'
+import { FIZZ_DURATION } from '@core/transition'
 import { starBackground } from '@core/transition/render'
 
 export type RenderContext = {
@@ -88,14 +88,9 @@ export const renderGame = (context: RenderContext): MonochromeBitmap => {
     // Handle starmap phase - show target bitmap
     if (state.transition.status === 'starmap') {
       // Check if we're about to transition to next level
-      if (state.transition.starmapFrames >= TRANSITION_DELAY_FRAMES) {
-        fizzTransitionService.reset()
-        // Continue with normal rendering
-      } else {
-        // Show starmap (target bitmap)
-        const images = fizzTransitionService.getImages()
-        return images.to ? addStatusBar(images.to) : bitmap
-      }
+      // Show starmap (target bitmap)
+      const images = fizzTransitionService.getImages()
+      return images.to ? addStatusBar(images.to) : bitmap
     }
   }
 

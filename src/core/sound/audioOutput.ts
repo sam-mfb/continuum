@@ -37,6 +37,17 @@ export type AudioOutput = {
   getContext(): AudioContext | null
 
   /**
+   * Get the gain node for volume control
+   */
+  getGainNode(): GainNode | null
+
+  /**
+   * Set the master volume
+   * @param volume - Volume level between 0.0 (muted) and 1.0 (full volume)
+   */
+  setVolume(volume: number): void
+
+  /**
    * Get performance statistics
    */
   getStats(): {
@@ -54,6 +65,7 @@ export const createAudioOutput = (
 ): AudioOutput => {
   let audioContext: AudioContext | null = null
   let scriptProcessor: ScriptProcessorNode | null = null
+  let gainNode: GainNode | null = null
   let isPlaying = false
 
   // Performance tracking
@@ -64,6 +76,7 @@ export const createAudioOutput = (
   // Constants
   const SAMPLE_RATE = 22200 // Original Mac sample rate
   const BUFFER_SIZE = 512 // Common Web Audio buffer size
+  const MASTER_GAIN_SCALE = 0.6 // Scale down overall volume (100% = 60% of max)
 
   /**
    * Audio processing callback
@@ -146,11 +159,16 @@ export const createAudioOutput = (
         audioContext.destination.channelCount // match output channels
       )
 
+      // Create gain node for volume control
+      gainNode = audioContext.createGain()
+      gainNode.gain.value = 1.0 * MASTER_GAIN_SCALE // Default to scaled full volume
+
       // Connect audio processing callback
       scriptProcessor.onaudioprocess = processAudio
 
-      // Connect to speakers
-      scriptProcessor.connect(audioContext.destination)
+      // Connect chain: ScriptProcessor -> GainNode -> Destination
+      scriptProcessor.connect(gainNode)
+      gainNode.connect(audioContext.destination)
 
       isPlaying = true
 
@@ -175,6 +193,11 @@ export const createAudioOutput = (
       scriptProcessor.disconnect()
       scriptProcessor.onaudioprocess = null
       scriptProcessor = null
+    }
+
+    if (gainNode) {
+      gainNode.disconnect()
+      gainNode = null
     }
 
     isPlaying = false
@@ -214,6 +237,40 @@ export const createAudioOutput = (
   }
 
   /**
+   * Get the gain node for volume control
+   */
+  const getGainNode = (): GainNode | null => {
+    return gainNode
+  }
+
+  /**
+   * Set the master volume
+   * @param volume - Volume level between 0.0 (muted) and 1.0 (full volume)
+   */
+  const setVolume = (volume: number): void => {
+    // Validate input
+    if (typeof volume !== 'number' || isNaN(volume)) {
+      console.error(
+        `[AudioOutput] Invalid volume value: ${volume}. Volume must be a number between 0.0 and 1.0`
+      )
+      return
+    }
+
+    if (volume < 0 || volume > 1) {
+      console.error(
+        `[AudioOutput] Volume out of range: ${volume}. Volume must be between 0.0 and 1.0`
+      )
+    }
+
+    if (gainNode) {
+      // Clamp volume between 0 and 1 (still clamp in case of out-of-range values)
+      const clampedVolume = Math.max(0, Math.min(1, volume))
+      // Apply master gain scaling to reduce overall volume
+      gainNode.gain.value = clampedVolume * MASTER_GAIN_SCALE
+    }
+  }
+
+  /**
    * Get performance statistics
    */
   const getStats = (): {
@@ -234,6 +291,8 @@ export const createAudioOutput = (
     stop,
     isPlaying: getIsPlaying,
     getContext,
+    getGainNode,
+    setVolume,
     resumeContext,
     getStats
   }

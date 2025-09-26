@@ -7,9 +7,8 @@
 
 import type { GalaxyService } from '@core/galaxy'
 import type { GameStore, RootState } from '../store'
-import type { MonochromeBitmap, FrameInfo, KeyInfo } from '@lib/bitmap'
+import type { MonochromeBitmap, FrameInfo } from '@lib/bitmap'
 import type { FizzTransitionService } from '@core/transition'
-import type { SoundService } from '@core/sound'
 
 import { shipSlice, shipControl, CRITFUEL } from '@core/ship'
 import {
@@ -32,7 +31,7 @@ import {
   decrementShipDeathFlash
 } from '@core/explosions'
 import { statusSlice } from '@core/status'
-import { screenSlice, SCRWTH, VIEWHT } from '@core/screen'
+import { screenSlice, SCRWTH, VIEWHT, TOPMARG, BOTMARG } from '@core/screen'
 import { containShip, rint } from '@core/shared'
 import {
   startLevelTransition,
@@ -40,7 +39,8 @@ import {
   transitionToStarmap,
   incrementStarmap,
   resetTransition,
-  TRANSITION_DELAY_FRAMES
+  TRANSITION_DELAY_FRAMES,
+  skipToNextLevel
 } from '@core/transition'
 
 import { loadLevel } from '../levelThunks'
@@ -48,37 +48,52 @@ import {
   markLevelComplete,
   triggerGameOver,
   resetGame,
-  setMode,
-  setPendingHighScore
+  invalidateHighScore
 } from '../gameSlice'
+import { setMode, setPendingHighScore } from '../appSlice'
 import { TOTAL_INITIAL_LIVES } from '../constants'
-import { getPressedControls } from '../controls'
 import { triggerShipDeath } from '../shipDeath'
 
 import { BunkerKind } from '@core/figs'
+import type { ControlMatrix } from '@/core/controls'
 
 export type StateUpdateContext = {
   store: GameStore
   frame: FrameInfo
-  keys: KeyInfo
+  controls: ControlMatrix
   bitmap: MonochromeBitmap
   galaxyService: GalaxyService
   fizzTransitionService?: FizzTransitionService
-  soundService: SoundService
 }
 
 /**
  * Main state update function
  */
 export const updateGameState = (context: StateUpdateContext): void => {
-  const {
-    store,
-    frame,
-    keys,
-    galaxyService,
-    fizzTransitionService,
-    soundService
-  } = context
+  const { store, frame, controls, galaxyService, fizzTransitionService } =
+    context
+
+  if (controls.quit) {
+    handleGameOver(store)
+  }
+
+  if (controls.extraLife) {
+    store.dispatch(invalidateHighScore())
+    store.dispatch(shipSlice.actions.extraLife())
+  }
+
+  if (controls.nextLevel) {
+    store.dispatch(invalidateHighScore())
+    store.dispatch(markLevelComplete())
+
+    // Start transition directly using the reducer action
+    store.dispatch(skipToNextLevel())
+
+    // Reset fizz service to ensure clean state for new level
+    if (fizzTransitionService) {
+      fizzTransitionService.reset()
+    }
+  }
 
   // decrement death flash at start of state update
   store.dispatch(decrementShipDeathFlash())
@@ -101,10 +116,16 @@ export const updateGameState = (context: StateUpdateContext): void => {
   handleLevelCompletion(store, fizzTransitionService)
 
   // Check for game over
-  handleGameOver(store, soundService)
+  if (
+    !state.game.gameOver &&
+    state.ship.lives <= 0 &&
+    state.ship.deadCount === 0
+  ) {
+    handleGameOver(store)
+  }
 
   // Handle ship movement and controls
-  const { globalx, globaly } = handleShipMovement(store, keys)
+  const { globalx, globaly } = handleShipMovement(store, controls)
 
   // Update bunker rotations for animated bunkers
   store.dispatch(updateBunkerRotations({ globalx, globaly }))
@@ -212,21 +233,40 @@ const handleDeathAndRespawn = (store: GameStore): void => {
     store.dispatch(shipSlice.actions.decrementDeadCount())
     const newDeadCount = store.getState().ship.deadCount
     if (newDeadCount === 0) {
-      store.dispatch(shipSlice.actions.respawnShip())
+      // early return if game over because no need to reset ship position
+      if (store.getState().ship.lives === 0) {
+        return
+      }
+      // Get planet state for respawn coordinates
+      const planetState = store.getState().planet
+
+      // Use the same initialization as level start
+      // Initialize ship at center of screen with global coordinates
+      const shipScreenX = SCRWTH / 2
+      const shipScreenY = Math.floor((TOPMARG + BOTMARG) / 2)
+
+      store.dispatch(
+        shipSlice.actions.initShip({
+          x: shipScreenX,
+          y: shipScreenY,
+          globalx: planetState.xstart,
+          globaly: planetState.ystart,
+          resetFuel: true // Reset fuel on respawn
+        })
+      )
+
+      // Initialize screen position (same as in levelThunks)
+      store.dispatch(
+        screenSlice.actions.setPosition({
+          x: planetState.xstart - shipScreenX,
+          y: planetState.ystart - shipScreenY
+        })
+      )
 
       // Clear explosion and shot state per init_ship() in Play.c:182-187
       store.dispatch(resetSparksAlive())
       store.dispatch(clearBunkShots())
       store.dispatch(clearShards())
-
-      // Update screen position to place ship at planet start position
-      const respawnState = store.getState()
-      store.dispatch(
-        screenSlice.actions.setPosition({
-          x: respawnState.planet.xstart - respawnState.ship.shipx,
-          y: respawnState.planet.ystart - respawnState.ship.shipy
-        })
-      )
     }
   }
 }
@@ -270,50 +310,40 @@ const handleLevelCompletion = (
 /**
  * Handle game over condition
  */
-const handleGameOver = (store: GameStore, soundService: SoundService): void => {
+const handleGameOver = (store: GameStore): void => {
   const state = store.getState()
 
-  if (
-    !state.game.gameOver &&
-    state.ship.lives <= 0 &&
-    state.ship.deadCount === 0
-  ) {
-    console.log('Game Over - All lives lost')
-    store.dispatch(triggerGameOver())
+  store.dispatch(triggerGameOver())
 
-    // Check if score qualifies for high score table
-    const fullState = store.getState() as RootState
-    const { status, highscore } = fullState
+  // Check if score qualifies for high score table
+  const fullState = store.getState()
+  const { status, highscore, game } = fullState
 
-    // Find the lowest high score
-    const lowestScore = Math.min(
-      ...Object.values(highscore).map(hs => hs.score || 0)
+  // Find the lowest high score
+  const lowestScore = Math.min(
+    ...Object.values(highscore).map(hs => hs.score || 0)
+  )
+
+  // Check if eligible and qualifies for high score
+  if (game.highScoreEligible && status.score > lowestScore) {
+    // Set pending high score and switch to entry mode
+    store.dispatch(
+      setPendingHighScore({
+        score: status.score,
+        planet: status.currentlevel,
+        fuel: state.ship.fuel
+      })
     )
-
-    // Stop all sounds when game ends
-    soundService.cleanup()
-
-    // Check if eligible and qualifies for high score
-    if (status.highScoreEligible && status.score > lowestScore) {
-      // Set pending high score and switch to entry mode
-      store.dispatch(
-        setPendingHighScore({
-          score: status.score,
-          planet: status.currentlevel,
-          fuel: state.ship.fuel
-        })
-      )
-    } else {
-      // Just show game over screen
-      store.dispatch(setMode('gameOver'))
-    }
-
-    // Reset everything for a new game
-    store.dispatch(resetGame())
-    store.dispatch(shipSlice.actions.setLives(TOTAL_INITIAL_LIVES))
-    store.dispatch(statusSlice.actions.initStatus())
-    store.dispatch(loadLevel(1))
+  } else {
+    // Just show game over screen
+    store.dispatch(setMode('gameOver'))
   }
+
+  // Reset everything for a new game
+  store.dispatch(resetGame())
+  store.dispatch(shipSlice.actions.setLives(TOTAL_INITIAL_LIVES))
+  store.dispatch(statusSlice.actions.initStatus())
+  store.dispatch(loadLevel(1))
 }
 
 /**
@@ -321,13 +351,13 @@ const handleGameOver = (store: GameStore, soundService: SoundService): void => {
  */
 const handleShipMovement = (
   store: GameStore,
-  keys: KeyInfo
+  controls: ControlMatrix
 ): { globalx: number; globaly: number } => {
   const state = store.getState()
 
   if (state.ship.deadCount === 0) {
-    // Check for self-destruct command (A key)
-    if (keys.keysDown.has('KeyA')) {
+    // Check for self-destruct command
+    if (controls.selfDestruct) {
       triggerShipDeath(store)
       return {
         globalx: state.ship.globalx,
@@ -344,7 +374,7 @@ const handleShipMovement = (
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(store.dispatch as any)(
         shipControl({
-          controlsPressed: getPressedControls(keys.keysDown)
+          controlsPressed: controls
         })
       )
 
@@ -514,13 +544,11 @@ const transitionToNextLevel = (
     // Game won! For now, just loop back to level 1
     console.log('Game completed! Restarting from level 1')
     store.dispatch(resetGame())
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(store.dispatch as any)(loadLevel(1))
+    store.dispatch(loadLevel(1))
   } else {
     // Load next level
     const nextLevelNum = state.status.currentlevel + 1
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(store.dispatch as any)(loadLevel(nextLevelNum))
+    store.dispatch(loadLevel(nextLevelNum))
   }
 }
 
@@ -532,12 +560,12 @@ const updateTransitionState = (
   store: GameStore,
   galaxyService: GalaxyService,
   fizzTransitionService?: FizzTransitionService
-): boolean => {
+): void => {
   const prevState = store.getState().transition
   const { status, preFizzFrames, starmapFrames } = prevState
 
   if (status === 'inactive') {
-    return false
+    return
   }
 
   // Handle level-complete phase (countdown to fizz)
@@ -553,7 +581,7 @@ const updateTransitionState = (
         // Status automatically transitions to 'fizz' in reducer
       }
     }
-    return false
+    return
   }
 
   // Handle fizz phase
@@ -566,7 +594,7 @@ const updateTransitionState = (
     ) {
       store.dispatch(transitionToStarmap())
     }
-    return false
+    return
   }
 
   // Handle starmap phase
@@ -582,9 +610,7 @@ const updateTransitionState = (
       // Trigger the actual level load
       transitionToNextLevel(store, galaxyService)
 
-      return true
+      return
     }
   }
-
-  return false
 }

@@ -8,7 +8,8 @@ export {
   decrementPreFizz,
   transitionToStarmap,
   incrementStarmap,
-  resetTransition
+  resetTransition,
+  skipToNextLevel
 } from './transitionSlice'
 export type { FizzTransitionService } from './FizzTransitionService'
 export { createFizzTransitionService } from './FizzTransitionService'

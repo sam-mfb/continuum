@@ -3,17 +3,18 @@ import GameRenderer from './components/GameRenderer'
 import StartScreen from './components/StartScreen'
 import HighScoreEntry from './components/HighScoreEntry'
 import GameOverScreen from './components/GameOverScreen'
+import SettingsModal from './components/SettingsModal'
 import { loadLevel } from './levelThunks'
-import { startGame, setMode } from './gameSlice'
+import { startGame, setMode } from './appSlice'
 import { setHighScore } from '@/core/highscore'
 import { shipSlice } from '@/core/ship'
-import { invalidateHighScore } from '@/core/status'
+import { invalidateHighScore } from './gameSlice'
 import { type SoundService } from '@/core/sound'
-import type { BitmapRenderer } from '@lib/bitmap'
 import { useAppDispatch, useAppSelector } from './store'
+import type { GameRenderLoop } from './types'
 
 type AppProps = {
-  renderer: BitmapRenderer
+  renderer: GameRenderLoop
   totalLevels: number
   soundService: SoundService
 }
@@ -24,81 +25,128 @@ export const App: React.FC<AppProps> = ({
   soundService
 }) => {
   const dispatch = useAppDispatch()
-  const gameMode = useAppSelector(state => state.game.mode)
-  const volume = useAppSelector(state => state.game.volume)
-  const soundMuted = useAppSelector(state => !state.game.enabled)
-  const pendingHighScore = useAppSelector(state => state.game.pendingHighScore)
+  const gameMode = useAppSelector(state => state.app.mode)
+  const volume = useAppSelector(state => state.app.volume)
+  const soundMuted = useAppSelector(state => !state.app.soundOn)
+  const pendingHighScore = useAppSelector(state => state.app.pendingHighScore)
+  const highScoreEligible = useAppSelector(
+    state => state.game.highScoreEligible
+  )
 
-  // Handle different game modes
-  switch (gameMode) {
-    case 'start':
-      return (
-        <StartScreen
-          onStartGame={(level: number) => {
-            // Reset ship and sound to clean state
-            dispatch(shipSlice.actions.resetShip())
+  // Render the game content based on mode
+  const renderGameContent = (): React.ReactElement | null => {
+    switch (gameMode) {
+      case 'start':
+        return (
+          <StartScreen
+            onStartGame={(level: number) => {
+              // Reset ship and sound to clean state
+              dispatch(shipSlice.actions.resetShip())
 
-            // Invalidate high score if starting at level > 1
-            if (level > 1) {
-              dispatch(invalidateHighScore())
-            }
+              // Invalidate high score if starting at level > 1
+              if (level > 1) {
+                dispatch(invalidateHighScore())
+              }
 
-            // Reset sound service state for new game
-            soundService.setVolume(volume)
-            soundService.setMuted(soundMuted)
+              // Reset sound service state for new game
+              soundService.setVolume(volume)
+              soundService.setMuted(soundMuted)
 
-            // Load the selected level
-            dispatch(loadLevel(level))
+              // Load the selected level
+              dispatch(loadLevel(level))
 
-            // Start the game
-            dispatch(startGame())
-          }}
-          totalLevels={totalLevels}
-        />
-      )
+              // Start the game
+              dispatch(startGame())
+            }}
+            totalLevels={totalLevels}
+          />
+        )
 
-    case 'playing':
-      return (
-        <GameRenderer
-          renderer={renderer}
-          width={512}
-          height={342}
-          scale={2} // Pixel-doubled
-          fps={20} // Original Continuum runs at 20 FPS
-        />
-      )
+      case 'playing':
+        return (
+          <div style={{ width: '1024px', height: '684px' }}>
+            <GameRenderer
+              renderer={renderer}
+              width={512}
+              height={342}
+              scale={2} // Pixel-doubled
+              fps={20} // Original Continuum runs at 20 FPS
+            />
+          </div>
+        )
 
-    case 'highScoreEntry':
-      if (!pendingHighScore) {
-        // Shouldn't happen, but handle gracefully
-        dispatch(setMode('start'))
+      case 'highScoreEntry':
+        if (!pendingHighScore) {
+          // Shouldn't happen, but handle gracefully
+          dispatch(setMode('start'))
+          return null
+        }
+        return (
+          <HighScoreEntry
+            score={pendingHighScore.score}
+            planet={pendingHighScore.planet}
+            fuel={pendingHighScore.fuel}
+            onSubmit={(name: string) => {
+              dispatch(
+                setHighScore({
+                  user: name,
+                  score: pendingHighScore.score,
+                  planet: pendingHighScore.planet,
+                  fuel: pendingHighScore.fuel,
+                  date: new Date().toISOString()
+                })
+              )
+              dispatch(setMode('start'))
+            }}
+          />
+        )
+
+      case 'gameOver':
+        return <GameOverScreen onContinue={() => dispatch(setMode('start'))} />
+
+      default:
+        gameMode satisfies never
         return null
-      }
-      return (
-        <HighScoreEntry
-          score={pendingHighScore.score}
-          planet={pendingHighScore.planet}
-          fuel={pendingHighScore.fuel}
-          onSubmit={(name: string) => {
-            dispatch(
-              setHighScore({
-                user: name,
-                score: pendingHighScore.score,
-                planet: pendingHighScore.planet,
-                fuel: pendingHighScore.fuel,
-                date: new Date().toISOString()
-              })
-            )
-            dispatch(setMode('start'))
-          }}
-        />
-      )
-
-    case 'gameOver':
-      return <GameOverScreen onContinue={() => dispatch(setMode('start'))} />
-
-    default:
-      gameMode satisfies never
-      return
+    }
   }
+
+  return (
+    <>
+      <div
+        style={{
+          background: 'black',
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative'
+        }}
+      >
+        <div
+          style={{
+            padding: '8px',
+            background: 'black'
+          }}
+        >
+          {renderGameContent()}
+        </div>
+        {!highScoreEligible && (
+          <div
+            style={{
+              position: 'fixed',
+              top: '20px',
+              right: '20px',
+              color: '#AA0000',
+              fontSize: '28px',
+              opacity: 0.8
+            }}
+            title="High scores disabled"
+          >
+            ⚠
+          </div>
+        )}
+      </div>
+      <SettingsModal />
+    </>
+  )
 }

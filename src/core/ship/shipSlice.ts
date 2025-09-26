@@ -1,6 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { ShipState } from './types'
-import { ShipControl } from './types'
 import {
   SHIP,
   DEAD_TIME,
@@ -9,6 +8,7 @@ import {
   FUELBURN,
   SHIPSTART
 } from './constants'
+import type { ControlMatrix } from '../controls'
 
 // Note: TOTAL_INITIAL_LIVES will be set via preloadedState when creating the store
 // Default to 3 here for tests and development
@@ -39,8 +39,8 @@ const initialState: ShipState = {
   globaly: 0
 }
 
-type ControlAction = {
-  controlsPressed: ShipControl[]
+type ControlActionPayload = {
+  controlsPressed: ControlMatrix
   gravity: { x: number; y: number }
 }
 
@@ -55,6 +55,7 @@ export const shipSlice = createSlice({
         y: number
         globalx?: number
         globaly?: number
+        resetFuel?: boolean // For respawn, reset fuel to starting amount
       }>
     ) => {
       // Reset position to new level's start position
@@ -77,6 +78,12 @@ export const shipSlice = createSlice({
       state.firing = false
       state.bouncing = false
       state.shielding = false
+      state.refueling = false
+
+      // Reset fuel if requested (for respawn)
+      if (action.payload.resetFuel) {
+        state.fuel = FUELSTART
+      }
 
       // If global coordinates provided, initialize unbounce position and global position
       if (
@@ -109,21 +116,21 @@ export const shipSlice = createSlice({
       if (action.payload.globaly !== undefined)
         state.globaly = action.payload.globaly
     },
-    shipControlMovement: (state, action: PayloadAction<ControlAction>) => {
+    shipControlMovement: (
+      state,
+      action: PayloadAction<ControlActionPayload>
+    ) => {
       const { controlsPressed, gravity } = action.payload
-      const pressed = new Set(controlsPressed)
       // if (cartooning)
       // 	pressed = read_cartoon();
       // else
       // 	pressed = read_keyboard();
 
-      if (pressed.has(ShipControl.LEFT))
-        state.shiprot = (state.shiprot - 1) & 31
-      if (pressed.has(ShipControl.RIGHT))
-        state.shiprot = (state.shiprot + 1) & 31
+      if (controlsPressed.left) state.shiprot = (state.shiprot - 1) & 31
+      if (controlsPressed.right) state.shiprot = (state.shiprot + 1) & 31
 
       state.flaming = false
-      if (pressed.has(ShipControl.THRUST) && state.fuel) {
+      if (controlsPressed.thrust && state.fuel) {
         /* if bouncing, make weaker to avoid flying through */
         state.dx += (state.bouncing ? 1 : 2) * SHIP.thrustx[state.shiprot]!
         state.dy +=
@@ -240,37 +247,6 @@ export const shipSlice = createSlice({
       if (state.deadCount > 0) {
         state.deadCount--
       }
-    },
-
-    /**
-     * Respawn the ship at planet start position after death
-     * Based on orig/Sources/Play.c:203-207 which calls init_ship
-     * init_ship (Play.c:173-174) resets to xstart, ystart
-     */
-    respawnShip: state => {
-      // Center ship on screen
-      state.shipx = 128 // SCRWTH / 2
-      state.shipy = 96 // (TOPMARG + BOTMARG) / 2
-      // Note: Screen position must be updated by caller to place ship at start
-      // screenx = startx - shipx, screeny = starty - shipy
-
-      // Reset movement
-      state.dx = 0
-      state.dy = 0
-      state.xslow = 0
-      state.yslow = 0
-      // Reset rotation to north
-      state.shiprot = 0
-      // Reset fuel
-      state.fuel = FUELSTART
-      // Reset activity states
-      state.flaming = false
-      state.flameBlink = 0
-      state.thrusting = false
-      state.firing = false
-      state.bouncing = false
-      state.refueling = false
-      state.shielding = false
     },
 
     /**

@@ -30,7 +30,7 @@ import {
   moveBullets,
   clearBunkShots
 } from '@core/shots'
-import { ShipControl } from '@core/ship'
+import { getControls } from '@core/controls'
 import { shipControl } from '@core/ship'
 import { buildGameStore } from '@dev/store'
 import { containShip } from '@core/shared/containShip'
@@ -193,17 +193,7 @@ const resetGame = (): void => {
   store.dispatch(clearAllShots())
 }
 
-const getPressedControls = (keysDown: Set<string>): ShipControl[] => {
-  const controls: ShipControl[] = []
-
-  if (keysDown.has('KeyZ')) controls.push(ShipControl.LEFT)
-  if (keysDown.has('KeyX')) controls.push(ShipControl.RIGHT)
-  if (keysDown.has('Period')) controls.push(ShipControl.THRUST)
-  if (keysDown.has('Slash')) controls.push(ShipControl.FIRE)
-  if (keysDown.has('Space')) controls.push(ShipControl.SHIELD)
-
-  return controls
-}
+// Removed - now using getControls from @core/controls
 
 /**
  * Bitmap renderer for ship movement game
@@ -235,7 +225,22 @@ export const createShipMoveBitmapRenderer =
       store.dispatch(shipSlice.actions.decrementDeadCount())
       const newDeadCount = store.getState().ship.deadCount
       if (newDeadCount === 0) {
-        store.dispatch(shipSlice.actions.respawnShip())
+        // Get planet state for respawn coordinates
+        const planetState = store.getState().planet
+
+        // Use the same initialization as level start
+        const shipScreenX = 256 // SCRWTH / 2
+        const shipScreenY = 158 // Math.floor((TOPMARG + BOTMARG) / 2)
+
+        store.dispatch(
+          shipSlice.actions.initShip({
+            x: shipScreenX,
+            y: shipScreenY,
+            globalx: planetState.xstart,
+            globaly: planetState.ystart,
+            resetFuel: true
+          })
+        )
 
         // Clear explosion and shot state per init_ship() in Play.c:182-187
         // sparksalive = 0 (Play.c:182)
@@ -245,14 +250,11 @@ export const createShipMoveBitmapRenderer =
         // for(i=0; i<NUMSHARDS; i++) shards[i].lifecount = 0 (Play.c:186-187)
         store.dispatch(clearShards())
 
-        // Update screen position to place ship at planet start position
-        // globalx = xstart, globaly = ystart (from init_ship)
-        // screenx = globalx - shipx, screeny = globaly - shipy
-        const respawnState = store.getState()
+        // Initialize screen position (same as in levelThunks)
         store.dispatch(
           screenSlice.actions.setPosition({
-            x: respawnState.planet.xstart - respawnState.ship.shipx,
-            y: respawnState.planet.ystart - respawnState.ship.shipy
+            x: planetState.xstart - shipScreenX,
+            y: planetState.ystart - shipScreenY
           })
         )
       }
@@ -275,9 +277,10 @@ export const createShipMoveBitmapRenderer =
       // Only handle controls and move ship if alive
       // shipControl will read globalx/globaly from ship state (set by previous frame's containShip)
       // and calculate gravity from generators
+      const controls = getControls(keys, state.controls.bindings)
       store.dispatch(
         shipControl({
-          controlsPressed: getPressedControls(keys.keysDown)
+          controlsPressed: controls
         })
       )
 

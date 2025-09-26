@@ -2,9 +2,8 @@ import React, { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState } from '../store'
 import type { HighScoreState } from '@/core/highscore'
-import { resetHighScores } from '@/core/highscore'
-import { setAlignmentMode } from '../gameSlice'
-import type { AlignmentMode } from '@/core/shared'
+import { allowHighScore, invalidateHighScore } from '../gameSlice'
+import { openSettings } from '../appSlice'
 
 type StartScreenProps = {
   onStartGame: (level: number) => void
@@ -17,10 +16,6 @@ const StartScreen: React.FC<StartScreenProps> = ({
 }) => {
   const dispatch = useDispatch()
   const highScores = useSelector((state: RootState) => state.highscore)
-  const alignmentMode = useSelector(
-    (state: RootState) => state.game.alignmentMode
-  )
-  const [showConfirm, setShowConfirm] = useState(false)
   const [selectedLevel, setSelectedLevel] = useState(1)
 
   // Find the most recent score with a valid date (within last 5 minutes)
@@ -84,23 +79,6 @@ const StartScreen: React.FC<StartScreenProps> = ({
     )
   }
 
-  const handleResetScores = (): void => {
-    if (showConfirm) {
-      dispatch(resetHighScores())
-      setShowConfirm(false)
-    } else {
-      setShowConfirm(true)
-      // Auto-cancel confirmation after 3 seconds
-      setTimeout(() => setShowConfirm(false), 3000)
-    }
-  }
-
-  const handleAlignmentToggle = (): void => {
-    const newMode: AlignmentMode =
-      alignmentMode === 'world-fixed' ? 'screen-fixed' : 'world-fixed'
-    dispatch(setAlignmentMode(newMode))
-  }
-
   return (
     <div
       style={{
@@ -113,7 +91,7 @@ const StartScreen: React.FC<StartScreenProps> = ({
         backgroundColor: 'black',
         fontFamily: 'monospace',
         color: 'white',
-        border: '2px solid #666'
+        position: 'relative'
       }}
     >
       <div
@@ -186,11 +164,19 @@ const StartScreen: React.FC<StartScreenProps> = ({
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <label style={{ color: 'white', fontSize: '14px' }}>
-                Start at:
+                Start at Level:
               </label>
               <select
                 value={selectedLevel}
-                onChange={e => setSelectedLevel(Number(e.target.value))}
+                onChange={e => {
+                  const level = parseInt(e.target.value)
+                  setSelectedLevel(level)
+                  if (level > 1) {
+                    dispatch(invalidateHighScore())
+                  } else {
+                    dispatch(allowHighScore())
+                  }
+                }}
                 style={{
                   padding: '4px 8px',
                   fontFamily: 'monospace',
@@ -209,28 +195,6 @@ const StartScreen: React.FC<StartScreenProps> = ({
                   )
                 )}
               </select>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <input
-                type="checkbox"
-                id="originalBackground"
-                checked={alignmentMode === 'world-fixed'}
-                onChange={handleAlignmentToggle}
-                style={{
-                  cursor: 'pointer'
-                }}
-              />
-              <label
-                htmlFor="originalBackground"
-                style={{
-                  color: 'white',
-                  fontSize: '14px',
-                  cursor: 'pointer'
-                }}
-              >
-                Original Background
-              </label>
             </div>
           </div>
 
@@ -256,38 +220,34 @@ const StartScreen: React.FC<StartScreenProps> = ({
             >
               START GAME
             </button>
-
-            <button
-              onClick={handleResetScores}
-              style={{
-                fontSize: '11px',
-                padding: '6px 12px',
-                backgroundColor: 'black',
-                color: 'white',
-                border: '1px solid white',
-                cursor: 'pointer',
-                fontFamily: 'monospace'
-              }}
-            >
-              {showConfirm ? 'Confirm Reset' : 'Reset Scores'}
-            </button>
           </div>
         </div>
-
-        <div
-          style={{
-            fontSize: '11px',
-            color: 'white',
-            textAlign: 'center',
-            lineHeight: '1.3',
-            opacity: 0.8
-          }}
-        >
-          <div>Controls:</div>
-          <div>Z/X - Rotate | . - Thrust | / - Fire | Space - Shield</div>
-          <div>A - Self destruct (use when stuck)</div>
-        </div>
       </div>
+
+      {/* Settings Button */}
+      <button
+        onClick={() => dispatch(openSettings())}
+        style={{
+          position: 'absolute',
+          top: '20px',
+          right: '20px',
+          fontSize: '12px',
+          padding: '6px 12px',
+          backgroundColor: 'black',
+          color: 'white',
+          border: '1px solid white',
+          cursor: 'pointer',
+          fontFamily: 'monospace'
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.backgroundColor = '#333'
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.backgroundColor = 'black'
+        }}
+      >
+        SETTINGS
+      </button>
     </div>
   )
 }

@@ -5,25 +5,23 @@
  * rendering, and sound playback through specialized submodules.
  */
 
-import type { BitmapRenderer } from '@lib/bitmap'
 import { createGameBitmap } from '@lib/bitmap'
 import type { SpriteService } from '@core/sprites'
 import type { GalaxyService } from '@core/galaxy'
 import type { FizzTransitionService } from '@core/transition'
-import type { SoundService } from '@core/sound'
 import type { GameStore } from '../store'
 
 import { updateGameState } from './stateUpdates'
 import { renderGame } from './rendering'
+import type { GameRenderLoop } from '../types'
 
 export const createGameRenderer = (
   store: GameStore,
   spriteService: SpriteService,
   galaxyService: GalaxyService,
-  fizzTransitionService: FizzTransitionService,
-  soundService: SoundService
-): BitmapRenderer => {
-  return (frame, keys) => {
+  fizzTransitionService: FizzTransitionService
+): GameRenderLoop => {
+  return (frame, controls) => {
     // Create a fresh bitmap for this frame
     let bitmap = createGameBitmap()
 
@@ -32,11 +30,10 @@ export const createGameRenderer = (
     updateGameState({
       store,
       frame,
-      keys,
+      controls,
       bitmap,
       galaxyService,
-      fizzTransitionService,
-      soundService
+      fizzTransitionService
     })
 
     // Get current state after updates

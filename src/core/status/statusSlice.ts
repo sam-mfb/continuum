@@ -15,15 +15,13 @@ export type StatusState = {
   planetbonus: number // Play.c: planetbonus - bonus countdown for current planet
   currentlevel: number // Play.c: currentlevel - current level/planet
   curmessage: StatusMessage // Play.c: curmessage - current message being shown
-  highScoreEligible: boolean // Whether this game is eligible for a highscore
 }
 
 const initialState: StatusState = {
   score: 0,
   planetbonus: 0,
   currentlevel: 1,
-  curmessage: null,
-  highScoreEligible: true
+  curmessage: null
 }
 
 export const statusSlice = createSlice({
@@ -80,29 +78,17 @@ export const statusSlice = createSlice({
       state.currentlevel = action.payload
     },
 
-    // Make game high score ineligible
-    invalidateHighScore: state => {
-      state.highScoreEligible = false
-    },
-
     // Initialize for new game
     initStatus: (state, action: PayloadAction<number | undefined>) => {
       state.score = 0
       state.planetbonus = 0
       state.currentlevel = action.payload ?? 1
       state.curmessage = null
-      state.highScoreEligible = true
     }
   }
 })
 
-export const {
-  setMessage,
-  setPlanetBonus,
-  nextLevel,
-  setLevel,
-  invalidateHighScore,
-  initStatus
-} = statusSlice.actions
+export const { setMessage, setPlanetBonus, nextLevel, setLevel, initStatus } =
+  statusSlice.actions
 
 export const statusReducer = statusSlice.reducer

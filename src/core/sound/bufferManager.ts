@@ -97,7 +97,7 @@ export type BufferManager = {
  */
 export const createBufferManager = (
   generator: SampleGenerator
-): BufferManager & { setVolume: (volume: number) => void } => {
+): BufferManager => {
   const CHUNK_SIZE = 370
   const BUFFER_SIZE = 8192 // Must be power of 2 for efficient wrapping
 
@@ -105,7 +105,6 @@ export const createBufferManager = (
   let writePosition = 0
   let readPosition = 0
   let currentGenerator = generator
-  let currentVolume = 1.0 // Master volume (0.0 to 1.0)
   let onSoundEnded: (() => void) | undefined = undefined
   let hasReportedEnded = false
 
@@ -150,13 +149,9 @@ export const createBufferManager = (
       )
     }
 
-    // Copy chunk to ring buffer with wraparound and apply volume
+    // Copy chunk to ring buffer with wraparound
     for (let i = 0; i < chunk.length; i++) {
-      // Apply volume by scaling the sample value around center (128)
-      const sample = chunk[i]!
-      const centered = sample - 128
-      const scaled = Math.round(centered * currentVolume)
-      buffer[writePosition] = Math.max(0, Math.min(255, scaled + 128))
+      buffer[writePosition] = chunk[i]!
 
       // Advance write position with wraparound at buffer size
       // Using bitwise AND with (BUFFER_SIZE - 1) is equivalent to modulo
@@ -244,21 +239,12 @@ export const createBufferManager = (
     readPosition = 0
   }
 
-  /**
-   * Set the master volume
-   * @param volume - Volume level from 0 to 1
-   */
-  const setVolume = (volume: number): void => {
-    currentVolume = Math.max(0, Math.min(1, volume))
-  }
-
   // Return the public interface
   return {
     requestSamples,
     getAvailableSamples,
     setGenerator,
     getBufferState,
-    reset,
-    setVolume
+    reset
   }
 }
