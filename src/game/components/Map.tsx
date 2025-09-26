@@ -3,7 +3,7 @@ import { SBARHT, VIEWHT, SCRWTH } from '@core/screen'
 import { useAppSelector } from '../store'
 import { LINE_KIND } from '@core/shared/types/line'
 import type { LineRec } from '@core/shared/types/line'
-import type { Fuel } from '@core/planet/types'
+import type { Fuel, Bunker } from '@core/planet/types'
 
 type MinimapProps = {
   scale: number
@@ -46,7 +46,7 @@ const drawMapLines = (
 }
 
 /**
- * Draw fuel cells on the map as 4x4 black squares
+ * Draw fuel cells on the map as 4x4 black squares (scaled)
  * Only draws fuel cells that are alive and visible
  */
 const drawFuelCells = (
@@ -54,7 +54,8 @@ const drawFuelCells = (
   fuels: Fuel[],
   scaleX: number,
   scaleY: number,
-  visibilityMap: globalThis.Map<number, boolean>
+  visibilityMap: globalThis.Map<number, boolean>,
+  displayScale: number
 ): void => {
   ctx.save()
   ctx.fillStyle = 'black'
@@ -67,17 +68,50 @@ const drawFuelCells = (
     // Skip invisible fuel cells
     if (!visibilityMap.get(index)) return
 
-    // Draw 4x4 black square at scaled position
-    const x = fuel.x * scaleX - 2 // Center the 4x4 square
-    const y = fuel.y * scaleY - 2
-    ctx.fillRect(x, y, 4, 4)
+    // Draw 4x4 black square at scaled position (multiply size by display scale)
+    const size = 4 * displayScale
+    const x = fuel.x * scaleX - size / 2 // Center the square
+    const y = fuel.y * scaleY - size / 2
+    ctx.fillRect(x, y, size, size)
   })
 
   ctx.restore()
 }
 
 /**
- * Draw ship position on the map as concentric filled circles
+ * Draw bunkers on the map as 4x4 black filled circles (scaled)
+ * Only draws bunkers that are alive
+ */
+const drawBunkers = (
+  ctx: CanvasRenderingContext2D,
+  bunkers: Bunker[],
+  scaleX: number,
+  scaleY: number,
+  displayScale: number
+): void => {
+  ctx.save()
+  ctx.fillStyle = 'black'
+
+  for (const bunker of bunkers) {
+    // Check for end marker
+    if (bunker.rot < 0) break
+    // Skip dead bunkers
+    if (!bunker.alive) continue
+
+    // Draw 4x4 filled circle at scaled position (multiply radius by display scale)
+    const x = bunker.x * scaleX
+    const y = bunker.y * scaleY
+    const radius = 2 * displayScale // radius of 2 for 4x4 circle, scaled
+    ctx.beginPath()
+    ctx.arc(x, y, radius, 0, Math.PI * 2)
+    ctx.fill()
+  }
+
+  ctx.restore()
+}
+
+/**
+ * Draw ship position on the map as concentric filled circles (scaled)
  * Creates a target-like appearance with colors that can be inverted for animation
  */
 const drawShipPosition = (
@@ -86,6 +120,7 @@ const drawShipPosition = (
   shipY: number,
   scaleX: number,
   scaleY: number,
+  displayScale: number,
   inverted: boolean = false
 ): void => {
   ctx.save()
@@ -99,23 +134,23 @@ const drawShipPosition = (
   const middleColor = inverted ? 'black' : 'white'
   const innerColor = inverted ? 'white' : 'black'
 
-  // Draw from largest to smallest
+  // Draw from largest to smallest (multiply radii by display scale)
   // Outermost circle (12px diameter)
   ctx.fillStyle = outerColor
   ctx.beginPath()
-  ctx.arc(mapX, mapY, 6, 0, Math.PI * 2)
+  ctx.arc(mapX, mapY, 6 * displayScale, 0, Math.PI * 2)
   ctx.fill()
 
   // Middle circle (8px diameter) - creates a ring effect
   ctx.fillStyle = middleColor
   ctx.beginPath()
-  ctx.arc(mapX, mapY, 4, 0, Math.PI * 2)
+  ctx.arc(mapX, mapY, 4 * displayScale, 0, Math.PI * 2)
   ctx.fill()
 
   // Center circle (4px diameter)
   ctx.fillStyle = innerColor
   ctx.beginPath()
-  ctx.arc(mapX, mapY, 2, 0, Math.PI * 2)
+  ctx.arc(mapX, mapY, 2 * displayScale, 0, Math.PI * 2)
   ctx.fill()
 
   ctx.restore()
@@ -138,6 +173,7 @@ export const Map: React.FC<MinimapProps> = ({ scale }) => {
   const worldheight = useAppSelector(state => state.planet.worldheight)
   const lines = useAppSelector(state => state.planet.lines)
   const fuels = useAppSelector(state => state.planet.fuels)
+  const bunkers = useAppSelector(state => state.planet.bunkers)
 
   // Get ship position from Redux store
   const shipGlobalX = useAppSelector(state => state.ship.globalx)
@@ -223,10 +259,21 @@ export const Map: React.FC<MinimapProps> = ({ scale }) => {
       drawMapLines(ctx, lines, scaleX, scaleY)
 
       // Draw the fuel cells with visibility map
-      drawFuelCells(ctx, fuels, scaleX, scaleY, visibleFuelsRef.current)
+      drawFuelCells(ctx, fuels, scaleX, scaleY, visibleFuelsRef.current, scale)
+
+      // Draw the bunkers
+      drawBunkers(ctx, bunkers, scaleX, scaleY, scale)
 
       // Draw the ship position with current inverted state
-      drawShipPosition(ctx, shipGlobalX, shipGlobalY, scaleX, scaleY, inverted)
+      drawShipPosition(
+        ctx,
+        shipGlobalX,
+        shipGlobalY,
+        scaleX,
+        scaleY,
+        scale,
+        inverted
+      )
 
       // Continue animation
       animationId = requestAnimationFrame(animate)
@@ -242,12 +289,14 @@ export const Map: React.FC<MinimapProps> = ({ scale }) => {
   }, [
     lines,
     fuels,
+    bunkers,
     worldwidth,
     worldheight,
     mapWidth,
     mapHeight,
     shipGlobalX,
-    shipGlobalY
+    shipGlobalY,
+    scale
   ])
 
   return (
