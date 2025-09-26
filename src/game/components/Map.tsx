@@ -10,7 +10,7 @@ type MapProps = {
 
 /**
  * Draw planet lines on the map canvas with appropriate scaling
- * Normal and ghost lines are solid black, bounce lines are dotted, explode lines are skipped
+ * Normal lines are solid black, bounce lines are dotted, ghost and explode lines are skipped
  */
 const drawMapLines = (
   ctx: CanvasRenderingContext2D,
@@ -23,14 +23,15 @@ const drawMapLines = (
   ctx.strokeStyle = 'black'
 
   for (const line of lines) {
-    // Skip explode lines
-    if (line.kind === LINE_KIND.EXPLODE) continue
+    // Skip ghost and explode lines
+    if (line.kind === LINE_KIND.GHOST || line.kind === LINE_KIND.EXPLODE)
+      continue
 
     // Set line style based on type
     if (line.kind === LINE_KIND.BOUNCE) {
       ctx.setLineDash([2, 2]) // Dotted line for bounce
     } else {
-      ctx.setLineDash([]) // Solid line for normal and ghost
+      ctx.setLineDash([]) // Solid line for normal
     }
 
     // Draw the line with scaling applied
@@ -39,6 +40,45 @@ const drawMapLines = (
     ctx.lineTo(line.endx * scaleX, line.endy * scaleY)
     ctx.stroke()
   }
+
+  ctx.restore()
+}
+
+/**
+ * Draw ship position on the map as concentric filled circles
+ * Creates a target-like appearance: outer black ring, middle black ring, inner white circle
+ */
+const drawShipPosition = (
+  ctx: CanvasRenderingContext2D,
+  shipX: number,
+  shipY: number,
+  scaleX: number,
+  scaleY: number
+): void => {
+  ctx.save()
+
+  // Transform ship coordinates to map coordinates
+  const mapX = shipX * scaleX
+  const mapY = shipY * scaleY
+
+  // Draw from largest to smallest
+  // Outermost circle (12px diameter) - black fill
+  ctx.fillStyle = 'black'
+  ctx.beginPath()
+  ctx.arc(mapX, mapY, 6, 0, Math.PI * 2)
+  ctx.fill()
+
+  // Middle circle (8px diameter) - white fill (creates a ring effect)
+  ctx.fillStyle = 'white'
+  ctx.beginPath()
+  ctx.arc(mapX, mapY, 4, 0, Math.PI * 2)
+  ctx.fill()
+
+  // Center circle (4px diameter) - black fill
+  ctx.fillStyle = 'black'
+  ctx.beginPath()
+  ctx.arc(mapX, mapY, 2, 0, Math.PI * 2)
+  ctx.fill()
 
   ctx.restore()
 }
@@ -54,6 +94,10 @@ export const Map: React.FC<MapProps> = ({ scale }) => {
   const worldwidth = useAppSelector(state => state.planet.worldwidth)
   const worldheight = useAppSelector(state => state.planet.worldheight)
   const lines = useAppSelector(state => state.planet.lines)
+
+  // Get ship position from Redux store
+  const shipGlobalX = useAppSelector(state => state.ship.globalx)
+  const shipGlobalY = useAppSelector(state => state.ship.globaly)
 
   // Fixed map height based on the viewable height (without status bar)
   const mapHeight = (VIEWHT - 8) * scale // 290px at scale=1, 580px at scale=2
@@ -76,7 +120,7 @@ export const Map: React.FC<MapProps> = ({ scale }) => {
   // VIEWHT is 318px, center is at 159px (at scale=1)
   const centerY = (VIEWHT / 2 + SBARHT) * scale
 
-  // Render the planet lines on the canvas
+  // Render the planet lines and ship position on the canvas
   useEffect(() => {
     if (!canvasRef.current || worldwidth === 0 || worldheight === 0) return
 
@@ -94,7 +138,18 @@ export const Map: React.FC<MapProps> = ({ scale }) => {
 
     // Draw the planet lines
     drawMapLines(ctx, lines, scaleX, scaleY)
-  }, [lines, worldwidth, worldheight, mapWidth, mapHeight])
+
+    // Draw the ship position
+    drawShipPosition(ctx, shipGlobalX, shipGlobalY, scaleX, scaleY)
+  }, [
+    lines,
+    worldwidth,
+    worldheight,
+    mapWidth,
+    mapHeight,
+    shipGlobalX,
+    shipGlobalY
+  ])
 
   return (
     <canvas
