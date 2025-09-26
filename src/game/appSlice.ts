@@ -25,6 +25,9 @@ export type AppState = {
   // Game flow
   mode: GameMode
   pendingHighScore: PendingHighScore | null
+
+  // UI state
+  showSettings: boolean
 }
 
 const initialState: AppState = {
@@ -32,7 +35,8 @@ const initialState: AppState = {
   volume: 0,
   soundOn: true,
   mode: 'start',
-  pendingHighScore: null
+  pendingHighScore: null,
+  showSettings: false
 }
 
 export const appSlice = createSlice({
@@ -80,6 +84,19 @@ export const appSlice = createSlice({
 
     clearPendingHighScore: state => {
       state.pendingHighScore = null
+    },
+
+    // UI state actions
+    openSettings: state => {
+      state.showSettings = true
+    },
+
+    closeSettings: state => {
+      state.showSettings = false
+    },
+
+    toggleSettings: state => {
+      state.showSettings = !state.showSettings
     }
   }
 })
@@ -93,5 +110,8 @@ export const {
   setMode,
   startGame,
   setPendingHighScore,
-  clearPendingHighScore
+  clearPendingHighScore,
+  openSettings,
+  closeSettings,
+  toggleSettings
 } = appSlice.actions

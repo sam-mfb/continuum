@@ -45,8 +45,7 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
         height: '684px',
         backgroundColor: 'black',
         fontFamily: 'monospace',
-        color: 'white',
-        border: '2px solid #666'
+        color: 'white'
       }}
     >
       <div

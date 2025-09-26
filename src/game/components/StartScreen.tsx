@@ -2,8 +2,8 @@ import React, { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState } from '../store'
 import type { HighScoreState } from '@/core/highscore'
-import { resetHighScores } from '@/core/highscore'
 import { allowHighScore, invalidateHighScore } from '../gameSlice'
+import { openSettings } from '../appSlice'
 
 type StartScreenProps = {
   onStartGame: (level: number) => void
@@ -16,7 +16,6 @@ const StartScreen: React.FC<StartScreenProps> = ({
 }) => {
   const dispatch = useDispatch()
   const highScores = useSelector((state: RootState) => state.highscore)
-  const [showConfirm, setShowConfirm] = useState(false)
   const [selectedLevel, setSelectedLevel] = useState(1)
 
   // Find the most recent score with a valid date (within last 5 minutes)
@@ -80,17 +79,6 @@ const StartScreen: React.FC<StartScreenProps> = ({
     )
   }
 
-  const handleResetScores = (): void => {
-    if (showConfirm) {
-      dispatch(resetHighScores())
-      setShowConfirm(false)
-    } else {
-      setShowConfirm(true)
-      // Auto-cancel confirmation after 3 seconds
-      setTimeout(() => setShowConfirm(false), 3000)
-    }
-  }
-
   return (
     <div
       style={{
@@ -103,7 +91,7 @@ const StartScreen: React.FC<StartScreenProps> = ({
         backgroundColor: 'black',
         fontFamily: 'monospace',
         color: 'white',
-        border: '2px solid #666'
+        position: 'relative'
       }}
     >
       <div
@@ -176,7 +164,7 @@ const StartScreen: React.FC<StartScreenProps> = ({
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <label style={{ color: 'white', fontSize: '14px' }}>
-                Start at:
+                Start at Level:
               </label>
               <select
                 value={selectedLevel}
@@ -232,24 +220,34 @@ const StartScreen: React.FC<StartScreenProps> = ({
             >
               START GAME
             </button>
-
-            <button
-              onClick={handleResetScores}
-              style={{
-                fontSize: '11px',
-                padding: '6px 12px',
-                backgroundColor: 'black',
-                color: 'white',
-                border: '1px solid white',
-                cursor: 'pointer',
-                fontFamily: 'monospace'
-              }}
-            >
-              {showConfirm ? 'Confirm Reset' : 'Reset Scores'}
-            </button>
           </div>
         </div>
       </div>
+
+      {/* Settings Button */}
+      <button
+        onClick={() => dispatch(openSettings())}
+        style={{
+          position: 'absolute',
+          top: '20px',
+          right: '20px',
+          fontSize: '12px',
+          padding: '6px 12px',
+          backgroundColor: 'black',
+          color: 'white',
+          border: '1px solid white',
+          cursor: 'pointer',
+          fontFamily: 'monospace'
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.backgroundColor = '#333'
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.backgroundColor = 'black'
+        }}
+      >
+        SETTINGS
+      </button>
     </div>
   )
 }

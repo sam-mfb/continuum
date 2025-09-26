@@ -3,7 +3,7 @@ import GameRenderer from './components/GameRenderer'
 import StartScreen from './components/StartScreen'
 import HighScoreEntry from './components/HighScoreEntry'
 import GameOverScreen from './components/GameOverScreen'
-import ControlsPanel from './components/ControlsPanel'
+import SettingsModal from './components/SettingsModal'
 import { loadLevel } from './levelThunks'
 import { startGame, setMode } from './appSlice'
 import { setHighScore } from '@/core/highscore'
@@ -29,6 +29,9 @@ export const App: React.FC<AppProps> = ({
   const volume = useAppSelector(state => state.app.volume)
   const soundMuted = useAppSelector(state => !state.app.soundOn)
   const pendingHighScore = useAppSelector(state => state.app.pendingHighScore)
+  const highScoreEligible = useAppSelector(
+    state => state.game.highScoreEligible
+  )
 
   // Render the game content based on mode
   const renderGameContent = (): React.ReactElement | null => {
@@ -61,13 +64,15 @@ export const App: React.FC<AppProps> = ({
 
       case 'playing':
         return (
-          <GameRenderer
-            renderer={renderer}
-            width={512}
-            height={342}
-            scale={2} // Pixel-doubled
-            fps={20} // Original Continuum runs at 20 FPS
-          />
+          <div style={{ width: '1024px', height: '684px' }}>
+            <GameRenderer
+              renderer={renderer}
+              width={512}
+              height={342}
+              scale={2} // Pixel-doubled
+              fps={20} // Original Continuum runs at 20 FPS
+            />
+          </div>
         )
 
       case 'highScoreEntry':
@@ -106,20 +111,43 @@ export const App: React.FC<AppProps> = ({
   }
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        background: '#1a1a1a',
-        minHeight: '100vh',
-        padding: '20px 0'
-      }}
-    >
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        {renderGameContent()}
-        <ControlsPanel />
+    <>
+      <div
+        style={{
+          background: 'black',
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative'
+        }}
+      >
+        <div
+          style={{
+            padding: '8px',
+            background: 'black'
+          }}
+        >
+          {renderGameContent()}
+        </div>
+        {!highScoreEligible && (
+          <div
+            style={{
+              position: 'fixed',
+              top: '20px',
+              right: '20px',
+              color: '#AA0000',
+              fontSize: '28px',
+              opacity: 0.8,
+              title: 'High scores disabled'
+            }}
+            title="High scores disabled"
+          >
+            ⚠
+          </div>
+        )}
       </div>
-    </div>
+      <SettingsModal />
+    </>
   )
 }

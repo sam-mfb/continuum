@@ -29,8 +29,7 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
         height: '684px',
         backgroundColor: 'black',
         fontFamily: 'monospace',
-        color: 'white',
-        border: '2px solid #666'
+        color: 'white'
       }}
     >
       <div

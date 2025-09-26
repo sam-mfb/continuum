@@ -76,7 +76,7 @@ export const createAudioOutput = (
   // Constants
   const SAMPLE_RATE = 22200 // Original Mac sample rate
   const BUFFER_SIZE = 512 // Common Web Audio buffer size
-  const MASTER_GAIN_SCALE = 0.7 // Scale down overall volume (100% = 70% of max)
+  const MASTER_GAIN_SCALE = 0.6 // Scale down overall volume (100% = 60% of max)
 
   /**
    * Audio processing callback
