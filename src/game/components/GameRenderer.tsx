@@ -29,6 +29,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
   const lastFrameTimeRef = useRef<number>(0)
   const frameIntervalMs = 1000 / fps
   const keysDownRef = useRef<Set<string>>(new Set())
+  const previousKeysDownRef = useRef<Set<string>>(new Set())
   const frameCountRef = useRef<number>(0)
   const startTimeRef = useRef<number>(0)
 
@@ -115,10 +116,27 @@ const GameRenderer: React.FC<GameRendererProps> = ({
           totalTime: currentTime - startTimeRef.current,
           targetDelta: frameIntervalMs
         }
+
+        // Calculate keys that were just pressed this frame
+        const keysPressed = new Set<string>()
+        for (const key of keysDownRef.current) {
+          if (!previousKeysDownRef.current.has(key)) {
+            keysPressed.add(key)
+          }
+        }
+
+        // Calculate keys that were just released this frame
+        const keysReleased = new Set<string>()
+        for (const key of previousKeysDownRef.current) {
+          if (!keysDownRef.current.has(key)) {
+            keysReleased.add(key)
+          }
+        }
+
         const keyInfo: KeyInfo = {
           keysDown: keysDownRef.current,
-          keysPressed: new Set(),
-          keysReleased: new Set()
+          keysPressed: keysPressed,
+          keysReleased: keysReleased
         }
         // Skip rendering when paused but keep the loop running
         if (!paused) {
@@ -187,6 +205,9 @@ const GameRenderer: React.FC<GameRendererProps> = ({
           lastFrameTimeRef.current = currentTime
           frameCountRef.current++
         }
+
+        // Update previous keys for next frame
+        previousKeysDownRef.current = new Set(keysDownRef.current)
       }
 
       animationRef.current = requestAnimationFrame(gameLoop)

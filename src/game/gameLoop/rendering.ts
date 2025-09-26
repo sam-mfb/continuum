@@ -30,7 +30,7 @@ import { whiteTerrain, blackTerrain } from '@core/walls/render'
 import { LINE_KIND } from '@core/walls'
 import { getAlignment, getBackgroundPattern } from '@core/shared'
 import { triggerShipDeath } from '../shipDeath'
-import { FIZZ_DURATION, TRANSITION_DELAY_FRAMES } from '@core/transition'
+import { FIZZ_DURATION } from '@core/transition'
 import { starBackground } from '@core/transition/render'
 
 export type RenderContext = {

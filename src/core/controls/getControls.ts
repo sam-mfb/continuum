@@ -33,11 +33,30 @@ export function getControls(
     [ControlAction.MAP]: false
   }
 
-  // Check each control action's binding against pressed keys
+  // Define which controls should only trigger on key press (not hold)
+  const oneShotControls = new Set([
+    ControlAction.SELF_DESTRUCT,
+    ControlAction.PAUSE,
+    ControlAction.NEXT_LEVEL,
+    ControlAction.EXTRA_LIFE,
+    ControlAction.MAP
+  ])
+
+  // Check each control action's binding
   for (const action of Object.values(ControlAction)) {
     const keyBinding = bindings[action as ControlAction]
-    if (keyBinding && keys.keysDown.has(keyBinding)) {
-      matrix[action as ControlAction] = true
+    if (!keyBinding) continue
+
+    if (oneShotControls.has(action as ControlAction)) {
+      // One-shot controls only trigger on initial key press
+      if (keys.keysPressed.has(keyBinding)) {
+        matrix[action as ControlAction] = true
+      }
+    } else {
+      // Continuous controls trigger while key is held
+      if (keys.keysDown.has(keyBinding)) {
+        matrix[action as ControlAction] = true
+      }
     }
   }
 
