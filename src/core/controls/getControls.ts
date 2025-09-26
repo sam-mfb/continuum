@@ -29,7 +29,8 @@ export function getControls(
     [ControlAction.PAUSE]: false,
     [ControlAction.QUIT]: false,
     [ControlAction.NEXT_LEVEL]: false,
-    [ControlAction.EXTRA_LIFE]: false
+    [ControlAction.EXTRA_LIFE]: false,
+    [ControlAction.MAP]: false
   }
 
   // Check each control action's binding against pressed keys

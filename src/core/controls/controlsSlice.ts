@@ -22,7 +22,8 @@ export const getDefaultBindings = (): ControlBindings => ({
   [ControlAction.PAUSE]: 'KeyP',
   [ControlAction.QUIT]: 'Escape',
   [ControlAction.NEXT_LEVEL]: 'KeyN',
-  [ControlAction.EXTRA_LIFE]: 'KeyL'
+  [ControlAction.EXTRA_LIFE]: 'KeyL',
+  [ControlAction.MAP]: 'KeyM'
 })
 
 const initialState: ControlsState = {

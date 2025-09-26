@@ -22,7 +22,8 @@ export enum ControlAction {
 
   // Debug/cheat controls
   NEXT_LEVEL = 'nextLevel',
-  EXTRA_LIFE = 'extraLife'
+  EXTRA_LIFE = 'extraLife',
+  MAP = 'map'
 }
 
 /**
