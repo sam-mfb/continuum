@@ -32,7 +32,7 @@ import {
   decrementShipDeathFlash
 } from '@core/explosions'
 import { statusSlice } from '@core/status'
-import { screenSlice, SCRWTH, VIEWHT } from '@core/screen'
+import { screenSlice, SCRWTH, VIEWHT, TOPMARG, BOTMARG } from '@core/screen'
 import { containShip, rint } from '@core/shared'
 import {
   startLevelTransition,
@@ -207,21 +207,36 @@ const handleDeathAndRespawn = (store: GameStore): void => {
     store.dispatch(shipSlice.actions.decrementDeadCount())
     const newDeadCount = store.getState().ship.deadCount
     if (newDeadCount === 0) {
-      store.dispatch(shipSlice.actions.respawnShip())
+      // Get planet state for respawn coordinates
+      const planetState = store.getState().planet
+
+      // Use the same initialization as level start
+      // Initialize ship at center of screen with global coordinates
+      const shipScreenX = SCRWTH / 2
+      const shipScreenY = Math.floor((TOPMARG + BOTMARG) / 2)
+
+      store.dispatch(
+        shipSlice.actions.initShip({
+          x: shipScreenX,
+          y: shipScreenY,
+          globalx: planetState.xstart,
+          globaly: planetState.ystart,
+          resetFuel: true // Reset fuel on respawn
+        })
+      )
+
+      // Initialize screen position (same as in levelThunks)
+      store.dispatch(
+        screenSlice.actions.setPosition({
+          x: planetState.xstart - shipScreenX,
+          y: planetState.ystart - shipScreenY
+        })
+      )
 
       // Clear explosion and shot state per init_ship() in Play.c:182-187
       store.dispatch(resetSparksAlive())
       store.dispatch(clearBunkShots())
       store.dispatch(clearShards())
-
-      // Update screen position to place ship at planet start position
-      const respawnState = store.getState()
-      store.dispatch(
-        screenSlice.actions.setPosition({
-          x: respawnState.planet.xstart - respawnState.ship.shipx,
-          y: respawnState.planet.ystart - respawnState.ship.shipy
-        })
-      )
     }
   }
 }
