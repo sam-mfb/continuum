@@ -31,7 +31,7 @@ export const App: React.FC<AppProps> = ({
   const pendingHighScore = useAppSelector(state => state.app.pendingHighScore)
 
   // Render the game content based on mode
-  const renderGameContent = (): JSX.Element | null => {
+  const renderGameContent = (): React.ReactElement | null => {
     switch (gameMode) {
       case 'start':
         return (

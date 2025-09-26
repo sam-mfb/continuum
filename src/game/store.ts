@@ -11,6 +11,7 @@ import type { SoundService } from '@core/sound'
 // Import all reducers
 import { gameSlice } from './gameSlice'
 import { appSlice } from './appSlice'
+import { appMiddleware, loadAppSettings } from './appMiddleware'
 import { shipSlice } from '@core/ship'
 import { shotsSlice } from '@core/shots'
 import { planetSlice } from '@core/planet'
@@ -63,13 +64,19 @@ const createStoreAndListeners = (
   const persistedHighScores = loadHighScores()
   // Load persisted control bindings
   const persistedControls = loadControlBindings()
+  // Load persisted app settings
+  const persistedAppSettings = loadAppSettings()
 
   // Build preloaded state with initial settings
   const preloadedState = {
     app: {
       ...appSlice.getInitialState(),
-      volume: initialSettings.soundVolume,
-      soundOn: initialSettings.soundEnabled
+      // Use persisted settings if available, otherwise use initial settings
+      volume: persistedAppSettings.volume ?? initialSettings.soundVolume,
+      soundOn: persistedAppSettings.soundOn ?? initialSettings.soundEnabled,
+      alignmentMode:
+        persistedAppSettings.alignmentMode ??
+        appSlice.getInitialState().alignmentMode
     },
     highscore: persistedHighScores,
     controls: {
@@ -103,6 +110,7 @@ const createStoreAndListeners = (
         }
       })
         .prepend(soundListenerMiddleware.middleware)
+        .concat(appMiddleware)
         .concat(highscoreMiddleware)
         .concat(controlsMiddleware),
     preloadedState
