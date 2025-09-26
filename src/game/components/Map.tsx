@@ -110,8 +110,10 @@ const drawFuelCells = (
     // Skip invisible fuel cells
     if (!visibilityMap.get(index)) return
 
+    const FUEL_MAP_SIZE = 3
+
     // Draw 4x4 black square at scaled position (multiply size by display scale)
-    const size = 4 * displayScale
+    const size = FUEL_MAP_SIZE * displayScale
     const x = fuel.x * scaleX - size / 2 // Center the square
     const y = fuel.y * scaleY - size / 2
     ctx.fillRect(x, y, size, size)
