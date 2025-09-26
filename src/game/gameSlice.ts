@@ -63,6 +63,9 @@ export const gameSlice = createSlice({
     // Make game high score ineligible
     invalidateHighScore: state => {
       state.highScoreEligible = false
+    },
+    allowHighScore: state => {
+      state.highScoreEligible = true
     }
   }
 })
@@ -77,5 +80,6 @@ export const {
   togglePause,
   showMap,
   hideMap,
-  invalidateHighScore
+  invalidateHighScore,
+  allowHighScore
 } = gameSlice.actions

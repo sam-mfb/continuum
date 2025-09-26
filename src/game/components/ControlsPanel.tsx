@@ -7,6 +7,9 @@ const ControlsPanel: React.FC = () => {
   const dispatch = useAppDispatch()
   const alignmentMode = useAppSelector(state => state.app.alignmentMode)
   const bindings = useAppSelector(state => state.controls.bindings)
+  const highScoreEligible = useAppSelector(
+    state => state.game.highScoreEligible
+  )
 
   const handleAlignmentToggle = (): void => {
     dispatch(toggleAlignmentMode())
@@ -89,6 +92,22 @@ const ControlsPanel: React.FC = () => {
 
   return (
     <div style={panelStyle}>
+      {/* High Score Disabled Warning */}
+      {!highScoreEligible && (
+        <div
+          style={{
+            ...sectionStyle,
+            border: '1px solid #aa3333',
+            color: '#aa3333',
+            textAlign: 'center',
+            fontWeight: 'bold',
+            fontSize: '12px'
+          }}
+        >
+          HIGH SCORE DISABLED
+        </div>
+      )}
+
       {/* Alignment Mode Section */}
       <div style={sectionStyle}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -208,7 +227,7 @@ const ControlsPanel: React.FC = () => {
               <div
                 style={{ fontSize: '9px', color: '#888', marginBottom: '3px' }}
               >
-                CHEATS (disable high scores):
+                CHEATS (disables high scores):
               </div>
               <div style={controlItemStyle}>
                 <span style={{ ...labelStyle, color: '#888' }}>

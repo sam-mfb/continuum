@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import type { RootState } from '../store'
 import type { HighScoreState } from '@/core/highscore'
 import { resetHighScores } from '@/core/highscore'
+import { allowHighScore, invalidateHighScore } from '../gameSlice'
 
 type StartScreenProps = {
   onStartGame: (level: number) => void
@@ -179,7 +180,15 @@ const StartScreen: React.FC<StartScreenProps> = ({
               </label>
               <select
                 value={selectedLevel}
-                onChange={e => setSelectedLevel(Number(e.target.value))}
+                onChange={e => {
+                  const level = parseInt(e.target.value)
+                  setSelectedLevel(level)
+                  if (level > 1) {
+                    dispatch(invalidateHighScore())
+                  } else {
+                    dispatch(allowHighScore())
+                  }
+                }}
                 style={{
                   padding: '4px 8px',
                   fontFamily: 'monospace',
@@ -198,17 +207,6 @@ const StartScreen: React.FC<StartScreenProps> = ({
                   )
                 )}
               </select>
-              {selectedLevel > 1 && (
-                <span
-                  style={{
-                    color: '#888',
-                    fontSize: '11px',
-                    fontStyle: 'italic'
-                  }}
-                >
-                  (disables high score)
-                </span>
-              )}
             </div>
           </div>
 
