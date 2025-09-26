@@ -64,11 +64,11 @@ const GameRenderer: React.FC<GameRendererProps> = ({
       keysDownRef.current.add(e.code)
       // Prevent default browser behavior for game control keys
       if (
-        e.code === 'Space' || // Shield
-        e.code === 'KeyZ' || // Left
-        e.code === 'KeyX' || // Right
-        e.code === 'Period' || // Thrust
-        e.code === 'Slash' // Fire
+        e.code === bindings.shield ||
+        e.code === bindings.left ||
+        e.code === bindings.right ||
+        e.code === bindings.thrust ||
+        e.code === bindings.fire
       ) {
         e.preventDefault()
       }

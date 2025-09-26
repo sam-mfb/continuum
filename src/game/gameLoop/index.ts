@@ -5,7 +5,6 @@
  * rendering, and sound playback through specialized submodules.
  */
 
-import type { FrameInfo, MonochromeBitmap } from '@lib/bitmap'
 import { createGameBitmap } from '@lib/bitmap'
 import type { SpriteService } from '@core/sprites'
 import type { GalaxyService } from '@core/galaxy'
@@ -15,7 +14,7 @@ import type { GameStore } from '../store'
 
 import { updateGameState } from './stateUpdates'
 import { renderGame } from './rendering'
-import type { ControlMatrix } from '@/core/controls'
+import type { GameRenderLoop } from '../types'
 
 export const createGameRenderer = (
   store: GameStore,
@@ -23,7 +22,7 @@ export const createGameRenderer = (
   galaxyService: GalaxyService,
   fizzTransitionService: FizzTransitionService,
   soundService: SoundService
-): ((frame: FrameInfo, controls: ControlMatrix) => MonochromeBitmap) => {
+): GameRenderLoop => {
   return (frame, controls) => {
     // Create a fresh bitmap for this frame
     let bitmap = createGameBitmap()

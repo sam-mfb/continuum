@@ -9,11 +9,11 @@ import { setHighScore } from '@/core/highscore'
 import { shipSlice } from '@/core/ship'
 import { invalidateHighScore } from '@/core/status'
 import { type SoundService } from '@/core/sound'
-import type { BitmapRenderer } from '@lib/bitmap'
 import { useAppDispatch, useAppSelector } from './store'
+import type { GameRenderLoop } from './types'
 
 type AppProps = {
-  renderer: BitmapRenderer
+  renderer: GameRenderLoop
   totalLevels: number
   soundService: SoundService
 }
