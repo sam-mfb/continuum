@@ -7,11 +7,11 @@ const VolumeControls: React.FC = () => {
   const volume = useAppSelector(state => state.app.volume)
   const soundOn = useAppSelector(state => state.app.soundOn)
 
-  const handleVolumeChange = (newVolume: number) => {
+  const handleVolumeChange = (newVolume: number): void => {
     dispatch(setVolume(newVolume))
   }
 
-  const handleSoundToggle = () => {
+  const handleSoundToggle = (): void => {
     if (soundOn) {
       dispatch(disableSound())
     } else {
@@ -22,9 +22,7 @@ const VolumeControls: React.FC = () => {
   return (
     <div
       style={{
-        position: 'fixed',
-        bottom: '20px',
-        right: '20px',
+        marginTop: '20px',
         background: 'rgba(0, 0, 0, 0.8)',
         border: '2px solid #333',
         padding: '15px',
@@ -62,7 +60,7 @@ const VolumeControls: React.FC = () => {
           type="range"
           min="0"
           max="1"
-          step="0.1"
+          step="0.01"
           value={volume}
           onChange={e => handleVolumeChange(parseFloat(e.target.value))}
           disabled={!soundOn}

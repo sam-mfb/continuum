@@ -94,7 +94,6 @@ export const createSoundEngine = (): SoundEngine => {
       )
     }
 
-    console.log(`Setting volume to: ${volume}`)
     audioOutput.setVolume(volume)
   }
 

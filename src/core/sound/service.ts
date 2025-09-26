@@ -100,38 +100,37 @@ export async function createSoundService(initialSettings: {
       if (!soundEngine) return
 
       // Try to resume audio context on any play attempt (in case it's suspended)
-      // TODO: await
-      soundEngine.resumeContext()
+      soundEngine.resumeContext().then(() => {
+        // Check if muted
+        if (isMuted) {
+          return
+        }
 
-      // Check if muted
-      if (isMuted) {
-        return
-      }
+        // Start the engine first if not already running
+        if (!isEngineRunning) {
+          soundEngine.start()
+          soundEngine.setVolume(currentVolume)
+          isEngineRunning = true
+        }
 
-      // Start the engine first if not already running
-      if (!isEngineRunning) {
-        soundEngine.start()
-        soundEngine.setVolume(currentVolume)
-        isEngineRunning = true
-      }
+        // Determine if this sound needs a callback to clear state when it ends
+        // Continuous sounds (thrust/shield) and silence don't need callbacks
+        const needsCallback =
+          soundType !== 'thruster' &&
+          soundType !== 'shield' &&
+          soundType !== 'silence'
 
-      // Determine if this sound needs a callback to clear state when it ends
-      // Continuous sounds (thrust/shield) and silence don't need callbacks
-      const needsCallback =
-        soundType !== 'thruster' &&
-        soundType !== 'shield' &&
-        soundType !== 'silence'
-
-      if (needsCallback) {
-        // Add callback to clear state when sound ends (like original's clear_sound())
-        soundEngine.play(soundType, () => {
-          currentSound = null
-          currentSoundPriority = 0
-        })
-      } else {
-        // Continuous sounds and silence play without callbacks
-        soundEngine.play(soundType)
-      }
+        if (needsCallback) {
+          // Add callback to clear state when sound ends (like original's clear_sound())
+          soundEngine.play(soundType, () => {
+            currentSound = null
+            currentSoundPriority = 0
+          })
+        } else {
+          // Continuous sounds and silence play without callbacks
+          soundEngine.play(soundType)
+        }
+      })
     }
 
     /**

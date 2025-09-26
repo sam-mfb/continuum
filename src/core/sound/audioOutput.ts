@@ -76,6 +76,7 @@ export const createAudioOutput = (
   // Constants
   const SAMPLE_RATE = 22200 // Original Mac sample rate
   const BUFFER_SIZE = 512 // Common Web Audio buffer size
+  const MASTER_GAIN_SCALE = 0.7 // Scale down overall volume (100% = 70% of max)
 
   /**
    * Audio processing callback
@@ -160,7 +161,7 @@ export const createAudioOutput = (
 
       // Create gain node for volume control
       gainNode = audioContext.createGain()
-      gainNode.gain.value = 1.0 // Default to full volume
+      gainNode.gain.value = 1.0 * MASTER_GAIN_SCALE // Default to scaled full volume
 
       // Connect audio processing callback
       scriptProcessor.onaudioprocess = processAudio
@@ -264,7 +265,8 @@ export const createAudioOutput = (
     if (gainNode) {
       // Clamp volume between 0 and 1 (still clamp in case of out-of-range values)
       const clampedVolume = Math.max(0, Math.min(1, volume))
-      gainNode.gain.value = clampedVolume
+      // Apply master gain scaling to reduce overall volume
+      gainNode.gain.value = clampedVolume * MASTER_GAIN_SCALE
     }
   }
 
