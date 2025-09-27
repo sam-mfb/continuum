@@ -149,31 +149,67 @@ const StartScreen: React.FC<StartScreenProps> = ({
     )
   }, [titlePage])
 
-  const formatHighScore = (slot: keyof HighScoreState): React.ReactElement => {
+  const formatHighScore = (
+    slot: keyof HighScoreState,
+    index: number
+  ): React.ReactElement => {
     const score = highScores[slot]
     const isRecent = slot === mostRecentSlot
+
+    // Original positions scaled by 2x, adjusted up by 26px
+    const yPos = 312 + index * 30 // (169 * 2) - 26 + index * 15 * 2
 
     return (
       <div
         key={slot}
         style={{
-          display: 'grid',
-          gridTemplateColumns: '30px 150px 100px 60px',
-          gap: '20px',
-          fontSize: '16px',
-          padding: '4px 10px',
-          backgroundColor: isRecent ? 'white' : 'transparent',
-          color: isRecent ? 'black' : 'white',
-          margin: '0 -10px'
+          position: 'absolute',
+          top: `${yPos}px`,
+          left: 0,
+          right: 0,
+          display: 'flex',
+          alignItems: 'center',
+          height: '32px',
+          fontFamily: 'Verdana, Geneva, sans-serif',
+          fontSize: '24px', // 12pt * 2 for pixel doubling
+          fontWeight: '500', // Medium weight
+          color: 'black',
+          backgroundColor: isRecent ? 'rgba(255, 255, 255, 0.8)' : 'transparent'
         }}
       >
-        <span>{slot}.</span>
-        <span>{score.user || '---'}</span>
-        <span style={{ textAlign: 'right' }}>
-          {score.score ? score.score.toLocaleString() : '---'}
+        {/* Name at x=440px (428 + 12) */}
+        <span
+          style={{
+            position: 'absolute',
+            left: '440px',
+            width: '180px'
+          }}
+        >
+          {score.user || ''}
         </span>
-        <span style={{ textAlign: 'center' }}>
-          {score.planet ? `L${score.planet}` : '---'}
+
+        {/* Level at x=764px (776 - 12) */}
+        <span
+          style={{
+            position: 'absolute',
+            left: '764px',
+            width: '60px',
+            textAlign: 'right'
+          }}
+        >
+          {score.planet ? `${score.planet}` : ''}
+        </span>
+
+        {/* Score at x=892px (900 - 8) */}
+        <span
+          style={{
+            position: 'absolute',
+            left: '892px',
+            width: '90px',
+            textAlign: 'right'
+          }}
+        >
+          {score.score ? score.score.toLocaleString() : ''}
         </span>
       </div>
     )
@@ -209,53 +245,13 @@ const StartScreen: React.FC<StartScreenProps> = ({
         />
       )}
 
-      {/* Main content area - high scores */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '50px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '30px'
-        }}
-      >
-        <div
-          style={{
-            backgroundColor: 'black',
-            border: '1px solid white',
-            padding: '15px',
-            minWidth: '400px'
-          }}
-        >
-          <h2
-            style={{
-              fontSize: '18px',
-              margin: '0 0 10px 0',
-              textAlign: 'center',
-              borderBottom: '1px solid white',
-              paddingBottom: '6px'
-            }}
-          >
-            HIGH SCORES
-          </h2>
-
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '2px'
-            }}
-          >
-            {Object.keys(highScores)
-              .map(Number)
-              .sort((a, b) => a - b)
-              .map(slot => formatHighScore(slot as keyof HighScoreState))}
-          </div>
-        </div>
-      </div>
+      {/* High scores positioned on title page */}
+      {Object.keys(highScores)
+        .map(Number)
+        .sort((a, b) => a - b)
+        .map((slot, index) =>
+          formatHighScore(slot as keyof HighScoreState, index)
+        )}
 
       {/* Bottom controls - in the 62px space below canvas */}
       <div
