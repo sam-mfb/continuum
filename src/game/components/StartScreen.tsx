@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState, GameServices } from '../store'
-import type { HighScore, HighScoreState } from '@/core/highscore'
+import type { HighScoreState } from '@/core/highscore'
 import { allowHighScore, invalidateHighScore } from '../gameSlice'
 import { openSettings } from '../appSlice'
 import type { MonochromeBitmap } from '@lib/bitmap/types'
@@ -21,38 +21,12 @@ const StartScreen: React.FC<StartScreenProps> = ({
   const dispatch =
     useDispatch<ThunkDispatch<RootState, GameServices, AnyAction>>()
   const highScores = useSelector((state: RootState) => state.highscore)
+  const mostRecentScore = useSelector(
+    (state: RootState) => state.app.mostRecentScore
+  )
   const [selectedLevel, setSelectedLevel] = useState(1)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [titlePage, setTitlePage] = useState<MonochromeBitmap | null>(null)
-
-  // Find the most recent score with a valid date
-  const getMostRecentScore = (): HighScore | null => {
-    let mostRecentScore: HighScore | null = null
-    let mostRecentDate: Date | null = null
-
-    Object.keys(highScores).forEach(key => {
-      const slot = Number(key) as keyof HighScoreState
-      const score = highScores[slot]
-      if (score.date && score.date !== '') {
-        try {
-          const date = new Date(score.date)
-          // Check if it's a valid date
-          if (!isNaN(date.getTime())) {
-            if (!mostRecentDate || date > mostRecentDate) {
-              mostRecentDate = date
-              mostRecentScore = score
-            }
-          }
-        } catch {
-          // Invalid date format, skip
-        }
-      }
-    })
-
-    return mostRecentScore
-  }
-
-  const mostRecentScore = getMostRecentScore()
 
   // Load title page from sprite service
   useEffect(() => {

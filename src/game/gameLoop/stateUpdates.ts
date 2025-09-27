@@ -50,7 +50,7 @@ import {
   resetGame,
   invalidateHighScore
 } from '../gameSlice'
-import { setMode, setPendingHighScore } from '../appSlice'
+import { setMode, setMostRecentScore } from '../appSlice'
 import { TOTAL_INITIAL_LIVES } from '../constants'
 import { triggerShipDeath } from '../shipDeath'
 
@@ -315,29 +315,17 @@ const handleGameOver = (store: GameStore): void => {
 
   store.dispatch(triggerGameOver())
 
-  // Check if score qualifies for high score table
-  const fullState = store.getState()
-  const { status, highscore, game } = fullState
-
-  // Find the lowest high score
-  const lowestScore = Math.min(
-    ...Object.values(highscore).map(hs => hs.score || 0)
+  // Always record the most recent score
+  store.dispatch(
+    setMostRecentScore({
+      score: state.status.score,
+      planet: state.status.currentlevel,
+      fuel: state.ship.fuel
+    })
   )
 
-  // Check if eligible and qualifies for high score
-  if (game.highScoreEligible && status.score > lowestScore) {
-    // Set pending high score and switch to entry mode
-    store.dispatch(
-      setPendingHighScore({
-        score: status.score,
-        planet: status.currentlevel,
-        fuel: state.ship.fuel
-      })
-    )
-  } else {
-    // Just show game over screen
-    store.dispatch(setMode('gameOver'))
-  }
+  // Always go to highScoreEntry mode - it will decide what to do
+  store.dispatch(setMode('highScoreEntry'))
 
   // Reset everything for a new game
   store.dispatch(resetGame())
