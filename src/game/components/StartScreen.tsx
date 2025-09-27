@@ -81,56 +81,9 @@ const StartScreen: React.FC<StartScreenProps> = ({
     dispatch(loadTitlePage())
   }, [dispatch])
 
-  // Find content boundaries in the title page bitmap
-  const findContentBounds = (
-    bitmap: MonochromeBitmap
-  ): { width: number; height: number } => {
-    let rightMost = 0
-    let bottomMost = 0
-
-    // Scan for rightmost black pixel (actual content)
-    for (let x = 511; x >= 0; x--) {
-      let foundBlack = false
-      for (let y = 0; y < 342; y++) {
-        const byteIndex = y * 64 + Math.floor(x / 8)
-        const bitIndex = 7 - (x % 8)
-        const byte = bitmap.data[byteIndex]
-        if (byte !== undefined) {
-          const bit = (byte >> bitIndex) & 1
-          if (bit === 1) {
-            // Black pixel (content)
-            rightMost = x
-            foundBlack = true
-            break
-          }
-        }
-      }
-      if (foundBlack) break
-    }
-
-    // Scan for bottommost black pixel (actual content)
-    for (let y = 341; y >= 0; y--) {
-      let foundBlack = false
-      for (let x = 0; x <= rightMost; x++) {
-        const byteIndex = y * 64 + Math.floor(x / 8)
-        const bitIndex = 7 - (x % 8)
-        const byte = bitmap.data[byteIndex]
-        if (byte !== undefined) {
-          const bit = (byte >> bitIndex) & 1
-          if (bit === 1) {
-            // Black pixel (content)
-            bottomMost = y
-            foundBlack = true
-            break
-          }
-        }
-      }
-      if (foundBlack) break
-    }
-
-    // Add 1 to convert from index to width/height
-    return { width: rightMost + 1, height: bottomMost + 1 }
-  }
+  // Title page content dimensions (hardcoded for deterministic behavior)
+  const TITLE_PAGE_CONTENT_WIDTH = 501
+  const TITLE_PAGE_CONTENT_HEIGHT = 311
 
   // Render title page to canvas
   useEffect(() => {
@@ -140,26 +93,27 @@ const StartScreen: React.FC<StartScreenProps> = ({
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Find the actual content boundaries
-    const bounds = findContentBounds(titlePage)
+    // Set canvas size to pixel-doubled dimensions
+    // Width and height are fixed for consistent layout
+    canvas.width = TITLE_PAGE_CONTENT_WIDTH * 2 // 1002px (501 * 2)
+    canvas.height = 622 // 622px (311 * 2)
 
-    // Set canvas size to pixel-doubled cropped dimensions
-    canvas.width = bounds.width * 2
-    canvas.height = bounds.height * 2
-
-    // Create ImageData at cropped size
-    const imageData = ctx.createImageData(bounds.width, bounds.height)
+    // Create ImageData at original cropped size
+    const imageData = ctx.createImageData(
+      TITLE_PAGE_CONTENT_WIDTH,
+      TITLE_PAGE_CONTENT_HEIGHT
+    )
     const data = imageData.data
 
     // Convert monochrome bitmap to RGBA (only the content area)
-    for (let y = 0; y < bounds.height; y++) {
-      for (let x = 0; x < bounds.width; x++) {
+    for (let y = 0; y < TITLE_PAGE_CONTENT_HEIGHT; y++) {
+      for (let x = 0; x < TITLE_PAGE_CONTENT_WIDTH; x++) {
         const byteIndex = y * 64 + Math.floor(x / 8)
         const bitIndex = 7 - (x % 8)
         const byte = titlePage.data[byteIndex]
         const bit = byte !== undefined ? (byte >> bitIndex) & 1 : 0
 
-        const pixelIndex = (y * bounds.width + x) * 4
+        const pixelIndex = (y * TITLE_PAGE_CONTENT_WIDTH + x) * 4
         const color = bit ? 0 : 255 // Black for 1, white for 0
         data[pixelIndex] = color // R
         data[pixelIndex + 1] = color // G
@@ -173,25 +127,25 @@ const StartScreen: React.FC<StartScreenProps> = ({
 
     // First put the image data on a temporary canvas at original size
     const tempCanvas = document.createElement('canvas')
-    tempCanvas.width = bounds.width
-    tempCanvas.height = bounds.height
+    tempCanvas.width = TITLE_PAGE_CONTENT_WIDTH
+    tempCanvas.height = TITLE_PAGE_CONTENT_HEIGHT
     const tempCtx = tempCanvas.getContext('2d')
     if (!tempCtx) return
 
     tempCtx.putImageData(imageData, 0, 0)
 
-    // Now draw it scaled 2x on the main canvas
+    // Now draw it pixel-doubled to the main canvas
     ctx.imageSmoothingEnabled = false
     ctx.drawImage(
       tempCanvas,
       0,
       0,
-      bounds.width,
-      bounds.height,
+      TITLE_PAGE_CONTENT_WIDTH,
+      TITLE_PAGE_CONTENT_HEIGHT,
       0,
       0,
-      bounds.width * 2,
-      bounds.height * 2
+      TITLE_PAGE_CONTENT_WIDTH * 2,
+      TITLE_PAGE_CONTENT_HEIGHT * 2
     )
   }, [titlePage])
 
@@ -246,35 +200,28 @@ const StartScreen: React.FC<StartScreenProps> = ({
           ref={canvasRef}
           style={{
             position: 'absolute',
-            top: '50%',
+            top: 0,
             left: '50%',
-            transform: 'translate(-50%, -50%)',
-            opacity: 0.3,
+            transform: 'translateX(-50%)',
             pointerEvents: 'none',
             imageRendering: 'pixelated'
           }}
         />
       )}
 
+      {/* Main content area - high scores */}
       <div
         style={{
+          position: 'absolute',
+          top: '50px',
+          left: '50%',
+          transform: 'translateX(-50%)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           gap: '30px'
         }}
       >
-        <h1
-          style={{
-            fontSize: '32px',
-            margin: 0,
-            letterSpacing: '3px',
-            fontWeight: 'bold'
-          }}
-        >
-          CONTINUUM
-        </h1>
-
         <div
           style={{
             backgroundColor: 'black',
@@ -308,82 +255,70 @@ const StartScreen: React.FC<StartScreenProps> = ({
               .map(slot => formatHighScore(slot as keyof HighScoreState))}
           </div>
         </div>
+      </div>
 
-        <div
+      {/* Bottom controls - in the 62px space below canvas */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '62px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '30px'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <label style={{ color: 'white', fontSize: '14px' }}>
+            Start at Level:
+          </label>
+          <select
+            value={selectedLevel}
+            onChange={e => {
+              const level = parseInt(e.target.value)
+              setSelectedLevel(level)
+              if (level > 1) {
+                dispatch(invalidateHighScore())
+              } else {
+                dispatch(allowHighScore())
+              }
+            }}
+            style={{
+              padding: '4px 8px',
+              fontFamily: 'monospace',
+              fontSize: '14px',
+              backgroundColor: 'black',
+              color: 'white',
+              border: '1px solid white',
+              cursor: 'pointer'
+            }}
+          >
+            {Array.from({ length: totalLevels }, (_, i) => i + 1).map(level => (
+              <option key={level} value={level}>
+                {level}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <button
+          onClick={() => onStartGame(selectedLevel)}
           style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '15px',
-            alignItems: 'center'
+            fontSize: '16px',
+            padding: '8px 20px',
+            backgroundColor: 'white',
+            color: 'black',
+            border: '1px solid white',
+            cursor: 'pointer',
+            fontFamily: 'monospace',
+            letterSpacing: '2px'
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              gap: '20px',
-              alignItems: 'center'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <label style={{ color: 'white', fontSize: '14px' }}>
-                Start at Level:
-              </label>
-              <select
-                value={selectedLevel}
-                onChange={e => {
-                  const level = parseInt(e.target.value)
-                  setSelectedLevel(level)
-                  if (level > 1) {
-                    dispatch(invalidateHighScore())
-                  } else {
-                    dispatch(allowHighScore())
-                  }
-                }}
-                style={{
-                  padding: '4px 8px',
-                  fontFamily: 'monospace',
-                  fontSize: '14px',
-                  backgroundColor: 'black',
-                  color: 'white',
-                  border: '1px solid white',
-                  cursor: 'pointer'
-                }}
-              >
-                {Array.from({ length: totalLevels }, (_, i) => i + 1).map(
-                  level => (
-                    <option key={level} value={level}>
-                      {level}
-                    </option>
-                  )
-                )}
-              </select>
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: 'flex',
-              gap: '15px',
-              alignItems: 'center'
-            }}
-          >
-            <button
-              onClick={() => onStartGame(selectedLevel)}
-              style={{
-                fontSize: '18px',
-                padding: '10px 24px',
-                backgroundColor: 'white',
-                color: 'black',
-                border: '1px solid white',
-                cursor: 'pointer',
-                fontFamily: 'monospace',
-                letterSpacing: '2px'
-              }}
-            >
-              START GAME
-            </button>
-          </div>
-        </div>
+          START GAME
+        </button>
       </div>
 
       {/* Settings Button */}
