@@ -19,7 +19,8 @@ export const ASSET_PATHS = {
 
   // Sprite and graphics resources
   SPRITE_RESOURCE: '/rsrc_260.bin',
-  STATUS_BAR_RESOURCE: '/rsrc_259.bin'
+  STATUS_BAR_RESOURCE: '/rsrc_259.bin',
+  TITLE_PAGE_RESOURCE: '/rsrc_261.bin'
 } as const
 
 export type AssetPath = (typeof ASSET_PATHS)[keyof typeof ASSET_PATHS]

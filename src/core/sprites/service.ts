@@ -51,6 +51,9 @@ export type SpriteService = {
 
   // Status bar template
   getStatusBarTemplate(): MonochromeBitmap
+
+  // Title page (optional - may be null if not loaded)
+  getTitlePage(): MonochromeBitmap | null
 }
 
 // Helper function to convert Uint8Array to Uint16Array (big-endian)
@@ -101,6 +104,7 @@ type PrecomputedStorage = {
   strafe: Map<number, SpriteData> // key: rotation
   digit: Map<string, SpriteData> // key: character
   statusBarTemplate: MonochromeBitmap // The clean status bar template
+  titlePage: MonochromeBitmap | null // The title page image (optional)
 }
 
 /**
@@ -109,6 +113,7 @@ type PrecomputedStorage = {
 export async function createSpriteService(assetPaths: {
   spriteResource: string
   statusBarResource: string
+  titlePageResource?: string
 }): Promise<SpriteService> {
   // Load sprite resource file
   const response = await fetch(assetPaths.spriteResource)
@@ -134,8 +139,26 @@ export async function createSpriteService(assetPaths: {
   const statusBarTemplate = createMonochromeBitmap(512, 24)
   statusBarTemplate.data.set(statusBarData)
 
+  // Load title page if provided
+  let titlePage: MonochromeBitmap | null = null
+  if (assetPaths.titlePageResource) {
+    try {
+      const titlePageResponse = await fetch(assetPaths.titlePageResource)
+      if (titlePageResponse.ok) {
+        const titlePageBuffer = await titlePageResponse.arrayBuffer()
+        // Decompress title page (342 rows as per SCRHT)
+        const titlePageData = expandTitlePage(titlePageBuffer, 342)
+        // Convert to MonochromeBitmap (512 pixels wide, 342 pixels tall)
+        titlePage = createMonochromeBitmap(512, 342)
+        titlePage.data.set(titlePageData)
+      }
+    } catch (error) {
+      console.warn('Failed to load title page resource:', error)
+    }
+  }
+
   // Pre-compute all sprite data at initialization
-  const storage = precomputeAllSprites(allSprites, statusBarTemplate)
+  const storage = precomputeAllSprites(allSprites, statusBarTemplate, titlePage)
 
   // Return the service implementation
   return {
@@ -225,6 +248,10 @@ export async function createSpriteService(assetPaths: {
 
     getStatusBarTemplate(): MonochromeBitmap {
       return storage.statusBarTemplate
+    },
+
+    getTitlePage(): MonochromeBitmap | null {
+      return storage.titlePage
     }
   }
 }
@@ -234,7 +261,8 @@ export async function createSpriteService(assetPaths: {
  */
 function precomputeAllSprites(
   allSprites: AllSprites,
-  statusBarTemplate: MonochromeBitmap
+  statusBarTemplate: MonochromeBitmap,
+  titlePage: MonochromeBitmap | null
 ): PrecomputedStorage {
   const storage: PrecomputedStorage = {
     ship: new Map(),
@@ -246,7 +274,8 @@ function precomputeAllSprites(
     flame: new Map(),
     strafe: new Map(),
     digit: new Map(),
-    statusBarTemplate
+    statusBarTemplate,
+    titlePage
   }
 
   // Pre-compute ship sprites (32 rotations, def and mask variants)

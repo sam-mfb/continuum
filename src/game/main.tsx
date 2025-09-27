@@ -27,7 +27,8 @@ try {
   // Initialize services
   const spriteService = await createSpriteService({
     spriteResource: ASSET_PATHS.SPRITE_RESOURCE,
-    statusBarResource: ASSET_PATHS.STATUS_BAR_RESOURCE
+    statusBarResource: ASSET_PATHS.STATUS_BAR_RESOURCE,
+    titlePageResource: ASSET_PATHS.TITLE_PAGE_RESOURCE
   })
   console.log('Sprite service created')
 
