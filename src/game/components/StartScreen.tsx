@@ -231,13 +231,14 @@ const StartScreen: React.FC<StartScreenProps> = ({
           position: 'absolute',
           top: '20px',
           right: '20px',
-          fontSize: '12px',
-          padding: '6px 12px',
+          padding: '8px',
           backgroundColor: 'black',
           color: 'white',
-          border: '1px solid white',
+          border: '1px solid #666',
           cursor: 'pointer',
-          fontFamily: 'monospace'
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
         }}
         onMouseEnter={e => {
           e.currentTarget.style.backgroundColor = '#333'
@@ -245,8 +246,49 @@ const StartScreen: React.FC<StartScreenProps> = ({
         onMouseLeave={e => {
           e.currentTarget.style.backgroundColor = 'black'
         }}
+        aria-label="Settings"
       >
-        SETTINGS
+        {/* Pixelated Gear Icon */}
+        <svg
+          width="17"
+          height="17"
+          viewBox="0 0 17 17"
+          xmlns="http://www.w3.org/2000/svg"
+          style={{ fill: 'white' }}
+        >
+          {/* Draw gear teeth and body with individual rectangles */}
+
+          {/* Top tooth */}
+          <rect x="7" y="0" width="3" height="3" />
+
+          {/* Top-left diagonal */}
+          <rect x="3" y="3" width="2" height="2" />
+
+          {/* Left tooth */}
+          <rect x="0" y="7" width="3" height="3" />
+
+          {/* Bottom-left diagonal */}
+          <rect x="3" y="12" width="2" height="2" />
+
+          {/* Bottom tooth */}
+          <rect x="7" y="14" width="3" height="3" />
+
+          {/* Bottom-right diagonal */}
+          <rect x="12" y="12" width="2" height="2" />
+
+          {/* Right tooth */}
+          <rect x="14" y="7" width="3" height="3" />
+
+          {/* Top-right diagonal */}
+          <rect x="12" y="3" width="2" height="2" />
+
+          {/* Main circular body */}
+          <rect x="5" y="3" width="7" height="11" />
+          <rect x="3" y="5" width="11" height="7" />
+
+          {/* Center hole */}
+          <rect x="7" y="7" width="3" height="3" fill="black" />
+        </svg>
       </button>
     </div>
   )
