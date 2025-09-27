@@ -6,7 +6,7 @@ import GameOverScreen from './components/GameOverScreen'
 import SettingsModal from './components/SettingsModal'
 import { loadLevel } from './levelThunks'
 import { startGame, setMode } from './appSlice'
-import { setHighScore } from '@/core/highscore'
+import { setHighScore, type HighScoreState } from '@/core/highscore'
 import { shipSlice } from '@/core/ship'
 import { invalidateHighScore } from './gameSlice'
 import { type SoundService } from '@/core/sound'
@@ -28,10 +28,11 @@ export const App: React.FC<AppProps> = ({
   const gameMode = useAppSelector(state => state.app.mode)
   const volume = useAppSelector(state => state.app.volume)
   const soundMuted = useAppSelector(state => !state.app.soundOn)
-  const pendingHighScore = useAppSelector(state => state.app.pendingHighScore)
+  const mostRecentScore = useAppSelector(state => state.app.mostRecentScore)
   const highScoreEligible = useAppSelector(
     state => state.game.highScoreEligible
   )
+  const highScores = useAppSelector(state => state.highscore)
 
   // Render the game content based on mode
   const renderGameContent = (): React.ReactElement | null => {
@@ -76,30 +77,45 @@ export const App: React.FC<AppProps> = ({
         )
 
       case 'highScoreEntry':
-        if (!pendingHighScore) {
+        if (!mostRecentScore) {
           // Shouldn't happen, but handle gracefully
           dispatch(setMode('start'))
           return null
         }
-        return (
-          <HighScoreEntry
-            score={pendingHighScore.score}
-            planet={pendingHighScore.planet}
-            fuel={pendingHighScore.fuel}
-            onSubmit={(name: string) => {
-              dispatch(
-                setHighScore({
-                  user: name,
-                  score: pendingHighScore.score,
-                  planet: pendingHighScore.planet,
-                  fuel: pendingHighScore.fuel,
-                  date: new Date().toISOString()
-                })
-              )
-              dispatch(setMode('start'))
-            }}
-          />
+
+        // Check if score is eligible and qualifies for high score table
+        const lowestScore = Math.min(
+          ...Object.values(highScores as HighScoreState).map(
+            hs => hs.score || 0
+          )
         )
+
+        if (highScoreEligible && mostRecentScore.score > lowestScore) {
+          // Score qualifies - show name entry
+          return (
+            <HighScoreEntry
+              score={mostRecentScore.score}
+              planet={mostRecentScore.planet}
+              fuel={mostRecentScore.fuel}
+              onSubmit={(name: string) => {
+                dispatch(
+                  setHighScore({
+                    user: name,
+                    score: mostRecentScore.score,
+                    planet: mostRecentScore.planet,
+                    fuel: mostRecentScore.fuel,
+                    date: new Date().toISOString()
+                  })
+                )
+                dispatch(setMode('start'))
+              }}
+            />
+          )
+        } else {
+          // Score doesn't qualify - go to game over
+          dispatch(setMode('gameOver'))
+          return null
+        }
 
       case 'gameOver':
         return <GameOverScreen onContinue={() => dispatch(setMode('start'))} />

@@ -8,7 +8,7 @@ import type { AlignmentMode } from '@/core/shared'
 
 export type GameMode = 'start' | 'playing' | 'highScoreEntry' | 'gameOver'
 
-export type PendingHighScore = {
+export type MostRecentScore = {
   score: number
   planet: number
   fuel: number
@@ -24,7 +24,7 @@ export type AppState = {
 
   // Game flow
   mode: GameMode
-  pendingHighScore: PendingHighScore | null
+  mostRecentScore: MostRecentScore | null
 
   // UI state
   showSettings: boolean
@@ -35,7 +35,7 @@ const initialState: AppState = {
   volume: 0,
   soundOn: true,
   mode: 'start',
-  pendingHighScore: null,
+  mostRecentScore: null,
   showSettings: false
 }
 
@@ -67,23 +67,14 @@ export const appSlice = createSlice({
     // Game flow management
     setMode: (state, action: PayloadAction<GameMode>) => {
       state.mode = action.payload
-      if (action.payload === 'start') {
-        state.pendingHighScore = null
-      }
     },
 
     startGame: state => {
       state.mode = 'playing'
-      state.pendingHighScore = null
     },
 
-    setPendingHighScore: (state, action: PayloadAction<PendingHighScore>) => {
-      state.pendingHighScore = action.payload
-      state.mode = 'highScoreEntry'
-    },
-
-    clearPendingHighScore: state => {
-      state.pendingHighScore = null
+    setMostRecentScore: (state, action: PayloadAction<MostRecentScore>) => {
+      state.mostRecentScore = action.payload
     },
 
     // UI state actions
@@ -109,8 +100,7 @@ export const {
   disableSound,
   setMode,
   startGame,
-  setPendingHighScore,
-  clearPendingHighScore,
+  setMostRecentScore,
   openSettings,
   closeSettings,
   toggleSettings
