@@ -81,6 +81,57 @@ const StartScreen: React.FC<StartScreenProps> = ({
     dispatch(loadTitlePage())
   }, [dispatch])
 
+  // Find content boundaries in the title page bitmap
+  const findContentBounds = (
+    bitmap: MonochromeBitmap
+  ): { width: number; height: number } => {
+    let rightMost = 0
+    let bottomMost = 0
+
+    // Scan for rightmost black pixel (actual content)
+    for (let x = 511; x >= 0; x--) {
+      let foundBlack = false
+      for (let y = 0; y < 342; y++) {
+        const byteIndex = y * 64 + Math.floor(x / 8)
+        const bitIndex = 7 - (x % 8)
+        const byte = bitmap.data[byteIndex]
+        if (byte !== undefined) {
+          const bit = (byte >> bitIndex) & 1
+          if (bit === 1) {
+            // Black pixel (content)
+            rightMost = x
+            foundBlack = true
+            break
+          }
+        }
+      }
+      if (foundBlack) break
+    }
+
+    // Scan for bottommost black pixel (actual content)
+    for (let y = 341; y >= 0; y--) {
+      let foundBlack = false
+      for (let x = 0; x <= rightMost; x++) {
+        const byteIndex = y * 64 + Math.floor(x / 8)
+        const bitIndex = 7 - (x % 8)
+        const byte = bitmap.data[byteIndex]
+        if (byte !== undefined) {
+          const bit = (byte >> bitIndex) & 1
+          if (bit === 1) {
+            // Black pixel (content)
+            bottomMost = y
+            foundBlack = true
+            break
+          }
+        }
+      }
+      if (foundBlack) break
+    }
+
+    // Add 1 to convert from index to width/height
+    return { width: rightMost + 1, height: bottomMost + 1 }
+  }
+
   // Render title page to canvas
   useEffect(() => {
     if (!titlePage || !canvasRef.current) return
@@ -89,23 +140,26 @@ const StartScreen: React.FC<StartScreenProps> = ({
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Set canvas size to pixel-doubled (matching game display)
-    canvas.width = 1024
-    canvas.height = 684
+    // Find the actual content boundaries
+    const bounds = findContentBounds(titlePage)
 
-    // Create ImageData at original size
-    const imageData = ctx.createImageData(512, 342)
+    // Set canvas size to pixel-doubled cropped dimensions
+    canvas.width = bounds.width * 2
+    canvas.height = bounds.height * 2
+
+    // Create ImageData at cropped size
+    const imageData = ctx.createImageData(bounds.width, bounds.height)
     const data = imageData.data
 
-    // Convert monochrome bitmap to RGBA
-    for (let y = 0; y < 342; y++) {
-      for (let x = 0; x < 512; x++) {
+    // Convert monochrome bitmap to RGBA (only the content area)
+    for (let y = 0; y < bounds.height; y++) {
+      for (let x = 0; x < bounds.width; x++) {
         const byteIndex = y * 64 + Math.floor(x / 8)
         const bitIndex = 7 - (x % 8)
         const byte = titlePage.data[byteIndex]
         const bit = byte !== undefined ? (byte >> bitIndex) & 1 : 0
 
-        const pixelIndex = (y * 512 + x) * 4
+        const pixelIndex = (y * bounds.width + x) * 4
         const color = bit ? 0 : 255 // Black for 1, white for 0
         data[pixelIndex] = color // R
         data[pixelIndex + 1] = color // G
@@ -119,8 +173,8 @@ const StartScreen: React.FC<StartScreenProps> = ({
 
     // First put the image data on a temporary canvas at original size
     const tempCanvas = document.createElement('canvas')
-    tempCanvas.width = 512
-    tempCanvas.height = 342
+    tempCanvas.width = bounds.width
+    tempCanvas.height = bounds.height
     const tempCtx = tempCanvas.getContext('2d')
     if (!tempCtx) return
 
@@ -128,7 +182,17 @@ const StartScreen: React.FC<StartScreenProps> = ({
 
     // Now draw it scaled 2x on the main canvas
     ctx.imageSmoothingEnabled = false
-    ctx.drawImage(tempCanvas, 0, 0, 512, 342, 0, 0, 1024, 684)
+    ctx.drawImage(
+      tempCanvas,
+      0,
+      0,
+      bounds.width,
+      bounds.height,
+      0,
+      0,
+      bounds.width * 2,
+      bounds.height * 2
+    )
   }, [titlePage])
 
   const formatHighScore = (slot: keyof HighScoreState): React.ReactElement => {
@@ -185,8 +249,6 @@ const StartScreen: React.FC<StartScreenProps> = ({
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            width: '1024px',
-            height: '684px',
             opacity: 0.3,
             pointerEvents: 'none',
             imageRendering: 'pixelated'
