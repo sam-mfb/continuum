@@ -43,7 +43,6 @@ export const gameSlice = createSlice({
     resetGame: state => {
       state.gameOver = false
       state.levelComplete = false
-      state.highScoreEligible = true
     },
     pause: state => {
       state.paused = true

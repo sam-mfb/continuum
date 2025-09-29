@@ -30,6 +30,7 @@ const StartScreen: React.FC<StartScreenProps> = ({
 
   // Load title page from sprite service
   useEffect(() => {
+    dispatch(allowHighScore())
     // Create a thunk to access the sprite service
     const loadTitlePage =
       () =>
