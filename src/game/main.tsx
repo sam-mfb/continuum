@@ -88,6 +88,7 @@ try {
         renderer={renderer}
         totalLevels={totalLevels}
         soundService={soundService}
+        spriteService={spriteService}
       />
     </Provider>
   )

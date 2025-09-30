@@ -12,6 +12,7 @@ import { setHighScore, type HighScoreState } from '@/core/highscore'
 import { shipSlice } from '@/core/ship'
 import { invalidateHighScore } from './gameSlice'
 import { type SoundService } from '@/core/sound'
+import { type SpriteService } from '@/core/sprites'
 import { useAppDispatch, useAppSelector } from './store'
 import type { GameRenderLoop } from './types'
 
@@ -19,12 +20,14 @@ type AppProps = {
   renderer: GameRenderLoop
   totalLevels: number
   soundService: SoundService
+  spriteService: SpriteService
 }
 
 export const App: React.FC<AppProps> = ({
   renderer,
   totalLevels,
-  soundService
+  soundService,
+  spriteService
 }) => {
   const dispatch = useAppDispatch()
   const gameMode = useAppSelector(state => state.app.mode)
@@ -170,7 +173,7 @@ export const App: React.FC<AppProps> = ({
           </div>
         )}
       </div>
-      <SettingsModal />
+      <SettingsModal spriteService={spriteService} />
       <VolumeButton />
     </>
   )

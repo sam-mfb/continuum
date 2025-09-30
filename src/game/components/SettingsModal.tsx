@@ -8,11 +8,70 @@ import {
 import { resetHighScores } from '@/core/highscore'
 import { setBinding, resetBindings } from '@/core/controls'
 import { ControlAction } from '@/core/controls/types'
+import { type SpriteService } from '@/core/sprites'
+import { BunkerKind } from '@/core/figs'
+import { bitmapToCanvas } from '@/lib/bitmap'
 import VolumeControls from './VolumeControls'
 
-type Tab = 'options' | 'controls' | 'tips' | 'about'
+type Tab = 'options' | 'controls' | 'tips' | 'scoring' | 'about'
 
-const SettingsModal: React.FC = () => {
+type SettingsModalProps = {
+  spriteService: SpriteService
+}
+
+// Helper component to render a sprite to a canvas
+const SpriteIcon: React.FC<{
+  spriteService: SpriteService
+  type: 'bunker' | 'fuel'
+  bunkerKind?: BunkerKind
+  rotation?: number
+  width: number
+  height: number
+}> = ({ spriteService, type, bunkerKind, rotation = 0, width, height }) => {
+  const canvasRef = React.useRef<HTMLCanvasElement>(null)
+
+  React.useEffect(() => {
+    if (!canvasRef.current) return
+
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    // Clear canvas with white background
+    ctx.fillStyle = '#fff'
+    ctx.fillRect(0, 0, width, height)
+
+    // Get and render sprite
+    if (type === 'bunker' && bunkerKind !== undefined) {
+      const spriteData = spriteService.getBunkerSprite(bunkerKind, rotation, {
+        variant: 'def'
+      })
+      bitmapToCanvas(spriteData.bitmap, ctx, {
+        foregroundColor: 'black',
+        backgroundColor: 'white'
+      })
+    } else if (type === 'fuel') {
+      const spriteData = spriteService.getFuelSprite(0, { variant: 'def' })
+      bitmapToCanvas(spriteData.bitmap, ctx, {
+        foregroundColor: 'black',
+        backgroundColor: 'white'
+      })
+    }
+  }, [spriteService, type, bunkerKind, rotation, width, height])
+
+  return (
+    <canvas
+      ref={canvasRef}
+      width={width}
+      height={height}
+      style={{
+        imageRendering: 'pixelated'
+      }}
+    />
+  )
+}
+
+const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
   const dispatch = useAppDispatch()
   const alignmentMode = useAppSelector(state => state.app.alignmentMode)
   const showInGameControls = useAppSelector(
@@ -293,6 +352,22 @@ const SettingsModal: React.FC = () => {
             }}
           >
             Tips
+          </button>
+          <button
+            style={tabButtonStyle(activeTab === 'scoring')}
+            onClick={() => setActiveTab('scoring')}
+            onMouseEnter={e => {
+              if (activeTab !== 'scoring') {
+                e.currentTarget.style.background = '#222'
+              }
+            }}
+            onMouseLeave={e => {
+              if (activeTab !== 'scoring') {
+                e.currentTarget.style.background = '#000'
+              }
+            }}
+          >
+            Scoring
           </button>
           <button
             style={tabButtonStyle(activeTab === 'about')}
@@ -888,6 +963,186 @@ const SettingsModal: React.FC = () => {
                 </div>
                 <div style={{ color: '#ccc' }}>
                   • Don't always do things the obvious way
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Scoring Tab Content */}
+        {activeTab === 'scoring' && (
+          <div style={sectionStyle}>
+            <div
+              style={{
+                fontSize: '13px',
+                lineHeight: '1.8',
+                padding: '20px',
+                background: '#fff',
+                color: '#000'
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: 'bold',
+                  marginBottom: '15px',
+                  fontSize: '14px'
+                }}
+              >
+                POINT VALUES
+              </div>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: '20px',
+                  justifyItems: 'center'
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <SpriteIcon
+                    spriteService={spriteService}
+                    type="bunker"
+                    bunkerKind={BunkerKind.WALL}
+                    width={48}
+                    height={48}
+                  />
+                  <span style={{ color: '#000', fontWeight: 'bold' }}>100</span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <SpriteIcon
+                    spriteService={spriteService}
+                    type="bunker"
+                    bunkerKind={BunkerKind.GROUND}
+                    width={48}
+                    height={48}
+                  />
+                  <span style={{ color: '#000', fontWeight: 'bold' }}>100</span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <SpriteIcon
+                    spriteService={spriteService}
+                    type="bunker"
+                    bunkerKind={BunkerKind.DIFF}
+                    rotation={0}
+                    width={48}
+                    height={48}
+                  />
+                  <span style={{ color: '#000', fontWeight: 'bold' }}>10</span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <SpriteIcon
+                    spriteService={spriteService}
+                    type="bunker"
+                    bunkerKind={BunkerKind.DIFF}
+                    rotation={1}
+                    width={48}
+                    height={48}
+                  />
+                  <span style={{ color: '#000', fontWeight: 'bold' }}>200</span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <SpriteIcon
+                    spriteService={spriteService}
+                    type="bunker"
+                    bunkerKind={BunkerKind.DIFF}
+                    rotation={2}
+                    width={48}
+                    height={48}
+                  />
+                  <span style={{ color: '#000', fontWeight: 'bold' }}>300</span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <SpriteIcon
+                    spriteService={spriteService}
+                    type="bunker"
+                    bunkerKind={BunkerKind.FOLLOW}
+                    width={48}
+                    height={48}
+                  />
+                  <span style={{ color: '#000', fontWeight: 'bold' }}>400</span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <SpriteIcon
+                    spriteService={spriteService}
+                    type="bunker"
+                    bunkerKind={BunkerKind.GENERATOR}
+                    width={48}
+                    height={48}
+                  />
+                  <span style={{ color: '#000', fontWeight: 'bold' }}>500</span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <SpriteIcon
+                    spriteService={spriteService}
+                    type="fuel"
+                    width={32}
+                    height={32}
+                  />
+                  <span style={{ color: '#000', fontWeight: 'bold' }}>15</span>
                 </div>
               </div>
             </div>
