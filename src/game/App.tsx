@@ -5,6 +5,7 @@ import HighScoreEntry from './components/HighScoreEntry'
 import GameOverScreen from './components/GameOverScreen'
 import SettingsModal from './components/SettingsModal'
 import VolumeButton from './components/VolumeButton'
+import InGameControlsPanel from './components/InGameControlsPanel'
 import { loadLevel } from './levelThunks'
 import { startGame, setMode } from './appSlice'
 import { setHighScore, type HighScoreState } from '@/core/highscore'
@@ -66,7 +67,9 @@ export const App: React.FC<AppProps> = ({
 
       case 'playing':
         return (
-          <div style={{ width: '1024px', height: '684px' }}>
+          <div
+            style={{ width: '1024px', height: '684px', position: 'relative' }}
+          >
             <GameRenderer
               renderer={renderer}
               width={512}
@@ -74,6 +77,7 @@ export const App: React.FC<AppProps> = ({
               scale={2} // Pixel-doubled
               fps={20} // Original Continuum runs at 20 FPS
             />
+            <InGameControlsPanel />
           </div>
         )
 
