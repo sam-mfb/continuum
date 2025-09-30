@@ -45,32 +45,31 @@ const VolumeButton: React.FC = () => {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '10px'
+    gap: '4px'
   }
 
   const buttonStyle: React.CSSProperties = {
     width: '44px',
     height: '44px',
     borderRadius: '50%',
-    background: isHovered ? 'rgba(0, 0, 0, 0.95)' : 'rgba(0, 0, 0, 0.75)',
-    border: `2px solid ${isHovered ? 'rgba(255, 255, 255, 0.7)' : 'rgba(255, 255, 255, 0.35)'}`,
+    background: 'transparent',
+    border: 'none',
+    outline: 'none',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     cursor: 'pointer',
     transition: 'all 0.25s ease',
     padding: '0',
-    boxShadow: isHovered
-      ? '0 4px 12px rgba(0, 0, 0, 0.5)'
-      : '0 2px 6px rgba(0, 0, 0, 0.3)'
+    boxShadow: 'none'
   }
 
   const sliderContainerStyle: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    background: 'rgba(0, 0, 0, 0.95)',
-    border: '2px solid rgba(255, 255, 255, 0.4)',
+    background: 'transparent',
+    border: 'none',
     borderRadius: '6px',
     padding: '14px 10px',
     gap: '10px',
@@ -81,7 +80,7 @@ const VolumeButton: React.FC = () => {
       : 'translateY(10px) scale(0.9)',
     transition: 'all 0.25s ease',
     pointerEvents: isHovered ? 'auto' : 'none',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.6)'
+    boxShadow: 'none'
   }
 
   const sliderWrapperStyle: React.CSSProperties = {
@@ -98,11 +97,11 @@ const VolumeButton: React.FC = () => {
     appearance: 'none',
     width: '100px',
     height: '6px',
-    background: 'rgba(255, 255, 255, 0.15)',
+    background: 'rgba(128, 128, 128, 0.5)',
     outline: 'none',
     cursor: 'pointer',
     borderRadius: '3px',
-    border: '1px solid rgba(255, 255, 255, 0.25)'
+    border: '1px solid rgba(128, 128, 128, 0.7)'
   }
 
   const volumeTextStyle: React.CSSProperties = {
