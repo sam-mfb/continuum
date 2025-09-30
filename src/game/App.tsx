@@ -4,12 +4,15 @@ import StartScreen from './components/StartScreen'
 import HighScoreEntry from './components/HighScoreEntry'
 import GameOverScreen from './components/GameOverScreen'
 import SettingsModal from './components/SettingsModal'
+import VolumeButton from './components/VolumeButton'
+import InGameControlsPanel from './components/InGameControlsPanel'
 import { loadLevel } from './levelThunks'
 import { startGame, setMode } from './appSlice'
 import { setHighScore, type HighScoreState } from '@/core/highscore'
 import { shipSlice } from '@/core/ship'
 import { invalidateHighScore } from './gameSlice'
 import { type SoundService } from '@/core/sound'
+import { type SpriteService } from '@/core/sprites'
 import { useAppDispatch, useAppSelector } from './store'
 import type { GameRenderLoop } from './types'
 
@@ -17,17 +20,22 @@ type AppProps = {
   renderer: GameRenderLoop
   totalLevels: number
   soundService: SoundService
+  spriteService: SpriteService
 }
 
 export const App: React.FC<AppProps> = ({
   renderer,
   totalLevels,
-  soundService
+  soundService,
+  spriteService
 }) => {
   const dispatch = useAppDispatch()
   const gameMode = useAppSelector(state => state.app.mode)
   const volume = useAppSelector(state => state.app.volume)
   const soundMuted = useAppSelector(state => !state.app.soundOn)
+  const showInGameControls = useAppSelector(
+    state => state.app.showInGameControls
+  )
   const mostRecentScore = useAppSelector(state => state.app.mostRecentScore)
   const highScoreEligible = useAppSelector(
     state => state.game.highScoreEligible
@@ -65,7 +73,9 @@ export const App: React.FC<AppProps> = ({
 
       case 'playing':
         return (
-          <div style={{ width: '1024px', height: '684px' }}>
+          <div
+            style={{ width: '1024px', height: '684px', position: 'relative' }}
+          >
             <GameRenderer
               renderer={renderer}
               width={512}
@@ -73,6 +83,7 @@ export const App: React.FC<AppProps> = ({
               scale={2} // Pixel-doubled
               fps={20} // Original Continuum runs at 20 FPS
             />
+            {showInGameControls && <InGameControlsPanel />}
           </div>
         )
 
@@ -162,7 +173,8 @@ export const App: React.FC<AppProps> = ({
           </div>
         )}
       </div>
-      <SettingsModal />
+      <SettingsModal spriteService={spriteService} />
+      <VolumeButton />
     </>
   )
 }

@@ -76,7 +76,10 @@ const createStoreAndListeners = (
       soundOn: persistedAppSettings.soundOn ?? initialSettings.soundEnabled,
       alignmentMode:
         persistedAppSettings.alignmentMode ??
-        appSlice.getInitialState().alignmentMode
+        appSlice.getInitialState().alignmentMode,
+      showInGameControls:
+        persistedAppSettings.showInGameControls ??
+        appSlice.getInitialState().showInGameControls
     },
     highscore: persistedHighScores,
     controls: {

@@ -1,21 +1,126 @@
 import React, { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../store'
-import { toggleAlignmentMode, closeSettings } from '../appSlice'
+import {
+  toggleAlignmentMode,
+  toggleInGameControls,
+  closeSettings
+} from '../appSlice'
 import { resetHighScores } from '@/core/highscore'
+import { setBinding, resetBindings } from '@/core/controls'
+import { ControlAction } from '@/core/controls/types'
+import { type SpriteService } from '@/core/sprites'
+import { BunkerKind } from '@/core/figs'
+import { bitmapToCanvas } from '@/lib/bitmap'
+import { formatKey } from '../utils/formatKey'
 import VolumeControls from './VolumeControls'
 
-type Tab = 'options' | 'controls' | 'about'
+type Tab = 'options' | 'controls' | 'tips' | 'scoring' | 'about'
 
-const SettingsModal: React.FC = () => {
+type SettingsModalProps = {
+  spriteService: SpriteService
+}
+
+// Helper component to render a sprite to a canvas
+const SpriteIcon: React.FC<{
+  spriteService: SpriteService
+  type: 'bunker' | 'fuel'
+  bunkerKind?: BunkerKind
+  rotation?: number
+  width: number
+  height: number
+}> = ({ spriteService, type, bunkerKind, rotation = 0, width, height }) => {
+  const canvasRef = React.useRef<HTMLCanvasElement>(null)
+
+  React.useEffect(() => {
+    if (!canvasRef.current) return
+
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    // Clear canvas with white background
+    ctx.fillStyle = '#fff'
+    ctx.fillRect(0, 0, width, height)
+
+    // Get and render sprite
+    if (type === 'bunker' && bunkerKind !== undefined) {
+      const spriteData = spriteService.getBunkerSprite(bunkerKind, rotation, {
+        variant: 'def'
+      })
+      bitmapToCanvas(spriteData.bitmap, ctx, {
+        foregroundColor: 'black',
+        backgroundColor: 'white'
+      })
+    } else if (type === 'fuel') {
+      const spriteData = spriteService.getFuelSprite(0, { variant: 'def' })
+      bitmapToCanvas(spriteData.bitmap, ctx, {
+        foregroundColor: 'black',
+        backgroundColor: 'white'
+      })
+    }
+  }, [spriteService, type, bunkerKind, rotation, width, height])
+
+  return (
+    <canvas
+      ref={canvasRef}
+      width={width}
+      height={height}
+      style={{
+        imageRendering: 'pixelated'
+      }}
+    />
+  )
+}
+
+const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
   const dispatch = useAppDispatch()
   const alignmentMode = useAppSelector(state => state.app.alignmentMode)
+  const showInGameControls = useAppSelector(
+    state => state.app.showInGameControls
+  )
   const bindings = useAppSelector(state => state.controls.bindings)
   const showSettings = useAppSelector(state => state.app.showSettings)
   const [showConfirm, setShowConfirm] = useState(false)
   const [activeTab, setActiveTab] = useState<Tab>('options')
+  const [editingControl, setEditingControl] = useState<ControlAction | null>(
+    null
+  )
+  const [conflictError, setConflictError] = useState<string | null>(null)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
+      // If editing a control, capture the key press
+      if (editingControl) {
+        e.preventDefault()
+        e.stopPropagation()
+
+        // Don't allow Escape to be bound (reserved for closing modal)
+        if (e.code === 'Escape') {
+          setEditingControl(null)
+          setConflictError(null)
+          return
+        }
+
+        // Check if this key is already bound to another control
+        const conflictingControl = Object.entries(bindings).find(
+          ([action, key]) => key === e.code && action !== editingControl
+        )
+
+        if (conflictingControl) {
+          setConflictError(
+            `${e.code} is already bound to ${conflictingControl[0]}`
+          )
+          return
+        }
+
+        // Valid key - update the binding
+        dispatch(setBinding({ action: editingControl, key: e.code }))
+        setEditingControl(null)
+        setConflictError(null)
+        return
+      }
+
+      // Normal modal behavior
       if (e.key === 'Escape' && showSettings) {
         dispatch(closeSettings())
       }
@@ -23,27 +128,9 @@ const SettingsModal: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown)
     return (): void => window.removeEventListener('keydown', handleKeyDown)
-  }, [dispatch, showSettings])
+  }, [dispatch, showSettings, editingControl, bindings])
 
   if (!showSettings) return null as React.ReactElement | null
-
-  const formatKey = (keyCode: string): string => {
-    if (keyCode.startsWith('Key')) {
-      return keyCode.slice(3)
-    }
-    switch (keyCode) {
-      case 'Space':
-        return 'SPACE'
-      case 'Escape':
-        return 'ESC'
-      case 'Period':
-        return '.'
-      case 'Slash':
-        return '/'
-      default:
-        return keyCode.toUpperCase()
-    }
-  }
 
   const handleAlignmentToggle = (): void => {
     dispatch(toggleAlignmentMode())
@@ -78,7 +165,7 @@ const SettingsModal: React.FC = () => {
     border: '2px solid #666',
     color: '#fff',
     fontFamily: 'monospace',
-    fontSize: '12px',
+    fontSize: '13px',
     padding: '20px',
     maxWidth: '800px',
     maxHeight: '80vh',
@@ -116,7 +203,7 @@ const SettingsModal: React.FC = () => {
     display: 'grid',
     gridTemplateColumns: 'repeat(3, 1fr)',
     gap: '5px',
-    fontSize: '11px'
+    fontSize: '12px'
   }
 
   const controlItemStyle: React.CSSProperties = {
@@ -129,9 +216,24 @@ const SettingsModal: React.FC = () => {
     color: '#aaa'
   }
 
-  const keyStyle: React.CSSProperties = {
-    color: '#fff',
-    fontWeight: 'bold'
+  const editableKeyStyle = (isEditing: boolean): React.CSSProperties => ({
+    color: isEditing ? '#000' : '#fff',
+    fontWeight: 'bold',
+    background: isEditing ? '#ffcc00' : '#333',
+    border: '1px solid ' + (isEditing ? '#ffcc00' : '#666'),
+    padding: '2px 6px',
+    borderRadius: '2px',
+    cursor: 'pointer',
+    minWidth: '60px',
+    textAlign: 'center',
+    display: 'inline-block',
+    transition: 'all 0.15s',
+    fontSize: '11px'
+  })
+
+  const handleControlClick = (action: ControlAction): void => {
+    setEditingControl(action)
+    setConflictError(null)
   }
 
   const toggleButtonStyle: React.CSSProperties = {
@@ -141,7 +243,7 @@ const SettingsModal: React.FC = () => {
     padding: '4px 8px',
     cursor: 'pointer',
     fontFamily: 'monospace',
-    fontSize: '11px',
+    fontSize: '12px',
     textTransform: 'uppercase'
   }
 
@@ -219,6 +321,38 @@ const SettingsModal: React.FC = () => {
             Controls
           </button>
           <button
+            style={tabButtonStyle(activeTab === 'tips')}
+            onClick={() => setActiveTab('tips')}
+            onMouseEnter={e => {
+              if (activeTab !== 'tips') {
+                e.currentTarget.style.background = '#222'
+              }
+            }}
+            onMouseLeave={e => {
+              if (activeTab !== 'tips') {
+                e.currentTarget.style.background = '#000'
+              }
+            }}
+          >
+            Tips
+          </button>
+          <button
+            style={tabButtonStyle(activeTab === 'scoring')}
+            onClick={() => setActiveTab('scoring')}
+            onMouseEnter={e => {
+              if (activeTab !== 'scoring') {
+                e.currentTarget.style.background = '#222'
+              }
+            }}
+            onMouseLeave={e => {
+              if (activeTab !== 'scoring') {
+                e.currentTarget.style.background = '#000'
+              }
+            }}
+          >
+            Scoring
+          </button>
+          <button
             style={tabButtonStyle(activeTab === 'about')}
             onClick={() => setActiveTab('about')}
             onMouseEnter={e => {
@@ -275,6 +409,36 @@ const SettingsModal: React.FC = () => {
               </div>
             </div>
 
+            {/* In-Game Controls Panel Section */}
+            <div style={sectionStyle}>
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+              >
+                <span>SHOW IN-GAME CONTROLS:</span>
+                <button
+                  onClick={() => dispatch(toggleInGameControls())}
+                  style={toggleButtonStyle}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = '#333'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = '#000'
+                  }}
+                >
+                  {showInGameControls ? 'VISIBLE' : 'HIDDEN'}
+                </button>
+                <span
+                  style={{
+                    color: '#666',
+                    fontSize: '10px',
+                    marginLeft: '10px'
+                  }}
+                >
+                  (Show control hints at bottom of screen during gameplay)
+                </span>
+              </div>
+            </div>
+
             {/* Volume Controls Section */}
             <VolumeControls />
 
@@ -317,121 +481,651 @@ const SettingsModal: React.FC = () => {
 
         {/* Controls Tab Content */}
         {activeTab === 'controls' && (
-          <div style={sectionStyle}>
-            <div style={{ marginBottom: '5px', fontWeight: 'bold' }}>
-              CONTROLS
-            </div>
-            <div style={controlGridStyle}>
-              {/* Movement Controls */}
-              <div>
-                <div
-                  style={{
-                    ...controlItemStyle,
-                    fontWeight: 'bold',
-                    borderBottom: '1px solid #333',
-                    marginBottom: '3px'
-                  }}
-                >
-                  MOVEMENT
-                </div>
-                <div style={controlItemStyle}>
-                  <span style={labelStyle}>Thrust:</span>
-                  <span style={keyStyle}>{formatKey(bindings.thrust)}</span>
-                </div>
-                <div style={controlItemStyle}>
-                  <span style={labelStyle}>Left:</span>
-                  <span style={keyStyle}>{formatKey(bindings.left)}</span>
-                </div>
-                <div style={controlItemStyle}>
-                  <span style={labelStyle}>Right:</span>
-                  <span style={keyStyle}>{formatKey(bindings.right)}</span>
-                </div>
-              </div>
-
-              {/* Action Controls */}
-              <div>
-                <div
-                  style={{
-                    ...controlItemStyle,
-                    fontWeight: 'bold',
-                    borderBottom: '1px solid #333',
-                    marginBottom: '3px'
-                  }}
-                >
-                  ACTIONS
-                </div>
-                <div style={controlItemStyle}>
-                  <span style={labelStyle}>Fire:</span>
-                  <span style={keyStyle}>{formatKey(bindings.fire)}</span>
-                </div>
-                <div style={controlItemStyle}>
-                  <span style={labelStyle}>Shield:</span>
-                  <span style={keyStyle}>{formatKey(bindings.shield)}</span>
-                </div>
-                <div style={controlItemStyle}>
-                  <span style={labelStyle}>Self Destruct:</span>
-                  <span style={keyStyle}>
-                    {formatKey(bindings.selfDestruct)}
+          <>
+            <div style={sectionStyle}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '10px'
+                }}
+              >
+                <div style={{ fontWeight: 'bold' }}>
+                  CONTROLS
+                  <span
+                    style={{
+                      fontSize: '10px',
+                      color: '#888',
+                      marginLeft: '10px',
+                      fontWeight: 'normal'
+                    }}
+                  >
+                    (Click to edit)
                   </span>
                 </div>
+                <button
+                  onClick={() => dispatch(resetBindings())}
+                  style={toggleButtonStyle}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = '#333'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = '#000'
+                  }}
+                >
+                  RESET TO DEFAULTS
+                </button>
               </div>
-
-              {/* Game Controls */}
-              <div>
+              {conflictError && (
                 <div
                   style={{
-                    ...controlItemStyle,
-                    fontWeight: 'bold',
-                    borderBottom: '1px solid #333',
-                    marginBottom: '3px'
+                    color: '#ff3333',
+                    fontSize: '11px',
+                    marginBottom: '8px',
+                    padding: '4px 8px',
+                    background: 'rgba(255, 51, 51, 0.1)',
+                    border: '1px solid #ff3333'
                   }}
                 >
-                  GAME
+                  {conflictError}
                 </div>
-                <div style={controlItemStyle}>
-                  <span style={labelStyle}>Pause:</span>
-                  <span style={keyStyle}>{formatKey(bindings.pause)}</span>
-                </div>
-                <div style={controlItemStyle}>
-                  <span style={labelStyle}>Map:</span>
-                  <span style={keyStyle}>{formatKey(bindings.map)}</span>
-                </div>
-                <div style={controlItemStyle}>
-                  <span style={labelStyle}>Quit:</span>
-                  <span style={keyStyle}>{formatKey(bindings.quit)}</span>
-                </div>
+              )}
+              {editingControl && (
                 <div
                   style={{
-                    marginTop: '5px',
-                    paddingTop: '5px',
-                    borderTop: '1px solid #333'
+                    color: '#ffcc00',
+                    fontSize: '11px',
+                    marginBottom: '8px',
+                    padding: '4px 8px',
+                    background: 'rgba(255, 204, 0, 0.1)',
+                    border: '1px solid #ffcc00'
                   }}
                 >
+                  Press a key to bind to this control (ESC to cancel)
+                </div>
+              )}
+              <div style={controlGridStyle}>
+                {/* Movement Controls */}
+                <div>
                   <div
                     style={{
-                      fontSize: '9px',
-                      color: '#888',
+                      ...controlItemStyle,
+                      fontWeight: 'bold',
+                      borderBottom: '1px solid #333',
                       marginBottom: '3px'
                     }}
                   >
-                    CHEATS (disables high scores):
+                    MOVEMENT
                   </div>
                   <div style={controlItemStyle}>
-                    <span style={{ ...labelStyle, color: '#888' }}>
-                      Next Level:
-                    </span>
-                    <span style={{ ...keyStyle, color: '#888' }}>
-                      {formatKey(bindings.nextLevel)}
-                    </span>
+                    <span style={labelStyle}>Thrust:</span>
+                    <button
+                      style={editableKeyStyle(
+                        editingControl === ControlAction.THRUST
+                      )}
+                      onClick={() => handleControlClick(ControlAction.THRUST)}
+                      onMouseEnter={e => {
+                        if (editingControl !== ControlAction.THRUST) {
+                          e.currentTarget.style.background = '#444'
+                        }
+                      }}
+                      onMouseLeave={e => {
+                        if (editingControl !== ControlAction.THRUST) {
+                          e.currentTarget.style.background = '#333'
+                        }
+                      }}
+                    >
+                      {editingControl === ControlAction.THRUST
+                        ? '...'
+                        : formatKey(bindings.thrust)}
+                    </button>
                   </div>
                   <div style={controlItemStyle}>
-                    <span style={{ ...labelStyle, color: '#888' }}>
-                      Extra Life:
-                    </span>
-                    <span style={{ ...keyStyle, color: '#888' }}>
-                      {formatKey(bindings.extraLife)}
-                    </span>
+                    <span style={labelStyle}>Left:</span>
+                    <button
+                      style={editableKeyStyle(
+                        editingControl === ControlAction.LEFT
+                      )}
+                      onClick={() => handleControlClick(ControlAction.LEFT)}
+                      onMouseEnter={e => {
+                        if (editingControl !== ControlAction.LEFT) {
+                          e.currentTarget.style.background = '#444'
+                        }
+                      }}
+                      onMouseLeave={e => {
+                        if (editingControl !== ControlAction.LEFT) {
+                          e.currentTarget.style.background = '#333'
+                        }
+                      }}
+                    >
+                      {editingControl === ControlAction.LEFT
+                        ? '...'
+                        : formatKey(bindings.left)}
+                    </button>
                   </div>
+                  <div style={controlItemStyle}>
+                    <span style={labelStyle}>Right:</span>
+                    <button
+                      style={editableKeyStyle(
+                        editingControl === ControlAction.RIGHT
+                      )}
+                      onClick={() => handleControlClick(ControlAction.RIGHT)}
+                      onMouseEnter={e => {
+                        if (editingControl !== ControlAction.RIGHT) {
+                          e.currentTarget.style.background = '#444'
+                        }
+                      }}
+                      onMouseLeave={e => {
+                        if (editingControl !== ControlAction.RIGHT) {
+                          e.currentTarget.style.background = '#333'
+                        }
+                      }}
+                    >
+                      {editingControl === ControlAction.RIGHT
+                        ? '...'
+                        : formatKey(bindings.right)}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Action Controls */}
+                <div>
+                  <div
+                    style={{
+                      ...controlItemStyle,
+                      fontWeight: 'bold',
+                      borderBottom: '1px solid #333',
+                      marginBottom: '3px'
+                    }}
+                  >
+                    ACTIONS
+                  </div>
+                  <div style={controlItemStyle}>
+                    <span style={labelStyle}>Fire:</span>
+                    <button
+                      style={editableKeyStyle(
+                        editingControl === ControlAction.FIRE
+                      )}
+                      onClick={() => handleControlClick(ControlAction.FIRE)}
+                      onMouseEnter={e => {
+                        if (editingControl !== ControlAction.FIRE) {
+                          e.currentTarget.style.background = '#444'
+                        }
+                      }}
+                      onMouseLeave={e => {
+                        if (editingControl !== ControlAction.FIRE) {
+                          e.currentTarget.style.background = '#333'
+                        }
+                      }}
+                    >
+                      {editingControl === ControlAction.FIRE
+                        ? '...'
+                        : formatKey(bindings.fire)}
+                    </button>
+                  </div>
+                  <div style={controlItemStyle}>
+                    <span style={labelStyle}>Shield:</span>
+                    <button
+                      style={editableKeyStyle(
+                        editingControl === ControlAction.SHIELD
+                      )}
+                      onClick={() => handleControlClick(ControlAction.SHIELD)}
+                      onMouseEnter={e => {
+                        if (editingControl !== ControlAction.SHIELD) {
+                          e.currentTarget.style.background = '#444'
+                        }
+                      }}
+                      onMouseLeave={e => {
+                        if (editingControl !== ControlAction.SHIELD) {
+                          e.currentTarget.style.background = '#333'
+                        }
+                      }}
+                    >
+                      {editingControl === ControlAction.SHIELD
+                        ? '...'
+                        : formatKey(bindings.shield)}
+                    </button>
+                  </div>
+                  <div style={controlItemStyle}>
+                    <span style={labelStyle}>Self Destruct:</span>
+                    <button
+                      style={editableKeyStyle(
+                        editingControl === ControlAction.SELF_DESTRUCT
+                      )}
+                      onClick={() =>
+                        handleControlClick(ControlAction.SELF_DESTRUCT)
+                      }
+                      onMouseEnter={e => {
+                        if (editingControl !== ControlAction.SELF_DESTRUCT) {
+                          e.currentTarget.style.background = '#444'
+                        }
+                      }}
+                      onMouseLeave={e => {
+                        if (editingControl !== ControlAction.SELF_DESTRUCT) {
+                          e.currentTarget.style.background = '#333'
+                        }
+                      }}
+                    >
+                      {editingControl === ControlAction.SELF_DESTRUCT
+                        ? '...'
+                        : formatKey(bindings.selfDestruct)}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Game Controls */}
+                <div>
+                  <div
+                    style={{
+                      ...controlItemStyle,
+                      fontWeight: 'bold',
+                      borderBottom: '1px solid #333',
+                      marginBottom: '3px'
+                    }}
+                  >
+                    GAME
+                  </div>
+                  <div style={controlItemStyle}>
+                    <span style={labelStyle}>Pause:</span>
+                    <button
+                      style={editableKeyStyle(
+                        editingControl === ControlAction.PAUSE
+                      )}
+                      onClick={() => handleControlClick(ControlAction.PAUSE)}
+                      onMouseEnter={e => {
+                        if (editingControl !== ControlAction.PAUSE) {
+                          e.currentTarget.style.background = '#444'
+                        }
+                      }}
+                      onMouseLeave={e => {
+                        if (editingControl !== ControlAction.PAUSE) {
+                          e.currentTarget.style.background = '#333'
+                        }
+                      }}
+                    >
+                      {editingControl === ControlAction.PAUSE
+                        ? '...'
+                        : formatKey(bindings.pause)}
+                    </button>
+                  </div>
+                  <div style={controlItemStyle}>
+                    <span style={labelStyle}>Map:</span>
+                    <button
+                      style={editableKeyStyle(
+                        editingControl === ControlAction.MAP
+                      )}
+                      onClick={() => handleControlClick(ControlAction.MAP)}
+                      onMouseEnter={e => {
+                        if (editingControl !== ControlAction.MAP) {
+                          e.currentTarget.style.background = '#444'
+                        }
+                      }}
+                      onMouseLeave={e => {
+                        if (editingControl !== ControlAction.MAP) {
+                          e.currentTarget.style.background = '#333'
+                        }
+                      }}
+                    >
+                      {editingControl === ControlAction.MAP
+                        ? '...'
+                        : formatKey(bindings.map)}
+                    </button>
+                  </div>
+                  <div style={controlItemStyle}>
+                    <span style={labelStyle}>Quit:</span>
+                    <button
+                      style={editableKeyStyle(
+                        editingControl === ControlAction.QUIT
+                      )}
+                      onClick={() => handleControlClick(ControlAction.QUIT)}
+                      onMouseEnter={e => {
+                        if (editingControl !== ControlAction.QUIT) {
+                          e.currentTarget.style.background = '#444'
+                        }
+                      }}
+                      onMouseLeave={e => {
+                        if (editingControl !== ControlAction.QUIT) {
+                          e.currentTarget.style.background = '#333'
+                        }
+                      }}
+                    >
+                      {editingControl === ControlAction.QUIT
+                        ? '...'
+                        : formatKey(bindings.quit)}
+                    </button>
+                  </div>
+                  <div
+                    style={{
+                      marginTop: '5px',
+                      paddingTop: '5px',
+                      borderTop: '1px solid #333'
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: '9px',
+                        color: '#888',
+                        marginBottom: '3px'
+                      }}
+                    >
+                      CHEATS (disables high scores):
+                    </div>
+                    <div style={controlItemStyle}>
+                      <span style={{ ...labelStyle, color: '#888' }}>
+                        Next Level:
+                      </span>
+                      <button
+                        style={{
+                          ...editableKeyStyle(
+                            editingControl === ControlAction.NEXT_LEVEL
+                          ),
+                          opacity: 0.7
+                        }}
+                        onClick={() =>
+                          handleControlClick(ControlAction.NEXT_LEVEL)
+                        }
+                        onMouseEnter={e => {
+                          if (editingControl !== ControlAction.NEXT_LEVEL) {
+                            e.currentTarget.style.background = '#444'
+                          }
+                        }}
+                        onMouseLeave={e => {
+                          if (editingControl !== ControlAction.NEXT_LEVEL) {
+                            e.currentTarget.style.background = '#333'
+                          }
+                        }}
+                      >
+                        {editingControl === ControlAction.NEXT_LEVEL
+                          ? '...'
+                          : formatKey(bindings.nextLevel)}
+                      </button>
+                    </div>
+                    <div style={controlItemStyle}>
+                      <span style={{ ...labelStyle, color: '#888' }}>
+                        Extra Life:
+                      </span>
+                      <button
+                        style={{
+                          ...editableKeyStyle(
+                            editingControl === ControlAction.EXTRA_LIFE
+                          ),
+                          opacity: 0.7
+                        }}
+                        onClick={() =>
+                          handleControlClick(ControlAction.EXTRA_LIFE)
+                        }
+                        onMouseEnter={e => {
+                          if (editingControl !== ControlAction.EXTRA_LIFE) {
+                            e.currentTarget.style.background = '#444'
+                          }
+                        }}
+                        onMouseLeave={e => {
+                          if (editingControl !== ControlAction.EXTRA_LIFE) {
+                            e.currentTarget.style.background = '#333'
+                          }
+                        }}
+                      >
+                        {editingControl === ControlAction.EXTRA_LIFE
+                          ? '...'
+                          : formatKey(bindings.extraLife)}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Tips Tab Content */}
+        {activeTab === 'tips' && (
+          <div style={sectionStyle}>
+            <div
+              style={{
+                fontSize: '13px',
+                lineHeight: '1.8',
+                padding: '20px'
+              }}
+            >
+              <div style={{ marginBottom: '20px' }}>
+                <div
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    color: '#fff',
+                    marginBottom: '10px',
+                    borderBottom: '1px solid #444',
+                    paddingBottom: '5px'
+                  }}
+                >
+                  BEGINNER
+                </div>
+                <div style={{ color: '#ccc', marginBottom: '6px' }}>
+                  • Avoid the walls first; kill things second
+                </div>
+                <div style={{ color: '#ccc' }}>
+                  • Never thrust with the wind
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <div
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    color: '#fff',
+                    marginBottom: '10px',
+                    borderBottom: '1px solid #444',
+                    paddingBottom: '5px'
+                  }}
+                >
+                  INTERMEDIATE
+                </div>
+                <div style={{ color: '#ccc', marginBottom: '6px' }}>
+                  • Take your time
+                </div>
+                <div style={{ color: '#ccc' }}>• Use your shield often</div>
+              </div>
+
+              <div>
+                <div
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    color: '#fff',
+                    marginBottom: '10px',
+                    borderBottom: '1px solid #444',
+                    paddingBottom: '5px'
+                  }}
+                >
+                  ADVANCED
+                </div>
+                <div style={{ color: '#ccc', marginBottom: '6px' }}>
+                  • Find and use bases' blind spots
+                </div>
+                <div style={{ color: '#ccc' }}>
+                  • Don't always do things the obvious way
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Scoring Tab Content */}
+        {activeTab === 'scoring' && (
+          <div style={sectionStyle}>
+            <div
+              style={{
+                fontSize: '13px',
+                lineHeight: '1.8',
+                padding: '20px',
+                background: '#fff',
+                color: '#000'
+              }}
+            >
+              <div
+                style={{
+                  fontWeight: 'bold',
+                  marginBottom: '15px',
+                  fontSize: '14px'
+                }}
+              >
+                POINT VALUES
+              </div>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gap: '20px',
+                  justifyItems: 'center'
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <SpriteIcon
+                    spriteService={spriteService}
+                    type="bunker"
+                    bunkerKind={BunkerKind.WALL}
+                    width={48}
+                    height={48}
+                  />
+                  <span style={{ color: '#000', fontWeight: 'bold' }}>100</span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <SpriteIcon
+                    spriteService={spriteService}
+                    type="bunker"
+                    bunkerKind={BunkerKind.GROUND}
+                    width={48}
+                    height={48}
+                  />
+                  <span style={{ color: '#000', fontWeight: 'bold' }}>100</span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <SpriteIcon
+                    spriteService={spriteService}
+                    type="bunker"
+                    bunkerKind={BunkerKind.DIFF}
+                    rotation={0}
+                    width={48}
+                    height={48}
+                  />
+                  <span style={{ color: '#000', fontWeight: 'bold' }}>10</span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <SpriteIcon
+                    spriteService={spriteService}
+                    type="bunker"
+                    bunkerKind={BunkerKind.DIFF}
+                    rotation={1}
+                    width={48}
+                    height={48}
+                  />
+                  <span style={{ color: '#000', fontWeight: 'bold' }}>200</span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <SpriteIcon
+                    spriteService={spriteService}
+                    type="bunker"
+                    bunkerKind={BunkerKind.DIFF}
+                    rotation={2}
+                    width={48}
+                    height={48}
+                  />
+                  <span style={{ color: '#000', fontWeight: 'bold' }}>300</span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <SpriteIcon
+                    spriteService={spriteService}
+                    type="bunker"
+                    bunkerKind={BunkerKind.FOLLOW}
+                    width={48}
+                    height={48}
+                  />
+                  <span style={{ color: '#000', fontWeight: 'bold' }}>400</span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <SpriteIcon
+                    spriteService={spriteService}
+                    type="bunker"
+                    bunkerKind={BunkerKind.GENERATOR}
+                    width={48}
+                    height={48}
+                  />
+                  <span style={{ color: '#000', fontWeight: 'bold' }}>500</span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <SpriteIcon
+                    spriteService={spriteService}
+                    type="fuel"
+                    width={32}
+                    height={32}
+                  />
+                  <span style={{ color: '#000', fontWeight: 'bold' }}>15</span>
                 </div>
               </div>
             </div>
