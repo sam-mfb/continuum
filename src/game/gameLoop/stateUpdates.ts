@@ -330,6 +330,7 @@ const handleGameOver = (store: GameStore): void => {
   // Reset everything for a new game
   store.dispatch(resetGame())
   store.dispatch(shipSlice.actions.setLives(TOTAL_INITIAL_LIVES))
+  store.dispatch(shipSlice.actions.resetFuel())
   store.dispatch(statusSlice.actions.initStatus())
   store.dispatch(loadLevel(1))
 }

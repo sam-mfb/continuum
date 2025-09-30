@@ -96,6 +96,9 @@ export const shipSlice = createSlice({
         state.globaly = action.payload.globaly
       }
     },
+    resetFuel: state => {
+      state.fuel = FUELSTART
+    },
     updatePosition: (
       state,
       action: PayloadAction<{
