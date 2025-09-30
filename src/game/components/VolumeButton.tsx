@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../store'
 import { setVolume, enableSound, disableSound } from '../appSlice'
+import styles from './VolumeButton.module.css'
 
 const VolumeButton: React.FC = () => {
   const dispatch = useAppDispatch()
@@ -266,6 +267,7 @@ const VolumeButton: React.FC = () => {
             value={volume}
             onChange={e => handleVolumeChange(parseFloat(e.target.value))}
             style={sliderStyle}
+            className={styles.volumeSlider}
           />
         </div>
       </div>
@@ -288,43 +290,6 @@ const VolumeButton: React.FC = () => {
           {getSpeakerIcon()}
         </div>
       </button>
-
-      {/* Custom slider styling */}
-      <style>
-        {`
-          input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 14px;
-            height: 14px;
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px solid rgba(255, 255, 255, 1);
-            border-radius: 2px;
-            cursor: pointer;
-            transition: all 0.15s ease;
-          }
-
-          input[type="range"]::-webkit-slider-thumb:hover {
-            background: rgba(255, 255, 255, 1);
-            box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
-          }
-
-          input[type="range"]::-moz-range-thumb {
-            width: 14px;
-            height: 14px;
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px solid rgba(255, 255, 255, 1);
-            border-radius: 2px;
-            cursor: pointer;
-            transition: all 0.15s ease;
-          }
-
-          input[type="range"]::-moz-range-thumb:hover {
-            background: rgba(255, 255, 255, 1);
-            box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
-          }
-        `}
-      </style>
     </div>
   )
 }

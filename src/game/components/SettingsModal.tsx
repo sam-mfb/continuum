@@ -11,6 +11,7 @@ import { ControlAction } from '@/core/controls/types'
 import { type SpriteService } from '@/core/sprites'
 import { BunkerKind } from '@/core/figs'
 import { bitmapToCanvas } from '@/lib/bitmap'
+import { formatKey } from '../utils/formatKey'
 import VolumeControls from './VolumeControls'
 
 type Tab = 'options' | 'controls' | 'tips' | 'scoring' | 'about'
@@ -130,24 +131,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
   }, [dispatch, showSettings, editingControl, bindings])
 
   if (!showSettings) return null as React.ReactElement | null
-
-  const formatKey = (keyCode: string): string => {
-    if (keyCode.startsWith('Key')) {
-      return keyCode.slice(3)
-    }
-    switch (keyCode) {
-      case 'Space':
-        return 'SPACE'
-      case 'Escape':
-        return 'ESC'
-      case 'Period':
-        return '.'
-      case 'Slash':
-        return '/'
-      default:
-        return keyCode.toUpperCase()
-    }
-  }
 
   const handleAlignmentToggle = (): void => {
     dispatch(toggleAlignmentMode())

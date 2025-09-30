@@ -1,39 +1,11 @@
 import React from 'react'
 import { useAppDispatch, useAppSelector } from '../store'
 import { toggleInGameControls } from '../appSlice'
+import { formatKey } from '../utils/formatKey'
 
 const InGameControlsPanel: React.FC = () => {
   const dispatch = useAppDispatch()
   const bindings = useAppSelector(state => state.controls.bindings)
-
-  // Format key code for display
-  const formatKey = (keyCode: string): string => {
-    // Remove 'Key' prefix and make uppercase
-    if (keyCode.startsWith('Key')) {
-      return keyCode.slice(3)
-    }
-    // Special keys
-    switch (keyCode) {
-      case 'Space':
-        return 'SPACE'
-      case 'Escape':
-        return 'ESC'
-      case 'Period':
-        return '.'
-      case 'Slash':
-        return '/'
-      case 'ArrowLeft':
-        return '←'
-      case 'ArrowRight':
-        return '→'
-      case 'ArrowUp':
-        return '↑'
-      case 'ArrowDown':
-        return '↓'
-      default:
-        return keyCode.toUpperCase()
-    }
-  }
 
   const panelStyle: React.CSSProperties = {
     position: 'absolute',
