@@ -30,6 +30,9 @@ export const App: React.FC<AppProps> = ({
   const gameMode = useAppSelector(state => state.app.mode)
   const volume = useAppSelector(state => state.app.volume)
   const soundMuted = useAppSelector(state => !state.app.soundOn)
+  const showInGameControls = useAppSelector(
+    state => state.app.showInGameControls
+  )
   const mostRecentScore = useAppSelector(state => state.app.mostRecentScore)
   const highScoreEligible = useAppSelector(
     state => state.game.highScoreEligible
@@ -77,7 +80,7 @@ export const App: React.FC<AppProps> = ({
               scale={2} // Pixel-doubled
               fps={20} // Original Continuum runs at 20 FPS
             />
-            <InGameControlsPanel />
+            {showInGameControls && <InGameControlsPanel />}
           </div>
         )
 

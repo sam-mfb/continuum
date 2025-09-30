@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../store'
-import { toggleAlignmentMode, closeSettings } from '../appSlice'
+import {
+  toggleAlignmentMode,
+  toggleInGameControls,
+  closeSettings
+} from '../appSlice'
 import { resetHighScores } from '@/core/highscore'
 import VolumeControls from './VolumeControls'
 
@@ -9,6 +13,9 @@ type Tab = 'options' | 'controls' | 'about'
 const SettingsModal: React.FC = () => {
   const dispatch = useAppDispatch()
   const alignmentMode = useAppSelector(state => state.app.alignmentMode)
+  const showInGameControls = useAppSelector(
+    state => state.app.showInGameControls
+  )
   const bindings = useAppSelector(state => state.controls.bindings)
   const showSettings = useAppSelector(state => state.app.showSettings)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -271,6 +278,36 @@ const SettingsModal: React.FC = () => {
                     ? 'Original mode - background moves with camera'
                     : 'Modern mode - background fixed against camera'}
                   )
+                </span>
+              </div>
+            </div>
+
+            {/* In-Game Controls Panel Section */}
+            <div style={sectionStyle}>
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+              >
+                <span>SHOW IN-GAME CONTROLS:</span>
+                <button
+                  onClick={() => dispatch(toggleInGameControls())}
+                  style={toggleButtonStyle}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = '#333'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = '#000'
+                  }}
+                >
+                  {showInGameControls ? 'VISIBLE' : 'HIDDEN'}
+                </button>
+                <span
+                  style={{
+                    color: '#666',
+                    fontSize: '10px',
+                    marginLeft: '10px'
+                  }}
+                >
+                  (Show control hints at bottom of screen during gameplay)
                 </span>
               </div>
             </div>

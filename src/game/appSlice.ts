@@ -17,6 +17,7 @@ export type MostRecentScore = {
 export type AppState = {
   // Display settings
   alignmentMode: AlignmentMode
+  showInGameControls: boolean
 
   // Sound settings
   volume: number
@@ -32,6 +33,7 @@ export type AppState = {
 
 const initialState: AppState = {
   alignmentMode: 'screen-fixed', // Default to screen-fixed (not original)
+  showInGameControls: true,
   volume: 0,
   soundOn: true,
   mode: 'start',
@@ -51,6 +53,10 @@ export const appSlice = createSlice({
     toggleAlignmentMode: state => {
       state.alignmentMode =
         state.alignmentMode === 'world-fixed' ? 'screen-fixed' : 'world-fixed'
+    },
+
+    toggleInGameControls: state => {
+      state.showInGameControls = !state.showInGameControls
     },
 
     // Sound settings
@@ -95,6 +101,7 @@ export const appSlice = createSlice({
 export const {
   setAlignmentMode,
   toggleAlignmentMode,
+  toggleInGameControls,
   setVolume,
   enableSound,
   disableSound,

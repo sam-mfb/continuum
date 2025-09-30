@@ -6,6 +6,7 @@ import type { Middleware } from '@reduxjs/toolkit'
 import {
   setAlignmentMode,
   toggleAlignmentMode,
+  toggleInGameControls,
   setVolume,
   enableSound,
   disableSound
@@ -16,6 +17,7 @@ const APP_SETTINGS_STORAGE_KEY = 'continuum_app_settings'
 
 export type PersistedAppSettings = {
   alignmentMode: AlignmentMode
+  showInGameControls: boolean
   volume: number
   soundOn: boolean
 }
@@ -31,6 +33,7 @@ export const appMiddleware: Middleware = store => next => action => {
   if (
     setAlignmentMode.match(action) ||
     toggleAlignmentMode.match(action) ||
+    toggleInGameControls.match(action) ||
     setVolume.match(action) ||
     enableSound.match(action) ||
     disableSound.match(action)
@@ -39,6 +42,7 @@ export const appMiddleware: Middleware = store => next => action => {
     try {
       const settingsToSave: PersistedAppSettings = {
         alignmentMode: state.app.alignmentMode,
+        showInGameControls: state.app.showInGameControls,
         volume: state.app.volume,
         soundOn: state.app.soundOn
       }
@@ -65,6 +69,7 @@ export const loadAppSettings = (): Partial<PersistedAppSettings> => {
       const parsed = JSON.parse(saved) as PersistedAppSettings
       return {
         alignmentMode: parsed.alignmentMode,
+        showInGameControls: parsed.showInGameControls,
         volume: parsed.volume,
         soundOn: parsed.soundOn
       }
