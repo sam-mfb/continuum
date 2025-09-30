@@ -115,7 +115,7 @@ const VolumeButton: React.FC = () => {
   // Speaker icon SVG
   const getSpeakerIcon = (): React.ReactElement => {
     if (!soundOn || volume === 0) {
-      // Muted speaker icon
+      // Muted speaker icon with diagonal line through it
       return (
         <svg
           width="24"
@@ -126,27 +126,18 @@ const VolumeButton: React.FC = () => {
         >
           <path
             d="M11 5L6 9H2v6h4l5 4V5z"
-            fill="rgba(255, 255, 255, 0.6)"
-            stroke="rgba(255, 255, 255, 0.8)"
+            fill="rgba(128, 128, 128, 0.4)"
+            stroke="rgba(128, 128, 128, 0.6)"
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
           <line
-            x1="23"
-            y1="9"
-            x2="17"
-            y2="15"
-            stroke="rgba(255, 100, 100, 0.9)"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
-          <line
-            x1="17"
-            y1="9"
-            x2="23"
-            y2="15"
-            stroke="rgba(255, 100, 100, 0.9)"
+            x1="2"
+            y1="2"
+            x2="22"
+            y2="22"
+            stroke="rgba(128, 128, 128, 0.8)"
             strokeWidth="2"
             strokeLinecap="round"
           />
