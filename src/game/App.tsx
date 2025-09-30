@@ -4,6 +4,7 @@ import StartScreen from './components/StartScreen'
 import HighScoreEntry from './components/HighScoreEntry'
 import GameOverScreen from './components/GameOverScreen'
 import SettingsModal from './components/SettingsModal'
+import VolumeButton from './components/VolumeButton'
 import { loadLevel } from './levelThunks'
 import { startGame, setMode } from './appSlice'
 import { setHighScore, type HighScoreState } from '@/core/highscore'
@@ -163,6 +164,7 @@ export const App: React.FC<AppProps> = ({
         )}
       </div>
       <SettingsModal />
+      <VolumeButton />
     </>
   )
 }
