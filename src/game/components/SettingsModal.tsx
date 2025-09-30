@@ -10,7 +10,7 @@ import { setBinding, resetBindings } from '@/core/controls'
 import { ControlAction } from '@/core/controls/types'
 import VolumeControls from './VolumeControls'
 
-type Tab = 'options' | 'controls' | 'about'
+type Tab = 'options' | 'controls' | 'tips' | 'about'
 
 const SettingsModal: React.FC = () => {
   const dispatch = useAppDispatch()
@@ -277,6 +277,22 @@ const SettingsModal: React.FC = () => {
             }}
           >
             Controls
+          </button>
+          <button
+            style={tabButtonStyle(activeTab === 'tips')}
+            onClick={() => setActiveTab('tips')}
+            onMouseEnter={e => {
+              if (activeTab !== 'tips') {
+                e.currentTarget.style.background = '#222'
+              }
+            }}
+            onMouseLeave={e => {
+              if (activeTab !== 'tips') {
+                e.currentTarget.style.background = '#000'
+              }
+            }}
+          >
+            Tips
           </button>
           <button
             style={tabButtonStyle(activeTab === 'about')}
@@ -802,6 +818,80 @@ const SettingsModal: React.FC = () => {
               </div>
             </div>
           </>
+        )}
+
+        {/* Tips Tab Content */}
+        {activeTab === 'tips' && (
+          <div style={sectionStyle}>
+            <div
+              style={{
+                fontSize: '13px',
+                lineHeight: '1.8',
+                padding: '20px'
+              }}
+            >
+              <div style={{ marginBottom: '20px' }}>
+                <div
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    color: '#fff',
+                    marginBottom: '10px',
+                    borderBottom: '1px solid #444',
+                    paddingBottom: '5px'
+                  }}
+                >
+                  BEGINNER
+                </div>
+                <div style={{ color: '#ccc', marginBottom: '6px' }}>
+                  • Avoid the walls first; kill things second
+                </div>
+                <div style={{ color: '#ccc' }}>
+                  • Never thrust with the wind
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <div
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    color: '#fff',
+                    marginBottom: '10px',
+                    borderBottom: '1px solid #444',
+                    paddingBottom: '5px'
+                  }}
+                >
+                  INTERMEDIATE
+                </div>
+                <div style={{ color: '#ccc', marginBottom: '6px' }}>
+                  • Take your time
+                </div>
+                <div style={{ color: '#ccc' }}>• Use your shield often</div>
+              </div>
+
+              <div>
+                <div
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    color: '#fff',
+                    marginBottom: '10px',
+                    borderBottom: '1px solid #444',
+                    paddingBottom: '5px'
+                  }}
+                >
+                  ADVANCED
+                </div>
+                <div style={{ color: '#ccc', marginBottom: '6px' }}>
+                  • Find and use bases' blind spots
+                </div>
+                <div style={{ color: '#ccc' }}>
+                  • Don't always do things the obvious way
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         {/* About Tab Content */}

@@ -37,7 +37,7 @@ const InGameControlsPanel: React.FC = () => {
 
   const panelStyle: React.CSSProperties = {
     position: 'absolute',
-    bottom: '20px',
+    bottom: '4px',
     left: '50%',
     transform: 'translateX(-50%)',
     background: 'rgba(0, 0, 0, 0.4)',
@@ -207,6 +207,19 @@ const InGameControlsPanel: React.FC = () => {
             {formatKey(bindings.selfDestruct)}
           </span>
         </div>
+      </div>
+
+      {/* Tip text */}
+      <div
+        style={{
+          textAlign: 'center',
+          fontSize: '9px',
+          color: 'rgba(220, 220, 220, 0.85)',
+          marginTop: '4px',
+          fontStyle: 'italic'
+        }}
+      >
+        Shield to retrieve fuel
       </div>
     </div>
   )
