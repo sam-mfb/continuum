@@ -8,7 +8,11 @@ import VolumeButton from './components/VolumeButton'
 import InGameControlsPanel from './components/InGameControlsPanel'
 import { loadLevel } from './levelThunks'
 import { startGame, setMode } from './appSlice'
-import { setHighScore, type HighScoreState } from '@/core/highscore'
+import {
+  setHighScore,
+  type HighScoreTable,
+  getDefaultHighScoreTable
+} from '@/core/highscore'
 import { shipSlice } from '@/core/ship'
 import { invalidateHighScore } from './gameSlice'
 import { type SoundService } from '@/core/sound'
@@ -18,19 +22,18 @@ import type { GameRenderLoop } from './types'
 
 type AppProps = {
   renderer: GameRenderLoop
-  totalLevels: number
   soundService: SoundService
   spriteService: SpriteService
 }
 
 export const App: React.FC<AppProps> = ({
   renderer,
-  totalLevels,
   soundService,
   spriteService
 }) => {
   const dispatch = useAppDispatch()
   const gameMode = useAppSelector(state => state.app.mode)
+  const currentGalaxyId = useAppSelector(state => state.app.currentGalaxyId)
   const volume = useAppSelector(state => state.app.volume)
   const soundMuted = useAppSelector(state => !state.app.soundOn)
   const showInGameControls = useAppSelector(
@@ -40,7 +43,9 @@ export const App: React.FC<AppProps> = ({
   const highScoreEligible = useAppSelector(
     state => state.game.highScoreEligible
   )
-  const highScores = useAppSelector(state => state.highscore)
+  const allHighScores = useAppSelector(state => state.highscore)
+  const highScores: HighScoreTable =
+    allHighScores[currentGalaxyId] ?? getDefaultHighScoreTable()
 
   // Render the game content based on mode
   const renderGameContent = (): React.ReactElement | null => {
@@ -67,7 +72,6 @@ export const App: React.FC<AppProps> = ({
               // Start the game
               dispatch(startGame())
             }}
-            totalLevels={totalLevels}
           />
         )
 
@@ -96,8 +100,8 @@ export const App: React.FC<AppProps> = ({
 
         // Check if score is eligible and qualifies for high score table
         const lowestScore = Math.min(
-          ...Object.values(highScores as HighScoreState).map(
-            hs => hs.score || 0
+          ...Object.values(highScores).map(
+            (hs: { score: number }) => hs.score || 0
           )
         )
 
@@ -111,11 +115,14 @@ export const App: React.FC<AppProps> = ({
               onSubmit={(name: string) => {
                 dispatch(
                   setHighScore({
-                    user: name,
-                    score: mostRecentScore.score,
-                    planet: mostRecentScore.planet,
-                    fuel: mostRecentScore.fuel,
-                    date: new Date().toISOString()
+                    galaxyId: currentGalaxyId,
+                    score: {
+                      user: name,
+                      score: mostRecentScore.score,
+                      planet: mostRecentScore.planet,
+                      fuel: mostRecentScore.fuel,
+                      date: new Date().toISOString()
+                    }
                   })
                 )
                 dispatch(setMode('start'))
