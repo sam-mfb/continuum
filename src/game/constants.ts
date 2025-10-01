@@ -14,9 +14,6 @@ export const DEFAULT_SOUND_MUTED = false
 
 // Asset paths for the game
 export const ASSET_PATHS = {
-  // Galaxy data files
-  GALAXY_DATA: '/release_galaxy.bin',
-
   // Sprite and graphics resources
   SPRITE_RESOURCE: '/rsrc_260.bin',
   STATUS_BAR_RESOURCE: '/rsrc_259.bin',

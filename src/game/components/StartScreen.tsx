@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState, GameServices } from '../store'
-import type { HighScoreState } from '@/core/highscore'
+import type { HighScoreTable } from '@/core/highscore'
+import { getDefaultHighScoreTable } from '@/core/highscore'
 import { allowHighScore, invalidateHighScore } from '../gameSlice'
 import { openSettings } from '../appSlice'
+import { loadGalaxy } from '../galaxyThunks'
+import { GALAXIES } from '../galaxyConfig'
 import type { MonochromeBitmap } from '@lib/bitmap/types'
 import type { SpriteService } from '@core/sprites'
 import type { ThunkDispatch } from '@reduxjs/toolkit'
@@ -11,20 +14,23 @@ import type { AnyAction } from 'redux'
 
 type StartScreenProps = {
   onStartGame: (level: number) => void
-  totalLevels: number
 }
 
-const StartScreen: React.FC<StartScreenProps> = ({
-  onStartGame,
-  totalLevels
-}) => {
+const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
   const dispatch =
     useDispatch<ThunkDispatch<RootState, GameServices, AnyAction>>()
-  const highScores = useSelector((state: RootState) => state.highscore)
+  const currentGalaxyId = useSelector(
+    (state: RootState) => state.app.currentGalaxyId
+  )
+  const totalLevels = useSelector((state: RootState) => state.app.totalLevels)
+  const allHighScores = useSelector((state: RootState) => state.highscore)
+  const highScores: HighScoreTable =
+    allHighScores[currentGalaxyId] ?? getDefaultHighScoreTable()
   const mostRecentScore = useSelector(
     (state: RootState) => state.app.mostRecentScore
   )
   const [selectedLevel, setSelectedLevel] = useState(1)
+  const [selectedGalaxyId, setSelectedGalaxyId] = useState(currentGalaxyId)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [titlePage, setTitlePage] = useState<MonochromeBitmap | null>(null)
 
@@ -122,11 +128,26 @@ const StartScreen: React.FC<StartScreenProps> = ({
     )
   }, [titlePage])
 
-  const formatHighScore = (
-    slot: keyof HighScoreState,
-    index: number
-  ): React.ReactElement => {
-    const score = highScores[slot]
+  // Handle galaxy change
+  const handleGalaxyChange = async (galaxyId: string): Promise<void> => {
+    if (galaxyId === currentGalaxyId) return
+
+    setSelectedGalaxyId(galaxyId)
+
+    try {
+      await dispatch(loadGalaxy(galaxyId)).unwrap()
+      // Reset level selection to 1 when changing galaxies
+      setSelectedLevel(1)
+      dispatch(allowHighScore())
+    } catch (error) {
+      console.error('Failed to load galaxy:', error)
+      // Revert selection on error
+      setSelectedGalaxyId(currentGalaxyId)
+    }
+  }
+
+  const formatHighScore = (slot: number, index: number): React.ReactElement => {
+    const score = highScores[slot as keyof HighScoreTable]
 
     // Original positions scaled by 2x, adjusted up by 26px
     const yPos = 312 + index * 30 // (169 * 2) - 26 + index * 15 * 2
@@ -276,9 +297,7 @@ const StartScreen: React.FC<StartScreenProps> = ({
       {Object.keys(highScores)
         .map(Number)
         .sort((a, b) => a - b)
-        .map((slot, index) =>
-          formatHighScore(slot as keyof HighScoreState, index)
-        )}
+        .map((slot, index) => formatHighScore(slot, index))}
 
       {/* Bottom controls - in the 62px space below canvas */}
       <div
@@ -291,9 +310,34 @@ const StartScreen: React.FC<StartScreenProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '30px'
+          gap: '20px'
         }}
       >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <label style={{ color: 'white', fontSize: '14px' }}>Galaxy:</label>
+          <select
+            value={selectedGalaxyId}
+            onChange={e => {
+              void handleGalaxyChange(e.target.value)
+            }}
+            style={{
+              padding: '4px 8px',
+              fontFamily: 'monospace',
+              fontSize: '14px',
+              backgroundColor: 'black',
+              color: 'white',
+              border: '1px solid white',
+              cursor: 'pointer'
+            }}
+          >
+            {GALAXIES.map(galaxy => (
+              <option key={galaxy.id} value={galaxy.id}>
+                {galaxy.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <label style={{ color: 'white', fontSize: '14px' }}>
             Start at Level:

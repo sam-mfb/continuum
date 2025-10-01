@@ -13,12 +13,14 @@ import { createSoundService } from '@core/sound'
 import { createGameRenderer } from './gameLoop'
 import { setAlignmentMode } from '@/core/shared'
 import { createGameStore } from './store'
+import { setCurrentGalaxy, setTotalLevels } from './appSlice'
 import {
   ASSET_PATHS,
   DEFAULT_SOUND_VOLUME,
   DEFAULT_SOUND_MUTED,
   TOTAL_INITIAL_LIVES
 } from './constants'
+import { getDefaultGalaxy } from './galaxyConfig'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 const root = createRoot(app)
@@ -32,7 +34,9 @@ try {
   })
   console.log('Sprite service created')
 
-  const galaxyService = await createGalaxyService(ASSET_PATHS.GALAXY_DATA)
+  // Load default galaxy
+  const defaultGalaxy = getDefaultGalaxy()
+  const galaxyService = await createGalaxyService(defaultGalaxy.path)
   console.log('Galaxy service created')
 
   const fizzTransitionService = createFizzTransitionService()
@@ -60,13 +64,17 @@ try {
   )
   console.log('Game store created with services')
 
+  // Set initial galaxy state
+  const totalLevels = galaxyService.getHeader().planets
+  store.dispatch(setCurrentGalaxy(defaultGalaxy.id))
+  store.dispatch(setTotalLevels(totalLevels))
+
   const renderer = createGameRenderer(
     store,
     spriteService,
     galaxyService,
     fizzTransitionService
   )
-  const totalLevels = galaxyService.getHeader().planets
 
   // Set up alignment mode subscription
   let currentAlignmentMode = store.getState().app.alignmentMode
@@ -86,7 +94,6 @@ try {
     <Provider store={store}>
       <App
         renderer={renderer}
-        totalLevels={totalLevels}
         soundService={soundService}
         spriteService={spriteService}
       />

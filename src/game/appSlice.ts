@@ -29,6 +29,10 @@ export type AppState = {
 
   // UI state
   showSettings: boolean
+
+  // Current galaxy
+  currentGalaxyId: string
+  totalLevels: number
 }
 
 const initialState: AppState = {
@@ -38,7 +42,9 @@ const initialState: AppState = {
   soundOn: true,
   mode: 'start',
   mostRecentScore: null,
-  showSettings: false
+  showSettings: false,
+  currentGalaxyId: 'release', // Will be overridden by galaxy config
+  totalLevels: 0 // Will be set when galaxy is loaded
 }
 
 export const appSlice = createSlice({
@@ -94,6 +100,15 @@ export const appSlice = createSlice({
 
     toggleSettings: state => {
       state.showSettings = !state.showSettings
+    },
+
+    // Galaxy management
+    setCurrentGalaxy: (state, action: PayloadAction<string>) => {
+      state.currentGalaxyId = action.payload
+    },
+
+    setTotalLevels: (state, action: PayloadAction<number>) => {
+      state.totalLevels = action.payload
     }
   }
 })
@@ -110,5 +125,7 @@ export const {
   setMostRecentScore,
   openSettings,
   closeSettings,
-  toggleSettings
+  toggleSettings,
+  setCurrentGalaxy,
+  setTotalLevels
 } = appSlice.actions
