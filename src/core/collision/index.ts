@@ -9,3 +9,4 @@ export type {
 } from './types'
 
 export { bitmapToCollisionItem } from './helpers'
+export { createCollisionService } from './createCollisionService'

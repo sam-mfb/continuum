@@ -7,7 +7,7 @@ export type CollisionType = (typeof Collision)[keyof typeof Collision]
 export type CollisionMap = CollisionType[][]
 
 /** a point that can collide **/
-export type CollisionPoint = { x: number; y: number }
+export type CollisionPoint = { x: number; y: number; collision: CollisionType }
 
 /** an item (collection of points) that can collide */
 export type CollisionItem = CollisionPoint[]
@@ -16,6 +16,7 @@ export type CollisionItem = CollisionPoint[]
 export type CollisionLine = {
   startPoint: CollisionPoint
   endPoint: CollisionPoint
+  collision: CollisionType
   width: number
 }
 
@@ -24,13 +25,13 @@ export type CollisionService = {
   reset: () => void
 
   /** add a point to the map with a given collision value **/
-  addPoint: (point: CollisionPoint, collision: CollisionType) => void
+  addPoint: (point: CollisionPoint) => void
 
   /** add an item to the map with a given collision value **/
-  addItem: (item: CollisionItem, collision: CollisionType) => void
+  addItem: (item: CollisionItem) => void
 
   /** ad a line to the map with a given collision value **/
-  addLine: (line: CollisionLine, collision: CollisionType) => void
+  //addLine: (line: CollisionLine) => void
 
   /** returns collision value for a given point */
   checkPoint: (point: CollisionPoint) => CollisionType
@@ -42,5 +43,5 @@ export type CollisionService = {
    * so if any pixel returns LETHAL this function will
    * return lethal, etc.
    */
-  checkItem: (item: CollisionItem) => CollisionType
+  //checkItem: (item: CollisionItem) => CollisionType
 }
