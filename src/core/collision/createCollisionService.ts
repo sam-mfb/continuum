@@ -13,7 +13,7 @@ import type {
  * call to reset(). Items that may change should be added via
  * a direct call to one of the service methods after creation
  **/
-export function createCollisionService(initial: {
+export function createCollisionService(_initial: {
   lines: CollisionLine[]
   items: CollisionItem[]
   points: CollisionPoint[]
