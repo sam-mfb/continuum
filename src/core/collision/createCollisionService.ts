@@ -68,12 +68,19 @@ function addPoint(
   originalMap: CollisionMap
 ): CollisionMap {
   const newMap = copy2dArray(originalMap)
-  if (newMap[point.x][point.y] === undefined) {
+  // ignore out of bounds setting (allows sending items that are
+  // partially out of bounds)
+  if (newMap[point.x]?.[point.y] === undefined) {
+    return newMap
+  }
+  // don't lower the collision priority if already set higher
+  if (newMap[point.x]![point.y]! > point.collision) {
     return newMap
   }
   newMap[point.x]![point.y] = point.collision
   return newMap
 }
+
 function checkPoint(
   point: CollisionPoint,
   originalMap: CollisionMap
