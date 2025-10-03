@@ -1,12 +1,15 @@
 import type { MonochromeBitmap } from '@/lib/bitmap'
-import type { CollisionItem } from './types'
+import type { CollisionItem, CollisionType } from './types'
 
 /**
  * Converts all the black pixels in the monochrome bitmap to
  * CollisionPoints and returns a CollisionItem (colleciton of
  * those points
  */
-export function bitmapToCollisionItem(bitmap: MonochromeBitmap): CollisionItem {
+export function bitmapToCollisionItem(
+  bitmap: MonochromeBitmap,
+  collision: CollisionType
+): CollisionItem {
   const points: CollisionItem = []
 
   for (let y = 0; y < bitmap.height; y++) {
@@ -17,7 +20,7 @@ export function bitmapToCollisionItem(bitmap: MonochromeBitmap): CollisionItem {
       const isBlack = (byte & (1 << bitIndex)) !== 0
 
       if (isBlack) {
-        points.push({ x, y })
+        points.push({ x, y, collision })
       }
     }
   }

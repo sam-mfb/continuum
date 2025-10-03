@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { bitmapToCollisionItem } from '../helpers'
+import { Collision } from '../constants'
 import type { MonochromeBitmap } from '@/lib/bitmap'
 
 /**
@@ -21,15 +22,15 @@ function createBitmap(
 describe('bitmapToCollisionItem', () => {
   it('returns empty array for bitmap with no black pixels (all white)', () => {
     const bitmap = createBitmap(8, 2, [0x00, 0x00])
-    const result = bitmapToCollisionItem(bitmap)
+    const result = bitmapToCollisionItem(bitmap, Collision.LETHAL)
     expect(result).toEqual([])
   })
 
   it('returns single point for bitmap with one black pixel', () => {
     // 0x80 = 10000000 in binary (leftmost pixel is black)
     const bitmap = createBitmap(8, 1, [0x80])
-    const result = bitmapToCollisionItem(bitmap)
-    expect(result).toEqual([{ x: 0, y: 0 }])
+    const result = bitmapToCollisionItem(bitmap, Collision.BOUNCE)
+    expect(result).toEqual([{ x: 0, y: 0, collision: Collision.BOUNCE }])
   })
 
   it('correctly handles big-endian bit order (MSB = leftmost pixel)', () => {
@@ -37,12 +38,12 @@ describe('bitmapToCollisionItem', () => {
     // This represents: ■ □ ■ □ □ ■ □ ■
     // Black pixels at x: 0, 2, 5, 7
     const bitmap = createBitmap(8, 1, [0xa5])
-    const result = bitmapToCollisionItem(bitmap)
+    const result = bitmapToCollisionItem(bitmap, Collision.LETHAL)
     expect(result).toEqual([
-      { x: 0, y: 0 },
-      { x: 2, y: 0 },
-      { x: 5, y: 0 },
-      { x: 7, y: 0 }
+      { x: 0, y: 0, collision: Collision.LETHAL },
+      { x: 2, y: 0, collision: Collision.LETHAL },
+      { x: 5, y: 0, collision: Collision.LETHAL },
+      { x: 7, y: 0, collision: Collision.LETHAL }
     ])
   })
 
@@ -51,24 +52,24 @@ describe('bitmapToCollisionItem', () => {
     // Row 0: 0xFF 0x00 = 11111111 00000000 (8 black pixels on left)
     // Row 1: 0x00 0xFF = 00000000 11111111 (8 black pixels on right)
     const bitmap = createBitmap(16, 2, [0xff, 0x00, 0x00, 0xff])
-    const result = bitmapToCollisionItem(bitmap)
+    const result = bitmapToCollisionItem(bitmap, Collision.BOUNCE)
     expect(result).toEqual([
-      { x: 0, y: 0 },
-      { x: 1, y: 0 },
-      { x: 2, y: 0 },
-      { x: 3, y: 0 },
-      { x: 4, y: 0 },
-      { x: 5, y: 0 },
-      { x: 6, y: 0 },
-      { x: 7, y: 0 },
-      { x: 8, y: 1 },
-      { x: 9, y: 1 },
-      { x: 10, y: 1 },
-      { x: 11, y: 1 },
-      { x: 12, y: 1 },
-      { x: 13, y: 1 },
-      { x: 14, y: 1 },
-      { x: 15, y: 1 }
+      { x: 0, y: 0, collision: Collision.BOUNCE },
+      { x: 1, y: 0, collision: Collision.BOUNCE },
+      { x: 2, y: 0, collision: Collision.BOUNCE },
+      { x: 3, y: 0, collision: Collision.BOUNCE },
+      { x: 4, y: 0, collision: Collision.BOUNCE },
+      { x: 5, y: 0, collision: Collision.BOUNCE },
+      { x: 6, y: 0, collision: Collision.BOUNCE },
+      { x: 7, y: 0, collision: Collision.BOUNCE },
+      { x: 8, y: 1, collision: Collision.BOUNCE },
+      { x: 9, y: 1, collision: Collision.BOUNCE },
+      { x: 10, y: 1, collision: Collision.BOUNCE },
+      { x: 11, y: 1, collision: Collision.BOUNCE },
+      { x: 12, y: 1, collision: Collision.BOUNCE },
+      { x: 13, y: 1, collision: Collision.BOUNCE },
+      { x: 14, y: 1, collision: Collision.BOUNCE },
+      { x: 15, y: 1, collision: Collision.BOUNCE }
     ])
   })
 
@@ -77,12 +78,12 @@ describe('bitmapToCollisionItem', () => {
     // Row 0: 0x81 0x00 = 10000001 00000000 (pixels at x=0 and x=7)
     // Row 1: 0x00 0x81 = 00000000 10000001 (pixels at x=8 and x=15)
     const bitmap = createBitmap(16, 2, [0x81, 0x00, 0x00, 0x81])
-    const result = bitmapToCollisionItem(bitmap)
+    const result = bitmapToCollisionItem(bitmap, Collision.LETHAL)
     expect(result).toEqual([
-      { x: 0, y: 0 },
-      { x: 7, y: 0 },
-      { x: 8, y: 1 },
-      { x: 15, y: 1 }
+      { x: 0, y: 0, collision: Collision.LETHAL },
+      { x: 7, y: 0, collision: Collision.LETHAL },
+      { x: 8, y: 1, collision: Collision.LETHAL },
+      { x: 15, y: 1, collision: Collision.LETHAL }
     ])
   })
 })

@@ -43,5 +43,5 @@ export type CollisionService = {
    * so if any pixel returns LETHAL this function will
    * return lethal, etc.
    */
-  //checkItem: (item: CollisionItem) => CollisionType
+  checkItem: (item: CollisionItem) => CollisionType
 }

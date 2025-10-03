@@ -5,6 +5,7 @@ import type {
   CollisionService,
   CollisionType
 } from './types'
+import { deepFreeze, copy2dArray } from './utils'
 
 /**
  * Initialize a collision map with lines, items, and points.
@@ -70,16 +71,4 @@ function addPoint(
   }
   newMap[point.x]![point.y] = point.collision
   return newMap
-}
-
-function copy2dArray<T extends number | string>(orig: T[][]): T[][] {
-  return orig.map(row => [...row])
-}
-
-function deepFreeze<T>(obj: T): T {
-  Object.freeze(obj)
-  if (Array.isArray(obj)) {
-    obj.forEach(item => deepFreeze(item))
-  }
-  return obj
 }
