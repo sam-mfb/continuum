@@ -16,28 +16,29 @@ import { deepFreeze, copy2dArray } from './utils'
  * call to reset(). Items that may change should be added via
  * a direct call to one of the service methods after creation
  **/
-export function createCollisionService(args: {
-  width: number
-  height: number
-  //lines: CollisionLine[]
-  items: CollisionItem[]
-}): CollisionService {
-  const { width, height, items } = args
-  let baseMap: CollisionMap = new Array(width).map(() =>
-    new Array(height).map(() => 0)
-  )
-
-  items.forEach(item =>
-    item.forEach(point => {
-      baseMap = addPoint(point, baseMap)
-    })
-  )
-
-  baseMap = deepFreeze(baseMap)
-
-  let instanceMap = copy2dArray(baseMap)
-
+export function createCollisionService(): CollisionService {
+  let baseMap: CollisionMap
+  let instanceMap: CollisionMap
   return {
+    initialize: function (args: {
+      width: number
+      height: number
+      //lines: CollisionLine[]
+      items: CollisionItem[]
+    }): void {
+      const { width, height, items } = args
+      baseMap = new Array(width).map(() => new Array(height).map(() => 0))
+
+      items.forEach(item =>
+        item.forEach(point => {
+          baseMap = addPoint(point, baseMap)
+        })
+      )
+
+      baseMap = deepFreeze(baseMap)
+
+      instanceMap = copy2dArray(baseMap)
+    },
     reset: function (): void {
       instanceMap = copy2dArray(baseMap)
     },

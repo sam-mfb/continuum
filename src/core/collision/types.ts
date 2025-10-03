@@ -21,6 +21,13 @@ export type CollisionLine = {
 }
 
 export type CollisionService = {
+  /** initialize the collision map */
+  initialize: (args: {
+    width: number
+    height: number
+    //lines: CollisionLine[]
+    items: CollisionItem[]
+  }) => void
   /** resets the collision map to its initialized value **/
   reset: () => void
 
