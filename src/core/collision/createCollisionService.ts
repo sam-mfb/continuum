@@ -20,20 +20,9 @@ export function createCollisionService(): CollisionService {
   let baseMap: CollisionMap
   let instanceMap: CollisionMap
   return {
-    initialize: function (args: {
-      width: number
-      height: number
-      //lines: CollisionLine[]
-      items: CollisionItem[]
-    }): void {
-      const { width, height, items } = args
+    initialize: function (args: { width: number; height: number }): void {
+      const { width, height } = args
       baseMap = new Array(width).map(() => new Array(height).map(() => 0))
-
-      items.forEach(item =>
-        item.forEach(point => {
-          baseMap = addPoint(point, baseMap)
-        })
-      )
 
       baseMap = deepFreeze(baseMap)
 

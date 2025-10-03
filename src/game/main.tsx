@@ -22,6 +22,7 @@ import {
 } from './constants'
 import { getDefaultGalaxy } from './galaxyConfig'
 import { createCollisionService } from '@/core/collision'
+import { SCRWTH, VIEWHT } from '@/core/screen'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 const root = createRoot(app)
@@ -50,6 +51,7 @@ try {
   console.log('Sound service created')
 
   const collisionService = createCollisionService()
+  collisionService.initialize({ width: SCRWTH, height: VIEWHT })
   console.log('Collision service created')
 
   // Create store with services and initial settings
