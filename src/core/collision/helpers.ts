@@ -8,7 +8,9 @@ import type { CollisionItem, CollisionType } from './types'
  */
 export function bitmapToCollisionItem(
   bitmap: MonochromeBitmap,
-  collision: CollisionType
+  collision: CollisionType,
+  localX?: number,
+  localY?: number
 ): CollisionItem {
   const points: CollisionItem = []
 
@@ -20,7 +22,7 @@ export function bitmapToCollisionItem(
       const isBlack = (byte & (1 << bitIndex)) !== 0
 
       if (isBlack) {
-        points.push({ x, y, collision })
+        points.push({ x: x + (localX ?? 0), y: y + (localY ?? 0), collision })
       }
     }
   }

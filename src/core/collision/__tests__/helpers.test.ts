@@ -86,4 +86,42 @@ describe('bitmapToCollisionItem', () => {
       { x: 15, y: 1, collision: Collision.LETHAL }
     ])
   })
+
+  it('applies localX offset to all points', () => {
+    // 0x80 = 10000000 (pixel at x=0)
+    const bitmap = createBitmap(8, 1, [0x80])
+    const result = bitmapToCollisionItem(bitmap, Collision.BOUNCE, 100)
+    expect(result).toEqual([{ x: 100, y: 0, collision: Collision.BOUNCE }])
+  })
+
+  it('applies localY offset to all points', () => {
+    // 0x80 = 10000000 (pixel at x=0, y=0)
+    const bitmap = createBitmap(8, 1, [0x80])
+    const result = bitmapToCollisionItem(
+      bitmap,
+      Collision.BOUNCE,
+      undefined,
+      50
+    )
+    expect(result).toEqual([{ x: 0, y: 50, collision: Collision.BOUNCE }])
+  })
+
+  it('applies both localX and localY offsets to all points', () => {
+    // 0xC0 = 11000000 (pixels at x=0 and x=1)
+    const bitmap = createBitmap(8, 2, [0xc0, 0xc0])
+    const result = bitmapToCollisionItem(bitmap, Collision.LETHAL, 10, 20)
+    expect(result).toEqual([
+      { x: 10, y: 20, collision: Collision.LETHAL },
+      { x: 11, y: 20, collision: Collision.LETHAL },
+      { x: 10, y: 21, collision: Collision.LETHAL },
+      { x: 11, y: 21, collision: Collision.LETHAL }
+    ])
+  })
+
+  it('applies offsets with zero values correctly', () => {
+    // 0x80 = 10000000 (pixel at x=0)
+    const bitmap = createBitmap(8, 1, [0x80])
+    const result = bitmapToCollisionItem(bitmap, Collision.BOUNCE, 0, 0)
+    expect(result).toEqual([{ x: 0, y: 0, collision: Collision.BOUNCE }])
+  })
 })

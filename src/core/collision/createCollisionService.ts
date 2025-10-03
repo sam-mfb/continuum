@@ -22,7 +22,9 @@ export function createCollisionService(): CollisionService {
   return {
     initialize: function (args: { width: number; height: number }): void {
       const { width, height } = args
-      baseMap = new Array(width).map(() => new Array(height).map(() => 0))
+      baseMap = new Array(width).map(() =>
+        new Array(height).map(() => Collision.NONE)
+      )
 
       baseMap = deepFreeze(baseMap)
 
@@ -54,6 +56,9 @@ export function createCollisionService(): CollisionService {
         }
       }
       return priorityCollision
+    },
+    getMap: function (): CollisionMap {
+      return instanceMap
     }
   }
 }
@@ -63,8 +68,8 @@ function addPoint(
   originalMap: CollisionMap
 ): CollisionMap {
   const newMap = copy2dArray(originalMap)
-  if (newMap[point.x] === undefined) {
-    throw new Error(`Point x value: ${point.x} out of bounds`)
+  if (newMap[point.x][point.y] === undefined) {
+    return newMap
   }
   newMap[point.x]![point.y] = point.collision
   return newMap

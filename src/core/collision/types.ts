@@ -47,4 +47,7 @@ export type CollisionService = {
    * return lethal, etc.
    */
   checkItem: (item: CollisionItem) => CollisionType
+
+  /** return the underlying collision map as a grid */
+  getMap: () => CollisionMap
 }
