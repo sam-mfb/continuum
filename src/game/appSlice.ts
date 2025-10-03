@@ -15,6 +15,9 @@ export type MostRecentScore = {
 }
 
 export type AppState = {
+  // Collision methodology
+  useOriginalCollisions: boolean
+
   // Display settings
   alignmentMode: AlignmentMode
   showInGameControls: boolean
@@ -36,6 +39,7 @@ export type AppState = {
 }
 
 const initialState: AppState = {
+  useOriginalCollisions: false, // use modern collision detection
   alignmentMode: 'screen-fixed', // Default to screen-fixed (not original)
   showInGameControls: true,
   volume: 0,
@@ -51,6 +55,13 @@ export const appSlice = createSlice({
   name: 'app',
   initialState,
   reducers: {
+    // Collision settings
+    enableOldCollisions: state => {
+      state.useOriginalCollisions = true
+    },
+    toggleCollisionMode: state => {
+      state.useOriginalCollisions = !state.useOriginalCollisions
+    },
     // Display settings
     setAlignmentMode: (state, action: PayloadAction<AlignmentMode>) => {
       state.alignmentMode = action.payload

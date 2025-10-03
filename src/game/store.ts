@@ -2,7 +2,11 @@
  * @fileoverview Central Redux store configuration for the game
  */
 
-import { configureStore, createListenerMiddleware } from '@reduxjs/toolkit'
+import {
+  combineReducers,
+  configureStore,
+  createListenerMiddleware
+} from '@reduxjs/toolkit'
 import type { GalaxyService } from '@core/galaxy'
 import type { SpriteService } from '@core/sprites'
 import type { FizzTransitionService } from '@core/transition'
@@ -36,6 +40,7 @@ import {
   type TypedUseSelectorHook
 } from 'react-redux'
 import { setupSoundListener } from './soundListenerMiddleware'
+import type { CollisionService } from '@/core/collision'
 
 // Define the services that will be injected
 export type GameServices = {
@@ -43,6 +48,7 @@ export type GameServices = {
   spriteService: SpriteService
   fizzTransitionService: FizzTransitionService
   soundService: SoundService
+  collisionService: CollisionService
 }
 
 // Initial settings for the game
@@ -52,8 +58,27 @@ export type GameInitialSettings = {
   initialLives: number
 }
 
+const rootReducer = combineReducers({
+  game: gameSlice.reducer,
+  app: appSlice.reducer,
+  controls: controlsSlice.reducer,
+  ship: shipSlice.reducer,
+  shots: shotsSlice.reducer,
+  planet: planetSlice.reducer,
+  screen: screenSlice.reducer,
+  status: statusSlice.reducer,
+  explosions: explosionsSlice.reducer,
+  walls: wallsSlice.reducer,
+  highscore: highscoreSlice.reducer,
+  transition: transitionSlice.reducer
+})
+
+export type RootReducer = typeof rootReducer
+export type RootState = ReturnType<RootReducer>
+
 // Factory function to create store and listeners
 const createStoreAndListeners = (
+  reducer: RootReducer,
   services: GameServices,
   initialSettings: GameInitialSettings
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -92,20 +117,7 @@ const createStoreAndListeners = (
   }
 
   const store = configureStore({
-    reducer: {
-      game: gameSlice.reducer,
-      app: appSlice.reducer,
-      controls: controlsSlice.reducer,
-      ship: shipSlice.reducer,
-      shots: shotsSlice.reducer,
-      planet: planetSlice.reducer,
-      screen: screenSlice.reducer,
-      status: statusSlice.reducer,
-      explosions: explosionsSlice.reducer,
-      walls: wallsSlice.reducer,
-      highscore: highscoreSlice.reducer,
-      transition: transitionSlice.reducer
-    },
+    reducer: reducer,
     middleware: getDefaultMiddleware =>
       getDefaultMiddleware({
         thunk: {
@@ -124,7 +136,6 @@ const createStoreAndListeners = (
 
 // Define the actual state shape
 export type GameStore = ReturnType<typeof createStoreAndListeners>['store']
-export type RootState = ReturnType<GameStore['getState']>
 
 export type AppDispatch = GameStore['dispatch']
 
@@ -137,6 +148,7 @@ export const createGameStore = (
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 ) => {
   const { store, soundListenerMiddleware } = createStoreAndListeners(
+    rootReducer,
     services,
     initialSettings
   )
