@@ -3,7 +3,7 @@
  */
 
 import {
-  combineReducers,
+  combineSlices,
   configureStore,
   createListenerMiddleware
 } from '@reduxjs/toolkit'
@@ -58,20 +58,20 @@ export type GameInitialSettings = {
   initialLives: number
 }
 
-const rootReducer = combineReducers({
-  game: gameSlice.reducer,
-  app: appSlice.reducer,
-  controls: controlsSlice.reducer,
-  ship: shipSlice.reducer,
-  shots: shotsSlice.reducer,
-  planet: planetSlice.reducer,
-  screen: screenSlice.reducer,
-  status: statusSlice.reducer,
-  explosions: explosionsSlice.reducer,
-  walls: wallsSlice.reducer,
-  highscore: highscoreSlice.reducer,
-  transition: transitionSlice.reducer
-})
+const rootReducer = combineSlices(
+  appSlice,
+  gameSlice,
+  controlsSlice,
+  shipSlice,
+  shotsSlice,
+  planetSlice,
+  screenSlice,
+  statusSlice,
+  explosionsSlice,
+  wallsSlice,
+  highscoreSlice,
+  transitionSlice
+)
 
 export type RootReducer = typeof rootReducer
 export type RootState = ReturnType<RootReducer>
@@ -97,6 +97,9 @@ const createStoreAndListeners = (
     app: {
       ...appSlice.getInitialState(),
       // Use persisted settings if available, otherwise use initial settings
+      useOriginalCollisions:
+        persistedAppSettings.useOriginalCollisions ??
+        appSlice.getInitialState().useOriginalCollisions,
       volume: persistedAppSettings.volume ?? initialSettings.soundVolume,
       soundOn: persistedAppSettings.soundOn ?? initialSettings.soundEnabled,
       alignmentMode:
