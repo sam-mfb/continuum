@@ -1,3 +1,4 @@
+import { Collision } from './constants'
 import type {
   CollisionItem,
   CollisionMap,
@@ -49,14 +50,20 @@ export function createCollisionService(args: {
       })
     },
     checkPoint: function (point: CollisionPoint): CollisionType {
-      if (instanceMap[point.x] === undefined) {
-        throw new Error(`Point x value: ${point.x} out of bounds`)
+      return checkPoint(point, instanceMap)
+    },
+    checkItem: function (item: CollisionItem): CollisionType {
+      let priorityCollision: CollisionType = Collision.NONE
+      for (const point of item) {
+        const collision = checkPoint(point, instanceMap)
+        if (collision > priorityCollision) {
+          priorityCollision = collision
+          if (priorityCollision === Collision.LETHAL) {
+            return Collision.LETHAL
+          }
+        }
       }
-      const result = instanceMap[point.x]![point.y]
-      if (result === undefined) {
-        throw new Error(`Point y value: ${point.y} out of bounds`)
-      }
-      return result
+      return priorityCollision
     }
   }
 }
@@ -71,4 +78,17 @@ function addPoint(
   }
   newMap[point.x]![point.y] = point.collision
   return newMap
+}
+function checkPoint(
+  point: CollisionPoint,
+  originalMap: CollisionMap
+): CollisionType {
+  if (originalMap[point.x] === undefined) {
+    throw new Error(`Point x value: ${point.x} out of bounds`)
+  }
+  const result = originalMap[point.x]![point.y]
+  if (result === undefined) {
+    throw new Error(`Point y value: ${point.y} out of bounds`)
+  }
+  return result
 }
