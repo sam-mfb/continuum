@@ -56,6 +56,7 @@ import { triggerShipDeath } from '../shipDeath'
 
 import { BunkerKind } from '@core/figs'
 import type { ControlMatrix } from '@/core/controls'
+import { createCollisionMap } from './createCollisionMapThunk'
 
 export type StateUpdateContext = {
   store: GameStore
@@ -123,6 +124,8 @@ export const updateGameState = (context: StateUpdateContext): void => {
   ) {
     handleGameOver(store)
   }
+
+  store.dispatch(createCollisionMap())
 
   // Handle ship movement and controls
   const { globalx, globaly } = handleShipMovement(store, controls)

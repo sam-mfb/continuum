@@ -101,6 +101,7 @@ try {
     <Provider store={store}>
       <App
         renderer={renderer}
+        collisionService={collisionService}
         soundService={soundService}
         spriteService={spriteService}
       />

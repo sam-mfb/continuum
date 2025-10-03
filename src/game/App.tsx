@@ -19,15 +19,18 @@ import { type SoundService } from '@/core/sound'
 import { type SpriteService } from '@/core/sprites'
 import { useAppDispatch, useAppSelector } from './store'
 import type { GameRenderLoop } from './types'
+import type { CollisionService } from '@/core/collision'
 
 type AppProps = {
   renderer: GameRenderLoop
   soundService: SoundService
   spriteService: SpriteService
+  collisionService: CollisionService
 }
 
 export const App: React.FC<AppProps> = ({
   renderer,
+  collisionService,
   soundService,
   spriteService
 }) => {
@@ -82,6 +85,7 @@ export const App: React.FC<AppProps> = ({
           >
             <GameRenderer
               renderer={renderer}
+              collisionService={collisionService}
               width={512}
               height={342}
               scale={2} // Pixel-doubled

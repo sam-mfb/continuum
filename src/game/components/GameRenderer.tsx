@@ -4,9 +4,11 @@ import { useAppDispatch, useAppSelector } from '../store'
 import { togglePause, showMap, hideMap, pause, unpause } from '../gameSlice'
 import { getControls, type ControlMatrix } from '@core/controls'
 import { Map } from './Map'
+import type { CollisionService } from '@/core/collision'
 
 type GameRendererProps = {
   renderer: (frame: FrameInfo, controls: ControlMatrix) => MonochromeBitmap
+  collisionService: CollisionService
   width: number
   height: number
   scale: number
@@ -19,6 +21,7 @@ type GameRendererProps = {
  */
 const GameRenderer: React.FC<GameRendererProps> = ({
   renderer,
+  collisionService,
   width,
   height,
   scale,
@@ -137,6 +140,8 @@ const GameRenderer: React.FC<GameRendererProps> = ({
           // Render game and get the resulting bitmap
           const renderedBitmap = renderer(frameInfo, controls)
 
+          const collisionMap = collisionService.getMap()
+
           // Create offscreen canvas for pixel-perfect scaling
           const offscreen = document.createElement('canvas')
           offscreen.width = renderedBitmap.width
@@ -160,10 +165,21 @@ const GameRenderer: React.FC<GameRendererProps> = ({
               const pixelIndex = (y * renderedBitmap.width + x) * 4
               const value = isSet ? 0 : 255 // Black on white
 
-              pixels[pixelIndex] = value // R
-              pixels[pixelIndex + 1] = value // G
-              pixels[pixelIndex + 2] = value // B
-              pixels[pixelIndex + 3] = 255 // A
+              // Check if there's a collision at this point
+              const collision = collisionMap[x]?.[y] ?? 0
+
+              if (collision > 0) {
+                // Render collision in red
+                pixels[pixelIndex] = 255 // R
+                pixels[pixelIndex + 1] = 0 // G
+                pixels[pixelIndex + 2] = 0 // B
+                pixels[pixelIndex + 3] = 255 // A
+              } else {
+                pixels[pixelIndex] = value // R
+                pixels[pixelIndex + 1] = value // G
+                pixels[pixelIndex + 2] = value // B
+                pixels[pixelIndex + 3] = 255 // A
+              }
             }
           }
 
@@ -211,7 +227,8 @@ const GameRenderer: React.FC<GameRendererProps> = ({
     bindings,
     paused,
     showMapState,
-    dispatch
+    dispatch,
+    collisionService
   ])
 
   return (
