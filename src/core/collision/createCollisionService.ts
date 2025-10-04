@@ -22,8 +22,8 @@ export function createCollisionService(): CollisionService {
   return {
     initialize: function (args: { width: number; height: number }): void {
       const { width, height } = args
-      baseMap = new Array(width).map(() =>
-        new Array(height).map(() => Collision.NONE)
+      baseMap = Array.from({ length: width }, () =>
+        Array.from({ length: height }, () => Collision.NONE)
       )
 
       baseMap = deepFreeze(baseMap)
