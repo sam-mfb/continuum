@@ -5,6 +5,7 @@ import { togglePause, showMap, hideMap, pause, unpause } from '../gameSlice'
 import { getControls, type ControlMatrix } from '@core/controls'
 import { Map } from './Map'
 import type { CollisionService } from '@/core/collision'
+import { SBARHT } from '@/core/screen'
 
 type GameRendererProps = {
   renderer: (frame: FrameInfo, controls: ControlMatrix) => MonochromeBitmap
@@ -166,7 +167,8 @@ const GameRenderer: React.FC<GameRendererProps> = ({
               const value = isSet ? 0 : 255 // Black on white
 
               // Check if there's a collision at this point
-              const collision = collisionMap[x]?.[y] ?? 0
+              // NB: collision map doesn't include status bar
+              const collision = collisionMap[x]?.[y - SBARHT] ?? 0
 
               if (collision > 0) {
                 // Render collision in red
