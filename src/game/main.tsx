@@ -23,9 +23,12 @@ import {
 import { getDefaultGalaxy } from './galaxyConfig'
 import { createCollisionService } from '@/core/collision'
 import { SCRWTH, VIEWHT } from '@/core/screen'
+import { enableDebugOption } from './debug'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 const root = createRoot(app)
+
+enableDebugOption({ SHOW_COLLISION_MAP: true })
 
 try {
   // Initialize services
