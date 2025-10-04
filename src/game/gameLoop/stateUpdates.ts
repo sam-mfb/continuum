@@ -128,8 +128,6 @@ export const updateGameState = (context: StateUpdateContext): void => {
   // Handle ship movement and controls
   const { globalx, globaly } = handleShipMovement(store, controls)
 
-  store.dispatch(createCollisionMap())
-
   // Update bunker rotations for animated bunkers
   store.dispatch(updateBunkerRotations({ globalx, globaly }))
 
@@ -176,6 +174,8 @@ export const updateGameState = (context: StateUpdateContext): void => {
       shielding: finalState.ship.shielding
     })
   )
+
+  store.dispatch(createCollisionMap())
 
   // Update strafe lifecounts
   store.dispatch(doStrafes())

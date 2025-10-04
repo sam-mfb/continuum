@@ -166,21 +166,28 @@ const GameRenderer: React.FC<GameRendererProps> = ({
               const pixelIndex = (y * renderedBitmap.width + x) * 4
               const value = isSet ? 0 : 255 // Black on white
 
+              // Set base pixel color
+              pixels[pixelIndex] = value // R
+              pixels[pixelIndex + 1] = value // G
+              pixels[pixelIndex + 2] = value // B
+              pixels[pixelIndex + 3] = 255 // A
+
               // Check if there's a collision at this point
               // NB: collision map doesn't include status bar
               const collision = collisionMap[x]?.[y - SBARHT] ?? 0
 
               if (collision > 0) {
-                // Render collision in red
-                pixels[pixelIndex] = 255 // R
-                pixels[pixelIndex + 1] = 0 // G
-                pixels[pixelIndex + 2] = 0 // B
-                pixels[pixelIndex + 3] = 255 // A
-              } else {
-                pixels[pixelIndex] = value // R
-                pixels[pixelIndex + 1] = value // G
-                pixels[pixelIndex + 2] = value // B
-                pixels[pixelIndex + 3] = 255 // A
+                // Blend red transparently on top
+                const alpha = 0.5 // 50% transparency
+                pixels[pixelIndex] = Math.round(
+                  pixels[pixelIndex]! * (1 - alpha) + 255 * alpha
+                ) // R
+                pixels[pixelIndex + 1] = Math.round(
+                  pixels[pixelIndex + 1]! * (1 - alpha) + 0 * alpha
+                ) // G
+                pixels[pixelIndex + 2] = Math.round(
+                  pixels[pixelIndex + 2]! * (1 - alpha) + 0 * alpha
+                ) // B
               }
             }
           }
