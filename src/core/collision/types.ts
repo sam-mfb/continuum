@@ -24,7 +24,7 @@ export type CollisionService = {
   /** initialize the collision map */
   initialize: (args: { width: number; height: number }) => void
 
-  /** resets the collision map to its initialized value **/
+  /** reset the collision map to the initialized state */
   reset: () => void
 
   /** add a point to the map with a given collision value **/

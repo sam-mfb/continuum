@@ -125,10 +125,10 @@ export const updateGameState = (context: StateUpdateContext): void => {
     handleGameOver(store)
   }
 
-  store.dispatch(createCollisionMap())
-
   // Handle ship movement and controls
   const { globalx, globaly } = handleShipMovement(store, controls)
+
+  store.dispatch(createCollisionMap())
 
   // Update bunker rotations for animated bunkers
   store.dispatch(updateBunkerRotations({ globalx, globaly }))

@@ -34,11 +34,11 @@ export function createCollisionService(): CollisionService {
       instanceMap = copy2dArray(baseMap)
     },
     addPoint: function (point: CollisionPoint): void {
-      instanceMap = addPoint(point, instanceMap)
+      addPoint(point, instanceMap)
     },
     addItem: function (item: CollisionItem): void {
       item.forEach(point => {
-        instanceMap = addPoint(point, instanceMap)
+        addPoint(point, instanceMap)
       })
     },
     checkPoint: function (point: CollisionPoint): CollisionType {
@@ -63,22 +63,17 @@ export function createCollisionService(): CollisionService {
   }
 }
 
-function addPoint(
-  point: CollisionPoint,
-  originalMap: CollisionMap
-): CollisionMap {
-  const newMap = copy2dArray(originalMap)
+function addPoint(point: CollisionPoint, originalMap: CollisionMap): void {
   // ignore out of bounds setting (allows sending items that are
   // partially out of bounds)
-  if (newMap[point.x]?.[point.y] === undefined) {
-    return newMap
+  if (originalMap[point.x]?.[point.y] === undefined) {
+    return
   }
   // don't lower the collision priority if already set higher
-  if (newMap[point.x]![point.y]! > point.collision) {
-    return newMap
+  if (originalMap[point.x]![point.y]! > point.collision) {
+    return
   }
-  newMap[point.x]![point.y] = point.collision
-  return newMap
+  originalMap[point.x]![point.y] = point.collision
 }
 
 function checkPoint(

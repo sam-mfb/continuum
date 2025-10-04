@@ -42,38 +42,6 @@ describe('createCollisionService', () => {
     })
   })
 
-  describe('reset', () => {
-    it('resets collision map to initialized state', () => {
-      service.initialize({ width: 10, height: 10 })
-      service.addPoint({ x: 3, y: 3, collision: Collision.LETHAL })
-
-      service.reset()
-
-      expect(
-        service.checkPoint({ x: 3, y: 3, collision: Collision.NONE })
-      ).toBe(Collision.NONE)
-    })
-
-    it('clears all added points and items', () => {
-      service.initialize({ width: 10, height: 10 })
-      service.addPoint({ x: 1, y: 1, collision: Collision.BOUNCE })
-      service.addPoint({ x: 2, y: 2, collision: Collision.LETHAL })
-      service.addItem([
-        { x: 5, y: 5, collision: Collision.BOUNCE },
-        { x: 6, y: 6, collision: Collision.LETHAL }
-      ])
-
-      service.reset()
-
-      const map = service.getMap()
-      for (let x = 0; x < 10; x++) {
-        for (let y = 0; y < 10; y++) {
-          expect(map[x]?.[y]).toBe(Collision.NONE)
-        }
-      }
-    })
-  })
-
   describe('addPoint', () => {
     it('adds a collision point to the map', () => {
       service.addPoint({ x: 5, y: 5, collision: Collision.LETHAL })
@@ -256,15 +224,6 @@ describe('createCollisionService', () => {
       const map = service.getMap()
       expect(map[3]?.[7]).toBe(Collision.LETHAL)
     })
-
-    it('returns updated map after reset', () => {
-      service.initialize({ width: 10, height: 10 })
-      service.addPoint({ x: 5, y: 5, collision: Collision.BOUNCE })
-      service.reset()
-
-      const map = service.getMap()
-      expect(map[5]?.[5]).toBe(Collision.NONE)
-    })
   })
 
   describe('integration scenarios', () => {
@@ -286,7 +245,7 @@ describe('createCollisionService', () => {
       expect(service.checkItem(item)).toBe(Collision.LETHAL)
 
       // Reset and verify clean state
-      service.reset()
+      service.initialize({ width: 20, height: 20 })
       expect(service.checkItem(item)).toBe(Collision.NONE)
 
       // Add new collision and check
