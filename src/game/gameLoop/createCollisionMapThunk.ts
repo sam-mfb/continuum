@@ -1,7 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit'
 import type { RootState, GameServices } from '../store'
 import { bitmapToCollisionItem, Collision } from '@/core/collision'
-import { SBARHT } from '@/core/screen'
+import { xbcenter, ybcenter } from '@/core/planet'
 
 export const createCollisionMap = createAsyncThunk<
   void,
@@ -20,12 +20,13 @@ export const createCollisionMap = createAsyncThunk<
         bunker.rot,
         { variant: 'mask' }
       ).bitmap
+      const xcenter = xbcenter[bunker.kind]![bunker.rot]!
+      const ycenter = ybcenter[bunker.kind]![bunker.rot]!
       const item = bitmapToCollisionItem(
         sprite,
         Collision.LETHAL,
-        bunker.x - state.screen.screenx,
-        // NB: collision map doesn't include status bar
-        bunker.y - state.screen.screeny - SBARHT
+        bunker.x - xcenter - state.screen.screenx,
+        bunker.y - ycenter - state.screen.screeny
       )
       extra.collisionService.addItem(item)
     })
