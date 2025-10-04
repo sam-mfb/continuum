@@ -57,7 +57,6 @@ export const createGameRenderer = (
         bitmap,
         state,
         spriteService,
-        store,
         fizzTransitionService
       })
     }

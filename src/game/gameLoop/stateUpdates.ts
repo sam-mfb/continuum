@@ -10,7 +10,7 @@ import type { GameStore, RootState } from '../store'
 import type { MonochromeBitmap, FrameInfo } from '@lib/bitmap'
 import type { FizzTransitionService } from '@core/transition'
 
-import { shipSlice, shipControl, CRITFUEL } from '@core/ship'
+import { shipSlice, shipControl, CRITFUEL, handleBounceState } from '@core/ship'
 import {
   shotsSlice,
   doStrafes,
@@ -61,7 +61,6 @@ import type { ControlMatrix } from '@/core/controls'
 import { createCollisionMap } from './createCollisionMapThunk'
 import { checkCollisions } from './checkCollisionsThunk'
 import { Collision } from '@/core/collision'
-import { handleBounceState } from '@/core/ship/physics/handleBounceState'
 
 export type StateUpdateContext = {
   store: GameStore
@@ -362,9 +361,9 @@ const handleGameOver = (store: GameStore): void => {
   const highScoreEligible = state.game.highScoreEligible
   const currentGalaxyId = state.app.currentGalaxyId
   const allHighScores = state.highscore
-  const highScores = allHighScores[currentGalaxyId] ?? {}
+  const highScores = allHighScores[currentGalaxyId]!
   const lowestScore = Math.min(
-    ...Object.values(highScores).map((hs: any) => hs?.score || 0)
+    ...Object.values(highScores).map(hs => hs?.score || 0)
   )
   const recentScore = state.status.score
 
