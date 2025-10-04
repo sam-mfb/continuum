@@ -47,7 +47,6 @@ const GameRenderer: React.FC<GameRendererProps> = ({
   const paused = useAppSelector(state => state.game.paused)
   const showMapState = useAppSelector(state => state.game.showMap)
   const bindings = useAppSelector(state => state.controls.bindings)
-  //  const ship = useAppSelector(state => state.ship)
   const store = useStore()
   const dispatch = useAppDispatch()
 
