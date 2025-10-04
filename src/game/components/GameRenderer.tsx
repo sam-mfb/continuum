@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import type { FrameInfo, KeyInfo, MonochromeBitmap } from '@lib/bitmap'
-import { useAppDispatch, useAppSelector } from '../store'
+import { useAppDispatch, useAppSelector, type RootState } from '../store'
 import { togglePause, showMap, hideMap, pause, unpause } from '../gameSlice'
 import { getControls, type ControlMatrix } from '@core/controls'
 import { Map } from './Map'
@@ -10,6 +10,7 @@ import { SBARHT } from '@/core/screen'
 import { getDebug } from '../debug'
 import type { SpriteService } from '@/core/sprites'
 import { SCENTER } from '@/core/figs'
+import { useStore } from 'react-redux'
 
 type GameRendererProps = {
   renderer: (frame: FrameInfo, controls: ControlMatrix) => MonochromeBitmap
@@ -46,7 +47,8 @@ const GameRenderer: React.FC<GameRendererProps> = ({
   const paused = useAppSelector(state => state.game.paused)
   const showMapState = useAppSelector(state => state.game.showMap)
   const bindings = useAppSelector(state => state.controls.bindings)
-  const ship = useAppSelector(state => state.ship)
+  //  const ship = useAppSelector(state => state.ship)
+  const store = useStore()
   const dispatch = useAppDispatch()
 
   useEffect(() => {
@@ -182,6 +184,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
           }
 
           if (getDebug()?.SHOW_COLLISION_MAP) {
+            const ship = (store.getState() as RootState).ship
             // Get ship collision item
             const shipBitmap = spriteService.getShipSprite(ship.shiprot, {
               variant: 'mask'
@@ -296,9 +299,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
     dispatch,
     collisionService,
     spriteService,
-    ship.shiprot,
-    ship.shipx,
-    ship.shipy
+    store
   ])
 
   return (
