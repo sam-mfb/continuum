@@ -16,6 +16,7 @@ import type { SoundService } from '@core/sound'
 import { gameSlice } from './gameSlice'
 import { appSlice } from './appSlice'
 import { appMiddleware, loadAppSettings } from './appMiddleware'
+import { syncThunkMiddleware } from './syncThunkMiddleware'
 import { shipSlice } from '@core/ship'
 import { shotsSlice } from '@core/shots'
 import { planetSlice } from '@core/planet'
@@ -128,6 +129,7 @@ const createStoreAndListeners = (
         }
       })
         .prepend(soundListenerMiddleware.middleware)
+        .prepend(syncThunkMiddleware(services))
         .concat(appMiddleware)
         .concat(highscoreMiddleware)
         .concat(controlsMiddleware),

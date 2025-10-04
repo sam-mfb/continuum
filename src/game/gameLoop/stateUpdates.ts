@@ -198,26 +198,21 @@ export const updateGameState = (context: StateUpdateContext): void => {
   if (finalState.app.collisionMode === 'modern') {
     if (state.ship.deadCount === 0) {
       store.dispatch(createCollisionMap())
-      store
-        .dispatch(checkCollisions())
-        .unwrap()
-        // not actually async but this gives us the convenience
-        // of using createAsyncThunk's DI
-        .then(collision => {
-          if (collision === Collision.LETHAL) {
-            store.dispatch(killShipNextFrame())
-          } else {
-            handleBounceState({
-              store,
-              wallData: {
-                kindPointers: state.walls.kindPointers,
-                organizedWalls: state.walls.organizedWalls
-              },
-              worldwidth: state.planet.worldwidth,
-              collision
-            })
-          }
+      const resultAction = store.dispatch(checkCollisions())
+      const collision = resultAction.meta.result
+      if (collision === Collision.LETHAL) {
+        store.dispatch(killShipNextFrame())
+      } else {
+        handleBounceState({
+          store,
+          wallData: {
+            kindPointers: state.walls.kindPointers,
+            organizedWalls: state.walls.organizedWalls
+          },
+          worldwidth: state.planet.worldwidth,
+          collision
         })
+      }
     }
   }
 }
