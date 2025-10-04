@@ -47,11 +47,9 @@ export const createCollisionMap = createAsyncThunk<
 
   // Add lines at wrapped position
   if (on_right_side && worldwrap) {
-    state.planet.lines
-      .filter(line => line.kind === LINE_KIND.NORMAL)
-      .forEach(line =>
-        addLineCollision(line, state.screen.screenx - state.planet.worldwidth)
-      )
+    state.planet.lines.forEach(line =>
+      addLineCollision(line, state.screen.screenx - state.planet.worldwidth)
+    )
   }
 
   // Helper to add bunker collision with optional wrapping

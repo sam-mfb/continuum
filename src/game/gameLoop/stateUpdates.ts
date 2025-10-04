@@ -61,6 +61,7 @@ import type { ControlMatrix } from '@/core/controls'
 import { createCollisionMap } from './createCollisionMapThunk'
 import { checkCollisions } from './checkCollisionsThunk'
 import { Collision } from '@/core/collision'
+import { handleBounceState } from '@/core/ship/physics/handleBounceState'
 
 export type StateUpdateContext = {
   store: GameStore
@@ -204,16 +205,18 @@ export const updateGameState = (context: StateUpdateContext): void => {
         // not actually async but this gives us the convenience
         // of using createAsyncThunk's DI
         .then(collision => {
-          switch (collision) {
-            case Collision.LETHAL:
-              store.dispatch(killShipNextFrame())
-              break
-            case Collision.BOUNCE:
-              break
-            case Collision.NONE:
-              break
-            default:
-              collision satisfies never
+          if (collision === Collision.LETHAL) {
+            store.dispatch(killShipNextFrame())
+          } else {
+            handleBounceState({
+              store,
+              wallData: {
+                kindPointers: state.walls.kindPointers,
+                organizedWalls: state.walls.organizedWalls
+              },
+              worldwidth: state.planet.worldwidth,
+              collision
+            })
           }
         })
     }
