@@ -90,7 +90,7 @@ We parse the original galaxy files and resources from the original game. I got t
 
 BTW, at some point _after_ i did this, I learned about (resource_dasm)[https://github.com/fuzziqersoftware/resource_dasm] which is a much friendlier way to get old 68k resources in a modern dev environment. Next time ;)
 
-At some point I should add an interface to let you use arbitrary galaxy files.
+The game also makes available some additional levels that were either distributed by the authors or by others on the internet. the Zephyr levels are particularly interesting as they really were pushing the limits of the physics engine and discovering quirks. On some of the levels it seems like they were relying on bugs to allow you to beat the level -- I hope I've properly "ported" those bugs...
 
 ## Codebase/Compiling
 
