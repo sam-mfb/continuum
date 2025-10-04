@@ -126,6 +126,10 @@ const createStoreAndListeners = (
       getDefaultMiddleware({
         thunk: {
           extraArgument: services
+        },
+        serializableCheck: {
+          // Ignore these paths in the state/actions for serializability checks
+          ignoredActionPaths: ['meta.payloadCreator', 'meta.result']
         }
       })
         .prepend(soundListenerMiddleware.middleware)
