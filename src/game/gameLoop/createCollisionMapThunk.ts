@@ -5,8 +5,8 @@ import {
   Collision,
   type CollisionItem
 } from '@/core/collision'
-import { xbcenter, ybcenter } from '@/core/planet'
-import { LINE_KIND } from '@/core/shared'
+import { xbcenter, ybcenter, type Bunker } from '@/core/planet'
+import { LINE_KIND, type LineRec } from '@/core/shared'
 import { SCRWTH } from '@/core/screen'
 
 export const createCollisionMap = createAsyncThunk<
@@ -21,10 +21,7 @@ export const createCollisionMap = createAsyncThunk<
   const worldwrap = state.planet.worldwrap
 
   // Helper to add lines with optional wrapping
-  const addLineCollision = (
-    line: (typeof state.planet.lines)[0],
-    screenOffsetX: number
-  ): void => {
+  const addLineCollision = (line: LineRec, screenOffsetX: number): void => {
     const startX = line.startx - screenOffsetX
     const startY = line.starty - state.screen.screeny
     const endX = line.endx - screenOffsetX
@@ -33,15 +30,20 @@ export const createCollisionMap = createAsyncThunk<
     extra.collisionService.addLine({
       startPoint: { x: startX, y: startY, collision: Collision.LETHAL },
       endPoint: { x: endX, y: endY, collision: Collision.LETHAL },
-      collision: Collision.LETHAL,
+      collision:
+        line.kind === LINE_KIND.NORMAL
+          ? Collision.LETHAL
+          : line.kind === LINE_KIND.BOUNCE
+            ? Collision.BOUNCE
+            : Collision.NONE,
       width: 2
     })
   }
 
   // Add lines at normal position
-  state.planet.lines
-    .filter(line => line.kind === LINE_KIND.NORMAL)
-    .forEach(line => addLineCollision(line, state.screen.screenx))
+  state.planet.lines.forEach(line =>
+    addLineCollision(line, state.screen.screenx)
+  )
 
   // Add lines at wrapped position
   if (on_right_side && worldwrap) {
@@ -53,10 +55,7 @@ export const createCollisionMap = createAsyncThunk<
   }
 
   // Helper to add bunker collision with optional wrapping
-  const addBunkerCollision = (
-    bunker: (typeof state.planet.bunkers)[0],
-    screenOffsetX: number
-  ): void => {
+  const addBunkerCollision = (bunker: Bunker, screenOffsetX: number): void => {
     const sprite = extra.spriteService.getBunkerSprite(
       bunker.kind,
       bunker.rot,

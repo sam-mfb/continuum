@@ -5,6 +5,7 @@ import { togglePause, showMap, hideMap, pause, unpause } from '../gameSlice'
 import { getControls, type ControlMatrix } from '@core/controls'
 import { Map } from './Map'
 import type { CollisionService } from '@/core/collision'
+import { Collision } from '@/core/collision/constants'
 import { SBARHT } from '@/core/screen'
 
 type GameRendererProps = {
@@ -176,7 +177,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
               // NB: collision map doesn't include status bar
               const collision = collisionMap[x]?.[y - SBARHT] ?? 0
 
-              if (collision > 0) {
+              if (collision === Collision.LETHAL) {
                 // Blend red transparently on top
                 const alpha = 0.5 // 50% transparency
                 pixels[pixelIndex] = Math.round(
@@ -184,6 +185,18 @@ const GameRenderer: React.FC<GameRendererProps> = ({
                 ) // R
                 pixels[pixelIndex + 1] = Math.round(
                   pixels[pixelIndex + 1]! * (1 - alpha) + 0 * alpha
+                ) // G
+                pixels[pixelIndex + 2] = Math.round(
+                  pixels[pixelIndex + 2]! * (1 - alpha) + 0 * alpha
+                ) // B
+              } else if (collision === Collision.BOUNCE) {
+                // Blend green transparently on top
+                const alpha = 0.5 // 50% transparency
+                pixels[pixelIndex] = Math.round(
+                  pixels[pixelIndex]! * (1 - alpha) + 0 * alpha
+                ) // R
+                pixels[pixelIndex + 1] = Math.round(
+                  pixels[pixelIndex + 1]! * (1 - alpha) + 255 * alpha
                 ) // G
                 pixels[pixelIndex + 2] = Math.round(
                   pixels[pixelIndex + 2]! * (1 - alpha) + 0 * alpha
