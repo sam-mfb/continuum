@@ -40,7 +40,7 @@ export const createGameRenderer = (
     const state = store.getState()
 
     // This draws all visual elements based on the updated state
-    // The new implementation only handles rendering and collisiosn are
+    // The new implementation only handles rendering. Collisions are
     // handled via a collision map service in state. The original game
     // handled collisions via the render system and that is preserved
     // here for authenticity

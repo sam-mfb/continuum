@@ -403,7 +403,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                   (
                   {collisionMode === 'modern'
                     ? 'Modern collision detection'
-                    : 'Original pixel-perfect collision'}
+                    : 'Original render-time collision detection'}
                   )
                 </span>
               </div>
