@@ -358,8 +358,23 @@ const handleGameOver = (store: GameStore): void => {
     })
   )
 
-  // Always go to highScoreEntry mode - it will decide what to do
-  store.dispatch(setMode('highScoreEntry'))
+  // Determine which mode to go to based on high score eligibility
+  const highScoreEligible = state.game.highScoreEligible
+  const currentGalaxyId = state.app.currentGalaxyId
+  const allHighScores = state.highscore
+  const highScores = allHighScores[currentGalaxyId] ?? {}
+  const lowestScore = Math.min(
+    ...Object.values(highScores).map((hs: any) => hs?.score || 0)
+  )
+  const recentScore = state.status.score
+
+  if (highScoreEligible && recentScore > lowestScore) {
+    // Score qualifies for high score entry
+    store.dispatch(setMode('highScoreEntry'))
+  } else {
+    // Go directly to game over
+    store.dispatch(setMode('gameOver'))
+  }
 
   // Reset everything for a new game
   store.dispatch(resetGame())
