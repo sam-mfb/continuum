@@ -92,6 +92,9 @@ export const App: React.FC<AppProps> = ({
       case 'highScoreEntry':
         if (!mostRecentScore) {
           // Shouldn't happen, but handle gracefully - just show nothing
+          console.warn(
+            "[App] Entered 'highScoreEntry' mode with no mostRecentScore. This should not happen. Rendering nothing."
+          );
           return null
         }
 
