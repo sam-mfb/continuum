@@ -5,6 +5,7 @@ import {
   Collision,
   type CollisionType
 } from '@/core/collision'
+import { SCENTER } from '@/core/figs'
 
 export const checkCollisions = createAsyncThunk<
   CollisionType,
@@ -19,8 +20,8 @@ export const checkCollisions = createAsyncThunk<
   const shipItem = bitmapToCollisionItem(
     shipBitmap,
     Collision.NONE,
-    ship.shipx,
-    ship.shipy
+    ship.shipx - SCENTER,
+    ship.shipy - SCENTER
   )
   return extra.collisionService.checkItem(shipItem)
 })

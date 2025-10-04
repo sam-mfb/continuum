@@ -86,6 +86,7 @@ export const App: React.FC<AppProps> = ({
             <GameRenderer
               renderer={renderer}
               collisionService={collisionService}
+              spriteService={spriteService}
               width={512}
               height={342}
               scale={2} // Pixel-doubled
