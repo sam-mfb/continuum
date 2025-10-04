@@ -61,6 +61,11 @@ export type BitmapGameDefinition = {
   name: string
   bitmapRenderer: BitmapRenderer
   bitmapOptions?: BitmapToCanvasOptions
+  collisionService?: {
+    getMap: () => number[][]
+    viewportOffset?: { x: number; y: number }
+    statusBarHeight?: number
+  }
 }
 
 export type GameDefinition = CanvasGameDefinition | BitmapGameDefinition
@@ -281,8 +286,61 @@ const GameView: React.FC<GameViewProps> = ({
               // Update bitmap reference for next frame
               bitmapRef.current = renderedBitmap
 
-              // Convert to canvas
-              bitmapToCanvas(renderedBitmap, ctx, game.bitmapOptions)
+              // Convert to canvas with optional collision overlay
+              if (game.collisionService) {
+                // Render with collision overlay (similar to GameRenderer.tsx)
+                const collisionMap = game.collisionService.getMap()
+                const viewportX = game.collisionService.viewportOffset?.x ?? 0
+                const viewportY = game.collisionService.viewportOffset?.y ?? 0
+                const SBARHT = game.collisionService.statusBarHeight ?? 0
+
+                const imageData = new ImageData(
+                  renderedBitmap.width,
+                  renderedBitmap.height
+                )
+                const pixels = imageData.data
+
+                for (let y = 0; y < renderedBitmap.height; y++) {
+                  for (let x = 0; x < renderedBitmap.width; x++) {
+                    const byteIndex =
+                      y * renderedBitmap.rowBytes + Math.floor(x / 8)
+                    const bitMask = 0x80 >> x % 8
+                    const isSet =
+                      (renderedBitmap.data[byteIndex]! & bitMask) !== 0
+
+                    const pixelIndex = (y * renderedBitmap.width + x) * 4
+                    const value = isSet ? 0 : 255
+
+                    pixels[pixelIndex] = value
+                    pixels[pixelIndex + 1] = value
+                    pixels[pixelIndex + 2] = value
+                    pixels[pixelIndex + 3] = 255
+
+                    // Check collision map (offset by status bar height)
+                    const worldX = x + viewportX
+                    const worldY = y + viewportY - SBARHT
+                    const collision = collisionMap[worldX]?.[worldY] ?? 0
+
+                    if (collision > 0) {
+                      const alpha = 0.5
+                      pixels[pixelIndex] = Math.round(
+                        pixels[pixelIndex]! * (1 - alpha) + 255 * alpha
+                      )
+                      pixels[pixelIndex + 1] = Math.round(
+                        pixels[pixelIndex + 1]! * (1 - alpha) + 0 * alpha
+                      )
+                      pixels[pixelIndex + 2] = Math.round(
+                        pixels[pixelIndex + 2]! * (1 - alpha) + 0 * alpha
+                      )
+                    }
+                  }
+                }
+
+                ctx.putImageData(imageData, 0, 0)
+              } else {
+                // Standard bitmap to canvas conversion
+                bitmapToCanvas(renderedBitmap, ctx, game.bitmapOptions)
+              }
               break
           }
         }
