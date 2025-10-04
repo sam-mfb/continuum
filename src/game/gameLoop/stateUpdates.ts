@@ -175,7 +175,9 @@ export const updateGameState = (context: StateUpdateContext): void => {
     })
   )
 
-  store.dispatch(createCollisionMap())
+  if (finalState.app.collisionMode === 'modern') {
+    store.dispatch(createCollisionMap())
+  }
 
   // Update strafe lifecounts
   store.dispatch(doStrafes())
