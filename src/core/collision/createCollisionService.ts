@@ -85,9 +85,13 @@ function addPoint(point: CollisionPoint, originalMap: CollisionMap): void {
 function addLine(line: CollisionLine, originalMap: CollisionMap): void {
   const { startPoint, endPoint, collision, width } = line
 
+  // Calculate raw deltas BEFORE abs() for slope detection
+  const rawDx = endPoint.x - startPoint.x
+  const rawDy = endPoint.y - startPoint.y
+
   // Calculate line parameters using Bresenham's algorithm
-  const dx = Math.abs(endPoint.x - startPoint.x)
-  const dy = Math.abs(endPoint.y - startPoint.y)
+  const dx = Math.abs(rawDx)
+  const dy = Math.abs(rawDy)
   const sx = startPoint.x < endPoint.x ? 1 : -1
   const sy = startPoint.y < endPoint.y ? 1 : -1
   let err = dx - dy
@@ -108,6 +112,10 @@ function addLine(line: CollisionLine, originalMap: CollisionMap): void {
       // Check if line is close to diagonal (within some tolerance)
       const isNearDiagonal = Math.abs(Math.abs(dx) - Math.abs(dy)) <= 2
 
+      const hasPositiveSlope =
+        (rawDx > 0 && rawDy < 0) || (rawDx < 0 && rawDy > 0)
+
+      // Some adjustments needed to account for original games drawing logic
       for (let w = 0; w < width; w++) {
         if (isVertical) {
           // Line is more vertical, expand horizontally
@@ -115,12 +123,11 @@ function addLine(line: CollisionLine, originalMap: CollisionMap): void {
         } else if (isHorizontal) {
           // Line is perfectly horizontal, no adjustment needed
           addPoint({ x, y: y + w, collision }, originalMap)
-        } else if (isNearDiagonal) {
-          // Line is near-diagonal (NE/SW or NW/SE), no adjustment needed
+        } else if (isNearDiagonal && hasPositiveSlope) {
+          // Line is near-diagonal NW/SE (negative slope), shift down by 1 pixel
           addPoint({ x, y: y + w, collision }, originalMap)
         } else {
-          // Line is more horizontal (but not perfectly), expand vertically
-          // Adjust upward by 1 pixel to match original game's drawing logic
+          // Other angled lines: shift up by 1 pixel
           addPoint({ x, y: y + w - 1, collision }, originalMap)
         }
       }
