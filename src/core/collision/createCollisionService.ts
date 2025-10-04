@@ -31,6 +31,8 @@ export function createCollisionService(): CollisionService {
       instanceMap = copy2dArray(baseMap)
     },
     reset: function (): void {
+      // this is SIGNIFICANTLY faster than initializing the array
+      // which is important since we reset every frame
       instanceMap = copy2dArray(baseMap)
     },
     addPoint: function (point: CollisionPoint): void {
