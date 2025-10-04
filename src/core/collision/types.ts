@@ -33,8 +33,8 @@ export type CollisionService = {
   /** add an item to the map with a given collision value **/
   addItem: (item: CollisionItem) => void
 
-  /** ad a line to the map with a given collision value **/
-  //addLine: (line: CollisionLine) => void
+  /** add a line to the map with a given collision value **/
+  addLine: (line: CollisionLine) => void
 
   /** returns collision value for a given point */
   checkPoint: (point: CollisionPoint) => CollisionType

@@ -1,6 +1,7 @@
 import { Collision } from './constants'
 import type {
   CollisionItem,
+  CollisionLine,
   CollisionMap,
   CollisionPoint,
   CollisionService,
@@ -43,6 +44,9 @@ export function createCollisionService(): CollisionService {
         addPoint(point, instanceMap)
       })
     },
+    addLine: function (line: CollisionLine): void {
+      addLine(line, instanceMap)
+    },
     checkPoint: function (point: CollisionPoint): CollisionType {
       return checkPoint(point, instanceMap)
     },
@@ -76,6 +80,56 @@ function addPoint(point: CollisionPoint, originalMap: CollisionMap): void {
     return
   }
   originalMap[point.x]![point.y] = point.collision
+}
+
+function addLine(line: CollisionLine, originalMap: CollisionMap): void {
+  const { startPoint, endPoint, collision, width } = line
+
+  // Calculate line parameters using Bresenham's algorithm
+  const dx = Math.abs(endPoint.x - startPoint.x)
+  const dy = Math.abs(endPoint.y - startPoint.y)
+  const sx = startPoint.x < endPoint.x ? 1 : -1
+  const sy = startPoint.y < endPoint.y ? 1 : -1
+  let err = dx - dy
+
+  let x = startPoint.x
+  let y = startPoint.y
+
+  // Draw the line with width
+  while (true) {
+    // Add points for line width (perpendicular to line direction)
+    if (width === 1) {
+      addPoint({ x, y, collision }, originalMap)
+    } else {
+      // For wider lines, add points perpendicular to the line direction
+      // Determine perpendicular direction based on line slope
+      const isVertical = Math.abs(dy) > Math.abs(dx)
+
+      for (let w = 0; w < width; w++) {
+        if (isVertical) {
+          // Line is more vertical, expand horizontally
+          addPoint({ x: x + w, y, collision }, originalMap)
+        } else {
+          // Line is more horizontal, expand vertically
+          addPoint({ x, y: y + w, collision }, originalMap)
+        }
+      }
+    }
+
+    // Check if we've reached the end point
+    if (x === endPoint.x && y === endPoint.y) break
+
+    // Bresenham's algorithm step
+    const e2 = 2 * err
+    if (e2 > -dy) {
+      err -= dy
+      x += sx
+    }
+    if (e2 < dx) {
+      err += dx
+      y += sy
+    }
+  }
 }
 
 function checkPoint(

@@ -6,6 +6,7 @@ import {
   type CollisionItem
 } from '@/core/collision'
 import { xbcenter, ybcenter } from '@/core/planet'
+import { LINE_KIND } from '@/core/shared'
 
 export const createCollisionMap = createAsyncThunk<
   void,
@@ -14,6 +15,22 @@ export const createCollisionMap = createAsyncThunk<
 >('game/createCollisionMap', async (_, { extra, getState }) => {
   extra.collisionService.reset()
   const state = getState()
+
+  state.planet.lines
+    .filter(line => line.kind === LINE_KIND.NORMAL)
+    .forEach(line => {
+      const startX = line.startx - state.screen.screenx
+      const startY = line.starty - state.screen.screeny
+      const endX = line.endx - state.screen.screenx
+      const endY = line.endy - state.screen.screeny
+
+      extra.collisionService.addLine({
+        startPoint: { x: startX, y: startY, collision: Collision.LETHAL },
+        endPoint: { x: endX, y: endY, collision: Collision.LETHAL },
+        collision: Collision.LETHAL,
+        width: 2
+      })
+    })
 
   state.planet.bunkers
     .filter(bunker => bunker.alive)
