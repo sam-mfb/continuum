@@ -48,7 +48,9 @@ import {
   markLevelComplete,
   triggerGameOver,
   resetGame,
-  invalidateHighScore
+  invalidateHighScore,
+  killShipNextFrame,
+  resetKillShipNextFrame
 } from '../gameSlice'
 import { setMode, setMostRecentScore } from '../appSlice'
 import { TOTAL_INITIAL_LIVES } from '../constants'
@@ -57,6 +59,8 @@ import { triggerShipDeath } from '../shipDeath'
 import { BunkerKind } from '@core/figs'
 import type { ControlMatrix } from '@/core/controls'
 import { createCollisionMap } from './createCollisionMapThunk'
+import { checkCollisions } from './checkCollisionsThunk'
+import { Collision } from '@/core/collision'
 
 export type StateUpdateContext = {
   store: GameStore
@@ -128,6 +132,8 @@ export const updateGameState = (context: StateUpdateContext): void => {
   // Handle ship movement and controls
   const { globalx, globaly } = handleShipMovement(store, controls)
 
+  store.dispatch(resetKillShipNextFrame())
+
   // Update bunker rotations for animated bunkers
   store.dispatch(updateBunkerRotations({ globalx, globaly }))
 
@@ -175,10 +181,6 @@ export const updateGameState = (context: StateUpdateContext): void => {
     })
   )
 
-  if (finalState.app.collisionMode === 'modern') {
-    store.dispatch(createCollisionMap())
-  }
-
   // Update strafe lifecounts
   store.dispatch(doStrafes())
 
@@ -192,6 +194,30 @@ export const updateGameState = (context: StateUpdateContext): void => {
       gravityPoints: finalState.planet.gravityPoints
     })
   )
+
+  if (finalState.app.collisionMode === 'modern') {
+    if (state.ship.deadCount === 0) {
+      store.dispatch(createCollisionMap())
+      store
+        .dispatch(checkCollisions())
+        .unwrap()
+        // not actually async but this gives us the convenience
+        // of using createAsyncThunk's DI
+        .then(collision => {
+          switch (collision) {
+            case Collision.LETHAL:
+              store.dispatch(killShipNextFrame())
+              break
+            case Collision.BOUNCE:
+              break
+            case Collision.NONE:
+              break
+            default:
+              collision satisfies never
+          }
+        })
+    }
+  }
 }
 
 /**
@@ -350,8 +376,8 @@ const handleShipMovement = (
   const state = store.getState()
 
   if (state.ship.deadCount === 0) {
-    // Check for self-destruct command
-    if (controls.selfDestruct) {
+    // Check for self-destruct command or death on previous frame
+    if (controls.selfDestruct || state.game.killShipNextFrame) {
       triggerShipDeath(store)
       return {
         globalx: state.ship.globalx,
@@ -364,9 +390,7 @@ const handleShipMovement = (
       state.transition.status === 'inactive' ||
       state.transition.status === 'level-complete'
     ) {
-      // shipControl is a thunk - use any cast for dispatch
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ;(store.dispatch as any)(
+      store.dispatch(
         shipControl({
           controlsPressed: controls
         })
