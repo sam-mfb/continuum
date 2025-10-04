@@ -104,14 +104,24 @@ function addLine(line: CollisionLine, originalMap: CollisionMap): void {
       // For wider lines, add points perpendicular to the line direction
       // Determine perpendicular direction based on line slope
       const isVertical = Math.abs(dy) > Math.abs(dx)
+      const isHorizontal = dy === 0
+      // Check if line is close to diagonal (within some tolerance)
+      const isNearDiagonal = Math.abs(Math.abs(dx) - Math.abs(dy)) <= 2
 
       for (let w = 0; w < width; w++) {
         if (isVertical) {
           // Line is more vertical, expand horizontally
           addPoint({ x: x + w, y, collision }, originalMap)
-        } else {
-          // Line is more horizontal, expand vertically
+        } else if (isHorizontal) {
+          // Line is perfectly horizontal, no adjustment needed
           addPoint({ x, y: y + w, collision }, originalMap)
+        } else if (isNearDiagonal) {
+          // Line is near-diagonal (NE/SW or NW/SE), no adjustment needed
+          addPoint({ x, y: y + w, collision }, originalMap)
+        } else {
+          // Line is more horizontal (but not perfectly), expand vertically
+          // Adjust upward by 1 pixel to match original game's drawing logic
+          addPoint({ x, y: y + w - 1, collision }, originalMap)
         }
       }
     }
