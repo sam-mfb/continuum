@@ -361,10 +361,10 @@ const handleGameOver = (store: GameStore): void => {
   const highScoreEligible = state.game.highScoreEligible
   const currentGalaxyId = state.app.currentGalaxyId
   const allHighScores = state.highscore
-  const highScores = allHighScores[currentGalaxyId]!
-  const lowestScore = Math.min(
-    ...Object.values(highScores).map(hs => hs?.score || 0)
-  )
+  const highScores = allHighScores[currentGalaxyId]
+  const lowestScore = highScores
+    ? Math.min(...Object.values(highScores).map(hs => hs?.score || 0))
+    : 0
   const recentScore = state.status.score
 
   if (highScoreEligible && recentScore > lowestScore) {
