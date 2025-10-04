@@ -4,12 +4,15 @@
 
 import type { Middleware } from '@reduxjs/toolkit'
 import {
+  setCollisionMode,
+  toggleCollisionMode,
   setAlignmentMode,
   toggleAlignmentMode,
   toggleInGameControls,
   setVolume,
   enableSound,
-  disableSound
+  disableSound,
+  type CollisionMode
 } from './appSlice'
 import type { AlignmentMode } from '@/core/shared'
 import type { RootState } from './store'
@@ -17,7 +20,7 @@ import type { RootState } from './store'
 const APP_SETTINGS_STORAGE_KEY = 'continuum_app_settings'
 
 export type PersistedAppSettings = {
-  useOriginalCollisions: boolean
+  collisionMode: CollisionMode
   alignmentMode: AlignmentMode
   showInGameControls: boolean
   volume: number
@@ -34,6 +37,8 @@ export const appMiddleware: Middleware<{}, RootState> =
 
     // After the action has been processed, check if we need to save
     if (
+      setCollisionMode.match(action) ||
+      toggleCollisionMode.match(action) ||
       setAlignmentMode.match(action) ||
       toggleAlignmentMode.match(action) ||
       toggleInGameControls.match(action) ||
@@ -44,7 +49,7 @@ export const appMiddleware: Middleware<{}, RootState> =
       const state = store.getState()
       try {
         const settingsToSave: PersistedAppSettings = {
-          useOriginalCollisions: state.app.useOriginalCollisions,
+          collisionMode: state.app.collisionMode,
           alignmentMode: state.app.alignmentMode,
           showInGameControls: state.app.showInGameControls,
           volume: state.app.volume,
@@ -72,7 +77,7 @@ export const loadAppSettings = (): Partial<PersistedAppSettings> => {
     if (saved) {
       const parsed = JSON.parse(saved) as PersistedAppSettings
       return {
-        useOriginalCollisions: parsed.useOriginalCollisions,
+        collisionMode: parsed.collisionMode,
         alignmentMode: parsed.alignmentMode,
         showInGameControls: parsed.showInGameControls,
         volume: parsed.volume,

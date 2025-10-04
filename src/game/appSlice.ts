@@ -8,6 +8,8 @@ import type { AlignmentMode } from '@/core/shared'
 
 export type GameMode = 'start' | 'playing' | 'highScoreEntry' | 'gameOver'
 
+export type CollisionMode = 'modern' | 'original'
+
 export type MostRecentScore = {
   score: number
   planet: number
@@ -16,7 +18,7 @@ export type MostRecentScore = {
 
 export type AppState = {
   // Collision methodology
-  useOriginalCollisions: boolean
+  collisionMode: CollisionMode
 
   // Display settings
   alignmentMode: AlignmentMode
@@ -39,7 +41,7 @@ export type AppState = {
 }
 
 const initialState: AppState = {
-  useOriginalCollisions: false, // use modern collision detection
+  collisionMode: 'modern',
   alignmentMode: 'screen-fixed', // Default to screen-fixed (not original)
   showInGameControls: true,
   volume: 0,
@@ -56,11 +58,12 @@ export const appSlice = createSlice({
   initialState,
   reducers: {
     // Collision settings
-    enableOldCollisions: state => {
-      state.useOriginalCollisions = true
+    setCollisionMode: (state, action: PayloadAction<CollisionMode>) => {
+      state.collisionMode = action.payload
     },
     toggleCollisionMode: state => {
-      state.useOriginalCollisions = !state.useOriginalCollisions
+      state.collisionMode =
+        state.collisionMode === 'modern' ? 'original' : 'modern'
     },
     // Display settings
     setAlignmentMode: (state, action: PayloadAction<AlignmentMode>) => {
@@ -125,6 +128,8 @@ export const appSlice = createSlice({
 })
 
 export const {
+  setCollisionMode,
+  toggleCollisionMode,
   setAlignmentMode,
   toggleAlignmentMode,
   toggleInGameControls,

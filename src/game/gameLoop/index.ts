@@ -44,7 +44,7 @@ export const createGameRenderer = (
     // handled via a collision map service in state. The original game
     // handled collisions via the render system and that is preserved
     // here for authenticity
-    if (state.app.useOriginalCollisions) {
+    if (state.app.collisionMode === 'original') {
       bitmap = renderGameOriginal({
         bitmap,
         state,

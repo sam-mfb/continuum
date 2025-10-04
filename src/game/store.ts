@@ -97,9 +97,9 @@ const createStoreAndListeners = (
     app: {
       ...appSlice.getInitialState(),
       // Use persisted settings if available, otherwise use initial settings
-      useOriginalCollisions:
-        persistedAppSettings.useOriginalCollisions ??
-        appSlice.getInitialState().useOriginalCollisions,
+      collisionMode:
+        persistedAppSettings.collisionMode ??
+        appSlice.getInitialState().collisionMode,
       volume: persistedAppSettings.volume ?? initialSettings.soundVolume,
       soundOn: persistedAppSettings.soundOn ?? initialSettings.soundEnabled,
       alignmentMode:
