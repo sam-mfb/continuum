@@ -46,11 +46,11 @@ const VolumeButton: React.FC<VolumeButtonProps> = ({ scale }) => {
 
   const containerStyle: React.CSSProperties = {
     position: 'fixed',
-    bottom: `${20 * scale}px`,
+    top: `${20 * scale}px`,
     right: `${20 * scale}px`,
     zIndex: 999,
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: `${4 * scale}px`,
     opacity: isActive ? 1 : 0,
@@ -76,18 +76,18 @@ const VolumeButton: React.FC<VolumeButtonProps> = ({ scale }) => {
 
   const sliderContainerStyle: React.CSSProperties = {
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'row',
     alignItems: 'center',
     background: 'transparent',
     border: 'none',
     borderRadius: `${3 * scale}px`,
-    padding: `${6 * scale}px ${4 * scale}px`,
+    padding: `${4 * scale}px ${6 * scale}px`,
     gap: `${4 * scale}px`,
-    minWidth: `${20 * scale}px`,
+    minHeight: `${20 * scale}px`,
     opacity: isHovered ? 1 : 0,
     transform: isHovered
-      ? 'translateY(0) scale(1)'
-      : `translateY(${4 * scale}px) scale(0.9)`,
+      ? 'translateX(0) scale(1)'
+      : `translateX(${4 * scale}px) scale(0.9)`,
     transition: 'all 0.25s ease',
     pointerEvents: isHovered ? 'auto' : 'none',
     boxShadow: 'none'
@@ -95,11 +95,10 @@ const VolumeButton: React.FC<VolumeButtonProps> = ({ scale }) => {
 
   const sliderWrapperStyle: React.CSSProperties = {
     width: `${40 * scale}px`,
-    height: `${40 * scale}px`,
+    height: `${20 * scale}px`,
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    transform: 'rotate(-90deg)'
+    justifyContent: 'center'
   }
 
   const sliderStyle: React.CSSProperties = {
@@ -111,7 +110,8 @@ const VolumeButton: React.FC<VolumeButtonProps> = ({ scale }) => {
     outline: 'none',
     cursor: 'pointer',
     borderRadius: `${1.5 * scale}px`,
-    border: `${1 * scale}px solid rgba(128, 128, 128, 0.7)`
+    border: `${1 * scale}px solid rgba(128, 128, 128, 0.7)`,
+    direction: 'rtl'
   }
 
   const volumeTextStyle: React.CSSProperties = {
@@ -265,9 +265,8 @@ const VolumeButton: React.FC<VolumeButtonProps> = ({ scale }) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Slider (appears above button on hover) */}
+      {/* Slider (appears to the left of button on hover) */}
       <div style={sliderContainerStyle}>
-        <span style={volumeTextStyle}>{Math.round(volume * 100)}%</span>
         <div style={sliderWrapperStyle}>
           <input
             type="range"
@@ -280,6 +279,7 @@ const VolumeButton: React.FC<VolumeButtonProps> = ({ scale }) => {
             className={styles.volumeSlider}
           />
         </div>
+        <span style={volumeTextStyle}>{Math.round(volume * 100)}%</span>
       </div>
 
       {/* Speaker button - click to mute/unmute */}
