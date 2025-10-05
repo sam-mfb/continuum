@@ -27,9 +27,8 @@ const SpriteIcon: React.FC<{
   type: 'bunker' | 'fuel'
   bunkerKind?: BunkerKind
   rotation?: number
-  width: number
-  height: number
-}> = ({ spriteService, type, bunkerKind, rotation = 0, width, height }) => {
+  scale: number
+}> = ({ spriteService, type, bunkerKind, rotation = 0, scale }) => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null)
 
   React.useEffect(() => {
@@ -66,18 +65,15 @@ const SpriteIcon: React.FC<{
       return
     }
 
-    // Calculate integer scale factor from width
-    const scaleFactor = Math.round(width / spriteWidth)
-
     // Set canvas size to exact integer multiples
-    canvas.width = spriteWidth * scaleFactor
-    canvas.height = spriteHeight * scaleFactor
+    canvas.width = spriteWidth * scale
+    canvas.height = spriteHeight * scale
 
     // Clear canvas with white background
     ctx.fillStyle = '#fff'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-    // Draw pixels as scaled rectangles using integer coordinates
+    // Draw pixels as scaled rectangles
     for (let y = 0; y < spriteHeight; y++) {
       for (let x = 0; x < spriteWidth; x++) {
         const byteIdx = y * rowBytes + Math.floor(x / 8)
@@ -85,10 +81,10 @@ const SpriteIcon: React.FC<{
         const bit = (spriteData[byteIdx]! >> bitIdx) & 1
 
         ctx.fillStyle = bit ? '#000' : '#fff'
-        ctx.fillRect(x * scaleFactor, y * scaleFactor, scaleFactor, scaleFactor)
+        ctx.fillRect(x * scale, y * scale, scale, scale)
       }
     }
-  }, [spriteService, type, bunkerKind, rotation, width, height])
+  }, [spriteService, type, bunkerKind, rotation, scale])
 
   return (
     <canvas
@@ -1080,8 +1076,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     spriteService={spriteService}
                     type="bunker"
                     bunkerKind={BunkerKind.WALL}
-                    width={24 * scale}
-                    height={24 * scale}
+                    scale={scale}
                   />
                   <span style={{ color: '#000', fontWeight: 'bold' }}>100</span>
                 </div>
@@ -1098,8 +1093,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     spriteService={spriteService}
                     type="bunker"
                     bunkerKind={BunkerKind.GROUND}
-                    width={24 * scale}
-                    height={24 * scale}
+                    scale={scale}
                   />
                   <span style={{ color: '#000', fontWeight: 'bold' }}>100</span>
                 </div>
@@ -1117,8 +1111,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     type="bunker"
                     bunkerKind={BunkerKind.DIFF}
                     rotation={0}
-                    width={24 * scale}
-                    height={24 * scale}
+                    scale={scale}
                   />
                   <span style={{ color: '#000', fontWeight: 'bold' }}>10</span>
                 </div>
@@ -1136,8 +1129,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     type="bunker"
                     bunkerKind={BunkerKind.DIFF}
                     rotation={1}
-                    width={24 * scale}
-                    height={24 * scale}
+                    scale={scale}
                   />
                   <span style={{ color: '#000', fontWeight: 'bold' }}>200</span>
                 </div>
@@ -1155,8 +1147,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     type="bunker"
                     bunkerKind={BunkerKind.DIFF}
                     rotation={2}
-                    width={24 * scale}
-                    height={24 * scale}
+                    scale={scale}
                   />
                   <span style={{ color: '#000', fontWeight: 'bold' }}>300</span>
                 </div>
@@ -1173,8 +1164,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     spriteService={spriteService}
                     type="bunker"
                     bunkerKind={BunkerKind.FOLLOW}
-                    width={24 * scale}
-                    height={24 * scale}
+                    scale={scale}
                   />
                   <span style={{ color: '#000', fontWeight: 'bold' }}>400</span>
                 </div>
@@ -1191,8 +1181,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     spriteService={spriteService}
                     type="bunker"
                     bunkerKind={BunkerKind.GENERATOR}
-                    width={24 * scale}
-                    height={24 * scale}
+                    scale={scale}
                   />
                   <span style={{ color: '#000', fontWeight: 'bold' }}>500</span>
                 </div>
@@ -1208,8 +1197,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   <SpriteIcon
                     spriteService={spriteService}
                     type="fuel"
-                    width={16 * scale}
-                    height={16 * scale}
+                    scale={scale}
                   />
                   <span style={{ color: '#000', fontWeight: 'bold' }}>15</span>
                 </div>
