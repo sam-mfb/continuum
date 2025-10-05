@@ -40,26 +40,55 @@ const SpriteIcon: React.FC<{
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Clear canvas with white background
+    // Get sprite data
+    let spriteData
+    let nativeWidth
+    let nativeHeight
+
+    if (type === 'bunker' && bunkerKind !== undefined) {
+      spriteData = spriteService.getBunkerSprite(bunkerKind, rotation, {
+        variant: 'def'
+      })
+      nativeWidth = spriteData.bitmap.width
+      nativeHeight = spriteData.bitmap.height
+    } else if (type === 'fuel') {
+      spriteData = spriteService.getFuelSprite(0, { variant: 'def' })
+      nativeWidth = spriteData.bitmap.width
+      nativeHeight = spriteData.bitmap.height
+    } else {
+      return
+    }
+
+    // Create temporary canvas at native sprite size
+    const tempCanvas = document.createElement('canvas')
+    tempCanvas.width = nativeWidth
+    tempCanvas.height = nativeHeight
+    const tempCtx = tempCanvas.getContext('2d')
+    if (!tempCtx) return
+
+    // Render bitmap to temp canvas
+    bitmapToCanvas(spriteData.bitmap, tempCtx, {
+      foregroundColor: 'black',
+      backgroundColor: 'white'
+    })
+
+    // Clear main canvas with white background
     ctx.fillStyle = '#fff'
     ctx.fillRect(0, 0, width, height)
 
-    // Get and render sprite
-    if (type === 'bunker' && bunkerKind !== undefined) {
-      const spriteData = spriteService.getBunkerSprite(bunkerKind, rotation, {
-        variant: 'def'
-      })
-      bitmapToCanvas(spriteData.bitmap, ctx, {
-        foregroundColor: 'black',
-        backgroundColor: 'white'
-      })
-    } else if (type === 'fuel') {
-      const spriteData = spriteService.getFuelSprite(0, { variant: 'def' })
-      bitmapToCanvas(spriteData.bitmap, ctx, {
-        foregroundColor: 'black',
-        backgroundColor: 'white'
-      })
-    }
+    // Scale and draw temp canvas to main canvas
+    ctx.imageSmoothingEnabled = false
+    ctx.drawImage(
+      tempCanvas,
+      0,
+      0,
+      nativeWidth,
+      nativeHeight,
+      0,
+      0,
+      width,
+      height
+    )
   }, [spriteService, type, bunkerKind, rotation, width, height])
 
   return (
