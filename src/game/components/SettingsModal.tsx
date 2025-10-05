@@ -11,7 +11,6 @@ import { setBinding, resetBindings } from '@/core/controls'
 import { ControlAction } from '@/core/controls/types'
 import { type SpriteService } from '@/core/sprites'
 import { BunkerKind } from '@/core/figs'
-import { bitmapToCanvas } from '@/lib/bitmap'
 import { formatKey } from '../utils/formatKey'
 import VolumeControls from './VolumeControls'
 
@@ -40,62 +39,60 @@ const SpriteIcon: React.FC<{
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
+    // Disable image smoothing for crisp pixels
+    ctx.imageSmoothingEnabled = false
+
     // Get sprite data
     let spriteData
-    let nativeWidth
-    let nativeHeight
+    let spriteWidth
+    let spriteHeight
+    let rowBytes
 
     if (type === 'bunker' && bunkerKind !== undefined) {
-      spriteData = spriteService.getBunkerSprite(bunkerKind, rotation, {
+      const sprite = spriteService.getBunkerSprite(bunkerKind, rotation, {
         variant: 'def'
       })
-      nativeWidth = spriteData.bitmap.width
-      nativeHeight = spriteData.bitmap.height
+      spriteData = sprite.uint8
+      spriteWidth = sprite.bitmap.width
+      spriteHeight = sprite.bitmap.height
+      rowBytes = sprite.bitmap.rowBytes
     } else if (type === 'fuel') {
-      spriteData = spriteService.getFuelSprite(0, { variant: 'def' })
-      nativeWidth = spriteData.bitmap.width
-      nativeHeight = spriteData.bitmap.height
+      const sprite = spriteService.getFuelSprite(0, { variant: 'def' })
+      spriteData = sprite.uint8
+      spriteWidth = sprite.bitmap.width
+      spriteHeight = sprite.bitmap.height
+      rowBytes = sprite.bitmap.rowBytes
     } else {
       return
     }
 
-    // Create temporary canvas at native sprite size
-    const tempCanvas = document.createElement('canvas')
-    tempCanvas.width = nativeWidth
-    tempCanvas.height = nativeHeight
-    const tempCtx = tempCanvas.getContext('2d')
-    if (!tempCtx) return
+    // Calculate integer scale factor from width
+    const scaleFactor = Math.round(width / spriteWidth)
 
-    // Render bitmap to temp canvas
-    bitmapToCanvas(spriteData.bitmap, tempCtx, {
-      foregroundColor: 'black',
-      backgroundColor: 'white'
-    })
+    // Set canvas size to exact integer multiples
+    canvas.width = spriteWidth * scaleFactor
+    canvas.height = spriteHeight * scaleFactor
 
-    // Clear main canvas with white background
+    // Clear canvas with white background
     ctx.fillStyle = '#fff'
-    ctx.fillRect(0, 0, width, height)
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-    // Scale and draw temp canvas to main canvas
-    ctx.imageSmoothingEnabled = false
-    ctx.drawImage(
-      tempCanvas,
-      0,
-      0,
-      nativeWidth,
-      nativeHeight,
-      0,
-      0,
-      width,
-      height
-    )
+    // Draw pixels as scaled rectangles using integer coordinates
+    for (let y = 0; y < spriteHeight; y++) {
+      for (let x = 0; x < spriteWidth; x++) {
+        const byteIdx = y * rowBytes + Math.floor(x / 8)
+        const bitIdx = 7 - (x % 8)
+        const bit = (spriteData[byteIdx]! >> bitIdx) & 1
+
+        ctx.fillStyle = bit ? '#000' : '#fff'
+        ctx.fillRect(x * scaleFactor, y * scaleFactor, scaleFactor, scaleFactor)
+      }
+    }
   }, [spriteService, type, bunkerKind, rotation, width, height])
 
   return (
     <canvas
       ref={canvasRef}
-      width={width}
-      height={height}
       style={{
         imageRendering: 'pixelated'
       }}
