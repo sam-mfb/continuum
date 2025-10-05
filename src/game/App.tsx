@@ -94,7 +94,7 @@ export const App: React.FC<AppProps> = ({
               scale={scale}
               fps={20} // Original Continuum runs at 20 FPS
             />
-            {showInGameControls && <InGameControlsPanel />}
+            {showInGameControls && <InGameControlsPanel scale={scale} />}
           </div>
         )
 
