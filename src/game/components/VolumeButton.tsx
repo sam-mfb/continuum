@@ -54,8 +54,8 @@ const VolumeButton: React.FC<VolumeButtonProps> = ({ scale }) => {
   }
 
   const buttonStyle: React.CSSProperties = {
-    width: `${44 * scale}px`,
-    height: `${44 * scale}px`,
+    width: `${16 * scale}px`,
+    height: `${16 * scale}px`,
     borderRadius: '50%',
     background: 'transparent',
     border: 'none',
@@ -75,22 +75,22 @@ const VolumeButton: React.FC<VolumeButtonProps> = ({ scale }) => {
     alignItems: 'center',
     background: 'transparent',
     border: 'none',
-    borderRadius: `${6 * scale}px`,
-    padding: `${14 * scale}px ${10 * scale}px`,
-    gap: `${10 * scale}px`,
-    minWidth: `${50 * scale}px`,
+    borderRadius: `${3 * scale}px`,
+    padding: `${6 * scale}px ${4 * scale}px`,
+    gap: `${4 * scale}px`,
+    minWidth: `${20 * scale}px`,
     opacity: isHovered ? 1 : 0,
     transform: isHovered
       ? 'translateY(0) scale(1)'
-      : `translateY(${10 * scale}px) scale(0.9)`,
+      : `translateY(${4 * scale}px) scale(0.9)`,
     transition: 'all 0.25s ease',
     pointerEvents: isHovered ? 'auto' : 'none',
     boxShadow: 'none'
   }
 
   const sliderWrapperStyle: React.CSSProperties = {
-    width: `${100 * scale}px`,
-    height: `${100 * scale}px`,
+    width: `${40 * scale}px`,
+    height: `${40 * scale}px`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -100,25 +100,25 @@ const VolumeButton: React.FC<VolumeButtonProps> = ({ scale }) => {
   const sliderStyle: React.CSSProperties = {
     WebkitAppearance: 'slider-horizontal',
     appearance: 'none',
-    width: `${100 * scale}px`,
-    height: `${6 * scale}px`,
+    width: `${40 * scale}px`,
+    height: `${3 * scale}px`,
     background: 'rgba(128, 128, 128, 0.5)',
     outline: 'none',
     cursor: 'pointer',
-    borderRadius: `${3 * scale}px`,
+    borderRadius: `${1.5 * scale}px`,
     border: `${1 * scale}px solid rgba(128, 128, 128, 0.7)`
   }
 
   const volumeTextStyle: React.CSSProperties = {
     color: 'rgba(255, 255, 255, 0.95)',
-    fontSize: `${12 * scale}px`,
+    fontSize: `${6 * scale}px`,
     fontFamily: 'monospace',
     fontWeight: 'bold',
-    letterSpacing: `${0.5 * scale}px`
+    letterSpacing: `${0.25 * scale}px`
   }
 
   // Speaker icon SVG
-  const iconSize = 24 * scale
+  const iconSize = 16 * scale
   const getSpeakerIcon = (): React.ReactElement => {
     if (!soundOn || volume === 0) {
       // Muted speaker icon with diagonal line through it
@@ -288,8 +288,8 @@ const VolumeButton: React.FC<VolumeButtonProps> = ({ scale }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: `${24 * scale}px`,
-            height: `${24 * scale}px`
+            width: `${16 * scale}px`,
+            height: `${16 * scale}px`
           }}
         >
           {getSpeakerIcon()}
