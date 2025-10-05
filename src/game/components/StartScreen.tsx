@@ -440,8 +440,8 @@ const StartScreen: React.FC<StartScreenProps> = ({ scale, onStartGame }) => {
       >
         {/* Pixelated Gear Icon */}
         <svg
-          width={17 * scale}
-          height={17 * scale}
+          width={8.5 * scale}
+          height={8.5 * scale}
           viewBox="0 0 17 17"
           xmlns="http://www.w3.org/2000/svg"
           style={{ fill: 'white' }}
