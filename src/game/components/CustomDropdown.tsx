@@ -13,6 +13,7 @@ type CustomDropdownProps<T extends string | number = string | number> = {
   fontSize?: number
   minWidth?: number
   dataAttribute?: string
+  maxVisibleItems?: number
 }
 
 export const CustomDropdown = <T extends string | number = string | number>({
@@ -22,10 +23,12 @@ export const CustomDropdown = <T extends string | number = string | number>({
   scale,
   fontSize = 6 * scale,
   minWidth,
-  dataAttribute = 'custom-dropdown'
+  dataAttribute = 'custom-dropdown',
+  maxVisibleItems = 8
 }: CustomDropdownProps<T>): React.ReactElement => {
   const [showDropdown, setShowDropdown] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const dropdownContainerRef = useRef<HTMLDivElement>(null)
 
   const selectedOption = options.find(opt => opt.value === value)
   const selectedLabel = selectedOption?.label ?? String(value)
@@ -57,6 +60,24 @@ export const CustomDropdown = <T extends string | number = string | number>({
     }
   }, [showDropdown, dataAttribute])
 
+  // Auto-scroll to selected item when dropdown opens
+  useEffect(() => {
+    if (showDropdown && dropdownContainerRef.current) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        const selectedElement = dropdownContainerRef.current?.querySelector(
+          '[data-selected="true"]'
+        )
+        if (selectedElement) {
+          selectedElement.scrollIntoView({
+            block: 'nearest',
+            behavior: 'smooth'
+          })
+        }
+      }, 0)
+    }
+  }, [showDropdown])
+
   const buttonStyle: React.CSSProperties = {
     background: '#000',
     color: '#fff',
@@ -69,6 +90,10 @@ export const CustomDropdown = <T extends string | number = string | number>({
     minWidth: minWidth ? `${minWidth * scale}px` : undefined
   }
 
+  // Calculate max height based on item height and max visible items
+  const itemHeight = fontSize + 4 * scale // fontSize + padding top/bottom
+  const maxHeight = itemHeight * maxVisibleItems
+
   const dropdownContainerStyle: React.CSSProperties = {
     position: 'absolute',
     top: '100%',
@@ -76,7 +101,10 @@ export const CustomDropdown = <T extends string | number = string | number>({
     background: '#000',
     border: `${1 * scale}px solid #fff`,
     zIndex: 1000,
-    minWidth: '100%'
+    minWidth: '100%',
+    maxHeight: `${maxHeight}px`,
+    overflowY: 'auto',
+    overflowX: 'hidden'
   }
 
   const optionStyle = (isSelected: boolean): React.CSSProperties => ({
@@ -108,10 +136,11 @@ export const CustomDropdown = <T extends string | number = string | number>({
         {selectedLabel}
       </button>
       {showDropdown && (
-        <div style={dropdownContainerStyle}>
+        <div ref={dropdownContainerRef} style={dropdownContainerStyle}>
           {options.map(option => (
             <div
               key={String(option.value)}
+              data-selected={option.value === value ? 'true' : 'false'}
               onClick={() => {
                 onChange(option.value)
                 setShowDropdown(false)
