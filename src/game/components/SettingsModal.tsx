@@ -19,6 +19,7 @@ type Tab = 'options' | 'controls' | 'tips' | 'scoring' | 'about'
 
 type SettingsModalProps = {
   spriteService: SpriteService
+  scale: number
 }
 
 // Helper component to render a sprite to a canvas
@@ -73,7 +74,10 @@ const SpriteIcon: React.FC<{
   )
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
+const SettingsModal: React.FC<SettingsModalProps> = ({
+  spriteService,
+  scale
+}) => {
   const dispatch = useAppDispatch()
   const collisionMode = useAppSelector(state => state.app.collisionMode)
   const alignmentMode = useAppSelector(state => state.app.alignmentMode)
@@ -164,12 +168,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
 
   const modalStyle: React.CSSProperties = {
     backgroundColor: '#000',
-    border: '2px solid #666',
+    border: `${1 * scale}px solid #666`,
     color: '#fff',
     fontFamily: 'monospace',
-    fontSize: '13px',
-    padding: '20px',
-    maxWidth: '800px',
+    fontSize: `${6.5 * scale}px`,
+    padding: `${10 * scale}px`,
+    maxWidth: `${400 * scale}px`,
     maxHeight: '80vh',
     overflowY: 'auto',
     position: 'relative'
@@ -179,39 +183,39 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '20px',
-    borderBottom: '1px solid #666',
-    paddingBottom: '10px'
+    marginBottom: `${10 * scale}px`,
+    borderBottom: `${1 * scale}px solid #666`,
+    paddingBottom: `${5 * scale}px`
   }
 
   const closeButtonStyle: React.CSSProperties = {
     background: '#000',
     color: '#fff',
-    border: '1px solid #fff',
-    padding: '4px 8px',
+    border: `${1 * scale}px solid #fff`,
+    padding: `${2 * scale}px ${4 * scale}px`,
     cursor: 'pointer',
     fontFamily: 'monospace',
-    fontSize: '11px'
+    fontSize: `${5.5 * scale}px`
   }
 
   const sectionStyle: React.CSSProperties = {
-    border: '1px solid #666',
-    padding: '8px',
+    border: `${1 * scale}px solid #666`,
+    padding: `${4 * scale}px`,
     background: '#000',
-    marginBottom: '10px'
+    marginBottom: `${5 * scale}px`
   }
 
   const controlGridStyle: React.CSSProperties = {
     display: 'grid',
     gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '5px',
-    fontSize: '12px'
+    gap: `${2.5 * scale}px`,
+    fontSize: `${6 * scale}px`
   }
 
   const controlItemStyle: React.CSSProperties = {
     display: 'flex',
-    gap: '5px',
-    padding: '2px 0'
+    gap: `${2.5 * scale}px`,
+    padding: `${1 * scale}px 0`
   }
 
   const labelStyle: React.CSSProperties = {
@@ -222,15 +226,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
     color: isEditing ? '#000' : '#fff',
     fontWeight: 'bold',
     background: isEditing ? '#ffcc00' : '#333',
-    border: '1px solid ' + (isEditing ? '#ffcc00' : '#666'),
-    padding: '2px 6px',
-    borderRadius: '2px',
+    border: `${1 * scale}px solid ` + (isEditing ? '#ffcc00' : '#666'),
+    padding: `${1 * scale}px ${3 * scale}px`,
+    borderRadius: `${1 * scale}px`,
     cursor: 'pointer',
-    minWidth: '60px',
+    minWidth: `${30 * scale}px`,
     textAlign: 'center',
     display: 'inline-block',
     transition: 'all 0.15s',
-    fontSize: '11px'
+    fontSize: `${5.5 * scale}px`
   })
 
   const handleControlClick = (action: ControlAction): void => {
@@ -241,39 +245,41 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
   const toggleButtonStyle: React.CSSProperties = {
     background: '#000',
     color: '#fff',
-    border: '1px solid #fff',
-    padding: '4px 8px',
+    border: `${1 * scale}px solid #fff`,
+    padding: `${2 * scale}px ${4 * scale}px`,
     cursor: 'pointer',
     fontFamily: 'monospace',
-    fontSize: '12px',
+    fontSize: `${6 * scale}px`,
     textTransform: 'uppercase'
   }
 
   const tabContainerStyle: React.CSSProperties = {
     display: 'flex',
     gap: '0',
-    marginBottom: '20px',
-    borderBottom: '1px solid #666'
+    marginBottom: `${10 * scale}px`,
+    borderBottom: `${1 * scale}px solid #666`
   }
 
   const tabButtonStyle = (isActive: boolean): React.CSSProperties => ({
     background: isActive ? '#333' : '#000',
     color: isActive ? '#fff' : '#888',
-    border: '1px solid #666',
-    borderBottom: isActive ? '1px solid #333' : '1px solid #666',
-    padding: '8px 20px',
+    border: `${1 * scale}px solid #666`,
+    borderBottom: isActive
+      ? `${1 * scale}px solid #333`
+      : `${1 * scale}px solid #666`,
+    padding: `${4 * scale}px ${10 * scale}px`,
     cursor: 'pointer',
     fontFamily: 'monospace',
-    fontSize: '12px',
+    fontSize: `${6 * scale}px`,
     textTransform: 'uppercase',
-    marginBottom: '-1px'
+    marginBottom: `${-1 * scale}px`
   })
 
   return (
     <div style={overlayStyle} onClick={() => dispatch(closeSettings())}>
       <div style={modalStyle} onClick={e => e.stopPropagation()}>
         <div style={headerStyle}>
-          <h2 style={{ margin: 0, fontSize: '16px' }}>SETTINGS</h2>
+          <h2 style={{ margin: 0, fontSize: `${8 * scale}px` }}>SETTINGS</h2>
           <button
             onClick={() => dispatch(closeSettings())}
             style={closeButtonStyle}
@@ -378,7 +384,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
             {/* Collision Mode Section */}
             <div style={sectionStyle}>
               <div
-                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: `${5 * scale}px`
+                }}
               >
                 <span>COLLISION MODE:</span>
                 <button
@@ -396,8 +406,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                 <span
                   style={{
                     color: '#666',
-                    fontSize: '10px',
-                    marginLeft: '10px'
+                    fontSize: `${5 * scale}px`,
+                    marginLeft: `${5 * scale}px`
                   }}
                 >
                   (
@@ -412,7 +422,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
             {/* Alignment Mode Section */}
             <div style={sectionStyle}>
               <div
-                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: `${5 * scale}px`
+                }}
               >
                 <span>ALIGNMENT MODE:</span>
                 <button
@@ -432,8 +446,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                 <span
                   style={{
                     color: '#666',
-                    fontSize: '10px',
-                    marginLeft: '10px'
+                    fontSize: `${5 * scale}px`,
+                    marginLeft: `${5 * scale}px`
                   }}
                 >
                   (
@@ -448,7 +462,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
             {/* In-Game Controls Panel Section */}
             <div style={sectionStyle}>
               <div
-                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: `${5 * scale}px`
+                }}
               >
                 <span>SHOW IN-GAME CONTROLS:</span>
                 <button
@@ -466,8 +484,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                 <span
                   style={{
                     color: '#666',
-                    fontSize: '10px',
-                    marginLeft: '10px'
+                    fontSize: `${5 * scale}px`,
+                    marginLeft: `${5 * scale}px`
                   }}
                 >
                   (Show control hints at bottom of screen during gameplay)
@@ -481,7 +499,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
             {/* High Score Reset Section */}
             <div style={sectionStyle}>
               <div
-                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: `${5 * scale}px`
+                }}
               >
                 <span>HIGH SCORES:</span>
                 <button
@@ -506,7 +528,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                   {showConfirm ? 'CONFIRM RESET' : 'RESET SCORES'}
                 </button>
                 {showConfirm && (
-                  <span style={{ color: '#ff3333', fontSize: '10px' }}>
+                  <span
+                    style={{ color: '#ff3333', fontSize: `${5 * scale}px` }}
+                  >
                     Click again to confirm or wait to cancel
                   </span>
                 )}
@@ -524,14 +548,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  marginBottom: '10px'
+                  marginBottom: `${5 * scale}px`
                 }}
               >
                 <div style={{ fontWeight: 'bold' }}>
                   CONTROLS
                   <span
                     style={{
-                      fontSize: '10px',
+                      fontSize: `${5 * scale}px`,
                       color: '#888',
                       marginLeft: '10px',
                       fontWeight: 'normal'
@@ -557,11 +581,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                 <div
                   style={{
                     color: '#ff3333',
-                    fontSize: '11px',
-                    marginBottom: '8px',
-                    padding: '4px 8px',
+                    fontSize: `${5.5 * scale}px`,
+                    marginBottom: `${4 * scale}px`,
+                    padding: `${2 * scale}px ${4 * scale}px`,
                     background: 'rgba(255, 51, 51, 0.1)',
-                    border: '1px solid #ff3333'
+                    border: `${1 * scale}px solid #ff3333`
                   }}
                 >
                   {conflictError}
@@ -571,11 +595,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                 <div
                   style={{
                     color: '#ffcc00',
-                    fontSize: '11px',
-                    marginBottom: '8px',
-                    padding: '4px 8px',
+                    fontSize: `${5.5 * scale}px`,
+                    marginBottom: `${4 * scale}px`,
+                    padding: `${2 * scale}px ${4 * scale}px`,
                     background: 'rgba(255, 204, 0, 0.1)',
-                    border: '1px solid #ffcc00'
+                    border: `${1 * scale}px solid #ffcc00`
                   }}
                 >
                   Press a key to bind to this control (ESC to cancel)
@@ -588,8 +612,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                     style={{
                       ...controlItemStyle,
                       fontWeight: 'bold',
-                      borderBottom: '1px solid #333',
-                      marginBottom: '3px'
+                      borderBottom: `${1 * scale}px solid #333`,
+                      marginBottom: `${1.5 * scale}px`
                     }}
                   >
                     MOVEMENT
@@ -671,8 +695,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                     style={{
                       ...controlItemStyle,
                       fontWeight: 'bold',
-                      borderBottom: '1px solid #333',
-                      marginBottom: '3px'
+                      borderBottom: `${1 * scale}px solid #333`,
+                      marginBottom: `${1.5 * scale}px`
                     }}
                   >
                     ACTIONS
@@ -756,8 +780,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                     style={{
                       ...controlItemStyle,
                       fontWeight: 'bold',
-                      borderBottom: '1px solid #333',
-                      marginBottom: '3px'
+                      borderBottom: `${1 * scale}px solid #333`,
+                      marginBottom: `${1.5 * scale}px`
                     }}
                   >
                     GAME
@@ -833,16 +857,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                   </div>
                   <div
                     style={{
-                      marginTop: '5px',
-                      paddingTop: '5px',
-                      borderTop: '1px solid #333'
+                      marginTop: `${2.5 * scale}px`,
+                      paddingTop: `${2.5 * scale}px`,
+                      borderTop: `${1 * scale}px solid #333`
                     }}
                   >
                     <div
                       style={{
-                        fontSize: '9px',
+                        fontSize: `${4.5 * scale}px`,
                         color: '#888',
-                        marginBottom: '3px'
+                        marginBottom: `${1.5 * scale}px`
                       }}
                     >
                       CHEATS (disables high scores):
@@ -919,25 +943,25 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
           <div style={sectionStyle}>
             <div
               style={{
-                fontSize: '13px',
+                fontSize: `${6.5 * scale}px`,
                 lineHeight: '1.8',
-                padding: '20px'
+                padding: `${10 * scale}px`
               }}
             >
-              <div style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: `${10 * scale}px` }}>
                 <div
                   style={{
-                    fontSize: '14px',
+                    fontSize: `${7 * scale}px`,
                     fontWeight: 'bold',
                     color: '#fff',
-                    marginBottom: '10px',
-                    borderBottom: '1px solid #444',
-                    paddingBottom: '5px'
+                    marginBottom: `${5 * scale}px`,
+                    borderBottom: `${1 * scale}px solid #444`,
+                    paddingBottom: `${2.5 * scale}px`
                   }}
                 >
                   BEGINNER
                 </div>
-                <div style={{ color: '#ccc', marginBottom: '6px' }}>
+                <div style={{ color: '#ccc', marginBottom: `${3 * scale}px` }}>
                   • Avoid the walls first; kill things second
                 </div>
                 <div style={{ color: '#ccc' }}>
@@ -945,20 +969,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                 </div>
               </div>
 
-              <div style={{ marginBottom: '20px' }}>
+              <div style={{ marginBottom: `${10 * scale}px` }}>
                 <div
                   style={{
-                    fontSize: '14px',
+                    fontSize: `${7 * scale}px`,
                     fontWeight: 'bold',
                     color: '#fff',
-                    marginBottom: '10px',
-                    borderBottom: '1px solid #444',
-                    paddingBottom: '5px'
+                    marginBottom: `${5 * scale}px`,
+                    borderBottom: `${1 * scale}px solid #444`,
+                    paddingBottom: `${2.5 * scale}px`
                   }}
                 >
                   INTERMEDIATE
                 </div>
-                <div style={{ color: '#ccc', marginBottom: '6px' }}>
+                <div style={{ color: '#ccc', marginBottom: `${3 * scale}px` }}>
                   • Take your time
                 </div>
                 <div style={{ color: '#ccc' }}>• Use your shield often</div>
@@ -967,17 +991,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
               <div>
                 <div
                   style={{
-                    fontSize: '14px',
+                    fontSize: `${7 * scale}px`,
                     fontWeight: 'bold',
                     color: '#fff',
-                    marginBottom: '10px',
-                    borderBottom: '1px solid #444',
-                    paddingBottom: '5px'
+                    marginBottom: `${5 * scale}px`,
+                    borderBottom: `${1 * scale}px solid #444`,
+                    paddingBottom: `${2.5 * scale}px`
                   }}
                 >
                   ADVANCED
                 </div>
-                <div style={{ color: '#ccc', marginBottom: '6px' }}>
+                <div style={{ color: '#ccc', marginBottom: `${3 * scale}px` }}>
                   • Find and use bases' blind spots
                 </div>
                 <div style={{ color: '#ccc' }}>
@@ -993,9 +1017,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
           <div style={sectionStyle}>
             <div
               style={{
-                fontSize: '13px',
+                fontSize: `${6.5 * scale}px`,
                 lineHeight: '1.8',
-                padding: '20px',
+                padding: `${10 * scale}px`,
                 background: '#fff',
                 color: '#000'
               }}
@@ -1003,8 +1027,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
               <div
                 style={{
                   fontWeight: 'bold',
-                  marginBottom: '15px',
-                  fontSize: '14px'
+                  marginBottom: `${7.5 * scale}px`,
+                  fontSize: `${7 * scale}px`
                 }}
               >
                 POINT VALUES
@@ -1014,7 +1038,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(4, 1fr)',
-                  gap: '20px',
+                  gap: `${10 * scale}px`,
                   justifyItems: 'center'
                 }}
               >
@@ -1023,15 +1047,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '8px'
+                    gap: `${4 * scale}px`
                   }}
                 >
                   <SpriteIcon
                     spriteService={spriteService}
                     type="bunker"
                     bunkerKind={BunkerKind.WALL}
-                    width={48}
-                    height={48}
+                    width={24 * scale}
+                    height={24 * scale}
                   />
                   <span style={{ color: '#000', fontWeight: 'bold' }}>100</span>
                 </div>
@@ -1041,15 +1065,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '8px'
+                    gap: `${4 * scale}px`
                   }}
                 >
                   <SpriteIcon
                     spriteService={spriteService}
                     type="bunker"
                     bunkerKind={BunkerKind.GROUND}
-                    width={48}
-                    height={48}
+                    width={24 * scale}
+                    height={24 * scale}
                   />
                   <span style={{ color: '#000', fontWeight: 'bold' }}>100</span>
                 </div>
@@ -1059,7 +1083,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '8px'
+                    gap: `${4 * scale}px`
                   }}
                 >
                   <SpriteIcon
@@ -1067,8 +1091,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                     type="bunker"
                     bunkerKind={BunkerKind.DIFF}
                     rotation={0}
-                    width={48}
-                    height={48}
+                    width={24 * scale}
+                    height={24 * scale}
                   />
                   <span style={{ color: '#000', fontWeight: 'bold' }}>10</span>
                 </div>
@@ -1078,7 +1102,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '8px'
+                    gap: `${4 * scale}px`
                   }}
                 >
                   <SpriteIcon
@@ -1086,8 +1110,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                     type="bunker"
                     bunkerKind={BunkerKind.DIFF}
                     rotation={1}
-                    width={48}
-                    height={48}
+                    width={24 * scale}
+                    height={24 * scale}
                   />
                   <span style={{ color: '#000', fontWeight: 'bold' }}>200</span>
                 </div>
@@ -1097,7 +1121,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '8px'
+                    gap: `${4 * scale}px`
                   }}
                 >
                   <SpriteIcon
@@ -1105,8 +1129,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                     type="bunker"
                     bunkerKind={BunkerKind.DIFF}
                     rotation={2}
-                    width={48}
-                    height={48}
+                    width={24 * scale}
+                    height={24 * scale}
                   />
                   <span style={{ color: '#000', fontWeight: 'bold' }}>300</span>
                 </div>
@@ -1116,15 +1140,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '8px'
+                    gap: `${4 * scale}px`
                   }}
                 >
                   <SpriteIcon
                     spriteService={spriteService}
                     type="bunker"
                     bunkerKind={BunkerKind.FOLLOW}
-                    width={48}
-                    height={48}
+                    width={24 * scale}
+                    height={24 * scale}
                   />
                   <span style={{ color: '#000', fontWeight: 'bold' }}>400</span>
                 </div>
@@ -1134,15 +1158,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '8px'
+                    gap: `${4 * scale}px`
                   }}
                 >
                   <SpriteIcon
                     spriteService={spriteService}
                     type="bunker"
                     bunkerKind={BunkerKind.GENERATOR}
-                    width={48}
-                    height={48}
+                    width={24 * scale}
+                    height={24 * scale}
                   />
                   <span style={{ color: '#000', fontWeight: 'bold' }}>500</span>
                 </div>
@@ -1152,14 +1176,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '8px'
+                    gap: `${4 * scale}px`
                   }}
                 >
                   <SpriteIcon
                     spriteService={spriteService}
                     type="fuel"
-                    width={32}
-                    height={32}
+                    width={16 * scale}
+                    height={16 * scale}
                   />
                   <span style={{ color: '#000', fontWeight: 'bold' }}>15</span>
                 </div>
@@ -1174,15 +1198,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
             <div
               style={{
                 textAlign: 'center',
-                fontSize: '12px',
+                fontSize: `${6 * scale}px`,
                 lineHeight: '1.8',
-                padding: '20px'
+                padding: `${10 * scale}px`
               }}
             >
               <h2
                 style={{
-                  fontSize: '18px',
-                  marginBottom: '20px',
+                  fontSize: `${9 * scale}px`,
+                  marginBottom: `${10 * scale}px`,
                   letterSpacing: '2px',
                   fontWeight: 'bold'
                 }}
@@ -1190,21 +1214,21 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                 CONTINUUM
               </h2>
 
-              <div style={{ marginBottom: '15px' }}>
+              <div style={{ marginBottom: `${7.5 * scale}px` }}>
                 <div style={{ color: '#fff', marginBottom: '5px' }}>
                   Created by Randy and Brian Wilson
                 </div>
-                <div style={{ color: '#888', fontSize: '11px' }}>
+                <div style={{ color: '#888', fontSize: `${5.5 * scale}px` }}>
                   © 1987-1992
                 </div>
               </div>
 
-              <div style={{ marginBottom: '15px' }}>
+              <div style={{ marginBottom: `${7.5 * scale}px` }}>
                 <div
                   style={{
                     color: '#aaa',
                     marginBottom: '5px',
-                    fontSize: '11px'
+                    fontSize: `${5.5 * scale}px`
                   }}
                 >
                   Originally released under the "Beerware" system
@@ -1218,7 +1242,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                   rel="noopener noreferrer"
                   style={{
                     color: '#66aaff',
-                    fontSize: '10px',
+                    fontSize: `${5 * scale}px`,
                     wordBreak: 'break-all'
                   }}
                   onMouseEnter={e => {
@@ -1232,18 +1256,25 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                 </a>
               </div>
 
-              <div style={{ marginBottom: '20px' }}>
-                <div style={{ color: '#fff', marginBottom: '5px' }}>
+              <div style={{ marginBottom: `${10 * scale}px` }}>
+                <div
+                  style={{
+                    color: '#fff',
+                    marginBottom: `${2.5 * scale}px`
+                  }}
+                >
                   JavaScript Port by Sam Davidoff
                 </div>
-                <div style={{ color: '#888', fontSize: '11px' }}>© 2025</div>
+                <div style={{ color: '#888', fontSize: `${5.5 * scale}px` }}>
+                  © 2025
+                </div>
               </div>
 
               <div
                 style={{
-                  borderTop: '1px solid #666',
-                  paddingTop: '20px',
-                  marginTop: '20px'
+                  borderTop: `${1 * scale}px solid #666`,
+                  paddingTop: `${10 * scale}px`,
+                  marginTop: `${10 * scale}px`
                 }}
               >
                 <a
@@ -1255,9 +1286,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                     textDecoration: 'none',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '8px',
-                    padding: '8px 16px',
-                    border: '1px solid #666',
+                    gap: `${4 * scale}px`,
+                    padding: `${4 * scale}px ${8 * scale}px`,
+                    border: `${1 * scale}px solid #666`,
                     borderRadius: '0'
                   }}
                   onMouseEnter={e => {
@@ -1273,8 +1304,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                     viewBox="0 0 24 24"
                     xmlns="http://www.w3.org/2000/svg"
                     style={{
-                      width: '16px',
-                      height: '16px',
+                      width: `${8 * scale}px`,
+                      height: `${8 * scale}px`,
                       fill: 'currentColor'
                     }}
                   >

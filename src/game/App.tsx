@@ -183,7 +183,7 @@ export const App: React.FC<AppProps> = ({
           </div>
         )}
       </div>
-      <SettingsModal spriteService={spriteService} />
+      <SettingsModal spriteService={spriteService} scale={scale} />
       <VolumeButton />
     </>
   )
