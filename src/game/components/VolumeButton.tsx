@@ -267,6 +267,7 @@ const VolumeButton: React.FC<VolumeButtonProps> = ({ scale }) => {
     >
       {/* Slider (appears to the left of button on hover) */}
       <div style={sliderContainerStyle}>
+        <span style={volumeTextStyle}>{Math.round(volume * 100)}%</span>
         <div style={sliderWrapperStyle}>
           <input
             type="range"
@@ -279,7 +280,6 @@ const VolumeButton: React.FC<VolumeButtonProps> = ({ scale }) => {
             className={styles.volumeSlider}
           />
         </div>
-        <span style={volumeTextStyle}>{Math.round(volume * 100)}%</span>
       </div>
 
       {/* Speaker button - click to mute/unmute */}
