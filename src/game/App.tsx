@@ -16,7 +16,7 @@ import { type SpriteService } from '@/core/sprites'
 import { useAppDispatch, useAppSelector } from './store'
 import type { GameRenderLoop } from './types'
 import type { CollisionService } from '@/core/collision'
-import { DEFAULT_SCALE, getScaledDimensions } from './constants/dimensions'
+import { useResponsiveScale } from './hooks/useResponsiveScale'
 
 type AppProps = {
   renderer: GameRenderLoop
@@ -44,9 +44,8 @@ export const App: React.FC<AppProps> = ({
     state => state.game.highScoreEligible
   )
 
-  // Use default scale for now (will be made dynamic in Phase 1)
-  const scale = DEFAULT_SCALE
-  const dimensions = getScaledDimensions(scale)
+  // Use responsive scale that adapts to viewport size
+  const { scale, dimensions } = useResponsiveScale()
 
   // Render the game content based on mode
   const renderGameContent = (): React.ReactElement | null => {

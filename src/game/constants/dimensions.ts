@@ -7,11 +7,10 @@ import { SCRWTH, SCRHT } from '@/core/screen'
 export const BASE_GAME_WIDTH = SCRWTH // 512
 export const BASE_GAME_HEIGHT = SCRHT // 342
 
-// Current UI has controls below the game area
-// At 2x scale: total height is 684px (342*2)
-// This means controls area is 342px at 2x scale, or 171px at 1x scale
-export const BASE_CONTROLS_HEIGHT = 171
-export const BASE_TOTAL_HEIGHT = BASE_GAME_HEIGHT + BASE_CONTROLS_HEIGHT // 513
+// The InGameControlsPanel is absolutely positioned and doesn't add to layout height
+// So total height is just the game height
+export const BASE_CONTROLS_HEIGHT = 0
+export const BASE_TOTAL_HEIGHT = BASE_GAME_HEIGHT // 342
 
 // Default scale used throughout the current implementation
 export const DEFAULT_SCALE = 2
