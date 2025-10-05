@@ -19,8 +19,8 @@ const FullscreenButton: React.FC<FullscreenButtonProps> = ({ scale }) => {
 
   const containerStyle: React.CSSProperties = {
     position: 'fixed',
-    bottom: `${20 * scale}px`,
-    right: `${70 * scale}px`,
+    top: `${20 * scale}px`,
+    left: `${20 * scale}px`,
     zIndex: 999,
     display: 'flex',
     alignItems: 'center',
@@ -77,7 +77,7 @@ const FullscreenButton: React.FC<FullscreenButtonProps> = ({ scale }) => {
         title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
       >
         <span style={iconStyle} data-icon="true">
-          {isFullscreen ? '⤡' : '⤢'}
+          {isFullscreen ? '⛶' : '⛶'}
         </span>
       </button>
     </div>
