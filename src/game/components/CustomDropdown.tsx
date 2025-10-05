@@ -28,11 +28,29 @@ export const CustomDropdown = <T extends string | number = string | number>({
 }: CustomDropdownProps<T>): React.ReactElement => {
   const [showDropdown, setShowDropdown] = useState(false)
   const [openUpward, setOpenUpward] = useState(false)
+  const [canScrollUp, setCanScrollUp] = useState(false)
+  const [canScrollDown, setCanScrollDown] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const dropdownContainerRef = useRef<HTMLDivElement>(null)
 
   const selectedOption = options.find(opt => opt.value === value)
   const selectedLabel = selectedOption?.label ?? String(value)
+
+  // Helper function to update scroll indicators
+  const updateScrollIndicators = (): void => {
+    if (!dropdownContainerRef.current) return
+
+    const container = dropdownContainerRef.current
+    const scrollTop = container.scrollTop
+    const scrollHeight = container.scrollHeight
+    const clientHeight = container.clientHeight
+
+    // Can scroll up if not at the top
+    setCanScrollUp(scrollTop > 0)
+
+    // Can scroll down if not at the bottom (with 1px tolerance)
+    setCanScrollDown(scrollTop < scrollHeight - clientHeight - 1)
+  }
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -81,21 +99,31 @@ export const CustomDropdown = <T extends string | number = string | number>({
     }
   }, [showDropdown, fontSize, scale, maxVisibleItems])
 
-  // Auto-scroll to selected item when dropdown opens
+  // Auto-scroll to selected item when dropdown opens and update scroll indicators
   useEffect(() => {
     if (showDropdown && dropdownContainerRef.current) {
-      // Small delay to ensure DOM is ready
-      setTimeout(() => {
+      // Use requestAnimationFrame to ensure DOM is rendered
+      requestAnimationFrame(() => {
+        updateScrollIndicators()
+
         const selectedElement = dropdownContainerRef.current?.querySelector(
           '[data-selected="true"]'
         )
         if (selectedElement) {
           selectedElement.scrollIntoView({
             block: 'nearest',
-            behavior: 'smooth'
+            behavior: 'instant'
           })
         }
-      }, 0)
+        // Update indicators after scroll
+        requestAnimationFrame(() => {
+          updateScrollIndicators()
+        })
+      })
+    } else {
+      // Reset indicators when dropdown closes
+      setCanScrollUp(false)
+      setCanScrollDown(false)
     }
   }, [showDropdown])
 
@@ -117,7 +145,9 @@ export const CustomDropdown = <T extends string | number = string | number>({
 
   const dropdownContainerStyle: React.CSSProperties = {
     position: 'absolute',
-    ...(openUpward ? { bottom: '100%' } : { top: '100%' }),
+    ...(openUpward
+      ? { bottom: `calc(100% + ${1 * scale}px)` }
+      : { top: `calc(100% + ${1 * scale}px)` }),
     left: 0,
     background: '#000',
     border: `${1 * scale}px solid #fff`,
@@ -157,7 +187,35 @@ export const CustomDropdown = <T extends string | number = string | number>({
         {selectedLabel}
       </button>
       {showDropdown && (
-        <div ref={dropdownContainerRef} style={dropdownContainerStyle}>
+        <div
+          ref={dropdownContainerRef}
+          style={dropdownContainerStyle}
+          onScroll={updateScrollIndicators}
+        >
+          {/* Top scroll indicator - sticky to top */}
+          {canScrollUp && (
+            <div
+              style={{
+                position: 'sticky',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: `${8 * scale}px`,
+                background: 'rgba(0, 0, 0, 0.9)',
+                borderBottom: `${1 * scale}px solid #fff`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#fff',
+                fontSize: `${6 * scale}px`,
+                pointerEvents: 'none',
+                zIndex: 10
+              }}
+            >
+              ▲
+            </div>
+          )}
+
           {options.map(option => (
             <div
               key={String(option.value)}
@@ -178,6 +236,30 @@ export const CustomDropdown = <T extends string | number = string | number>({
               {option.label}
             </div>
           ))}
+
+          {/* Bottom scroll indicator - sticky to bottom */}
+          {canScrollDown && (
+            <div
+              style={{
+                position: 'sticky',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: `${8 * scale}px`,
+                background: 'rgba(0, 0, 0, 0.9)',
+                borderTop: `${1 * scale}px solid #fff`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#fff',
+                fontSize: `${6 * scale}px`,
+                pointerEvents: 'none',
+                zIndex: 10
+              }}
+            >
+              ▼
+            </div>
+          )}
         </div>
       )}
     </div>
