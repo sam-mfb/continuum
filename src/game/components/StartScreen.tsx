@@ -13,10 +13,11 @@ import type { ThunkDispatch } from '@reduxjs/toolkit'
 import type { AnyAction } from 'redux'
 
 type StartScreenProps = {
+  scale: number
   onStartGame: (level: number) => void
 }
 
-const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
+const StartScreen: React.FC<StartScreenProps> = ({ scale, onStartGame }) => {
   const dispatch =
     useDispatch<ThunkDispatch<RootState, GameServices, AnyAction>>()
   const currentGalaxyId = useSelector(
@@ -72,10 +73,10 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Set canvas size to pixel-doubled dimensions
-    // Width and height are fixed for consistent layout
-    canvas.width = TITLE_PAGE_CONTENT_WIDTH * 2 // 1002px (501 * 2)
-    canvas.height = 622 // 622px (311 * 2)
+    // Set canvas size to scaled dimensions
+    // Width and height scale with the display scale
+    canvas.width = TITLE_PAGE_CONTENT_WIDTH * scale
+    canvas.height = TITLE_PAGE_CONTENT_HEIGHT * scale
 
     // Create ImageData at original cropped size
     const imageData = ctx.createImageData(
@@ -113,7 +114,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
 
     tempCtx.putImageData(imageData, 0, 0)
 
-    // Now draw it pixel-doubled to the main canvas
+    // Now draw it scaled to the main canvas
     ctx.imageSmoothingEnabled = false
     ctx.drawImage(
       tempCanvas,
@@ -123,10 +124,10 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
       TITLE_PAGE_CONTENT_HEIGHT,
       0,
       0,
-      TITLE_PAGE_CONTENT_WIDTH * 2,
-      TITLE_PAGE_CONTENT_HEIGHT * 2
+      TITLE_PAGE_CONTENT_WIDTH * scale,
+      TITLE_PAGE_CONTENT_HEIGHT * scale
     )
-  }, [titlePage])
+  }, [titlePage, scale])
 
   // Handle galaxy change
   const handleGalaxyChange = async (galaxyId: string): Promise<void> => {
@@ -149,8 +150,19 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
   const formatHighScore = (slot: number, index: number): React.ReactElement => {
     const score = highScores[slot as keyof HighScoreTable]
 
-    // Original positions scaled by 2x, adjusted up by 26px
-    const yPos = 312 + index * 30 // (169 * 2) - 26 + index * 15 * 2
+    // Original positions at 1x scale: y=169, spacing=15
+    // At 2x: y=(169*2)-26=312, spacing=30
+    // Dynamic: use scale factor
+    const baseY = 169
+    const baseSpacing = 15
+    const yPos = baseY * scale - 26 + index * baseSpacing * scale
+
+    // Original positions at 1x scale: name=220, level=382, score=446
+    // At 2x: name=440, level=764, score=892
+    const nameX = 220 * scale
+    const levelX = 382 * scale
+    const scoreX = 446 * scale
+    const fontSize = 12 * scale
 
     return (
       <div
@@ -162,42 +174,42 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
           right: 0,
           display: 'flex',
           alignItems: 'center',
-          height: '32px',
+          height: `${16 * scale}px`,
           fontFamily: 'Verdana, Geneva, sans-serif',
-          fontSize: '24px', // 12pt * 2 for pixel doubling
-          fontWeight: '500', // Medium weight
+          fontSize: `${fontSize}px`,
+          fontWeight: '500',
           color: 'black'
         }}
       >
-        {/* Name at x=440px (428 + 12) */}
+        {/* Name */}
         <span
           style={{
             position: 'absolute',
-            left: '440px',
-            width: '180px'
+            left: `${nameX}px`,
+            width: `${90 * scale}px`
           }}
         >
           {score.user || ''}
         </span>
 
-        {/* Level at x=764px (776 - 12) */}
+        {/* Level */}
         <span
           style={{
             position: 'absolute',
-            left: '764px',
-            width: '60px',
+            left: `${levelX}px`,
+            width: `${30 * scale}px`,
             textAlign: 'right'
           }}
         >
           {score.planet ? `${score.planet}` : ''}
         </span>
 
-        {/* Score at x=892px (900 - 8) */}
+        {/* Score */}
         <span
           style={{
             position: 'absolute',
-            left: '892px',
-            width: '90px',
+            left: `${scoreX}px`,
+            width: `${45 * scale}px`,
             textAlign: 'right'
           }}
         >
@@ -214,8 +226,8 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        width: '1024px',
-        height: '684px',
+        width: `${512 * scale}px`,
+        height: `${342 * scale}px`,
         backgroundColor: 'black',
         fontFamily: 'monospace',
         color: 'white',
@@ -240,16 +252,16 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
       {/* Last score display on the left side */}
       {mostRecentScore && (
         <>
-          {/* Score - centered in box with center shifted 36px right */}
+          {/* Score - at 1x: top=163, left=33, width=101 */}
           <div
             style={{
               position: 'absolute',
-              top: '326px',
-              left: '66px',
-              width: '202px',
+              top: `${163 * scale}px`,
+              left: `${33 * scale}px`,
+              width: `${101 * scale}px`,
               textAlign: 'center',
               fontFamily: 'Verdana, Geneva, sans-serif',
-              fontSize: '24px',
+              fontSize: `${12 * scale}px`,
               fontWeight: '500',
               color: 'black'
             }}
@@ -257,16 +269,16 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
             {mostRecentScore.score.toLocaleString()}
           </div>
 
-          {/* Fuel - centered in box with center shifted 36px right */}
+          {/* Fuel - at 1x: top=218, left=33, width=101 */}
           <div
             style={{
               position: 'absolute',
-              top: '436px',
-              left: '66px',
-              width: '202px',
+              top: `${218 * scale}px`,
+              left: `${33 * scale}px`,
+              width: `${101 * scale}px`,
               textAlign: 'center',
               fontFamily: 'Verdana, Geneva, sans-serif',
-              fontSize: '24px',
+              fontSize: `${12 * scale}px`,
               fontWeight: '500',
               color: 'black'
             }}
@@ -274,16 +286,16 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
             {mostRecentScore.fuel.toLocaleString()}
           </div>
 
-          {/* Level - centered in same width box with center shifted 36px right */}
+          {/* Level - at 1x: top=273, left=33, width=101 */}
           <div
             style={{
               position: 'absolute',
-              top: '546px',
-              left: '66px',
-              width: '202px',
+              top: `${273 * scale}px`,
+              left: `${33 * scale}px`,
+              width: `${101 * scale}px`,
               textAlign: 'center',
               fontFamily: 'Verdana, Geneva, sans-serif',
-              fontSize: '24px',
+              fontSize: `${12 * scale}px`,
               fontWeight: '500',
               color: 'black'
             }}
@@ -299,31 +311,39 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
         .sort((a, b) => a - b)
         .map((slot, index) => formatHighScore(slot, index))}
 
-      {/* Bottom controls - in the 62px space below canvas */}
+      {/* Bottom controls - in the space below game (at 1x: 31px, at 2x: 62px) */}
       <div
         style={{
           position: 'absolute',
           bottom: 0,
           left: 0,
           right: 0,
-          height: '62px',
+          height: `${31 * scale}px`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '20px'
+          gap: `${10 * scale}px`
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <label style={{ color: 'white', fontSize: '14px' }}>Galaxy:</label>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: `${5 * scale}px`
+          }}
+        >
+          <label style={{ color: 'white', fontSize: `${7 * scale}px` }}>
+            Galaxy:
+          </label>
           <select
             value={selectedGalaxyId}
             onChange={e => {
               void handleGalaxyChange(e.target.value)
             }}
             style={{
-              padding: '4px 8px',
+              padding: `${2 * scale}px ${4 * scale}px`,
               fontFamily: 'monospace',
-              fontSize: '14px',
+              fontSize: `${7 * scale}px`,
               backgroundColor: 'black',
               color: 'white',
               border: '1px solid white',
@@ -338,8 +358,14 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
           </select>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <label style={{ color: 'white', fontSize: '14px' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: `${5 * scale}px`
+          }}
+        >
+          <label style={{ color: 'white', fontSize: `${7 * scale}px` }}>
             Start at Level:
           </label>
           <select
@@ -354,9 +380,9 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
               }
             }}
             style={{
-              padding: '4px 8px',
+              padding: `${2 * scale}px ${4 * scale}px`,
               fontFamily: 'monospace',
-              fontSize: '14px',
+              fontSize: `${7 * scale}px`,
               backgroundColor: 'black',
               color: 'white',
               border: '1px solid white',
@@ -374,14 +400,14 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
         <button
           onClick={() => onStartGame(selectedLevel)}
           style={{
-            fontSize: '16px',
-            padding: '8px 20px',
+            fontSize: `${8 * scale}px`,
+            padding: `${4 * scale}px ${10 * scale}px`,
             backgroundColor: 'white',
             color: 'black',
             border: '1px solid white',
             cursor: 'pointer',
             fontFamily: 'monospace',
-            letterSpacing: '2px'
+            letterSpacing: `${1 * scale}px`
           }}
         >
           START GAME
@@ -393,9 +419,9 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
         onClick={() => dispatch(openSettings())}
         style={{
           position: 'absolute',
-          top: '20px',
-          right: '20px',
-          padding: '8px',
+          top: `${10 * scale}px`,
+          right: `${10 * scale}px`,
+          padding: `${4 * scale}px`,
           backgroundColor: 'black',
           color: 'white',
           border: '1px solid #666',
@@ -414,8 +440,8 @@ const StartScreen: React.FC<StartScreenProps> = ({ onStartGame }) => {
       >
         {/* Pixelated Gear Icon */}
         <svg
-          width="17"
-          height="17"
+          width={17 * scale}
+          height={17 * scale}
           viewBox="0 0 17 17"
           xmlns="http://www.w3.org/2000/svg"
           style={{ fill: 'white' }}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 
 type HighScoreEntryProps = {
+  scale: number
   score: number
   planet: number
   fuel: number
@@ -8,6 +9,7 @@ type HighScoreEntryProps = {
 }
 
 const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
+  scale,
   score,
   planet,
   fuel,
@@ -41,8 +43,8 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        width: '1024px',
-        height: '684px',
+        width: `${512 * scale}px`,
+        height: `${342 * scale}px`,
         backgroundColor: 'black',
         fontFamily: 'monospace',
         color: 'white'
@@ -53,18 +55,18 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '25px',
+          gap: `${12 * scale}px`,
           backgroundColor: 'black',
           border: '1px solid white',
-          padding: '30px'
+          padding: `${15 * scale}px`
         }}
       >
         <h1
           style={{
-            fontSize: '28px',
+            fontSize: `${14 * scale}px`,
             margin: 0,
             color: 'white',
-            letterSpacing: '2px',
+            letterSpacing: `${1 * scale}px`,
             textAlign: 'center'
           }}
         >
@@ -73,7 +75,7 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
 
         <div
           style={{
-            fontSize: '18px',
+            fontSize: `${9 * scale}px`,
             textAlign: 'center',
             lineHeight: '1.5',
             color: 'white'
@@ -90,12 +92,12 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '20px'
+            gap: `${10 * scale}px`
           }}
         >
           <label
             style={{
-              fontSize: '16px',
+              fontSize: `${8 * scale}px`,
               fontWeight: 'bold',
               color: 'white'
             }}
@@ -110,9 +112,9 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
             onKeyDown={handleKeyDown}
             maxLength={10}
             style={{
-              fontSize: '18px',
-              padding: '8px',
-              width: '200px',
+              fontSize: `${9 * scale}px`,
+              padding: `${4 * scale}px`,
+              width: `${100 * scale}px`,
               textAlign: 'center',
               fontFamily: 'monospace',
               border: '1px solid white',
@@ -125,14 +127,14 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
             type="submit"
             disabled={!name.trim()}
             style={{
-              fontSize: '16px',
-              padding: '8px 24px',
+              fontSize: `${8 * scale}px`,
+              padding: `${4 * scale}px ${12 * scale}px`,
               backgroundColor: name.trim() ? 'white' : 'black',
               color: name.trim() ? 'black' : 'white',
               border: '1px solid white',
               cursor: name.trim() ? 'pointer' : 'not-allowed',
               fontFamily: 'monospace',
-              letterSpacing: '1px',
+              letterSpacing: `${0.5 * scale}px`,
               opacity: name.trim() ? 1 : 0.5
             }}
           >

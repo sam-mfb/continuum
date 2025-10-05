@@ -16,6 +16,7 @@ import { type SpriteService } from '@/core/sprites'
 import { useAppDispatch, useAppSelector } from './store'
 import type { GameRenderLoop } from './types'
 import type { CollisionService } from '@/core/collision'
+import { DEFAULT_SCALE, getScaledDimensions } from './constants/dimensions'
 
 type AppProps = {
   renderer: GameRenderLoop
@@ -43,12 +44,17 @@ export const App: React.FC<AppProps> = ({
     state => state.game.highScoreEligible
   )
 
+  // Use default scale for now (will be made dynamic in Phase 1)
+  const scale = DEFAULT_SCALE
+  const dimensions = getScaledDimensions(scale)
+
   // Render the game content based on mode
   const renderGameContent = (): React.ReactElement | null => {
     switch (gameMode) {
       case 'start':
         return (
           <StartScreen
+            scale={scale}
             onStartGame={(level: number) => {
               // Reset ship and sound to clean state
               dispatch(shipSlice.actions.resetShip())
@@ -74,7 +80,11 @@ export const App: React.FC<AppProps> = ({
       case 'playing':
         return (
           <div
-            style={{ width: '1024px', height: '684px', position: 'relative' }}
+            style={{
+              width: `${dimensions.gameWidth}px`,
+              height: `${dimensions.totalHeight}px`,
+              position: 'relative'
+            }}
           >
             <GameRenderer
               renderer={renderer}
@@ -82,7 +92,7 @@ export const App: React.FC<AppProps> = ({
               spriteService={spriteService}
               width={512}
               height={342}
-              scale={2} // Pixel-doubled
+              scale={scale}
               fps={20} // Original Continuum runs at 20 FPS
             />
             {showInGameControls && <InGameControlsPanel />}
@@ -101,6 +111,7 @@ export const App: React.FC<AppProps> = ({
         // At this point we know the score qualifies (checked in game loop)
         return (
           <HighScoreEntry
+            scale={scale}
             score={mostRecentScore.score}
             planet={mostRecentScore.planet}
             fuel={mostRecentScore.fuel}
@@ -123,7 +134,12 @@ export const App: React.FC<AppProps> = ({
         )
 
       case 'gameOver':
-        return <GameOverScreen onContinue={() => dispatch(setMode('start'))} />
+        return (
+          <GameOverScreen
+            scale={scale}
+            onContinue={() => dispatch(setMode('start'))}
+          />
+        )
 
       default:
         gameMode satisfies never
