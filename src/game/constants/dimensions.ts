@@ -14,7 +14,7 @@ export const BASE_CONTROLS_HEIGHT = 171
 export const BASE_TOTAL_HEIGHT = BASE_GAME_HEIGHT + BASE_CONTROLS_HEIGHT // 513
 
 // Default scale used throughout the current implementation
-export const DEFAULT_SCALE = 3
+export const DEFAULT_SCALE = 1
 
 /**
  * Calculate scaled dimensions based on a scale factor

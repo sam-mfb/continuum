@@ -29,7 +29,8 @@ const VolumeControls: React.FC<VolumeControlsProps> = ({ scale }) => {
     background: '#000',
     color: '#fff',
     fontFamily: 'monospace',
-    fontSize: `${5.5 * scale}px`
+    fontSize: `${5.5 * scale}px`,
+    marginBottom: `${5 * scale}px`
   }
 
   const toggleButtonStyle: React.CSSProperties = {
