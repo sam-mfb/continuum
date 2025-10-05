@@ -21,8 +21,8 @@ const FullscreenButton: React.FC<FullscreenButtonProps> = ({ scale }) => {
 
   const containerStyle: React.CSSProperties = {
     position: 'fixed',
-    top: `${20 * scale}px`,
-    left: `${20 * scale}px`,
+    top: `${10 * scale}px`,
+    left: `${10 * scale}px`,
     zIndex: 999,
     display: 'flex',
     alignItems: 'center',

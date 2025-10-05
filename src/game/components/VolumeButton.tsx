@@ -46,8 +46,8 @@ const VolumeButton: React.FC<VolumeButtonProps> = ({ scale }) => {
 
   const containerStyle: React.CSSProperties = {
     position: 'fixed',
-    top: `${20 * scale}px`,
-    right: `${20 * scale}px`,
+    top: `${10 * scale}px`,
+    right: `${10 * scale}px`,
     zIndex: 999,
     display: 'flex',
     flexDirection: 'row',
