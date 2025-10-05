@@ -5,6 +5,7 @@ import HighScoreEntry from './components/HighScoreEntry'
 import GameOverScreen from './components/GameOverScreen'
 import SettingsModal from './components/SettingsModal'
 import VolumeButton from './components/VolumeButton'
+import FullscreenButton from './components/FullscreenButton'
 import InGameControlsPanel from './components/InGameControlsPanel'
 import { loadLevel } from './levelThunks'
 import { startGame, setMode } from './appSlice'
@@ -183,6 +184,7 @@ export const App: React.FC<AppProps> = ({
           </div>
         )}
       </div>
+      <FullscreenButton scale={scale} />
       <SettingsModal spriteService={spriteService} scale={scale} />
       <VolumeButton scale={scale} />
     </>

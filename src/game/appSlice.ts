@@ -37,6 +37,7 @@ export type AppState = {
 
   // UI state
   showSettings: boolean
+  isFullscreen: boolean
 
   // Current galaxy
   currentGalaxyId: string
@@ -53,6 +54,7 @@ const initialState: AppState = {
   mode: 'start',
   mostRecentScore: null,
   showSettings: false,
+  isFullscreen: false,
   currentGalaxyId: 'release', // Will be overridden by galaxy config
   totalLevels: 0 // Will be set when galaxy is loaded
 }
@@ -124,6 +126,10 @@ export const appSlice = createSlice({
       state.showSettings = !state.showSettings
     },
 
+    setFullscreen: (state, action: PayloadAction<boolean>) => {
+      state.isFullscreen = action.payload
+    },
+
     // Galaxy management
     setCurrentGalaxy: (state, action: PayloadAction<string>) => {
       state.currentGalaxyId = action.payload
@@ -151,6 +157,7 @@ export const {
   openSettings,
   closeSettings,
   toggleSettings,
+  setFullscreen,
   setCurrentGalaxy,
   setTotalLevels
 } = appSlice.actions
