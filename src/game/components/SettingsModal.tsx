@@ -494,7 +494,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
 
             {/* Volume Controls Section */}
-            <VolumeControls />
+            <VolumeControls scale={scale} />
 
             {/* High Score Reset Section */}
             <div style={sectionStyle}>
