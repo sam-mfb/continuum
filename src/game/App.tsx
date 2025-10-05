@@ -172,7 +172,7 @@ export const App: React.FC<AppProps> = ({
           <div
             style={{
               position: 'fixed',
-              top: '20px',
+              bottom: '20px',
               right: '20px',
               color: '#AA0000',
               fontSize: '28px',
