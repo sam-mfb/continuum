@@ -75,68 +75,54 @@ Based on analysis of the codebase, here's a comprehensive plan for adapting the 
 
 ---
 
-## **C. Fullscreen Support**
+## **C. Fullscreen Support** ✅ **COMPLETED**
 
-**1. Add fullscreen state to `appSlice.ts`**
+**Status**: Fullscreen support with toggle button and auto-hide controls implemented.
 
-- New state field:
-  ```typescript
-  isFullscreen: boolean
-  ```
-- New actions:
-  ```typescript
-  setFullscreen(value: boolean)
-  toggleFullscreen()
-  ```
+**Completed work:**
 
-**2. Create fullscreen utility** (`src/game/mobile/fullscreen.ts`)
+1. ✅ **Added fullscreen state to `appSlice.ts`**:
 
-- Export `enterFullscreen()` function:
-  ```typescript
-  const elem = document.documentElement
-  if (elem.requestFullscreen) {
-    await elem.requestFullscreen()
-  }
-  ```
-- Export `exitFullscreen()` function:
-  ```typescript
-  if (document.exitFullscreen) {
-    await document.exitFullscreen()
-  }
-  ```
-- Export `toggleFullscreen()` helper that checks current state
-- Handle vendor prefixes for broader browser support
+   - New state field: `isFullscreen: boolean`
+   - New action: `setFullscreen(value: boolean)`
 
-**3. Add fullscreen change listeners**
+2. ✅ **Created fullscreen utility** (`src/game/mobile/fullscreen.ts`):
 
-- Listen to `fullscreenchange` event (and vendor-prefixed versions)
-- Sync `isFullscreen` state in Redux when user exits fullscreen via ESC key
-- Implementation in `App.tsx` or `main.tsx`:
-  ```typescript
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      const isNowFullscreen = !!document.fullscreenElement
-      dispatch(setFullscreen(isNowFullscreen))
-    }
-    document.addEventListener('fullscreenchange', handleFullscreenChange)
-    return () =>
-      document.removeEventListener('fullscreenchange', handleFullscreenChange)
-  }, [dispatch])
-  ```
+   - `enterFullscreen()` function with vendor prefix support
+   - `exitFullscreen()` function with vendor prefix support
+   - `toggleFullscreen()` helper that checks current state
+   - `isFullscreen()` helper with vendor prefix checks
 
-**4. Add fullscreen toggle button**
+3. ✅ **Created FullscreenButton component** (`src/game/components/FullscreenButton.tsx`):
 
-- Show on touch devices (phones/tablets) when not in game
-- Could be on `StartScreen` as a button near settings
-- Or as a floating button that appears when touch controls are detected
-- Icon: standard fullscreen expand/collapse icon
-- Hide when already in fullscreen mode, show "Exit Fullscreen" when in fullscreen
+   - Positioned at top-left corner (20px from edges)
+   - Light gray color (rgba(192, 192, 192, 0.8)) with white hover state
+   - Square fullscreen icon (⛶)
+   - Auto-hides after 3 seconds of inactivity (mouse/touch)
+   - Click-only control (no ESC key handling)
+   - Updates Redux state after toggling
 
-**5. Responsive scaling benefits**
+4. ✅ **Created inactivity detection hook** (`src/game/hooks/useInactivityDetection.ts`):
 
-- Once in fullscreen, `useResponsiveScale` will automatically recalculate
-- Game will scale to fill entire screen
-- Maximum playable area on mobile devices
+   - Detects mouse movement and touch events
+   - 3-second timeout before hiding controls
+   - Used by both FullscreenButton and VolumeButton
+
+5. ✅ **Updated VolumeButton** (`src/game/components/VolumeButton.tsx`):
+
+   - Repositioned to top-right corner
+   - Horizontal slider extending left (direction: rtl)
+   - Auto-hides after 3 seconds of inactivity
+   - Left side = 100% volume
+
+6. ✅ **Updated high score indicator** (`src/game/App.tsx`):
+
+   - Moved warning triangle (⚠) to bottom-right corner
+
+7. ✅ **Responsive scaling integration**:
+   - `useResponsiveScale` automatically recalculates when entering/exiting fullscreen
+   - Game scales to fill entire screen in fullscreen mode
+   - Maximum playable area on mobile devices
 
 ---
 
@@ -294,8 +280,8 @@ Add to `package.json`:
 
 1. ✅ **Phase 0 - Refactor Hardcoded Values**: Eliminate scale-dependent hardcoded values (A) - **COMPLETED**
 2. ✅ **Phase 1 - Responsive Scaling**: Dynamic scale based on viewport (B) - **COMPLETED**
-3. **Phase 2 - Fullscreen Support**: Maximize usable screen area on mobile (C) - **NEXT**
-4. **Phase 3 - Touch Input**: Joystick & buttons (D)
+3. ✅ **Phase 2 - Fullscreen Support**: Maximize usable screen area on mobile (C) - **COMPLETED**
+4. **Phase 3 - Touch Input**: Joystick & buttons (D) - **NEXT**
 5. **Phase 4 - Intelligence**: Device detection & mode management (E)
 6. **Phase 5 - Polish**: Settings UI & mobile optimizations (F, G)
 
@@ -307,7 +293,9 @@ Add to `package.json`:
 
 - ✅ `src/game/constants/dimensions.ts` (Phase 0) - **COMPLETED**
 - ✅ `src/game/hooks/useResponsiveScale.ts` (Phase 1) - **COMPLETED**
-- `src/game/mobile/fullscreen.ts` (Phase 2)
+- ✅ `src/game/hooks/useInactivityDetection.ts` (Phase 2) - **COMPLETED**
+- ✅ `src/game/mobile/fullscreen.ts` (Phase 2) - **COMPLETED**
+- ✅ `src/game/components/FullscreenButton.tsx` (Phase 2) - **COMPLETED**
 - `src/game/mobile/TouchJoystick.tsx` (Phase 3)
 - `src/game/mobile/TouchButtons.tsx` (Phase 3)
 - `src/game/mobile/TouchControlsOverlay.tsx` (Phase 3)
@@ -338,11 +326,12 @@ Add to `package.json`:
 - ✅ `src/game/components/SettingsModal.tsx` - Added Display Scale custom dropdown control
 - ✅ `src/game/constants/dimensions.ts` - Fixed BASE_CONTROLS_HEIGHT and BASE_TOTAL_HEIGHT
 
-**Phase 2:**
+**Phase 2:** ✅ **COMPLETED**
 
-- `src/game/appSlice.ts` - Add fullscreen state
-- `src/game/App.tsx` - Add fullscreen change listeners
-- `src/game/components/StartScreen.tsx` - Add fullscreen toggle button
+- ✅ `src/game/appSlice.ts` - Added fullscreen state and setFullscreen action
+- ✅ `src/game/App.tsx` - Added FullscreenButton component and repositioned high score indicator
+- ✅ `src/game/components/VolumeButton.tsx` - Repositioned to top-right, added inactivity detection, horizontal slider
+- ✅ `src/game/components/FullscreenButton.tsx` - Created with auto-hide functionality
 
 **Phase 4:**
 
