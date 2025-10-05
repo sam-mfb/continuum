@@ -19,7 +19,7 @@ const FullscreenButton: React.FC<FullscreenButtonProps> = ({ scale }) => {
 
   const containerStyle: React.CSSProperties = {
     position: 'fixed',
-    top: `${20 * scale}px`,
+    bottom: `${20 * scale}px`,
     left: `${20 * scale}px`,
     zIndex: 999,
     display: 'flex',
@@ -44,7 +44,7 @@ const FullscreenButton: React.FC<FullscreenButtonProps> = ({ scale }) => {
   }
 
   const iconStyle: React.CSSProperties = {
-    color: 'rgba(255, 255, 255, 0.95)',
+    color: 'rgba(192, 192, 192, 0.8)',
     fontSize: `${16 * scale}px`,
     lineHeight: '1',
     userSelect: 'none',
@@ -61,7 +61,7 @@ const FullscreenButton: React.FC<FullscreenButtonProps> = ({ scale }) => {
             '[data-icon]'
           ) as HTMLElement
           if (icon) {
-            icon.style.color = 'rgba(255, 255, 255, 1)'
+            icon.style.color = 'rgba(255, 255, 255, 0.95)'
             icon.style.transform = 'scale(1.15)'
           }
         }}
@@ -70,7 +70,7 @@ const FullscreenButton: React.FC<FullscreenButtonProps> = ({ scale }) => {
             '[data-icon]'
           ) as HTMLElement
           if (icon) {
-            icon.style.color = 'rgba(255, 255, 255, 0.95)'
+            icon.style.color = 'rgba(192, 192, 192, 0.8)'
             icon.style.transform = 'scale(1)'
           }
         }}
