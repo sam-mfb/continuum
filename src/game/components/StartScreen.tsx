@@ -416,17 +416,19 @@ const StartScreen: React.FC<StartScreenProps> = ({ scale, onStartGame }) => {
         </button>
       </div>
 
-      {/* Settings Button */}
+      {/* Settings Button - positioned at bottom right, aligned with START GAME button */}
       <button
         onClick={() => dispatch(openSettings())}
         style={{
           position: 'absolute',
-          top: `${10 * scale}px`,
-          right: `${10 * scale}px`,
+          bottom: `${((31 - 16) / 2) * scale}px`,
+          right: `${((31 - 16) / 2) * scale}px`,
+          width: `${16 * scale}px`,
+          height: `${16 * scale}px`,
           padding: `${4 * scale}px`,
           backgroundColor: 'black',
           color: 'white',
-          border: '1px solid #666',
+          border: '1px solid white',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
