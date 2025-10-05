@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../store'
 import { setVolume, enableSound, disableSound } from '../appSlice'
+import { useInactivityDetection } from '../hooks/useInactivityDetection'
 import styles from './VolumeButton.module.css'
 
 type VolumeButtonProps = {
@@ -13,6 +14,7 @@ const VolumeButton: React.FC<VolumeButtonProps> = ({ scale }) => {
   const soundOn = useAppSelector(state => state.app.soundOn)
   const [isHovered, setIsHovered] = useState(false)
   const [volumeBeforeMute, setVolumeBeforeMute] = useState(0.5)
+  const isActive = useInactivityDetection(3000)
 
   const handleVolumeChange = (newVolume: number): void => {
     dispatch(setVolume(newVolume))
@@ -50,7 +52,10 @@ const VolumeButton: React.FC<VolumeButtonProps> = ({ scale }) => {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: `${4 * scale}px`
+    gap: `${4 * scale}px`,
+    opacity: isActive ? 1 : 0,
+    pointerEvents: isActive ? 'auto' : 'none',
+    transition: 'opacity 0.3s ease'
   }
 
   const buttonStyle: React.CSSProperties = {

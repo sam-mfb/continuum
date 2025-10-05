@@ -2,6 +2,7 @@ import React from 'react'
 import { useAppDispatch, useAppSelector } from '../store'
 import { setFullscreen } from '../appSlice'
 import { toggleFullscreen } from '../mobile/fullscreen'
+import { useInactivityDetection } from '../hooks/useInactivityDetection'
 
 type FullscreenButtonProps = {
   scale: number
@@ -10,6 +11,7 @@ type FullscreenButtonProps = {
 const FullscreenButton: React.FC<FullscreenButtonProps> = ({ scale }) => {
   const dispatch = useAppDispatch()
   const isFullscreen = useAppSelector(state => state.app.isFullscreen)
+  const isActive = useInactivityDetection(3000)
 
   const handleClick = async (): Promise<void> => {
     await toggleFullscreen()
@@ -24,7 +26,10 @@ const FullscreenButton: React.FC<FullscreenButtonProps> = ({ scale }) => {
     zIndex: 999,
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
+    opacity: isActive ? 1 : 0,
+    pointerEvents: isActive ? 'auto' : 'none',
+    transition: 'opacity 0.3s ease'
   }
 
   const buttonStyle: React.CSSProperties = {
