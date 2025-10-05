@@ -43,9 +43,10 @@ export const App: React.FC<AppProps> = ({
   const highScoreEligible = useAppSelector(
     state => state.game.highScoreEligible
   )
+  const scaleMode = useAppSelector(state => state.app.scaleMode)
 
-  // Use responsive scale that adapts to viewport size
-  const { scale, dimensions } = useResponsiveScale()
+  // Use responsive scale that adapts to viewport size or fixed scale from settings
+  const { scale, dimensions } = useResponsiveScale(scaleMode)
 
   // Render the game content based on mode
   const renderGameContent = (): React.ReactElement | null => {

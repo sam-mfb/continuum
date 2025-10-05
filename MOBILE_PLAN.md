@@ -33,25 +33,45 @@ Based on analysis of the codebase, here's a comprehensive plan for adapting the 
 
 ---
 
-## **B. Responsive Canvas Scaling**
+## **B. Responsive Canvas Scaling (PHASE 1)** ✅ **COMPLETED**
 
-**1. Create a `useResponsiveScale` hook** (`src/game/hooks/useResponsiveScale.ts`)
+**Status**: Responsive scaling with user control implemented and working.
 
-- Calculate optimal scale factor based on viewport dimensions
-- Maintain 512x342 aspect ratio (original game dimensions)
-- Listen to window resize/orientation change events
-- Return: `{ scale, canvasWidth, canvasHeight, containerWidth, containerHeight }`
-- Minimum scale: 1, maximum scale: determined by viewport
+**Completed work:**
 
-**2. Update App.tsx to use responsive scale**
+1. ✅ **Created `useResponsiveScale` hook** (`src/game/hooks/useResponsiveScale.ts`):
 
-- Use `useResponsiveScale()` hook to get dynamic scale
-- Pass scale to all child components (GameRenderer, StartScreen, GameOverScreen, etc.)
-- Container dimensions should come from hook, not hardcoded
+   - Calculates optimal integer scale factor based on viewport dimensions
+   - Supports both auto-responsive mode and fixed scale modes (1x, 2x, 3x)
+   - Listens to window resize and orientation change events with 500ms debounce
+   - Returns `{ scale, dimensions: { gameWidth, gameHeight, controlsHeight, totalHeight } }`
+   - Immediately recalculates when switching from fixed to auto mode
 
-**3. Update `index.html`**
+2. ✅ **Updated App.tsx to use responsive scale**:
 
-- Add mobile-optimized viewport meta tags
+   - Uses `useResponsiveScale(scaleMode)` hook with scale mode from Redux state
+   - Passes scale to all child components (GameRenderer, StartScreen, SettingsModal, etc.)
+   - Container dimensions come from hook's `dimensions` object
+
+3. ✅ **Updated `index.html`**:
+
+   - Added mobile-optimized viewport meta tags:
+     - `width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover`
+     - `mobile-web-app-capable`, `apple-mobile-web-app-capable`
+     - `apple-mobile-web-app-status-bar-style: black-fullscreen`
+
+4. ✅ **Added Scale Mode setting**:
+
+   - New `ScaleMode` type: `'auto' | 1 | 2 | 3`
+   - Added to `appSlice.ts` with default value 'auto'
+   - Persisted to localStorage via `appMiddleware.ts`
+   - Loaded from localStorage in `store.ts`
+   - Custom dropdown in SettingsModal (replaced native `<select>` for better control over styling)
+
+5. ✅ **Fixed dimensions calculation**:
+   - Set `BASE_CONTROLS_HEIGHT = 0` (InGameControlsPanel is absolutely positioned)
+   - Updated `BASE_TOTAL_HEIGHT = 342` (just game height, no controls height)
+   - Allows 2x scale at smaller viewport sizes
 
 ---
 
@@ -273,8 +293,8 @@ Add to `package.json`:
 ## **Implementation Order**
 
 1. ✅ **Phase 0 - Refactor Hardcoded Values**: Eliminate scale-dependent hardcoded values (A) - **COMPLETED**
-2. **Phase 1 - Responsive Scaling**: Dynamic scale based on viewport (B) - **NEXT**
-3. **Phase 2 - Fullscreen Support**: Maximize usable screen area on mobile (C)
+2. ✅ **Phase 1 - Responsive Scaling**: Dynamic scale based on viewport (B) - **COMPLETED**
+3. **Phase 2 - Fullscreen Support**: Maximize usable screen area on mobile (C) - **NEXT**
 4. **Phase 3 - Touch Input**: Joystick & buttons (D)
 5. **Phase 4 - Intelligence**: Device detection & mode management (E)
 6. **Phase 5 - Polish**: Settings UI & mobile optimizations (F, G)
@@ -286,7 +306,7 @@ Add to `package.json`:
 **New Files:**
 
 - ✅ `src/game/constants/dimensions.ts` (Phase 0) - **COMPLETED**
-- `src/game/hooks/useResponsiveScale.ts` (Phase 1)
+- ✅ `src/game/hooks/useResponsiveScale.ts` (Phase 1) - **COMPLETED**
 - `src/game/mobile/fullscreen.ts` (Phase 2)
 - `src/game/mobile/TouchJoystick.tsx` (Phase 3)
 - `src/game/mobile/TouchButtons.tsx` (Phase 3)
@@ -307,11 +327,16 @@ Add to `package.json`:
 - ✅ `src/game/components/VolumeButton.tsx` - Accepts scale prop, all elements scaled
 - ✅ `src/game/constants/dimensions.ts` - Created with base dimensions and helpers
 
-**Phase 1:**
+**Phase 1:** ✅ **COMPLETED**
 
-- `src/game/App.tsx` - Use `useResponsiveScale()` hook
-- `src/game/components/GameRenderer.tsx` - Use scale from props
-- `src/game/index.html` - Add viewport meta tags
+- ✅ `src/game/App.tsx` - Uses `useResponsiveScale(scaleMode)` hook, passes scale to all components
+- ✅ `src/game/components/InGameControlsPanel.tsx` - Accepts and uses scale prop
+- ✅ `src/game/index.html` - Added mobile viewport meta tags
+- ✅ `src/game/appSlice.ts` - Added `scaleMode` state and `setScaleMode` action
+- ✅ `src/game/appMiddleware.ts` - Persists `scaleMode` to localStorage
+- ✅ `src/game/store.ts` - Loads `scaleMode` from localStorage on init
+- ✅ `src/game/components/SettingsModal.tsx` - Added Display Scale custom dropdown control
+- ✅ `src/game/constants/dimensions.ts` - Fixed BASE_CONTROLS_HEIGHT and BASE_TOTAL_HEIGHT
 
 **Phase 2:**
 

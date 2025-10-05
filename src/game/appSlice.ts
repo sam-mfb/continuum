@@ -10,6 +10,8 @@ export type GameMode = 'start' | 'playing' | 'highScoreEntry' | 'gameOver'
 
 export type CollisionMode = 'modern' | 'original'
 
+export type ScaleMode = 'auto' | 1 | 2 | 3
+
 export type MostRecentScore = {
   score: number
   planet: number
@@ -23,6 +25,7 @@ export type AppState = {
   // Display settings
   alignmentMode: AlignmentMode
   showInGameControls: boolean
+  scaleMode: ScaleMode
 
   // Sound settings
   volume: number
@@ -44,6 +47,7 @@ const initialState: AppState = {
   collisionMode: 'modern',
   alignmentMode: 'screen-fixed', // Default to screen-fixed (not original)
   showInGameControls: true,
+  scaleMode: 'auto', // Default to responsive auto-scaling
   volume: 0,
   soundOn: true,
   mode: 'start',
@@ -77,6 +81,10 @@ export const appSlice = createSlice({
 
     toggleInGameControls: state => {
       state.showInGameControls = !state.showInGameControls
+    },
+
+    setScaleMode: (state, action: PayloadAction<ScaleMode>) => {
+      state.scaleMode = action.payload
     },
 
     // Sound settings
@@ -133,6 +141,7 @@ export const {
   setAlignmentMode,
   toggleAlignmentMode,
   toggleInGameControls,
+  setScaleMode,
   setVolume,
   enableSound,
   disableSound,

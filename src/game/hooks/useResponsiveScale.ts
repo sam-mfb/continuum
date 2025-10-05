@@ -4,6 +4,7 @@ import {
   BASE_TOTAL_HEIGHT,
   getScaledDimensions
 } from '../constants/dimensions'
+import type { ScaleMode } from '../appSlice'
 
 // Padding around the game in pixels
 const VIEWPORT_PADDING = 16
@@ -43,12 +44,27 @@ const calculateScale = (): number => {
  * React hook that provides responsive scaling for the game canvas.
  * Automatically recalculates scale on window resize and orientation changes.
  *
+ * @param scaleMode - 'auto' for responsive scaling, or a fixed scale (1, 2, 3)
  * @returns Object containing scale factor and scaled dimensions
  */
-export const useResponsiveScale = (): ResponsiveScaleResult => {
-  const [scale, setScale] = useState<number>(() => calculateScale())
+export const useResponsiveScale = (
+  scaleMode: ScaleMode = 'auto'
+): ResponsiveScaleResult => {
+  const [scale, setScale] = useState<number>(() => {
+    // If a fixed scale is specified, use it; otherwise calculate responsive scale
+    return scaleMode === 'auto' ? calculateScale() : scaleMode
+  })
 
   useEffect(() => {
+    // If a fixed scale is specified, just use that
+    if (scaleMode !== 'auto') {
+      setScale(scaleMode)
+      return
+    }
+
+    // For auto mode, immediately recalculate and set up responsive scaling
+    setScale(calculateScale())
+
     let timeoutId: number | undefined
 
     const handleResize = (): void => {
@@ -75,7 +91,7 @@ export const useResponsiveScale = (): ResponsiveScaleResult => {
       window.removeEventListener('resize', handleResize)
       window.removeEventListener('orientationchange', handleResize)
     }
-  }, [])
+  }, [scaleMode])
 
   return {
     scale,

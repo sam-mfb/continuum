@@ -4,6 +4,7 @@ import {
   toggleCollisionMode,
   toggleAlignmentMode,
   toggleInGameControls,
+  setScaleMode,
   closeSettings
 } from '../appSlice'
 import { resetHighScores } from '@/core/highscore'
@@ -103,6 +104,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const dispatch = useAppDispatch()
   const collisionMode = useAppSelector(state => state.app.collisionMode)
   const alignmentMode = useAppSelector(state => state.app.alignmentMode)
+  const scaleMode = useAppSelector(state => state.app.scaleMode)
   const showInGameControls = useAppSelector(
     state => state.app.showInGameControls
   )
@@ -114,6 +116,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     null
   )
   const [conflictError, setConflictError] = useState<string | null>(null)
+  const [showScaleDropdown, setShowScaleDropdown] = useState(false)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -148,15 +151,35 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         return
       }
 
+      // Close scale dropdown on Escape
+      if (e.key === 'Escape' && showScaleDropdown) {
+        setShowScaleDropdown(false)
+        return
+      }
+
       // Normal modal behavior
       if (e.key === 'Escape' && showSettings) {
         dispatch(closeSettings())
       }
     }
 
+    const handleClickOutside = (e: MouseEvent): void => {
+      // Close scale dropdown if clicking outside
+      if (showScaleDropdown) {
+        const target = e.target as HTMLElement
+        if (!target.closest('[data-scale-dropdown]')) {
+          setShowScaleDropdown(false)
+        }
+      }
+    }
+
     window.addEventListener('keydown', handleKeyDown)
-    return (): void => window.removeEventListener('keydown', handleKeyDown)
-  }, [dispatch, showSettings, editingControl, bindings])
+    window.addEventListener('mousedown', handleClickOutside)
+    return (): void => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [dispatch, showSettings, editingControl, bindings, showScaleDropdown])
 
   if (!showSettings) return null as React.ReactElement | null
 
@@ -476,6 +499,93 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   {alignmentMode === 'world-fixed'
                     ? 'Original mode - background moves with camera'
                     : 'Modern mode - background fixed against camera'}
+                  )
+                </span>
+              </div>
+            </div>
+
+            {/* Display Scale Section */}
+            <div style={sectionStyle}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: `${5 * scale}px`
+                }}
+              >
+                <span>DISPLAY SCALE:</span>
+                <div
+                  style={{ position: 'relative' }}
+                  data-scale-dropdown="true"
+                >
+                  <button
+                    onClick={() => setShowScaleDropdown(!showScaleDropdown)}
+                    style={{
+                      ...toggleButtonStyle,
+                      minWidth: `${35 * scale}px`
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = '#333'
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = '#000'
+                    }}
+                  >
+                    {scaleMode === 'auto' ? 'AUTO' : `${scaleMode}X`}
+                  </button>
+                  {showScaleDropdown && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: `${100}%`,
+                        left: 0,
+                        background: '#000',
+                        border: `${1 * scale}px solid #fff`,
+                        zIndex: 1000,
+                        minWidth: '100%'
+                      }}
+                    >
+                      {(['auto', 1, 2, 3] as const).map(mode => (
+                        <div
+                          key={mode}
+                          onClick={() => {
+                            dispatch(setScaleMode(mode))
+                            setShowScaleDropdown(false)
+                          }}
+                          style={{
+                            padding: `${2 * scale}px ${4 * scale}px`,
+                            cursor: 'pointer',
+                            fontFamily: 'monospace',
+                            fontSize: `${6 * scale}px`,
+                            textTransform: 'uppercase',
+                            background: scaleMode === mode ? '#333' : '#000',
+                            color: '#fff'
+                          }}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.background = '#555'
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.background =
+                              scaleMode === mode ? '#333' : '#000'
+                          }}
+                        >
+                          {mode === 'auto' ? 'AUTO' : `${mode}X`}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <span
+                  style={{
+                    color: '#666',
+                    fontSize: `${5 * scale}px`,
+                    marginLeft: `${5 * scale}px`
+                  }}
+                >
+                  (
+                  {scaleMode === 'auto'
+                    ? 'Auto-scale based on viewport size'
+                    : `Fixed ${scaleMode}x scale`}
                   )
                 </span>
               </div>
