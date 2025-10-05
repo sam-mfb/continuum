@@ -40,9 +40,11 @@ The game's entire state is managed in Redux. I think Redux is one of those thing
 
 The net result is that the game's state is fully managed by Redux and fully separate from sound, rendering, controls, etc. So you could easily add new graphics and sound to it if you wanted. (And maybe make it work with a game controller?)
 
-OK, actually, this isn't not entirely true -- the one place that state is NOT disentangled for rendering is ship collisions. This is for a pretty cool reason. In the original game, the way it determined if your ship collided with a bullet, bunker, or wall, was by checking at drawing time if a ship's black pixel was being drawn over an existing, non-background, black pixel. In other words, it didn't use collision boxes or proximity checks (other game collisions use proximity checks -- like fuel pickups and bunker deaths), it literally gave you what-you-see-is-what-you-get for ship collisions. If any part of your ship was touching a black pixel -- BOOM (or bounce if it was a bouncy wall). That was both precise and efficient, but it means that ship rendering and ship collisions are inextricably tied together. At least if you keep the original implementation, which we do.
+#### Sidenote - Collision Handling
 
-To full extract collision state from rendering we'd have to do something like separately maintain a collision map in state. To match the original game's behavior that collision state would need to be pixel perfect. That's probably not a big deal on a modern machine, but it means that you are still going to have an implicit tie between the rendering and the collision because your collision map needs to map your image pixels exactly. That's just how it is. If you wanted to decouple it a little, you could have an image/collision format that packages an image and its collision map as one resource. (Historical note, this is basically what Dark Castle does with PPCT and PSCR resources as I understand it - images and collisions maps are stored together.)
+One place the original code had state and rendering deeply intertwined was collision detection. This was for a pretty cool reason. In the original game, the way it determined if your ship collided with a bullet, bunker, or wall, was by checking at drawing time if a ship's black pixel was being drawn over an existing, non-background, black pixel. In other words, it didn't use collision boxes or proximity checks (other game collisions use proximity checks -- like fuel pickups and bunker deaths), it literally gave you what-you-see-is-what-you-get for ship collisions. If any part of your ship was touching a black pixel -- BOOM (or bounce if it was a bouncy wall). That was both precise and efficient, but it means that ship rendering and ship collisions are inextricably tied together. At least if you keep the original implementation.
+
+I initially implemented the game with the same system as the original -- and you can still play it that way by going into settings and toggling the Collision Mode setting to "Original". However, I eventually ended up implement a fully abstracted collision map system that separates rendering from collisions entirely. It still creates pixel accurate collision maps so the behavior should be identical to the original game, but it is a reasonably significant deviation. This is the default setting, but as noted you can switch back to the original. That said, one of the reasons for switching (aside from just being OCD) was because decoupling state from rendering opens up some interesting possibilities for new features, like, new graphics, game recording, validated high-scores, etc. If those get implemented, they may not work with the original collision mode.
 
 ### 2. Rendering
 
@@ -88,7 +90,7 @@ We parse the original galaxy files and resources from the original game. I got t
 
 BTW, at some point _after_ i did this, I learned about (resource_dasm)[https://github.com/fuzziqersoftware/resource_dasm] which is a much friendlier way to get old 68k resources in a modern dev environment. Next time ;)
 
-At some point I should add an interface to let you use arbitrary galaxy files.
+The game also makes available some additional levels that were either distributed by the authors or by others on the internet. the Zephyr levels are particularly interesting as they really were pushing the limits of the physics engine and discovering quirks. On some of the levels it seems like they were relying on bugs to allow you to beat the level -- I hope I've properly "ported" those bugs...
 
 ## Codebase/Compiling
 

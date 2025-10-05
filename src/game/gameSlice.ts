@@ -12,6 +12,7 @@ export type GameState = {
   paused: boolean
   showMap: boolean
   highScoreEligible: boolean // Whether this game is eligible for a highscore
+  killShipNextFrame: boolean
 }
 
 const initialState: GameState = {
@@ -19,7 +20,9 @@ const initialState: GameState = {
   levelComplete: false,
   paused: false,
   showMap: false,
-  highScoreEligible: true
+  highScoreEligible: true,
+  // used so timing of modern collisions is in sync with old style
+  killShipNextFrame: false
 }
 
 export const gameSlice = createSlice({
@@ -65,6 +68,12 @@ export const gameSlice = createSlice({
     },
     allowHighScore: state => {
       state.highScoreEligible = true
+    },
+    killShipNextFrame: state => {
+      state.killShipNextFrame = true
+    },
+    resetKillShipNextFrame: state => {
+      state.killShipNextFrame = false
     }
   }
 })
@@ -80,5 +89,7 @@ export const {
   showMap,
   hideMap,
   invalidateHighScore,
-  allowHighScore
+  allowHighScore,
+  killShipNextFrame,
+  resetKillShipNextFrame
 } = gameSlice.actions

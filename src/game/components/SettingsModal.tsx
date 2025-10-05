@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../store'
 import {
+  toggleCollisionMode,
   toggleAlignmentMode,
   toggleInGameControls,
   closeSettings
@@ -74,6 +75,7 @@ const SpriteIcon: React.FC<{
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
   const dispatch = useAppDispatch()
+  const collisionMode = useAppSelector(state => state.app.collisionMode)
   const alignmentMode = useAppSelector(state => state.app.alignmentMode)
   const showInGameControls = useAppSelector(
     state => state.app.showInGameControls
@@ -373,6 +375,40 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
         {/* Tab Content */}
         {activeTab === 'options' && (
           <>
+            {/* Collision Mode Section */}
+            <div style={sectionStyle}>
+              <div
+                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+              >
+                <span>COLLISION MODE:</span>
+                <button
+                  onClick={() => dispatch(toggleCollisionMode())}
+                  style={toggleButtonStyle}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = '#333'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = '#000'
+                  }}
+                >
+                  {collisionMode === 'modern' ? 'MODERN' : 'ORIGINAL'}
+                </button>
+                <span
+                  style={{
+                    color: '#666',
+                    fontSize: '10px',
+                    marginLeft: '10px'
+                  }}
+                >
+                  (
+                  {collisionMode === 'modern'
+                    ? 'Modern collision detection'
+                    : 'Original render-time collision detection'}
+                  )
+                </span>
+              </div>
+            </div>
+
             {/* Alignment Mode Section */}
             <div style={sectionStyle}>
               <div

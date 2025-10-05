@@ -8,26 +8,25 @@ import VolumeButton from './components/VolumeButton'
 import InGameControlsPanel from './components/InGameControlsPanel'
 import { loadLevel } from './levelThunks'
 import { startGame, setMode } from './appSlice'
-import {
-  setHighScore,
-  type HighScoreTable,
-  getDefaultHighScoreTable
-} from '@/core/highscore'
+import { setHighScore } from '@/core/highscore'
 import { shipSlice } from '@/core/ship'
 import { invalidateHighScore } from './gameSlice'
 import { type SoundService } from '@/core/sound'
 import { type SpriteService } from '@/core/sprites'
 import { useAppDispatch, useAppSelector } from './store'
 import type { GameRenderLoop } from './types'
+import type { CollisionService } from '@/core/collision'
 
 type AppProps = {
   renderer: GameRenderLoop
   soundService: SoundService
   spriteService: SpriteService
+  collisionService: CollisionService
 }
 
 export const App: React.FC<AppProps> = ({
   renderer,
+  collisionService,
   soundService,
   spriteService
 }) => {
@@ -43,9 +42,6 @@ export const App: React.FC<AppProps> = ({
   const highScoreEligible = useAppSelector(
     state => state.game.highScoreEligible
   )
-  const allHighScores = useAppSelector(state => state.highscore)
-  const highScores: HighScoreTable =
-    allHighScores[currentGalaxyId] ?? getDefaultHighScoreTable()
 
   // Render the game content based on mode
   const renderGameContent = (): React.ReactElement | null => {
@@ -82,6 +78,8 @@ export const App: React.FC<AppProps> = ({
           >
             <GameRenderer
               renderer={renderer}
+              collisionService={collisionService}
+              spriteService={spriteService}
               width={512}
               height={342}
               scale={2} // Pixel-doubled
@@ -93,47 +91,36 @@ export const App: React.FC<AppProps> = ({
 
       case 'highScoreEntry':
         if (!mostRecentScore) {
-          // Shouldn't happen, but handle gracefully
-          dispatch(setMode('start'))
+          // Shouldn't happen, but handle gracefully - just show nothing
+          console.warn(
+            "[App] Entered 'highScoreEntry' mode with no mostRecentScore. This should not happen. Rendering nothing."
+          )
           return null
         }
 
-        // Check if score is eligible and qualifies for high score table
-        const lowestScore = Math.min(
-          ...Object.values(highScores).map(
-            (hs: { score: number }) => hs.score || 0
-          )
+        // At this point we know the score qualifies (checked in game loop)
+        return (
+          <HighScoreEntry
+            score={mostRecentScore.score}
+            planet={mostRecentScore.planet}
+            fuel={mostRecentScore.fuel}
+            onSubmit={(name: string) => {
+              dispatch(
+                setHighScore({
+                  galaxyId: currentGalaxyId,
+                  score: {
+                    user: name,
+                    score: mostRecentScore.score,
+                    planet: mostRecentScore.planet,
+                    fuel: mostRecentScore.fuel,
+                    date: new Date().toISOString()
+                  }
+                })
+              )
+              dispatch(setMode('start'))
+            }}
+          />
         )
-
-        if (highScoreEligible && mostRecentScore.score > lowestScore) {
-          // Score qualifies - show name entry
-          return (
-            <HighScoreEntry
-              score={mostRecentScore.score}
-              planet={mostRecentScore.planet}
-              fuel={mostRecentScore.fuel}
-              onSubmit={(name: string) => {
-                dispatch(
-                  setHighScore({
-                    galaxyId: currentGalaxyId,
-                    score: {
-                      user: name,
-                      score: mostRecentScore.score,
-                      planet: mostRecentScore.planet,
-                      fuel: mostRecentScore.fuel,
-                      date: new Date().toISOString()
-                    }
-                  })
-                )
-                dispatch(setMode('start'))
-              }}
-            />
-          )
-        } else {
-          // Score doesn't qualify - go to game over
-          dispatch(setMode('gameOver'))
-          return null
-        }
 
       case 'gameOver':
         return <GameOverScreen onContinue={() => dispatch(setMode('start'))} />

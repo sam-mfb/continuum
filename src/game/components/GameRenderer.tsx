@@ -1,12 +1,21 @@
 import React, { useEffect, useRef } from 'react'
 import type { FrameInfo, KeyInfo, MonochromeBitmap } from '@lib/bitmap'
-import { useAppDispatch, useAppSelector } from '../store'
+import { useAppDispatch, useAppSelector, type RootState } from '../store'
 import { togglePause, showMap, hideMap, pause, unpause } from '../gameSlice'
 import { getControls, type ControlMatrix } from '@core/controls'
 import { Map } from './Map'
+import { bitmapToCollisionItem, type CollisionService } from '@/core/collision'
+import { Collision } from '@/core/collision/constants'
+import { SBARHT } from '@/core/screen'
+import { getDebug } from '../debug'
+import type { SpriteService } from '@/core/sprites'
+import { SCENTER } from '@/core/figs'
+import { useStore } from 'react-redux'
 
 type GameRendererProps = {
   renderer: (frame: FrameInfo, controls: ControlMatrix) => MonochromeBitmap
+  collisionService: CollisionService
+  spriteService: SpriteService
   width: number
   height: number
   scale: number
@@ -19,6 +28,8 @@ type GameRendererProps = {
  */
 const GameRenderer: React.FC<GameRendererProps> = ({
   renderer,
+  collisionService,
+  spriteService,
   width,
   height,
   scale,
@@ -36,6 +47,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
   const paused = useAppSelector(state => state.game.paused)
   const showMapState = useAppSelector(state => state.game.showMap)
   const bindings = useAppSelector(state => state.controls.bindings)
+  const store = useStore()
   const dispatch = useAppDispatch()
 
   useEffect(() => {
@@ -137,6 +149,8 @@ const GameRenderer: React.FC<GameRendererProps> = ({
           // Render game and get the resulting bitmap
           const renderedBitmap = renderer(frameInfo, controls)
 
+          const collisionMap = collisionService.getMap()
+
           // Create offscreen canvas for pixel-perfect scaling
           const offscreen = document.createElement('canvas')
           offscreen.width = renderedBitmap.width
@@ -160,10 +174,80 @@ const GameRenderer: React.FC<GameRendererProps> = ({
               const pixelIndex = (y * renderedBitmap.width + x) * 4
               const value = isSet ? 0 : 255 // Black on white
 
+              // Set base pixel color
               pixels[pixelIndex] = value // R
               pixels[pixelIndex + 1] = value // G
               pixels[pixelIndex + 2] = value // B
               pixels[pixelIndex + 3] = 255 // A
+            }
+          }
+
+          if (getDebug()?.SHOW_COLLISION_MAP) {
+            const ship = (store.getState() as RootState).ship
+            // Get ship collision item
+            const shipBitmap = spriteService.getShipSprite(ship.shiprot, {
+              variant: 'mask'
+            }).bitmap
+            const shipItem = bitmapToCollisionItem(
+              shipBitmap,
+              Collision.NONE,
+              ship.shipx - SCENTER,
+              ship.shipy - SCENTER
+            )
+
+            // Overlay collision map colors
+            for (let y = 0; y < renderedBitmap.height; y++) {
+              for (let x = 0; x < renderedBitmap.width; x++) {
+                const pixelIndex = (y * renderedBitmap.width + x) * 4
+
+                // Check if there's a collision at this point
+                // NB: collision map doesn't include status bar
+                const collision = collisionMap[x]?.[y - SBARHT] ?? 0
+
+                if (collision === Collision.LETHAL) {
+                  // Blend red transparently on top
+                  const alpha = 0.5 // 50% transparency
+                  pixels[pixelIndex] = Math.round(
+                    pixels[pixelIndex]! * (1 - alpha) + 255 * alpha
+                  ) // R
+                  pixels[pixelIndex + 1] = Math.round(
+                    pixels[pixelIndex + 1]! * (1 - alpha) + 0 * alpha
+                  ) // G
+                  pixels[pixelIndex + 2] = Math.round(
+                    pixels[pixelIndex + 2]! * (1 - alpha) + 0 * alpha
+                  ) // B
+                } else if (collision === Collision.BOUNCE) {
+                  // Blend green transparently on top
+                  const alpha = 0.5 // 50% transparency
+                  pixels[pixelIndex] = Math.round(
+                    pixels[pixelIndex]! * (1 - alpha) + 0 * alpha
+                  ) // R
+                  pixels[pixelIndex + 1] = Math.round(
+                    pixels[pixelIndex + 1]! * (1 - alpha) + 255 * alpha
+                  ) // G
+                  pixels[pixelIndex + 2] = Math.round(
+                    pixels[pixelIndex + 2]! * (1 - alpha) + 0 * alpha
+                  ) // B
+                }
+
+                // Check if this pixel is part of the ship collision mask
+                const isShipPixel = shipItem.some(
+                  point => point.x === x && point.y === y - SBARHT
+                )
+                if (isShipPixel) {
+                  // Blend blue transparently on top
+                  const alpha = 0.5 // 50% transparency
+                  pixels[pixelIndex] = Math.round(
+                    pixels[pixelIndex]! * (1 - alpha) + 0 * alpha
+                  ) // R
+                  pixels[pixelIndex + 1] = Math.round(
+                    pixels[pixelIndex + 1]! * (1 - alpha) + 0 * alpha
+                  ) // G
+                  pixels[pixelIndex + 2] = Math.round(
+                    pixels[pixelIndex + 2]! * (1 - alpha) + 255 * alpha
+                  ) // B
+                }
+              }
             }
           }
 
@@ -211,7 +295,10 @@ const GameRenderer: React.FC<GameRendererProps> = ({
     bindings,
     paused,
     showMapState,
-    dispatch
+    dispatch,
+    collisionService,
+    spriteService,
+    store
   ])
 
   return (

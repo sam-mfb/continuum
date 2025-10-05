@@ -14,7 +14,10 @@ const LEGACY_HIGHSCORE_STORAGE_KEY = 'continuum_highscores'
  * Middleware to handle high score persistence to localStorage
  * Saves high scores whenever they are updated
  */
-export const highscoreMiddleware: Middleware = store => next => action => {
+export const highscoreMiddleware: Middleware<
+  {},
+  { highscore: HighScoreState }
+> = store => next => action => {
   // Let the action pass through first
   const result = next(action)
 

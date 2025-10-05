@@ -20,7 +20,11 @@ import { SoundTest } from './components/SoundTest'
 import { testGameLoop } from './demos/testGame'
 import { shipMoveGameLoop } from './demos/shipMove'
 import { bitmapTestRenderer } from './demos/bitmapTest'
-import { wallDrawingRenderer } from './demos/wallDrawing'
+import {
+  wallDrawingRenderer,
+  collisionService,
+  viewportState
+} from './demos/wallDrawing'
 import { planet3DrawingRenderer } from './demos/planet3Drawing'
 import { junctionDrawRenderer } from './demos/junctionDraw'
 import { createShipMoveBitmapRenderer } from './demos/shipMoveBitmap'
@@ -146,7 +150,12 @@ function App({ spriteService }: AppProps): React.JSX.Element {
                 {
                   type: 'bitmap',
                   name: 'Wall Drawing',
-                  bitmapRenderer: wallDrawingRenderer
+                  bitmapRenderer: wallDrawingRenderer,
+                  collisionService: {
+                    getMap: () => collisionService.getMap(),
+                    viewportOffset: viewportState,
+                    statusBarHeight: 24
+                  }
                 } as BitmapGameDefinition,
                 {
                   type: 'bitmap',

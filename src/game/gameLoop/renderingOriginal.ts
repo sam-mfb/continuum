@@ -7,7 +7,7 @@
 
 import type { MonochromeBitmap } from '@lib/bitmap'
 import type { SpriteService } from '@core/sprites'
-import type { RootState } from '../store'
+import type { RootState, GameStore } from '../store'
 import type { BunkerKind, ShardSprite, ShardSpriteSet } from '@core/figs'
 import type { FizzTransitionService } from '@core/transition'
 
@@ -18,6 +18,7 @@ import {
   eraseFigure,
   shiftFigure
 } from '@core/ship/render'
+import { checkForBounce, checkFigure } from '@core/ship'
 import { SCENTER } from '@core/figs'
 import { drawShipShot, drawStrafe, drawDotSafe } from '@core/shots/render'
 import { doBunks, drawCraters, drawFuels } from '@core/planet/render'
@@ -28,21 +29,28 @@ import { viewClear, viewWhite } from '@core/screen/render'
 import { whiteTerrain, blackTerrain } from '@core/walls/render'
 import { LINE_KIND } from '@core/walls'
 import { getAlignment, getBackgroundPattern } from '@core/shared'
+import { triggerShipDeath } from '../shipDeath'
 import { FIZZ_DURATION } from '@core/transition'
 import { starBackground } from '@core/transition/render'
 
-export type RenderContext = {
+export type RenderOriginalContext = {
   bitmap: MonochromeBitmap
   state: RootState
   spriteService: SpriteService
+  // we currently have a dependency on the store at the rendering phase because collision detections are
+  // handled through rendering (checkFigure(), specifically). that means handling ship deaths and ship
+  // bounces currently have to take place in the rendering stage
+  store: GameStore
   fizzTransitionService: FizzTransitionService
 }
 
 /**
  * Main rendering function - matches exact order from main branch gameLoop.ts
  */
-export const renderGame = (context: RenderContext): MonochromeBitmap => {
-  let { bitmap, state, spriteService, fizzTransitionService } = context
+export const renderGameOriginal = (
+  context: RenderOriginalContext
+): MonochromeBitmap => {
+  let { bitmap, state, spriteService, store, fizzTransitionService } = context
 
   // Helper to add status bar to bitmap - used for fizz/starmap phases
   const addStatusBar = (bmp: MonochromeBitmap): MonochromeBitmap => {
@@ -261,14 +269,30 @@ export const renderGame = (context: RenderContext): MonochromeBitmap => {
     })(renderedBitmap)
   }
 
-  // 9. Draw bounce lines
-  renderedBitmap = blackTerrain({
-    thekind: LINE_KIND.BOUNCE,
-    kindPointers: state.walls.kindPointers,
-    organizedWalls: state.walls.organizedWalls,
-    viewport: viewport,
-    worldwidth: state.planet.worldwidth
-  })(renderedBitmap)
+  // 9. check_for_bounce OR black_terrain(L_BOUNCE)
+  if (state.ship.deadCount === 0) {
+    // Only check collision when alive
+    renderedBitmap = checkForBounce({
+      screen: renderedBitmap,
+      store,
+      shipDef: shipMaskBitmap,
+      wallData: {
+        kindPointers: state.walls.kindPointers,
+        organizedWalls: state.walls.organizedWalls
+      },
+      viewport: viewport,
+      worldwidth: state.planet.worldwidth
+    })
+  } else {
+    // When dead, just draw bounce walls without collision check
+    renderedBitmap = blackTerrain({
+      thekind: LINE_KIND.BOUNCE,
+      kindPointers: state.walls.kindPointers,
+      organizedWalls: state.walls.organizedWalls,
+      viewport: viewport,
+      worldwidth: state.planet.worldwidth
+    })(renderedBitmap)
+  }
 
   // 10. black_terrain(L_NORMAL) - normal walls
   renderedBitmap = blackTerrain({
@@ -369,6 +393,22 @@ export const renderGame = (context: RenderContext): MonochromeBitmap => {
           }
         }
       }
+    }
+  }
+
+  // 13. Check for collision after drawing all lethal objects
+  if (state.ship.deadCount === 0) {
+    const collision = checkFigure(renderedBitmap, {
+      x: state.ship.shipx - SCENTER,
+      y: state.ship.shipy - SCENTER,
+      height: 32,
+      def: shipMaskBitmap
+    })
+
+    if (collision) {
+      triggerShipDeath(store)
+      // Don't return - continue rendering the ship this frame
+      // The death will take effect next frame
     }
   }
 

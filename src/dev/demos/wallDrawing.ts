@@ -15,9 +15,13 @@ import { buildGameStore } from '@dev/store'
 import { LINE_KIND, NEW_TYPE } from '@core/walls'
 import { createWall } from '@core/walls'
 import { viewClear } from '@core/screen/render'
+import { createCollisionService, Collision } from '@core/collision'
 
 // Create store instance
 const store = buildGameStore()
+
+// Create collision service instance (exported for console inspection)
+export const collisionService = createCollisionService()
 
 // Define a world larger than the viewport
 const WORLD_WIDTH = 1024
@@ -49,8 +53,26 @@ const sampleLines: LineRec[] = [
 // Initialize walls on module load
 store.dispatch(wallsActions.initWalls({ walls: sampleLines }))
 
-// Viewport state
-const viewportState = {
+// Initialize collision service and build collision map
+collisionService.initialize({ width: WORLD_WIDTH, height: WORLD_HEIGHT })
+
+// Build collision map from walls
+sampleLines.forEach(line => {
+  const startX = line.startx
+  const startY = line.starty
+  const endX = line.endx
+  const endY = line.endy
+
+  collisionService.addLine({
+    startPoint: { x: startX, y: startY, collision: Collision.LETHAL },
+    endPoint: { x: endX, y: endY, collision: Collision.LETHAL },
+    collision: Collision.LETHAL,
+    width: 2
+  })
+})
+
+// Viewport state (exported for collision overlay)
+export const viewportState = {
   x: 0,
   y: 0
 }
@@ -127,4 +149,5 @@ export const wallDrawingRenderer: BitmapRenderer = (
   // - White undersides/shadows (from whiteTerrain)
   // - Junction hashes if any walls intersect
   // - NNE wall white undersides
+  // - Collision map overlay is handled in the component layer
 }

@@ -10,7 +10,7 @@ import type { GameStore, RootState } from '../store'
 import type { MonochromeBitmap, FrameInfo } from '@lib/bitmap'
 import type { FizzTransitionService } from '@core/transition'
 
-import { shipSlice, shipControl, CRITFUEL } from '@core/ship'
+import { shipSlice, shipControl, CRITFUEL, handleBounceState } from '@core/ship'
 import {
   shotsSlice,
   doStrafes,
@@ -48,7 +48,9 @@ import {
   markLevelComplete,
   triggerGameOver,
   resetGame,
-  invalidateHighScore
+  invalidateHighScore,
+  killShipNextFrame,
+  resetKillShipNextFrame
 } from '../gameSlice'
 import { setMode, setMostRecentScore } from '../appSlice'
 import { TOTAL_INITIAL_LIVES } from '../constants'
@@ -56,6 +58,9 @@ import { triggerShipDeath } from '../shipDeath'
 
 import { BunkerKind } from '@core/figs'
 import type { ControlMatrix } from '@/core/controls'
+import { createCollisionMap } from './createCollisionMapThunk'
+import { checkCollisions } from './checkCollisionsThunk'
+import { Collision } from '@/core/collision'
 
 export type StateUpdateContext = {
   store: GameStore
@@ -127,6 +132,8 @@ export const updateGameState = (context: StateUpdateContext): void => {
   // Handle ship movement and controls
   const { globalx, globaly } = handleShipMovement(store, controls)
 
+  store.dispatch(resetKillShipNextFrame())
+
   // Update bunker rotations for animated bunkers
   store.dispatch(updateBunkerRotations({ globalx, globaly }))
 
@@ -187,6 +194,27 @@ export const updateGameState = (context: StateUpdateContext): void => {
       gravityPoints: finalState.planet.gravityPoints
     })
   )
+
+  if (finalState.app.collisionMode === 'modern') {
+    if (state.ship.deadCount === 0) {
+      store.dispatch(createCollisionMap())
+      const resultAction = store.dispatch(checkCollisions())
+      const collision = resultAction.meta.result
+      if (collision === Collision.LETHAL) {
+        store.dispatch(killShipNextFrame())
+      } else {
+        handleBounceState({
+          store,
+          wallData: {
+            kindPointers: state.walls.kindPointers,
+            organizedWalls: state.walls.organizedWalls
+          },
+          worldwidth: state.planet.worldwidth,
+          collision
+        })
+      }
+    }
+  }
 }
 
 /**
@@ -324,8 +352,23 @@ const handleGameOver = (store: GameStore): void => {
     })
   )
 
-  // Always go to highScoreEntry mode - it will decide what to do
-  store.dispatch(setMode('highScoreEntry'))
+  // Determine which mode to go to based on high score eligibility
+  const highScoreEligible = state.game.highScoreEligible
+  const currentGalaxyId = state.app.currentGalaxyId
+  const allHighScores = state.highscore
+  const highScores = allHighScores[currentGalaxyId]
+  const lowestScore = highScores
+    ? Math.min(...Object.values(highScores).map(hs => hs?.score || 0))
+    : 0
+  const recentScore = state.status.score
+
+  if (highScoreEligible && recentScore > lowestScore) {
+    // Score qualifies for high score entry
+    store.dispatch(setMode('highScoreEntry'))
+  } else {
+    // Go directly to game over
+    store.dispatch(setMode('gameOver'))
+  }
 
   // Reset everything for a new game
   store.dispatch(resetGame())
@@ -345,8 +388,8 @@ const handleShipMovement = (
   const state = store.getState()
 
   if (state.ship.deadCount === 0) {
-    // Check for self-destruct command
-    if (controls.selfDestruct) {
+    // Check for self-destruct command or death on previous frame
+    if (controls.selfDestruct || state.game.killShipNextFrame) {
       triggerShipDeath(store)
       return {
         globalx: state.ship.globalx,
@@ -359,9 +402,7 @@ const handleShipMovement = (
       state.transition.status === 'inactive' ||
       state.transition.status === 'level-complete'
     ) {
-      // shipControl is a thunk - use any cast for dispatch
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ;(store.dispatch as any)(
+      store.dispatch(
         shipControl({
           controlsPressed: controls
         })

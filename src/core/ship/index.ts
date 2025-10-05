@@ -15,3 +15,4 @@ export { shipControl } from './shipControl'
 
 // Physics
 export { checkForBounce } from './physics/checkForBounce'
+export { handleBounceState } from './physics/handleBounceState'

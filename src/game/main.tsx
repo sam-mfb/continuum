@@ -21,9 +21,14 @@ import {
   TOTAL_INITIAL_LIVES
 } from './constants'
 import { getDefaultGalaxy } from './galaxyConfig'
+import { createCollisionService } from '@/core/collision'
+import { SCRWTH, VIEWHT } from '@/core/screen'
+//import { enableDebugOption } from './debug'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 const root = createRoot(app)
+
+//enableDebugOption({ SHOW_COLLISION_MAP: true })
 
 try {
   // Initialize services
@@ -48,13 +53,18 @@ try {
   })
   console.log('Sound service created')
 
+  const collisionService = createCollisionService()
+  collisionService.initialize({ width: SCRWTH, height: VIEWHT })
+  console.log('Collision service created')
+
   // Create store with services and initial settings
   const store = createGameStore(
     {
       galaxyService,
       spriteService,
       fizzTransitionService,
-      soundService
+      soundService,
+      collisionService
     },
     {
       soundVolume: DEFAULT_SOUND_VOLUME,
@@ -94,6 +104,7 @@ try {
     <Provider store={store}>
       <App
         renderer={renderer}
+        collisionService={collisionService}
         soundService={soundService}
         spriteService={spriteService}
       />

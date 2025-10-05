@@ -14,6 +14,7 @@ import type { GameStore } from '../store'
 import { updateGameState } from './stateUpdates'
 import { renderGame } from './rendering'
 import type { GameRenderLoop } from '../types'
+import { renderGameOriginal } from './renderingOriginal'
 
 export const createGameRenderer = (
   store: GameStore,
@@ -26,7 +27,6 @@ export const createGameRenderer = (
     let bitmap = createGameBitmap()
 
     // This handles all game logic, physics, and state changes
-    // except for ship collisions which use rendering to detect
     updateGameState({
       store,
       frame,
@@ -40,14 +40,26 @@ export const createGameRenderer = (
     const state = store.getState()
 
     // This draws all visual elements based on the updated state
-    // It also handles ship collisions so it does modify state
-    bitmap = renderGame({
-      bitmap,
-      state,
-      spriteService,
-      store,
-      fizzTransitionService
-    })
+    // The new implementation only handles rendering. Collisions are
+    // handled via a collision map service in state. The original game
+    // handled collisions via the render system and that is preserved
+    // here for authenticity
+    if (state.app.collisionMode === 'original') {
+      bitmap = renderGameOriginal({
+        bitmap,
+        state,
+        spriteService,
+        store,
+        fizzTransitionService
+      })
+    } else {
+      bitmap = renderGame({
+        bitmap,
+        state,
+        spriteService,
+        fizzTransitionService
+      })
+    }
 
     // Return the final rendered bitmap
     return bitmap
