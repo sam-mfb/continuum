@@ -151,11 +151,13 @@ const StartScreen: React.FC<StartScreenProps> = ({ scale, onStartGame }) => {
     const score = highScores[slot as keyof HighScoreTable]
 
     // Original positions at 1x scale: y=169, spacing=15
-    // At 2x: y=(169*2)-26=312, spacing=30
+    // There's a -13px offset at 1x scale (becomes -26px at 2x)
     // Dynamic: use scale factor
     const baseY = 169
     const baseSpacing = 15
-    const yPos = baseY * scale - 26 + index * baseSpacing * scale
+    const baseOffset = 13
+    const yPos =
+      baseY * scale - baseOffset * scale + index * baseSpacing * scale
 
     // Original positions at 1x scale: name=220, level=382, score=446
     // At 2x: name=440, level=764, score=892
