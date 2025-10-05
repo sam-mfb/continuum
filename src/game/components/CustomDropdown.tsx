@@ -27,6 +27,7 @@ export const CustomDropdown = <T extends string | number = string | number>({
   maxVisibleItems = 8
 }: CustomDropdownProps<T>): React.ReactElement => {
   const [showDropdown, setShowDropdown] = useState(false)
+  const [openUpward, setOpenUpward] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const dropdownContainerRef = useRef<HTMLDivElement>(null)
 
@@ -59,6 +60,26 @@ export const CustomDropdown = <T extends string | number = string | number>({
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [showDropdown, dataAttribute])
+
+  // Calculate whether to open upward or downward based on available space
+  useEffect(() => {
+    if (showDropdown && dropdownRef.current) {
+      const buttonRect = dropdownRef.current.getBoundingClientRect()
+      const spaceBelow = window.innerHeight - buttonRect.bottom
+      const spaceAbove = buttonRect.top
+
+      // Calculate max height based on item height and max visible items
+      const itemHeight = fontSize + 4 * scale
+      const calculatedMaxHeight = itemHeight * maxVisibleItems
+
+      // Open upward if not enough space below and more space above
+      if (spaceBelow < calculatedMaxHeight && spaceAbove > spaceBelow) {
+        setOpenUpward(true)
+      } else {
+        setOpenUpward(false)
+      }
+    }
+  }, [showDropdown, fontSize, scale, maxVisibleItems])
 
   // Auto-scroll to selected item when dropdown opens
   useEffect(() => {
@@ -96,7 +117,7 @@ export const CustomDropdown = <T extends string | number = string | number>({
 
   const dropdownContainerStyle: React.CSSProperties = {
     position: 'absolute',
-    top: '100%',
+    ...(openUpward ? { bottom: '100%' } : { top: '100%' }),
     left: 0,
     background: '#000',
     border: `${1 * scale}px solid #fff`,
