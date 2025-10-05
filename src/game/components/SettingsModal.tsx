@@ -14,6 +14,8 @@ import { type SpriteService } from '@/core/sprites'
 import { BunkerKind } from '@/core/figs'
 import { formatKey } from '../utils/formatKey'
 import VolumeControls from './VolumeControls'
+import { CustomDropdown, type DropdownOption } from './CustomDropdown'
+import type { ScaleMode } from '../appSlice'
 
 type Tab = 'options' | 'controls' | 'tips' | 'scoring' | 'about'
 
@@ -116,7 +118,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     null
   )
   const [conflictError, setConflictError] = useState<string | null>(null)
-  const [showScaleDropdown, setShowScaleDropdown] = useState(false)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -151,35 +152,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         return
       }
 
-      // Close scale dropdown on Escape
-      if (e.key === 'Escape' && showScaleDropdown) {
-        setShowScaleDropdown(false)
-        return
-      }
-
       // Normal modal behavior
       if (e.key === 'Escape' && showSettings) {
         dispatch(closeSettings())
       }
     }
 
-    const handleClickOutside = (e: MouseEvent): void => {
-      // Close scale dropdown if clicking outside
-      if (showScaleDropdown) {
-        const target = e.target as HTMLElement
-        if (!target.closest('[data-scale-dropdown]')) {
-          setShowScaleDropdown(false)
-        }
-      }
-    }
-
     window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('mousedown', handleClickOutside)
     return (): void => {
       window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [dispatch, showSettings, editingControl, bindings, showScaleDropdown])
+  }, [dispatch, showSettings, editingControl, bindings])
 
   if (!showSettings) return null as React.ReactElement | null
 
@@ -514,67 +497,21 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 }}
               >
                 <span>DISPLAY SCALE:</span>
-                <div
-                  style={{ position: 'relative' }}
-                  data-scale-dropdown="true"
-                >
-                  <button
-                    onClick={() => setShowScaleDropdown(!showScaleDropdown)}
-                    style={{
-                      ...toggleButtonStyle,
-                      minWidth: `${35 * scale}px`
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.background = '#333'
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.background = '#000'
-                    }}
-                  >
-                    {scaleMode === 'auto' ? 'AUTO' : `${scaleMode}X`}
-                  </button>
-                  {showScaleDropdown && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: `${100}%`,
-                        left: 0,
-                        background: '#000',
-                        border: `${1 * scale}px solid #fff`,
-                        zIndex: 1000,
-                        minWidth: '100%'
-                      }}
-                    >
-                      {(['auto', 1, 2, 3] as const).map(mode => (
-                        <div
-                          key={mode}
-                          onClick={() => {
-                            dispatch(setScaleMode(mode))
-                            setShowScaleDropdown(false)
-                          }}
-                          style={{
-                            padding: `${2 * scale}px ${4 * scale}px`,
-                            cursor: 'pointer',
-                            fontFamily: 'monospace',
-                            fontSize: `${6 * scale}px`,
-                            textTransform: 'uppercase',
-                            background: scaleMode === mode ? '#333' : '#000',
-                            color: '#fff'
-                          }}
-                          onMouseEnter={e => {
-                            e.currentTarget.style.background = '#555'
-                          }}
-                          onMouseLeave={e => {
-                            e.currentTarget.style.background =
-                              scaleMode === mode ? '#333' : '#000'
-                          }}
-                        >
-                          {mode === 'auto' ? 'AUTO' : `${mode}X`}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <CustomDropdown<ScaleMode>
+                  value={scaleMode}
+                  options={
+                    [
+                      { value: 'auto', label: 'AUTO' },
+                      { value: 1, label: '1X' },
+                      { value: 2, label: '2X' },
+                      { value: 3, label: '3X' }
+                    ] as DropdownOption<ScaleMode>[]
+                  }
+                  onChange={mode => dispatch(setScaleMode(mode))}
+                  scale={scale}
+                  minWidth={35}
+                  dataAttribute="scale-dropdown"
+                />
                 <span
                   style={{
                     color: '#666',

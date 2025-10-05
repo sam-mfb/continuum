@@ -11,6 +11,7 @@ import type { MonochromeBitmap } from '@lib/bitmap/types'
 import type { SpriteService } from '@core/sprites'
 import type { ThunkDispatch } from '@reduxjs/toolkit'
 import type { AnyAction } from 'redux'
+import { CustomDropdown } from './CustomDropdown'
 
 type StartScreenProps = {
   scale: number
@@ -337,27 +338,19 @@ const StartScreen: React.FC<StartScreenProps> = ({ scale, onStartGame }) => {
           <label style={{ color: 'white', fontSize: `${7 * scale}px` }}>
             Galaxy:
           </label>
-          <select
+          <CustomDropdown
             value={selectedGalaxyId}
-            onChange={e => {
-              void handleGalaxyChange(e.target.value)
+            options={GALAXIES.map(galaxy => ({
+              value: galaxy.id,
+              label: galaxy.name
+            }))}
+            onChange={galaxyId => {
+              void handleGalaxyChange(String(galaxyId))
             }}
-            style={{
-              padding: `${2 * scale}px ${4 * scale}px`,
-              fontFamily: 'monospace',
-              fontSize: `${7 * scale}px`,
-              backgroundColor: 'black',
-              color: 'white',
-              border: '1px solid white',
-              cursor: 'pointer'
-            }}
-          >
-            {GALAXIES.map(galaxy => (
-              <option key={galaxy.id} value={galaxy.id}>
-                {galaxy.name}
-              </option>
-            ))}
-          </select>
+            scale={scale}
+            fontSize={7 * scale}
+            dataAttribute="galaxy-dropdown"
+          />
         </div>
 
         <div
@@ -370,33 +363,25 @@ const StartScreen: React.FC<StartScreenProps> = ({ scale, onStartGame }) => {
           <label style={{ color: 'white', fontSize: `${7 * scale}px` }}>
             Start at Level:
           </label>
-          <select
+          <CustomDropdown
             value={selectedLevel}
-            onChange={e => {
-              const level = parseInt(e.target.value)
-              setSelectedLevel(level)
-              if (level > 1) {
+            options={Array.from({ length: totalLevels }, (_, i) => ({
+              value: i + 1,
+              label: String(i + 1)
+            }))}
+            onChange={level => {
+              const lvl = Number(level)
+              setSelectedLevel(lvl)
+              if (lvl > 1) {
                 dispatch(invalidateHighScore())
               } else {
                 dispatch(allowHighScore())
               }
             }}
-            style={{
-              padding: `${2 * scale}px ${4 * scale}px`,
-              fontFamily: 'monospace',
-              fontSize: `${7 * scale}px`,
-              backgroundColor: 'black',
-              color: 'white',
-              border: '1px solid white',
-              cursor: 'pointer'
-            }}
-          >
-            {Array.from({ length: totalLevels }, (_, i) => i + 1).map(level => (
-              <option key={level} value={level}>
-                {level}
-              </option>
-            ))}
-          </select>
+            scale={scale}
+            fontSize={7 * scale}
+            dataAttribute="level-dropdown"
+          />
         </div>
 
         <button
