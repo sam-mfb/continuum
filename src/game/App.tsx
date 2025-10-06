@@ -65,8 +65,31 @@ export const App: React.FC<AppProps> = ({
         return
       }
 
+      // Don't show on mobile devices where window resizing isn't possible
+      const isTouchDevice =
+        'ontouchstart' in window || navigator.maxTouchPoints > 0
+      const isSmallScreen =
+        window.screen.width < 768 || window.screen.height < 768
+      const isMobile = isTouchDevice && isSmallScreen
+
+      if (isMobile) {
+        setShowResizeHint(false)
+        return
+      }
+
       const availableWidth = window.innerWidth - VIEWPORT_PADDING * 2
       const availableHeight = window.innerHeight - VIEWPORT_PADDING * 2
+
+      // Don't show if there isn't enough vertical space below the game for the hint
+      // Calculate space below the game canvas
+      const spaceBelow = availableHeight - dimensions.totalHeight
+      // The hint needs about 120px of clearance (bottom: 20px + sufficient space for hint with padding/text)
+      const hasVerticalSpace = spaceBelow >= 120
+
+      if (!hasVerticalSpace) {
+        setShowResizeHint(false)
+        return
+      }
 
       // 25% of the way from 1x to 2x
       const widthThreshold = BASE_GAME_WIDTH * 1.25
@@ -90,7 +113,7 @@ export const App: React.FC<AppProps> = ({
       window.removeEventListener('resize', checkResizeHint)
       window.removeEventListener('orientationchange', checkResizeHint)
     }
-  }, [scaleMode, scale])
+  }, [scaleMode, scale, dimensions.totalHeight])
 
   // Render the game content based on mode
   const renderGameContent = (): React.ReactElement | null => {
