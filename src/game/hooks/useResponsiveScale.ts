@@ -7,7 +7,7 @@ import {
 import type { ScaleMode } from '../appSlice'
 
 // Padding around the game in pixels
-const VIEWPORT_PADDING = 16
+const VIEWPORT_PADDING = 0
 
 type ResponsiveScaleResult = {
   scale: number

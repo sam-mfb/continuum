@@ -54,7 +54,7 @@ export const App: React.FC<AppProps> = ({
   const [showResizeHint, setShowResizeHint] = useState(false)
 
   // Viewport padding from useResponsiveScale hook
-  const VIEWPORT_PADDING = 16
+  const VIEWPORT_PADDING = 0
 
   // Check if user has expanded window 15% toward 2x scale
   useEffect(() => {
@@ -205,7 +205,6 @@ export const App: React.FC<AppProps> = ({
       >
         <div
           style={{
-            padding: '8px',
             background: 'black'
           }}
         >
