@@ -80,7 +80,7 @@ export const TouchJoystick: React.FC<TouchJoystickProps> = ({
     })
 
     // Cleanup
-    return () => {
+    return (): void => {
       manager.destroy()
       managerRef.current = null
     }

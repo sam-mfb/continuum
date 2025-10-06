@@ -17,25 +17,25 @@ export const TouchButtons: React.FC<TouchButtonsProps> = ({
   const [firePressed, setFirePressed] = React.useState(false)
   const [shieldPressed, setShieldPressed] = React.useState(false)
 
-  const handleFireStart = (e: React.TouchEvent | React.MouseEvent) => {
+  const handleFireStart = (e: React.TouchEvent | React.MouseEvent): void => {
     e.preventDefault()
     setFirePressed(true)
     onControlsChange({ fire: true, shield: shieldPressed })
   }
 
-  const handleFireEnd = (e: React.TouchEvent | React.MouseEvent) => {
+  const handleFireEnd = (e: React.TouchEvent | React.MouseEvent): void => {
     e.preventDefault()
     setFirePressed(false)
     onControlsChange({ fire: false, shield: shieldPressed })
   }
 
-  const handleShieldStart = (e: React.TouchEvent | React.MouseEvent) => {
+  const handleShieldStart = (e: React.TouchEvent | React.MouseEvent): void => {
     e.preventDefault()
     setShieldPressed(true)
     onControlsChange({ fire: firePressed, shield: true })
   }
 
-  const handleShieldEnd = (e: React.TouchEvent | React.MouseEvent) => {
+  const handleShieldEnd = (e: React.TouchEvent | React.MouseEvent): void => {
     e.preventDefault()
     setShieldPressed(false)
     onControlsChange({ fire: firePressed, shield: false })
