@@ -245,8 +245,8 @@ export const App: React.FC<AppProps> = ({
               pointerEvents: 'none'
             }}
           >
-            Expand your window to make the game bigger or press the fullscreen
-            button
+            Increase your window size or press the fullscreen button ⛶ to make
+            the game bigger
           </div>
         )}
       </div>
