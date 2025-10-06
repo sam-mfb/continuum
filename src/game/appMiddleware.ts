@@ -9,10 +9,12 @@ import {
   setAlignmentMode,
   toggleAlignmentMode,
   toggleInGameControls,
+  setScaleMode,
   setVolume,
   enableSound,
   disableSound,
-  type CollisionMode
+  type CollisionMode,
+  type ScaleMode
 } from './appSlice'
 import type { AlignmentMode } from '@/core/shared'
 import type { RootState } from './store'
@@ -23,6 +25,7 @@ export type PersistedAppSettings = {
   collisionMode: CollisionMode
   alignmentMode: AlignmentMode
   showInGameControls: boolean
+  scaleMode: ScaleMode
   volume: number
   soundOn: boolean
 }
@@ -42,6 +45,7 @@ export const appMiddleware: Middleware<{}, RootState> =
       setAlignmentMode.match(action) ||
       toggleAlignmentMode.match(action) ||
       toggleInGameControls.match(action) ||
+      setScaleMode.match(action) ||
       setVolume.match(action) ||
       enableSound.match(action) ||
       disableSound.match(action)
@@ -52,6 +56,7 @@ export const appMiddleware: Middleware<{}, RootState> =
           collisionMode: state.app.collisionMode,
           alignmentMode: state.app.alignmentMode,
           showInGameControls: state.app.showInGameControls,
+          scaleMode: state.app.scaleMode,
           volume: state.app.volume,
           soundOn: state.app.soundOn
         }
@@ -80,6 +85,7 @@ export const loadAppSettings = (): Partial<PersistedAppSettings> => {
         collisionMode: parsed.collisionMode,
         alignmentMode: parsed.alignmentMode,
         showInGameControls: parsed.showInGameControls,
+        scaleMode: parsed.scaleMode,
         volume: parsed.volume,
         soundOn: parsed.soundOn
       }

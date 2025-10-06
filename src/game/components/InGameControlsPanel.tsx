@@ -3,24 +3,28 @@ import { useAppDispatch, useAppSelector } from '../store'
 import { toggleInGameControls } from '../appSlice'
 import { formatKey } from '../utils/formatKey'
 
-const InGameControlsPanel: React.FC = () => {
+type InGameControlsPanelProps = {
+  scale: number
+}
+
+const InGameControlsPanel: React.FC<InGameControlsPanelProps> = ({ scale }) => {
   const dispatch = useAppDispatch()
   const bindings = useAppSelector(state => state.controls.bindings)
 
   const panelStyle: React.CSSProperties = {
     position: 'absolute',
-    bottom: '4px',
+    bottom: `${4 * scale}px`,
     left: '50%',
     transform: 'translateX(-50%)',
     background: 'rgba(0, 0, 0, 0.4)',
-    border: '1px solid rgba(255, 255, 255, 0.3)',
-    borderRadius: '4px',
-    padding: '8px 16px',
+    border: `${1 * scale}px solid rgba(255, 255, 255, 0.3)`,
+    borderRadius: `${4 * scale}px`,
+    padding: `${8 * scale}px ${16 * scale}px`,
     display: 'flex',
     flexDirection: 'column',
-    gap: '6px',
+    gap: `${6 * scale}px`,
     fontFamily: 'monospace',
-    fontSize: '11px',
+    fontSize: `${11 * scale}px`,
     color: 'rgba(255, 255, 255, 0.9)',
     backdropFilter: 'blur(4px)',
     zIndex: 100
@@ -28,16 +32,16 @@ const InGameControlsPanel: React.FC = () => {
 
   const closeButtonStyle: React.CSSProperties = {
     position: 'absolute',
-    top: '-10px',
-    right: '-10px',
-    width: '20px',
-    height: '20px',
+    top: `${-10 * scale}px`,
+    right: `${-10 * scale}px`,
+    width: `${20 * scale}px`,
+    height: `${20 * scale}px`,
     background: 'rgba(0, 0, 0, 0.8)',
-    border: '1px solid rgba(255, 255, 255, 0.4)',
+    border: `${1 * scale}px solid rgba(255, 255, 255, 0.4)`,
     borderRadius: '50%',
     color: 'rgba(255, 255, 255, 0.7)',
     cursor: 'pointer',
-    fontSize: '16px',
+    fontSize: `${16 * scale}px`,
     lineHeight: '1',
     padding: '0',
     display: 'flex',
@@ -48,42 +52,42 @@ const InGameControlsPanel: React.FC = () => {
 
   const rowStyle: React.CSSProperties = {
     display: 'flex',
-    gap: '20px',
+    gap: `${20 * scale}px`,
     alignItems: 'center'
   }
 
   const secondaryRowStyle: React.CSSProperties = {
     display: 'flex',
-    gap: '12px',
+    gap: `${12 * scale}px`,
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '9px'
+    fontSize: `${9 * scale}px`
   }
 
   const controlItemStyle: React.CSSProperties = {
     display: 'flex',
-    gap: '4px',
+    gap: `${4 * scale}px`,
     alignItems: 'center'
   }
 
   const labelStyle: React.CSSProperties = {
     color: 'rgba(200, 200, 200, 0.8)',
-    fontSize: '10px'
+    fontSize: `${10 * scale}px`
   }
 
   const secondaryLabelStyle: React.CSSProperties = {
     color: 'rgba(180, 180, 180, 0.7)',
-    fontSize: '8px'
+    fontSize: `${8 * scale}px`
   }
 
   const keyStyle: React.CSSProperties = {
     color: 'rgba(255, 255, 255, 1)',
     fontWeight: 'bold',
     background: 'rgba(255, 255, 255, 0.1)',
-    padding: '2px 6px',
-    borderRadius: '2px',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    minWidth: '20px',
+    padding: `${2 * scale}px ${6 * scale}px`,
+    borderRadius: `${2 * scale}px`,
+    border: `${1 * scale}px solid rgba(255, 255, 255, 0.2)`,
+    minWidth: `${20 * scale}px`,
     textAlign: 'center'
   }
 
@@ -91,17 +95,17 @@ const InGameControlsPanel: React.FC = () => {
     color: 'rgba(255, 255, 255, 0.9)',
     fontWeight: 'bold',
     background: 'rgba(255, 255, 255, 0.08)',
-    padding: '1px 4px',
-    borderRadius: '2px',
-    border: '1px solid rgba(255, 255, 255, 0.15)',
-    minWidth: '16px',
+    padding: `${1 * scale}px ${4 * scale}px`,
+    borderRadius: `${2 * scale}px`,
+    border: `${1 * scale}px solid rgba(255, 255, 255, 0.15)`,
+    minWidth: `${16 * scale}px`,
     textAlign: 'center',
-    fontSize: '8px'
+    fontSize: `${8 * scale}px`
   }
 
   const separatorStyle: React.CSSProperties = {
-    width: '1px',
-    height: '20px',
+    width: `${1 * scale}px`,
+    height: `${20 * scale}px`,
     background: 'rgba(255, 255, 255, 0.2)'
   }
 
@@ -185,9 +189,9 @@ const InGameControlsPanel: React.FC = () => {
       <div
         style={{
           textAlign: 'center',
-          fontSize: '9px',
+          fontSize: `${9 * scale}px`,
           color: 'rgba(220, 220, 220, 0.85)',
-          marginTop: '4px',
+          marginTop: `${4 * scale}px`,
           fontStyle: 'italic'
         }}
       >

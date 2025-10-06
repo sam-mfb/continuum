@@ -10,6 +10,8 @@ export type GameMode = 'start' | 'playing' | 'highScoreEntry' | 'gameOver'
 
 export type CollisionMode = 'modern' | 'original'
 
+export type ScaleMode = 'auto' | 1 | 2 | 3
+
 export type MostRecentScore = {
   score: number
   planet: number
@@ -23,6 +25,7 @@ export type AppState = {
   // Display settings
   alignmentMode: AlignmentMode
   showInGameControls: boolean
+  scaleMode: ScaleMode
 
   // Sound settings
   volume: number
@@ -34,6 +37,7 @@ export type AppState = {
 
   // UI state
   showSettings: boolean
+  isFullscreen: boolean
 
   // Current galaxy
   currentGalaxyId: string
@@ -44,11 +48,13 @@ const initialState: AppState = {
   collisionMode: 'modern',
   alignmentMode: 'screen-fixed', // Default to screen-fixed (not original)
   showInGameControls: true,
+  scaleMode: 'auto', // Default to responsive auto-scaling
   volume: 0,
   soundOn: true,
   mode: 'start',
   mostRecentScore: null,
   showSettings: false,
+  isFullscreen: false,
   currentGalaxyId: 'release', // Will be overridden by galaxy config
   totalLevels: 0 // Will be set when galaxy is loaded
 }
@@ -77,6 +83,10 @@ export const appSlice = createSlice({
 
     toggleInGameControls: state => {
       state.showInGameControls = !state.showInGameControls
+    },
+
+    setScaleMode: (state, action: PayloadAction<ScaleMode>) => {
+      state.scaleMode = action.payload
     },
 
     // Sound settings
@@ -116,6 +126,10 @@ export const appSlice = createSlice({
       state.showSettings = !state.showSettings
     },
 
+    setFullscreen: (state, action: PayloadAction<boolean>) => {
+      state.isFullscreen = action.payload
+    },
+
     // Galaxy management
     setCurrentGalaxy: (state, action: PayloadAction<string>) => {
       state.currentGalaxyId = action.payload
@@ -133,6 +147,7 @@ export const {
   setAlignmentMode,
   toggleAlignmentMode,
   toggleInGameControls,
+  setScaleMode,
   setVolume,
   enableSound,
   disableSound,
@@ -142,6 +157,7 @@ export const {
   openSettings,
   closeSettings,
   toggleSettings,
+  setFullscreen,
   setCurrentGalaxy,
   setTotalLevels
 } = appSlice.actions
