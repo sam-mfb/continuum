@@ -88,34 +88,40 @@ export const createCollisionMap = createSyncThunk<void>(
         )
     }
 
-    // Helper to add shot collision with optional wrapping
-    const addShotCollision = (
-      shot: (typeof state.shots.bunkshots)[0],
-      screenOffsetX: number
-    ): void => {
-      const shotX = shot.x - screenOffsetX
-      const shotY = shot.y - state.screen.screeny
-      const shotItem: CollisionItem = [
-        { x: shotX, y: shotY, collision: Collision.LETHAL },
-        { x: shotX + 1, y: shotY, collision: Collision.LETHAL },
-        { x: shotX, y: shotY + 1, collision: Collision.LETHAL },
-        { x: shotX + 1, y: shotY + 1, collision: Collision.LETHAL }
-      ]
-      extra.collisionService.addItem(shotItem)
-    }
+    // only add bunker shots to collision map if ship is not shielding
+    if (!state.ship.shielding) {
+      // Helper to add shot collision with optional wrapping
+      const addShotCollision = (
+        shot: (typeof state.shots.bunkshots)[0],
+        screenOffsetX: number
+      ): void => {
+        const shotX = shot.x - screenOffsetX
+        const shotY = shot.y - state.screen.screeny
+        const shotItem: CollisionItem = [
+          { x: shotX, y: shotY, collision: Collision.LETHAL },
+          { x: shotX + 1, y: shotY, collision: Collision.LETHAL },
+          { x: shotX, y: shotY + 1, collision: Collision.LETHAL },
+          { x: shotX + 1, y: shotY + 1, collision: Collision.LETHAL }
+        ]
+        extra.collisionService.addItem(shotItem)
+      }
 
-    // Add bunker shots at normal position
-    state.shots.bunkshots
-      .filter(shot => shot.lifecount > 0)
-      .forEach(shot => addShotCollision(shot, state.screen.screenx))
-
-    // Add bunker shots at wrapped position
-    if (on_right_side && worldwrap) {
+      // Add bunker shots at normal position
       state.shots.bunkshots
         .filter(shot => shot.lifecount > 0)
-        .forEach(shot =>
-          addShotCollision(shot, state.screen.screenx - state.planet.worldwidth)
-        )
+        .forEach(shot => addShotCollision(shot, state.screen.screenx))
+
+      // Add bunker shots at wrapped position
+      if (on_right_side && worldwrap) {
+        state.shots.bunkshots
+          .filter(shot => shot.lifecount > 0)
+          .forEach(shot =>
+            addShotCollision(
+              shot,
+              state.screen.screenx - state.planet.worldwidth
+            )
+          )
+      }
     }
   }
 )
