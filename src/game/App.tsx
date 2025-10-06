@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import GameRenderer from './components/GameRenderer'
 import StartScreen from './components/StartScreen'
 import HighScoreEntry from './components/HighScoreEntry'
@@ -18,6 +18,7 @@ import { useAppDispatch, useAppSelector } from './store'
 import type { GameRenderLoop } from './types'
 import type { CollisionService } from '@/core/collision'
 import { useResponsiveScale } from './hooks/useResponsiveScale'
+import { BASE_GAME_WIDTH, BASE_TOTAL_HEIGHT } from './constants/dimensions'
 
 type AppProps = {
   renderer: GameRenderLoop
@@ -48,6 +49,48 @@ export const App: React.FC<AppProps> = ({
 
   // Use responsive scale that adapts to viewport size or fixed scale from settings
   const { scale, dimensions } = useResponsiveScale(scaleMode)
+
+  // Track if we should show the resize hint
+  const [showResizeHint, setShowResizeHint] = useState(false)
+
+  // Viewport padding from useResponsiveScale hook
+  const VIEWPORT_PADDING = 16
+
+  // Check if user has expanded window 15% toward 2x scale
+  useEffect(() => {
+    const checkResizeHint = (): void => {
+      // Only show hint in auto mode when at 1x scale
+      if (scaleMode !== 'auto' || scale !== 1) {
+        setShowResizeHint(false)
+        return
+      }
+
+      const availableWidth = window.innerWidth - VIEWPORT_PADDING * 2
+      const availableHeight = window.innerHeight - VIEWPORT_PADDING * 2
+
+      // 15% of the way from 1x to 2x
+      const widthThreshold = BASE_GAME_WIDTH * 1.15
+      const heightThreshold = BASE_TOTAL_HEIGHT * 1.15
+
+      // Show hint if viewport has expanded 15% toward 2x in either dimension
+      const shouldShow =
+        availableWidth >= widthThreshold || availableHeight >= heightThreshold
+
+      setShowResizeHint(shouldShow)
+    }
+
+    // Check immediately
+    checkResizeHint()
+
+    // Check on resize
+    window.addEventListener('resize', checkResizeHint)
+    window.addEventListener('orientationchange', checkResizeHint)
+
+    return () => {
+      window.removeEventListener('resize', checkResizeHint)
+      window.removeEventListener('orientationchange', checkResizeHint)
+    }
+  }, [scaleMode, scale])
 
   // Render the game content based on mode
   const renderGameContent = (): React.ReactElement | null => {
@@ -181,6 +224,29 @@ export const App: React.FC<AppProps> = ({
             title="High scores disabled"
           >
             ⚠
+          </div>
+        )}
+        {showResizeHint && (
+          <div
+            style={{
+              position: 'fixed',
+              bottom: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'rgba(0, 0, 0, 0.8)',
+              color: 'white',
+              padding: `${8 * scale}px ${16 * scale}px`,
+              borderRadius: `${4 * scale}px`,
+              fontSize: `${12 * scale}px`,
+              fontFamily: 'sans-serif',
+              textAlign: 'center',
+              maxWidth: '80%',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              pointerEvents: 'none'
+            }}
+          >
+            Expand your window to make the game bigger or press the fullscreen
+            button
           </div>
         )}
       </div>
