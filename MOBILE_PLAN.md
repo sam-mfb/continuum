@@ -170,9 +170,6 @@ Based on analysis of the codebase, here's a comprehensive plan for adapting the 
   - Check for touch capability: `'ontouchstart' in window || navigator.maxTouchPoints > 0`
   - **Returns true for phones AND tablets (including iPads)**
   - This is the key function for determining default touch control state
-- Optional: Export `isSmallScreen()` for UI layout decisions
-  - Check screen width (e.g., `window.innerWidth < 768`)
-  - Used for layout optimizations, NOT for enabling/disabling touch controls
 - **Default behavior**: Touch controls enabled for ANY touch-capable device, regardless of screen size
 
 **2. Add touch controls state to `appSlice.ts`**
