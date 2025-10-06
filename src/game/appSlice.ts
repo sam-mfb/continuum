@@ -31,6 +31,10 @@ export type AppState = {
   volume: number
   soundOn: boolean
 
+  // Touch controls
+  touchControlsEnabled: boolean
+  touchControlsOverride: boolean | null // null = auto-detect
+
   // Game flow
   mode: GameMode
   mostRecentScore: MostRecentScore | null
@@ -51,6 +55,8 @@ const initialState: AppState = {
   scaleMode: 'auto', // Default to responsive auto-scaling
   volume: 0,
   soundOn: true,
+  touchControlsEnabled: false, // Will be set based on device detection
+  touchControlsOverride: null, // null = auto-detect based on device
   mode: 'start',
   mostRecentScore: null,
   showSettings: false,
@@ -137,6 +143,22 @@ export const appSlice = createSlice({
 
     setTotalLevels: (state, action: PayloadAction<number>) => {
       state.totalLevels = action.payload
+    },
+
+    // Touch controls management
+    enableTouchControls: state => {
+      state.touchControlsEnabled = true
+    },
+
+    disableTouchControls: state => {
+      state.touchControlsEnabled = false
+    },
+
+    setTouchControlsOverride: (
+      state,
+      action: PayloadAction<boolean | null>
+    ) => {
+      state.touchControlsOverride = action.payload
     }
   }
 })
@@ -159,5 +181,8 @@ export const {
   toggleSettings,
   setFullscreen,
   setCurrentGalaxy,
-  setTotalLevels
+  setTotalLevels,
+  enableTouchControls,
+  disableTouchControls,
+  setTouchControlsOverride
 } = appSlice.actions

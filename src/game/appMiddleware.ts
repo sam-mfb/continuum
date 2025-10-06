@@ -13,6 +13,7 @@ import {
   setVolume,
   enableSound,
   disableSound,
+  setTouchControlsOverride,
   type CollisionMode,
   type ScaleMode
 } from './appSlice'
@@ -28,6 +29,7 @@ export type PersistedAppSettings = {
   scaleMode: ScaleMode
   volume: number
   soundOn: boolean
+  touchControlsOverride: boolean | null
 }
 
 /**
@@ -48,7 +50,8 @@ export const appMiddleware: Middleware<{}, RootState> =
       setScaleMode.match(action) ||
       setVolume.match(action) ||
       enableSound.match(action) ||
-      disableSound.match(action)
+      disableSound.match(action) ||
+      setTouchControlsOverride.match(action)
     ) {
       const state = store.getState()
       try {
@@ -58,7 +61,8 @@ export const appMiddleware: Middleware<{}, RootState> =
           showInGameControls: state.app.showInGameControls,
           scaleMode: state.app.scaleMode,
           volume: state.app.volume,
-          soundOn: state.app.soundOn
+          soundOn: state.app.soundOn,
+          touchControlsOverride: state.app.touchControlsOverride
         }
         localStorage.setItem(
           APP_SETTINGS_STORAGE_KEY,
@@ -87,7 +91,8 @@ export const loadAppSettings = (): Partial<PersistedAppSettings> => {
         showInGameControls: parsed.showInGameControls,
         scaleMode: parsed.scaleMode,
         volume: parsed.volume,
-        soundOn: parsed.soundOn
+        soundOn: parsed.soundOn,
+        touchControlsOverride: parsed.touchControlsOverride
       }
     }
   } catch (error) {
