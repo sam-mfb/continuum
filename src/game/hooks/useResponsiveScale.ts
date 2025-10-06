@@ -76,7 +76,7 @@ export const useResponsiveScale = (
       timeoutId = window.setTimeout(() => {
         const newScale = calculateScale()
         setScale(newScale)
-      }, 500) // 500ms debounce
+      }, 200) // 200ms debounce
     }
 
     // Listen to both resize and orientation change events
