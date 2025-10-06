@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import type { FrameInfo, KeyInfo, MonochromeBitmap } from '@lib/bitmap'
 import { useAppDispatch, useAppSelector, type RootState } from '../store'
 import { togglePause, showMap, hideMap, pause, unpause } from '../gameSlice'
@@ -11,6 +11,7 @@ import { getDebug } from '../debug'
 import type { SpriteService } from '@/core/sprites'
 import { SCENTER } from '@/core/figs'
 import { useStore } from 'react-redux'
+import { TouchControlsOverlay } from '../mobile/TouchControlsOverlay'
 
 type GameRendererProps = {
   renderer: (frame: FrameInfo, controls: ControlMatrix) => MonochromeBitmap
@@ -47,8 +48,26 @@ const GameRenderer: React.FC<GameRendererProps> = ({
   const paused = useAppSelector(state => state.game.paused)
   const showMapState = useAppSelector(state => state.game.showMap)
   const bindings = useAppSelector(state => state.controls.bindings)
+  const touchControlsEnabled = useAppSelector(
+    state => state.app.touchControlsEnabled
+  )
   const store = useStore()
   const dispatch = useAppDispatch()
+
+  // Track touch controls state
+  const [touchControls, setTouchControls] = useState<ControlMatrix>({
+    thrust: false,
+    left: false,
+    right: false,
+    fire: false,
+    shield: false,
+    selfDestruct: false,
+    pause: false,
+    quit: false,
+    nextLevel: false,
+    extraLife: false,
+    map: false
+  })
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -113,6 +132,25 @@ const GameRenderer: React.FC<GameRendererProps> = ({
           keysPressed: keysPressed,
           keysReleased: keysReleased
         }
+        // Get keyboard controls
+        const keyboardControls = getControls(keyInfo, bindings)
+
+        // Merge keyboard and touch controls (OR logic for each control)
+        const mergedControls: ControlMatrix = {
+          thrust: keyboardControls.thrust || touchControls.thrust,
+          left: keyboardControls.left || touchControls.left,
+          right: keyboardControls.right || touchControls.right,
+          fire: keyboardControls.fire || touchControls.fire,
+          shield: keyboardControls.shield || touchControls.shield,
+          selfDestruct:
+            keyboardControls.selfDestruct || touchControls.selfDestruct,
+          pause: keyboardControls.pause || touchControls.pause,
+          quit: keyboardControls.quit || touchControls.quit,
+          nextLevel: keyboardControls.nextLevel || touchControls.nextLevel,
+          extraLife: keyboardControls.extraLife || touchControls.extraLife,
+          map: keyboardControls.map || touchControls.map
+        }
+
         // If map is showing, use blank controls (all false) to prevent game input
         const controls = showMapState
           ? {
@@ -127,9 +165,9 @@ const GameRenderer: React.FC<GameRendererProps> = ({
               nextLevel: false,
               extraLife: false,
               // need to still detect the map key
-              map: getControls(keyInfo, bindings).map
+              map: mergedControls.map
             }
-          : getControls(keyInfo, bindings)
+          : mergedControls
 
         if (controls.map) {
           if (showMapState) {
@@ -298,25 +336,34 @@ const GameRenderer: React.FC<GameRendererProps> = ({
     dispatch,
     collisionService,
     spriteService,
-    store
+    store,
+    touchControls
   ])
 
   return (
-    <div style={{ position: 'relative', display: 'inline-block' }}>
-      <canvas
-        ref={canvasRef}
-        width={width * scale}
-        height={height * scale}
-        style={{
-          imageRendering: 'pixelated',
-          // @ts-ignore - vendor prefixes
-          WebkitImageRendering: 'pixelated',
-          MozImageRendering: 'crisp-edges',
-          display: 'block'
-        }}
-      />
-      {showMapState && <Map scale={scale} />}
-    </div>
+    <>
+      <div style={{ position: 'relative', display: 'inline-block' }}>
+        <canvas
+          ref={canvasRef}
+          width={width * scale}
+          height={height * scale}
+          style={{
+            imageRendering: 'pixelated',
+            // @ts-ignore - vendor prefixes
+            WebkitImageRendering: 'pixelated',
+            MozImageRendering: 'crisp-edges',
+            display: 'block'
+          }}
+        />
+        {showMapState && <Map scale={scale} />}
+      </div>
+      {touchControlsEnabled && (
+        <TouchControlsOverlay
+          scale={scale}
+          onControlsChange={setTouchControls}
+        />
+      )}
+    </>
   )
 }
 

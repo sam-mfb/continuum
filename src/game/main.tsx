@@ -3,6 +3,7 @@
  */
 
 import './style.css'
+import './mobile/mobile.css'
 import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
 import { App } from './App'
@@ -13,7 +14,13 @@ import { createSoundService } from '@core/sound'
 import { createGameRenderer } from './gameLoop'
 import { setAlignmentMode } from '@/core/shared'
 import { createGameStore } from './store'
-import { setCurrentGalaxy, setTotalLevels } from './appSlice'
+import {
+  setCurrentGalaxy,
+  setTotalLevels,
+  enableTouchControls,
+  disableTouchControls
+} from './appSlice'
+import { isTouchDevice } from './mobile/deviceDetection'
 import {
   ASSET_PATHS,
   DEFAULT_SOUND_VOLUME,
@@ -78,6 +85,17 @@ try {
   const totalLevels = galaxyService.getHeader().planets
   store.dispatch(setCurrentGalaxy(defaultGalaxy.id))
   store.dispatch(setTotalLevels(totalLevels))
+
+  // Initialize touch controls based on device detection and user override
+  const touchControlsOverride = store.getState().app.touchControlsOverride
+  const shouldEnableTouchControls =
+    touchControlsOverride !== null ? touchControlsOverride : isTouchDevice()
+
+  if (shouldEnableTouchControls) {
+    store.dispatch(enableTouchControls())
+  } else {
+    store.dispatch(disableTouchControls())
+  }
 
   const renderer = createGameRenderer(
     store,

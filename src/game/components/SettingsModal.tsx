@@ -5,8 +5,10 @@ import {
   toggleAlignmentMode,
   toggleInGameControls,
   setScaleMode,
+  setTouchControlsOverride,
   closeSettings
 } from '../appSlice'
+import { isTouchDevice } from '../mobile/deviceDetection'
 import { resetHighScores } from '@/core/highscore'
 import { setBinding, resetBindings } from '@/core/controls'
 import { ControlAction } from '@/core/controls/types'
@@ -109,6 +111,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const scaleMode = useAppSelector(state => state.app.scaleMode)
   const showInGameControls = useAppSelector(
     state => state.app.showInGameControls
+  )
+  const touchControlsOverride = useAppSelector(
+    state => state.app.touchControlsOverride
+  )
+  const touchControlsEnabled = useAppSelector(
+    state => state.app.touchControlsEnabled
   )
   const bindings = useAppSelector(state => state.controls.bindings)
   const showSettings = useAppSelector(state => state.app.showSettings)
@@ -523,6 +531,56 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   {scaleMode === 'auto'
                     ? 'Auto-scale based on viewport size'
                     : `Fixed ${scaleMode}x scale`}
+                  )
+                </span>
+              </div>
+            </div>
+
+            {/* Touch Controls Section */}
+            <div style={sectionStyle}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: `${5 * scale}px`
+                }}
+              >
+                <span>TOUCH CONTROLS:</span>
+                <CustomDropdown<string>
+                  value={
+                    touchControlsOverride === null
+                      ? 'auto'
+                      : touchControlsOverride
+                        ? 'on'
+                        : 'off'
+                  }
+                  options={[
+                    { value: 'auto', label: 'AUTO' },
+                    { value: 'on', label: 'ON' },
+                    { value: 'off', label: 'OFF' }
+                  ]}
+                  onChange={value => {
+                    const override =
+                      value === 'auto' ? null : value === 'on' ? true : false
+                    dispatch(setTouchControlsOverride(override))
+                  }}
+                  scale={scale}
+                  minWidth={35}
+                  dataAttribute="touch-controls-dropdown"
+                />
+                <span
+                  style={{
+                    color: '#666',
+                    fontSize: `${5 * scale}px`,
+                    marginLeft: `${5 * scale}px`
+                  }}
+                >
+                  (
+                  {touchControlsOverride === null
+                    ? `Auto: ${isTouchDevice() ? 'ON (touch device detected)' : 'OFF (no touch detected)'}`
+                    : touchControlsEnabled
+                      ? 'Virtual joystick and buttons enabled'
+                      : 'Touch controls disabled'}
                   )
                 </span>
               </div>
