@@ -8,7 +8,13 @@ import VolumeButton from './components/VolumeButton'
 import FullscreenButton from './components/FullscreenButton'
 import InGameControlsPanel from './components/InGameControlsPanel'
 import { loadLevel } from './levelThunks'
-import { startGame, setMode } from './appSlice'
+import {
+  startGame,
+  setMode,
+  enableTouchControls,
+  disableTouchControls
+} from './appSlice'
+import { isTouchDevice } from './mobile/deviceDetection'
 import { setHighScore } from '@/core/highscore'
 import { shipSlice } from '@/core/ship'
 import { invalidateHighScore } from './gameSlice'
@@ -46,9 +52,24 @@ export const App: React.FC<AppProps> = ({
     state => state.game.highScoreEligible
   )
   const scaleMode = useAppSelector(state => state.app.scaleMode)
+  const touchControlsOverride = useAppSelector(
+    state => state.app.touchControlsOverride
+  )
 
   // Use responsive scale that adapts to viewport size or fixed scale from settings
   const { scale, dimensions } = useResponsiveScale(scaleMode)
+
+  // Re-evaluate touch controls when override setting changes
+  useEffect(() => {
+    const shouldEnableTouchControls =
+      touchControlsOverride !== null ? touchControlsOverride : isTouchDevice()
+
+    if (shouldEnableTouchControls) {
+      dispatch(enableTouchControls())
+    } else {
+      dispatch(disableTouchControls())
+    }
+  }, [touchControlsOverride, dispatch])
 
   // Track if we should show the resize hint
   const [showResizeHint, setShowResizeHint] = useState(false)

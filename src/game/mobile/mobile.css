@@ -1,0 +1,56 @@
+/**
+ * Mobile-specific CSS optimizations for touch interactions
+ */
+
+/* Prevent text selection during touch interactions */
+body,
+html {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Disable pull-to-refresh on the game canvas and controls */
+canvas,
+button,
+.touch-control {
+  overscroll-behavior: contain;
+  touch-action: manipulation;
+}
+
+/* Prevent zoom on double-tap for game elements */
+#app {
+  touch-action: manipulation;
+}
+
+/* Ensure touch targets are properly sized */
+button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Optimize rendering for mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevent overscroll bounce effect */
+html,
+body {
+  overscroll-behavior: none;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Ensure game container fills viewport on mobile */
+#app {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}

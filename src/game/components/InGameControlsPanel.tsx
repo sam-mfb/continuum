@@ -10,6 +10,12 @@ type InGameControlsPanelProps = {
 const InGameControlsPanel: React.FC<InGameControlsPanelProps> = ({ scale }) => {
   const dispatch = useAppDispatch()
   const bindings = useAppSelector(state => state.controls.bindings)
+  const touchControlsEnabled = useAppSelector(
+    state => state.app.touchControlsEnabled
+  )
+
+  // Hide panel when touch controls are active to save screen space
+  if (touchControlsEnabled) return null
 
   const panelStyle: React.CSSProperties = {
     position: 'absolute',
