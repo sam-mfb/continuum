@@ -12,23 +12,15 @@ html {
   -webkit-touch-callout: none;
 }
 
-/* Disable pull-to-refresh on the game canvas and controls */
-canvas,
-button,
-.touch-control {
+/* Disable pull-to-refresh on the game canvas */
+canvas {
   overscroll-behavior: contain;
-  touch-action: manipulation;
+  touch-action: none;
 }
 
 /* Prevent zoom on double-tap for game elements */
 #app {
   touch-action: manipulation;
-}
-
-/* Ensure touch targets are properly sized */
-button {
-  min-width: 44px;
-  min-height: 44px;
 }
 
 /* Optimize rendering for mobile */
@@ -42,15 +34,4 @@ button {
 html,
 body {
   overscroll-behavior: none;
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-/* Ensure game container fills viewport on mobile */
-#app {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
 }
