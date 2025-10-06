@@ -68,11 +68,11 @@ export const App: React.FC<AppProps> = ({
       const availableWidth = window.innerWidth - VIEWPORT_PADDING * 2
       const availableHeight = window.innerHeight - VIEWPORT_PADDING * 2
 
-      // 15% of the way from 1x to 2x
-      const widthThreshold = BASE_GAME_WIDTH * 1.15
-      const heightThreshold = BASE_TOTAL_HEIGHT * 1.15
+      // 25% of the way from 1x to 2x
+      const widthThreshold = BASE_GAME_WIDTH * 1.25
+      const heightThreshold = BASE_TOTAL_HEIGHT * 1.25
 
-      // Show hint if viewport has expanded 15% toward 2x in either dimension
+      // Show hint if viewport has expanded 25% toward 2x in either dimension
       const shouldShow =
         availableWidth >= widthThreshold || availableHeight >= heightThreshold
 
