@@ -26,7 +26,7 @@ export const TouchJoystick: React.FC<TouchJoystickProps> = ({
       zone: containerRef.current,
       mode: 'static',
       position: { left: '50%', top: '50%' },
-      color: 'rgba(255, 255, 255, 0.5)',
+      color: 'rgba(255, 255, 255, 0.7)',
       size: 120 * scale
     })
 
@@ -95,7 +95,10 @@ export const TouchJoystick: React.FC<TouchJoystickProps> = ({
         left: `${20 * scale}px`,
         width: `${140 * scale}px`,
         height: `${140 * scale}px`,
-        touchAction: 'none'
+        touchAction: 'none',
+        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+        border: '2px solid rgba(255, 255, 255, 0.3)',
+        borderRadius: '50%'
       }}
     />
   )
