@@ -87,7 +87,7 @@ export const TouchButtons: React.FC<TouchButtonsProps> = ({
         style={buttonStyle(shieldPressed)}
         aria-label="Shield"
       >
-        🛡
+        S
       </button>
 
       {/* Fire button (bottom) */}
@@ -100,7 +100,7 @@ export const TouchButtons: React.FC<TouchButtonsProps> = ({
         style={buttonStyle(firePressed)}
         aria-label="Fire"
       >
-        🔥
+        F
       </button>
     </div>
   )
