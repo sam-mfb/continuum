@@ -84,7 +84,7 @@ export const useResponsiveScale = (
     window.addEventListener('orientationchange', handleResize)
 
     // Clean up event listeners on unmount
-    return () => {
+    return (): void => {
       if (timeoutId !== undefined) {
         window.clearTimeout(timeoutId)
       }

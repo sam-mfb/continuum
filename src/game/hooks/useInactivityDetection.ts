@@ -31,7 +31,7 @@ export const useInactivityDetection = (timeout: number = 3000): boolean => {
     // Start the initial timeout (controls visible on mount)
     handleActivity()
 
-    return () => {
+    return (): void => {
       if (timeoutId !== undefined) {
         window.clearTimeout(timeoutId)
       }

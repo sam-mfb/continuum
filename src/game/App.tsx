@@ -86,7 +86,7 @@ export const App: React.FC<AppProps> = ({
     window.addEventListener('resize', checkResizeHint)
     window.addEventListener('orientationchange', checkResizeHint)
 
-    return () => {
+    return (): void => {
       window.removeEventListener('resize', checkResizeHint)
       window.removeEventListener('orientationchange', checkResizeHint)
     }

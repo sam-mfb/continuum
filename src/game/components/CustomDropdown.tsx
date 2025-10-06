@@ -73,7 +73,7 @@ export const CustomDropdown = <T extends string | number = string | number>({
     document.addEventListener('keydown', handleKeyDown)
     document.addEventListener('mousedown', handleClickOutside)
 
-    return () => {
+    return (): void => {
       document.removeEventListener('keydown', handleKeyDown)
       document.removeEventListener('mousedown', handleClickOutside)
     }
