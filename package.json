@@ -1,6 +1,6 @@
 {
   "name": "continuum",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "type": "module",
   "description": "Recreation of the 68000 Mac game Continuum for the web",
   "scripts": {
