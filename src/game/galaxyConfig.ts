@@ -68,6 +68,11 @@ export const GALAXIES: readonly GalaxyConfig[] = [
     id: 'eternity',
     name: 'Eternity',
     path: '/galaxies/eternity.bin'
+  },
+  {
+    id: 'chaos',
+    name: 'Chaos',
+    path: '/galaxies/chaos.bin'
   }
 ] as const
 
