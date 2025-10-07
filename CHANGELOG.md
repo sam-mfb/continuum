@@ -1,5 +1,10 @@
 # Changes
 
+## 1.0.4 - 2025.10.06
+
+Fix bug in ship contain
+Fix bug in collision running during transition
+
 ## 1.0.3 - 2025.10.06
 
 Add "Chaos" and "Lee's Galaxy" galaxies

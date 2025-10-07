@@ -196,7 +196,11 @@ export const updateGameState = (context: StateUpdateContext): void => {
   )
 
   if (finalState.app.collisionMode === 'modern') {
-    if (state.ship.deadCount === 0 && !state.game.levelComplete) {
+    if (
+      state.ship.deadCount === 0 &&
+      (state.transition.status === 'inactive' ||
+        state.transition.status === 'level-complete')
+    ) {
       store.dispatch(createCollisionMap())
       const resultAction = store.dispatch(checkCollisions())
       const collision = resultAction.meta.result
