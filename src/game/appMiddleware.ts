@@ -9,10 +9,13 @@ import {
   setAlignmentMode,
   toggleAlignmentMode,
   toggleInGameControls,
+  setScaleMode,
   setVolume,
   enableSound,
   disableSound,
-  type CollisionMode
+  setTouchControlsOverride,
+  type CollisionMode,
+  type ScaleMode
 } from './appSlice'
 import type { AlignmentMode } from '@/core/shared'
 import type { RootState } from './store'
@@ -23,8 +26,10 @@ export type PersistedAppSettings = {
   collisionMode: CollisionMode
   alignmentMode: AlignmentMode
   showInGameControls: boolean
+  scaleMode: ScaleMode
   volume: number
   soundOn: boolean
+  touchControlsOverride: boolean | null
 }
 
 /**
@@ -42,9 +47,11 @@ export const appMiddleware: Middleware<{}, RootState> =
       setAlignmentMode.match(action) ||
       toggleAlignmentMode.match(action) ||
       toggleInGameControls.match(action) ||
+      setScaleMode.match(action) ||
       setVolume.match(action) ||
       enableSound.match(action) ||
-      disableSound.match(action)
+      disableSound.match(action) ||
+      setTouchControlsOverride.match(action)
     ) {
       const state = store.getState()
       try {
@@ -52,8 +59,10 @@ export const appMiddleware: Middleware<{}, RootState> =
           collisionMode: state.app.collisionMode,
           alignmentMode: state.app.alignmentMode,
           showInGameControls: state.app.showInGameControls,
+          scaleMode: state.app.scaleMode,
           volume: state.app.volume,
-          soundOn: state.app.soundOn
+          soundOn: state.app.soundOn,
+          touchControlsOverride: state.app.touchControlsOverride
         }
         localStorage.setItem(
           APP_SETTINGS_STORAGE_KEY,
@@ -80,8 +89,10 @@ export const loadAppSettings = (): Partial<PersistedAppSettings> => {
         collisionMode: parsed.collisionMode,
         alignmentMode: parsed.alignmentMode,
         showInGameControls: parsed.showInGameControls,
+        scaleMode: parsed.scaleMode,
         volume: parsed.volume,
-        soundOn: parsed.soundOn
+        soundOn: parsed.soundOn,
+        touchControlsOverride: parsed.touchControlsOverride
       }
     }
   } catch (error) {

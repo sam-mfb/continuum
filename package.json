@@ -1,6 +1,6 @@
 {
   "name": "continuum",
-  "version": "0.1.0",
+  "version": "1.0.4",
   "type": "module",
   "description": "Recreation of the 68000 Mac game Continuum for the web",
   "scripts": {
@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.8.2",
+    "nipplejs": "^0.10.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-redux": "^9.2.0"

@@ -5,14 +5,14 @@ export const SBARHT = 24 // Status bar height
 export const VIEWHT = SCRHT - SBARHT // 318 - Viewable game area height
 export const SOFTBORDER = 200
 
-// Ship containment margins
-export const LEFTMARG = 170 // Left margin for ship movement
-export const RIGHTMARG = 341 // Right margin for ship movement
-export const TOPMARG = 106 // Top margin for ship movement
-export const BOTMARG = 211 // Bottom margin for ship movement
+// Ship containment margins (orig/Sources/GW.h:34-37)
+export const LEFTMARG = 180 // Left margin for ship movement
+export const RIGHTMARG = SCRWTH - LEFTMARG // 332 - Right margin for ship movement
+export const TOPMARG = 140 // Top margin for ship movement
+export const BOTMARG = VIEWHT - TOPMARG // 178 - Bottom margin for ship movement
 
-// Ship dimensions for edge constraints
-export const SHIPHT = 16 // Ship height for boundary calculations
+// Ship dimensions for edge constraints (orig/Sources/GW.h:74)
+export const SHIPHT = 32 // Ship height for boundary calculations
 
 // Screen buffer sizes from orig/Sources/GW.h:30-32
 export const SBARSIZE = SBARHT * 64 // 1536 - Status bar size in bytes

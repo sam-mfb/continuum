@@ -52,16 +52,17 @@ type WorldInput = {
  * Pure function implementation of contain_ship from original Continuum
  * Handles ship containment within screen boundaries and world scrolling
  *
- * Note: The original used recursion. I believe this was to handle a specific
- * edge case where globalx was calculated before the hard boundary checks. If
- * the hard boundaries modified shipx, globalx would be stale. The recursion forced
- * a recalculation with the corrected position. Our implementation avoids
- * this by not calculating global position internally.
+ * The original used recursion when hard boundaries modified ship position.
+ * This ensures all containment logic re-runs with corrected positions and
+ * recalculates globalx/globaly. Recursion is limited to one level deep.
+ *
+ * @param depth - Recursion depth (0 = initial call, 1 = recursive call)
  */
 export function containShip(
   ship: ShipInput,
   screen: ScreenInput,
-  world: WorldInput
+  world: WorldInput,
+  depth: number = 0
 ): ContainmentResult {
   let { shipx, shipy, dx, dy } = ship
   let { screenx, screeny } = screen
@@ -119,15 +120,32 @@ export function containShip(
   // on_right_side = screenx > worldwidth - SCRWTH;
   const on_right_side = screenx > worldwidth - SCRWTH
 
+  // Hard boundary checks with recursion (Play.c:445-456)
   if (shipy < SHIPHT || shipy > VIEWHT - SHIPHT) {
     dy = 0
     shipy = shipy < SHIPHT ? SHIPHT : VIEWHT - SHIPHT
-    // Note: Original has contain_ship() recursion here
+    // Recursion only goes one level deep (Play.c:449)
+    if (depth === 0) {
+      return containShip(
+        { shipx, shipy, dx, dy },
+        { screenx, screeny },
+        world,
+        depth + 1
+      )
+    }
   }
   if (shipx < SHIPHT || shipx > SCRWTH - SHIPHT) {
     dx = 0
     shipx = shipx < SHIPHT ? SHIPHT : SCRWTH - SHIPHT
-    // Note: Original has contain_ship() recursion here
+    // Recursion (Play.c:455)
+    if (depth === 0) {
+      return containShip(
+        { shipx, shipy, dx, dy },
+        { screenx, screeny },
+        world,
+        depth + 1
+      )
+    }
   }
 
   return {

@@ -108,7 +108,12 @@ const createStoreAndListeners = (
         appSlice.getInitialState().alignmentMode,
       showInGameControls:
         persistedAppSettings.showInGameControls ??
-        appSlice.getInitialState().showInGameControls
+        appSlice.getInitialState().showInGameControls,
+      scaleMode:
+        persistedAppSettings.scaleMode ?? appSlice.getInitialState().scaleMode,
+      touchControlsOverride:
+        persistedAppSettings.touchControlsOverride ??
+        appSlice.getInitialState().touchControlsOverride
     },
     highscore: persistedHighScores,
     controls: {

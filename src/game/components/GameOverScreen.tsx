@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react'
 
 type GameOverScreenProps = {
+  scale: number
   onContinue: () => void
 }
 
 const GameOverScreen: React.FC<GameOverScreenProps> = ({
+  scale,
   onContinue
 }): React.ReactElement => {
   useEffect(() => {
@@ -25,8 +27,8 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        width: '1024px',
-        height: '684px',
+        width: `${512 * scale}px`,
+        height: `${342 * scale}px`,
         backgroundColor: 'black',
         fontFamily: 'monospace',
         color: 'white'
@@ -37,14 +39,14 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '40px'
+          gap: `${20 * scale}px`
         }}
       >
         <h1
           style={{
-            fontSize: '48px',
+            fontSize: `${24 * scale}px`,
             margin: 0,
-            letterSpacing: '4px',
+            letterSpacing: `${2 * scale}px`,
             fontWeight: 'bold'
           }}
         >
@@ -53,9 +55,9 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
 
         <div
           style={{
-            fontSize: '16px',
+            fontSize: `${8 * scale}px`,
             color: 'white',
-            marginTop: '20px'
+            marginTop: `${10 * scale}px`
           }}
         >
           Press SPACE or ENTER to continue
@@ -64,15 +66,15 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
         <button
           onClick={onContinue}
           style={{
-            fontSize: '16px',
-            padding: '10px 24px',
+            fontSize: `${8 * scale}px`,
+            padding: `${5 * scale}px ${12 * scale}px`,
             backgroundColor: 'white',
             color: 'black',
             border: '1px solid white',
             cursor: 'pointer',
             fontFamily: 'monospace',
-            letterSpacing: '1px',
-            marginTop: '20px'
+            letterSpacing: `${0.5 * scale}px`,
+            marginTop: `${10 * scale}px`
           }}
         >
           CONTINUE
