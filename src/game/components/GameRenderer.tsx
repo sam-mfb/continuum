@@ -2,7 +2,12 @@ import React, { useEffect, useRef, useState } from 'react'
 import type { FrameInfo, KeyInfo, MonochromeBitmap } from '@lib/bitmap'
 import { useAppDispatch, useAppSelector, type RootState } from '../store'
 import { togglePause, showMap, hideMap, pause, unpause } from '../gameSlice'
-import { getControls, mergeControls, type ControlMatrix } from '@core/controls'
+import {
+  getControls,
+  mergeControls,
+  blankControls,
+  type ControlMatrix
+} from '@core/controls'
 import { Map } from './Map'
 import { bitmapToCollisionItem, type CollisionService } from '@/core/collision'
 import { Collision } from '@/core/collision/constants'
@@ -140,20 +145,10 @@ const GameRenderer: React.FC<GameRendererProps> = ({
 
         // If map is showing, use blank controls (all false) to prevent game input
         const controls = showMapState
-          ? {
-              thrust: false,
-              left: false,
-              right: false,
-              fire: false,
-              shield: false,
-              selfDestruct: false,
-              pause: false,
-              quit: false,
-              nextLevel: false,
-              extraLife: false,
+          ? blankControls(mergedControls, {
               // need to still detect the map key
               map: mergedControls.map
-            }
+            })
           : mergedControls
 
         if (controls.map) {
