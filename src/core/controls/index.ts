@@ -21,3 +21,7 @@ export {
 } from './types'
 
 export { getControls } from './getControls'
+
+export { mergeControls } from './mergeControls'
+
+export { blankControls } from './blankControls'
