@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import type { FrameInfo, KeyInfo, MonochromeBitmap } from '@lib/bitmap'
 import { useAppDispatch, useAppSelector, type RootState } from '../store'
 import { togglePause, showMap, hideMap, pause, unpause } from '../gameSlice'
-import { getControls, type ControlMatrix } from '@core/controls'
+import { getControls, mergeControls, type ControlMatrix } from '@core/controls'
 import { Map } from './Map'
 import { bitmapToCollisionItem, type CollisionService } from '@/core/collision'
 import { Collision } from '@/core/collision/constants'
@@ -136,20 +136,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
         const keyboardControls = getControls(keyInfo, bindings)
 
         // Merge keyboard and touch controls (OR logic for each control)
-        const mergedControls: ControlMatrix = {
-          thrust: keyboardControls.thrust || touchControls.thrust,
-          left: keyboardControls.left || touchControls.left,
-          right: keyboardControls.right || touchControls.right,
-          fire: keyboardControls.fire || touchControls.fire,
-          shield: keyboardControls.shield || touchControls.shield,
-          selfDestruct:
-            keyboardControls.selfDestruct || touchControls.selfDestruct,
-          pause: keyboardControls.pause || touchControls.pause,
-          quit: keyboardControls.quit || touchControls.quit,
-          nextLevel: keyboardControls.nextLevel || touchControls.nextLevel,
-          extraLife: keyboardControls.extraLife || touchControls.extraLife,
-          map: keyboardControls.map || touchControls.map
-        }
+        const mergedControls = mergeControls(keyboardControls, touchControls)
 
         // If map is showing, use blank controls (all false) to prevent game input
         const controls = showMapState
