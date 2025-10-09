@@ -2,8 +2,6 @@
  * @fileoverview Utility for creating blank control matrices
  */
 
-import type { ControlMatrix } from './types'
-
 /**
  * Creates a blank control matrix with all controls set to false.
  * Optionally allows specific controls to be overridden.
@@ -12,16 +10,16 @@ import type { ControlMatrix } from './types'
  * @param overrides - Optional partial control matrix to override specific controls
  * @returns A complete control matrix with all controls false except overrides
  */
-export function blankControls(
-  source: ControlMatrix,
-  overrides?: Partial<ControlMatrix>
-): ControlMatrix {
-  const blank = {} as ControlMatrix
-  const keys = Object.keys(source) as (keyof ControlMatrix)[]
+export function blankControls<T extends Record<string, boolean>>(
+  source: T,
+  overrides?: Partial<T>
+): T {
+  const blank = {} as T
+  const keys = Object.keys(source) as (keyof T)[]
 
   // Set all controls to false
   for (const key of keys) {
-    blank[key] = overrides?.[key] ?? false
+    blank[key] = (overrides?.[key] ?? false) as T[keyof T]
   }
 
   return blank
