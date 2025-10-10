@@ -17,9 +17,9 @@
 
 /// <reference path="./worklet.d.ts" />
 
-import type { SampleGenerator } from '@/core/sound-shared'
+import type { SampleGenerator, RingBuffer } from '@/core/sound-shared'
 import {
-  convertSample,
+  createRingBuffer,
   createSilenceGenerator,
   createFireGenerator,
   createExplosionGenerator,
@@ -37,7 +37,6 @@ import {
 // Constants
 const CHUNK_SIZE = 370
 const BUFFER_SIZE = 8192 // Must be power of 2
-const CENTER_VALUE = 128
 
 /**
  * Message types from main thread to worklet
@@ -57,10 +56,8 @@ type WorkletToMainMessage =
  * Basic audio processor that maintains single-sound behavior
  */
 class BasicAudioProcessor extends AudioWorkletProcessor {
-  // Ring buffer for generated samples (8-bit unsigned)
-  private buffer: Uint8Array
-  private writePosition: number
-  private readPosition: number
+  // Ring buffer for managing audio samples
+  private ringBuffer: RingBuffer
 
   // Generator state
   private currentGenerator: SampleGenerator | null
@@ -73,16 +70,14 @@ class BasicAudioProcessor extends AudioWorkletProcessor {
   constructor() {
     super()
 
-    this.buffer = new Uint8Array(BUFFER_SIZE)
-    this.writePosition = 0
-    this.readPosition = 0
+    this.ringBuffer = createRingBuffer(BUFFER_SIZE)
+    // Fill buffer with silence to prevent underruns on first audio callback
+    this.ringBuffer.fillWithSilence(BUFFER_SIZE)
+
     this.currentGenerator = null
     this.hasReportedEnded = false
     this.underruns = 0
     this.totalCallbacks = 0
-
-    // Fill initial buffer with silence
-    this.fillBufferWithSilence(BUFFER_SIZE)
 
     // Listen for messages from main thread
     this.port.onmessage = (event: MessageEvent<MainToWorkletMessage>): void => {
@@ -102,7 +97,7 @@ class BasicAudioProcessor extends AudioWorkletProcessor {
       case 'clearSound':
         this.currentGenerator = null
         this.hasReportedEnded = false
-        this.reset()
+        this.ringBuffer.reset()
         break
     }
   }
@@ -176,33 +171,11 @@ class BasicAudioProcessor extends AudioWorkletProcessor {
   }
 
   /**
-   * Fill buffer with silence (center value)
-   */
-  private fillBufferWithSilence(count: number): void {
-    for (let i = 0; i < count; i++) {
-      this.buffer[this.writePosition] = CENTER_VALUE
-      this.writePosition = (this.writePosition + 1) & (BUFFER_SIZE - 1)
-
-      if (this.writePosition === this.readPosition) {
-        break
-      }
-    }
-  }
-
-  /**
-   * Get available samples in buffer
-   */
-  private getAvailableSamples(): number {
-    const available = this.writePosition - this.readPosition
-    return available >= 0 ? available : available + BUFFER_SIZE
-  }
-
-  /**
    * Generate a chunk and add to buffer
    */
   private generateChunk(): void {
     if (!this.currentGenerator) {
-      this.fillBufferWithSilence(CHUNK_SIZE)
+      this.ringBuffer.fillWithSilence(CHUNK_SIZE)
       return
     }
 
@@ -215,15 +188,11 @@ class BasicAudioProcessor extends AudioWorkletProcessor {
     }
 
     // Add chunk to ring buffer
-    for (let i = 0; i < chunk.length; i++) {
-      this.buffer[this.writePosition] = chunk[i]!
-      this.writePosition = (this.writePosition + 1) & (BUFFER_SIZE - 1)
+    const written = this.ringBuffer.writeSamples(chunk)
 
-      // Check for overflow
-      if (this.writePosition === this.readPosition) {
-        this.underruns++
-        break
-      }
+    // Track underruns if we couldn't write the full chunk
+    if (written < chunk.length) {
+      this.underruns++
     }
   }
 
@@ -231,32 +200,9 @@ class BasicAudioProcessor extends AudioWorkletProcessor {
    * Ensure enough samples are available
    */
   private ensureAvailable(sampleCount: number): void {
-    while (this.getAvailableSamples() < sampleCount) {
+    while (this.ringBuffer.getAvailableSamples() < sampleCount) {
       this.generateChunk()
     }
-  }
-
-  /**
-   * Read samples from buffer and convert to Float32
-   * Volume control is handled by GainNode in main thread
-   */
-  private readSamples(output: Float32Array, count: number): void {
-    this.ensureAvailable(count)
-
-    for (let i = 0; i < count; i++) {
-      const sample = this.buffer[this.readPosition]!
-      output[i] = convertSample(sample)
-      this.readPosition = (this.readPosition + 1) & (BUFFER_SIZE - 1)
-    }
-  }
-
-  /**
-   * Reset buffer state
-   */
-  private reset(): void {
-    this.writePosition = 0
-    this.readPosition = 0
-    this.fillBufferWithSilence(BUFFER_SIZE)
   }
 
   /**
@@ -278,8 +224,11 @@ class BasicAudioProcessor extends AudioWorkletProcessor {
     const sampleCount = outputChannel.length
 
     try {
-      // Read and convert samples
-      this.readSamples(outputChannel, sampleCount)
+      // Ensure enough samples are available
+      this.ensureAvailable(sampleCount)
+
+      // Read and convert samples from ring buffer
+      this.ringBuffer.readSamples(outputChannel, sampleCount)
 
       // Copy to other channels if stereo
       for (let channel = 1; channel < output.length; channel++) {

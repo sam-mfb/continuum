@@ -12,6 +12,9 @@ export * from './sampleGenerator'
 // Format converter
 export * from './formatConverter'
 
+// Ring buffer
+export * from './ringBuffer'
+
 // Generator builders
 export * from './generators-asm/bunkerGenerator'
 export * from './generators-asm/crackGenerator'
