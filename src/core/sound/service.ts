@@ -100,41 +100,41 @@ export async function createSoundService(initialSettings: {
     /**
      * Internal helper to play a sound by engine type
      */
-    function playSoundByType(soundType: GameSoundType): void {
+    async function playSoundByType(soundType: GameSoundType): Promise<void> {
       if (!soundEngine) return
 
       // Try to resume audio context on any play attempt (in case it's suspended)
-      soundEngine.resumeContext().then(async () => {
-        // Check if muted
-        if (isMuted) {
-          return
-        }
+      await soundEngine.resumeContext()
 
-        // Start the engine first if not already running
-        if (!isEngineRunning) {
-          await soundEngine.start()
-          soundEngine.setVolume(currentVolume)
-          isEngineRunning = true
-        }
+      // Check if muted
+      if (isMuted) {
+        return
+      }
 
-        // Determine if this sound needs a callback to clear state when it ends
-        // Continuous sounds (thrust/shield) and silence don't need callbacks
-        const needsCallback =
-          soundType !== 'thruster' &&
-          soundType !== 'shield' &&
-          soundType !== 'silence'
+      // Start the engine first if not already running
+      if (!isEngineRunning) {
+        await soundEngine.start()
+        soundEngine.setVolume(currentVolume)
+        isEngineRunning = true
+      }
 
-        if (needsCallback) {
-          // Add callback to clear state when sound ends (like original's clear_sound())
-          soundEngine.play(soundType, () => {
-            currentSound = null
-            currentSoundPriority = 0
-          })
-        } else {
-          // Continuous sounds and silence play without callbacks
-          soundEngine.play(soundType)
-        }
-      })
+      // Determine if this sound needs a callback to clear state when it ends
+      // Continuous sounds (thrust/shield) and silence don't need callbacks
+      const needsCallback =
+        soundType !== 'thruster' &&
+        soundType !== 'shield' &&
+        soundType !== 'silence'
+
+      if (needsCallback) {
+        // Add callback to clear state when sound ends (like original's clear_sound())
+        soundEngine.play(soundType, () => {
+          currentSound = null
+          currentSoundPriority = 0
+        })
+      } else {
+        // Continuous sounds and silence play without callbacks
+        soundEngine.play(soundType)
+      }
     }
 
     /**
