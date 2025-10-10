@@ -7,7 +7,4 @@
 export { createSoundService } from './service'
 
 // Export types
-export type { SoundService, GameSoundType } from './types'
-
-// Export constants and types from shared
-export * from '@/core/sound-shared'
+export type { SoundService } from './types'
