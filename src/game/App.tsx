@@ -155,6 +155,14 @@ export const App: React.FC<AppProps> = ({
               soundService.setVolume(volume)
               soundService.setMuted(soundMuted)
 
+              // Start audio engine proactively to avoid first-sound delay
+              if (!soundMuted) {
+                soundService.startEngine().catch(err => {
+                  console.warn('Failed to start audio engine:', err)
+                  // Non-fatal: engine will lazy-start on first sound
+                })
+              }
+
               // Load the selected level
               dispatch(loadLevel(level))
 

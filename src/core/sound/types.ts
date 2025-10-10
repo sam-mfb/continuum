@@ -56,6 +56,7 @@ export type SoundService = {
   setVolume(volume: number): void
   setMuted(muted: boolean): void
 
-  // Cleanup method
+  // Engine lifecycle
+  startEngine(): Promise<void> // Pre-start audio engine to eliminate first-sound delay
   cleanup(): void
 }

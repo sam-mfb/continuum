@@ -177,6 +177,24 @@ export async function createSoundService(initialSettings: {
 
     // Create the service instance
     const serviceInstance: SoundService = {
+      // Engine lifecycle
+      startEngine: async (): Promise<void> => {
+        // Don't start if muted (audio will start when unmuted)
+        if (isMuted) {
+          return
+        }
+
+        // Resume context if suspended (user gesture requirement)
+        await audioOutput.resumeContext()
+
+        // Start the engine if not already running
+        if (!isEngineRunning) {
+          await audioOutput.start()
+          audioOutput.setVolume(currentVolume)
+          isEngineRunning = true
+        }
+      },
+
       // Ship sounds
       playShipFire: (): void => {
         playSound(SoundType.FIRE_SOUND)

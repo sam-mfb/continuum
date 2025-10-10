@@ -43,5 +43,6 @@ export type GameSoundService = {
   playEcho(): void
 
   // Lifecycle
+  startEngine(): Promise<void> // Pre-start audio engine to eliminate first-sound delay
   cleanup(): void
 }
