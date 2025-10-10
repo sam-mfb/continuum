@@ -122,9 +122,13 @@ export async function createSoundService(
   type: SoundServiceType = 'modern'
 ): Promise<SoundService> {
   if (type === 'original') {
-    return (await import('./sound-original')).createSoundService(initialSettings)
+    return (await import('./sound-original')).createSoundService(
+      initialSettings
+    )
   } else {
-    return (await import('./sound-modern')).createModernSoundService(initialSettings)
+    return (await import('./sound-modern')).createModernSoundService(
+      initialSettings
+    )
   }
 }
 ```

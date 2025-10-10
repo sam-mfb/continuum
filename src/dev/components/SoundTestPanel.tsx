@@ -10,7 +10,7 @@ import {
   type SoundService,
   SOUND_PRIORITIES,
   SoundType
-} from '@core/sound'
+} from '@/core/sound-original'
 
 // Map SoundType enum values to display names
 const SOUND_NAMES: Record<SoundType, string> = {
