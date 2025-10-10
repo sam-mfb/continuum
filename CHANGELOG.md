@@ -1,5 +1,9 @@
 # Changes
 
+## 1.0.5 - 2025.10.09
+
+Upgrade Audio System to use AudioWorklet
+
 ## 1.0.4 - 2025.10.06
 
 Fix bug in ship contain
