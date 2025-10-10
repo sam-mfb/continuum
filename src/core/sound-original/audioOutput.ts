@@ -50,7 +50,11 @@ export type AudioOutput = {
   /**
    * Send message to worklet to set generator
    */
-  setGenerator(generatorType: string, priority: number): void
+  setGenerator(
+    generatorType: string,
+    priority: number,
+    onEnded?: () => void
+  ): void
 
   /**
    * Send message to worklet to clear sound
@@ -79,6 +83,9 @@ export const createAudioOutput = (): AudioOutput => {
   // Performance tracking (received from worklet)
   let underruns = 0
   let totalCallbacks = 0
+
+  // Callback for when sound ends
+  let onSoundEndedCallback: (() => void) | null = null
 
   // Constants
   const SAMPLE_RATE = 22200 // Original Mac sample rate
@@ -135,7 +142,11 @@ export const createAudioOutput = (): AudioOutput => {
         const message = event.data
         switch (message.type) {
           case 'soundEnded':
-            console.log('Sound ended (from worklet)')
+            // Invoke the callback if one was registered
+            if (onSoundEndedCallback) {
+              onSoundEndedCallback()
+              onSoundEndedCallback = null // Clear after calling
+            }
             break
           case 'stats':
             underruns = message.underruns
@@ -239,7 +250,14 @@ export const createAudioOutput = (): AudioOutput => {
   /**
    * Send message to worklet to set generator
    */
-  const setGenerator = (generatorType: string, priority: number): void => {
+  const setGenerator = (
+    generatorType: string,
+    priority: number,
+    onEnded?: () => void
+  ): void => {
+    // Store the callback to invoke when worklet reports sound ended
+    onSoundEndedCallback = onEnded || null
+
     if (workletNode) {
       workletNode.port.postMessage({
         type: 'setGenerator',

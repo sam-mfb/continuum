@@ -156,14 +156,8 @@ export const createSoundEngine = (): SoundEngine => {
 
     currentGenerator = generator
 
-    // Send message to worklet to set generator
-    // For now, just send the sound type name (will be enhanced to actually create generators in worklet)
-    audioOutput.setGenerator(soundType, 0)
-
-    // TODO: Handle onEnded callback (need to listen for 'soundEnded' message from worklet)
-    if (onEnded) {
-      console.log('onEnded callbacks not yet implemented in worklet version')
-    }
+    // Send message to worklet to set generator with optional callback
+    audioOutput.setGenerator(soundType, 0, onEnded)
   }
 
   /**

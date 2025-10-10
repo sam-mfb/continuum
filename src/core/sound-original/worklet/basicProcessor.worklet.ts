@@ -121,7 +121,6 @@ class BasicAudioProcessor extends AudioWorkletProcessor {
    * Set the current generator based on type string
    */
   private setGenerator(generatorType: string): void {
-    console.log('[Worklet] setGenerator called with:', generatorType)
     // Create the appropriate generator based on the sound type
     switch (generatorType) {
       case 'silence':
@@ -170,9 +169,15 @@ class BasicAudioProcessor extends AudioWorkletProcessor {
 
     // Reset/start the generator to activate it
     if (this.currentGenerator) {
-      if ('start' in this.currentGenerator && typeof this.currentGenerator.start === 'function') {
+      if (
+        'start' in this.currentGenerator &&
+        typeof this.currentGenerator.start === 'function'
+      ) {
         this.currentGenerator.start()
-      } else if ('reset' in this.currentGenerator && typeof this.currentGenerator.reset === 'function') {
+      } else if (
+        'reset' in this.currentGenerator &&
+        typeof this.currentGenerator.reset === 'function'
+      ) {
         this.currentGenerator.reset()
       }
     }
@@ -216,7 +221,6 @@ class BasicAudioProcessor extends AudioWorkletProcessor {
     // Check if sound has ended
     if (!this.hasReportedEnded && this.currentGenerator.hasEnded()) {
       this.hasReportedEnded = true
-      console.log('[Worklet] Sound ended, generator.hasEnded() returned true')
       this.port.postMessage({ type: 'soundEnded' } as WorkletToMainMessage)
     }
 
