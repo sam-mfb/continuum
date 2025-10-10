@@ -44,7 +44,6 @@ const CENTER_VALUE = 128
  */
 type MainToWorkletMessage =
   | { type: 'setGenerator'; generatorType: string }
-  | { type: 'setVolume'; volume: number }
   | { type: 'clearSound' }
 
 /**
@@ -63,10 +62,6 @@ class BasicAudioProcessor extends AudioWorkletProcessor {
   private writePosition: number
   private readPosition: number
 
-  // Volume control
-  private volume: number
-  private readonly MASTER_GAIN_SCALE = 0.6
-
   // Generator state
   private currentGenerator: SampleGenerator | null
   private hasReportedEnded: boolean
@@ -81,7 +76,6 @@ class BasicAudioProcessor extends AudioWorkletProcessor {
     this.buffer = new Uint8Array(BUFFER_SIZE)
     this.writePosition = 0
     this.readPosition = 0
-    this.volume = 1.0
     this.currentGenerator = null
     this.hasReportedEnded = false
     this.underruns = 0
@@ -103,10 +97,6 @@ class BasicAudioProcessor extends AudioWorkletProcessor {
     switch (message.type) {
       case 'setGenerator':
         this.setGenerator(message.generatorType)
-        break
-
-      case 'setVolume':
-        this.volume = Math.max(0, Math.min(1, message.volume))
         break
 
       case 'clearSound':
@@ -248,13 +238,14 @@ class BasicAudioProcessor extends AudioWorkletProcessor {
 
   /**
    * Read samples from buffer and convert to Float32
+   * Volume control is handled by GainNode in main thread
    */
   private readSamples(output: Float32Array, count: number): void {
     this.ensureAvailable(count)
 
     for (let i = 0; i < count; i++) {
       const sample = this.buffer[this.readPosition]!
-      output[i] = convertSample(sample) * this.volume * this.MASTER_GAIN_SCALE
+      output[i] = convertSample(sample)
       this.readPosition = (this.readPosition + 1) & (BUFFER_SIZE - 1)
     }
   }
