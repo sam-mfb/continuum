@@ -287,6 +287,10 @@ export async function createSoundService(initialSettings: {
           isEngineRunning = false
           currentSound = null
           currentSoundPriority = 0
+        } else if (!muted) {
+          // When unmuting, clear the current sound state so new sounds can play
+          currentSound = null
+          currentSoundPriority = 0
         }
       },
 
