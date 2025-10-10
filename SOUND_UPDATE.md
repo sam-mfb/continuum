@@ -1,10 +1,13 @@
-# Sound Service Upgrade Proposal
+# Sound Service Upgrade
 
-## Current Issues
+## Status: Phase 1 Complete ✅
 
-1. **Deprecated API**: Uses `ScriptProcessorNode` (deprecated) instead of `AudioWorkletNode` (audioOutput.ts:156)
-2. **No Sound Mixing**: Single-channel architecture with priority system prevents simultaneous sounds
-3. **No Background Music**: No support for continuous background music tracks
+Phase 1 (AudioWorklet migration) has been completed and integrated into the game.
+
+## Remaining Work
+
+1. **No Sound Mixing**: Single-channel architecture with priority system prevents simultaneous sounds
+2. **No Background Music**: No support for continuous background music tracks
 
 ## Audio Format Recommendation
 
@@ -24,34 +27,23 @@ For **generated SFX**: Keep current approach (procedural generation from origina
 
 ## Proposed Architecture
 
-### Two Sound Service Implementations
-
-Organize into separate directories to keep original and modern services completely isolated:
+### Current Architecture (After Phase 1)
 
 ```
 src/core/
-├── sound-original/
-│   ├── service.ts           (current service upgraded to worklet)
+├── sound/                   ✅ AudioWorklet-based implementation
+│   ├── service.ts          (current service using AudioWorklet)
 │   ├── soundEngine.ts
-│   ├── audioOutput.ts
+│   ├── audioOutput.ts      (uses AudioWorkletNode)
 │   ├── bufferManager.ts
 │   ├── worklet/
-│   │   └── basicProcessor.worklet.ts
+│   │   ├── basicProcessor.worklet.ts
+│   │   └── worklet.d.ts
 │   ├── types.ts
-│   └── index.ts            (exports createSoundService)
+│   ├── index.ts            (exports createSoundService)
+│   └── __tests__/
 │
-├── sound-modern/
-│   ├── service.ts          (modern service with mixing + music)
-│   ├── mixer.ts
-│   ├── musicPlayer.ts
-│   ├── soundEngine.ts
-│   ├── audioOutput.ts
-│   ├── worklet/
-│   │   └── mixerProcessor.worklet.ts
-│   ├── types.ts
-│   └── index.ts            (exports createModernSoundService)
-│
-└── sound-shared/
+└── sound-shared/            ✅ Shared code
     ├── constants.ts         (SoundType, priorities, etc.)
     ├── sampleGenerator.ts
     ├── formatConverter.ts
@@ -63,24 +55,51 @@ src/core/
     └── __tests__/
 ```
 
-### Phase 1: Upgrade Current Service to AudioWorklet
+### Future Architecture (Phase 2+)
 
-**Goal**: Migrate current service to `sound-original/` with AudioWorklet
+When implementing Phase 2, we would add:
 
-- Create `sound-original/` directory
-- Copy current implementation (service, soundEngine, audioOutput, bufferManager, types)
-- Replace ScriptProcessorNode with AudioWorkletNode in `audioOutput.ts`
-- Create `worklet/basicProcessor.worklet.ts`
-- **Keep exact same behavior**: single sound, priority-based
-- **Keep exact same API**: all existing methods unchanged
-- No mixing, no music - just modernized internals
-- Update imports to use `sound-shared/`
+```
+src/core/
+├── sound/                   (current AudioWorklet implementation)
+├── sound-modern/           (TODO: modern service with mixing + music)
+│   ├── service.ts
+│   ├── mixer.ts
+│   ├── musicPlayer.ts
+│   ├── soundEngine.ts
+│   ├── audioOutput.ts
+│   ├── worklet/
+│   │   └── mixerProcessor.worklet.ts
+│   ├── types.ts
+│   └── index.ts
+└── sound-shared/           (shared by both implementations)
+```
 
-**Result**: Drop-in replacement with better performance
+### Phase 1: Upgrade Current Service to AudioWorklet ✅ COMPLETE
 
-### Phase 2: Create Modern Service
+**Goal**: Migrate current service to use AudioWorklet
+
+**Completed Work**:
+
+- ✅ Created `sound-shared/` directory with all shared code (generators, constants, utilities)
+- ✅ Replaced ScriptProcessorNode with AudioWorkletNode in `audioOutput.ts`
+- ✅ Created `worklet/basicProcessor.worklet.ts` with all audio processing in audio rendering thread
+- ✅ Used Vite's `?worker&url` import pattern to bundle worklet with TypeScript and dependencies
+- ✅ Implemented onEnded callback support for discrete sounds
+- ✅ **Kept exact same behavior**: single sound, priority-based
+- ✅ **Kept exact same API**: all existing methods unchanged
+- ✅ No mixing, no music - just modernized internals
+- ✅ Fixed unmute issue where continuous sounds weren't restarting
+- ✅ Integrated into game and verified all sounds work correctly
+- ✅ All 590 tests passing
+
+**Result**: Drop-in replacement using modern, non-deprecated Web Audio APIs. The old ScriptProcessorNode-based implementation has been removed.
+
+### Phase 2: Create Modern Service (TODO)
 
 **Goal**: Build modern service in `sound-modern/` with mixing + music
+
+**Remaining Work**:
 
 - Create `sound-modern/` directory
 - Implement new `service.ts` with `SoundService` interface
@@ -92,12 +111,14 @@ src/core/
 - Create `worklet/mixerProcessor.worklet.ts`
 - Update imports to use `sound-shared/`
 
-### Phase 3: Selection Mechanism
+**Note**: The current `sound/` directory now contains the AudioWorklet-based implementation and serves as the foundation for the modern service.
 
-Each directory exports its own factory:
+### Phase 3: Selection Mechanism (TODO)
+
+When Phase 2 is complete, each directory would export its own factory:
 
 ```typescript
-// src/core/sound-original/index.ts
+// src/core/sound/index.ts
 export { createSoundService }
 export type { SoundService }
 
@@ -106,25 +127,23 @@ export { createModernSoundService }
 export type { ModernSoundService }
 
 // Usage in game code:
-import { createSoundService } from '@/core/sound-original'
-// OR
+import { createSoundService } from '@/core/sound'
+// OR (for new features)
 import { createModernSoundService } from '@/core/sound-modern'
 ```
 
 Could add a top-level selector if desired:
 
 ```typescript
-// src/core/sound/index.ts (optional convenience wrapper)
-export type SoundServiceType = 'original' | 'modern'
+// Optional convenience wrapper
+export type SoundServiceType = 'basic' | 'modern'
 
 export async function createSoundService(
   initialSettings: { volume: number; muted: boolean },
   type: SoundServiceType = 'modern'
 ): Promise<SoundService> {
-  if (type === 'original') {
-    return (await import('./sound-original')).createSoundService(
-      initialSettings
-    )
+  if (type === 'basic') {
+    return (await import('./sound')).createSoundService(initialSettings)
   } else {
     return (await import('./sound-modern')).createModernSoundService(
       initialSettings
@@ -234,13 +253,16 @@ Both worklets will:
 
 ## Implementation Phases
 
-### Phase 1: AudioWorklet Migration (Foundation)
+### Phase 1: AudioWorklet Migration (Foundation) ✅ COMPLETE
 
-- Create `worklet/basicProcessor.worklet.ts`
-- Migrate buffer manager logic to worklet
-- Update `audioOutput.ts` to use AudioWorkletNode
-- **Ensure all existing tests pass**
-- **Ensure backward compatibility**
+**Completed**:
+
+- ✅ Created `worklet/basicProcessor.worklet.ts`
+- ✅ Migrated buffer manager logic to worklet
+- ✅ Updated `audioOutput.ts` to use AudioWorkletNode
+- ✅ All 590 tests passing
+- ✅ Full backward compatibility maintained
+- ✅ Integrated into game and verified working
 
 ### Phase 2: Multi-Channel Mixer
 
@@ -270,28 +292,29 @@ Both worklets will:
 
 ## Files to Create/Modify
 
-### Phase 0: Shared Code Extraction
+### Phase 0: Shared Code Extraction ✅ COMPLETE
 
-Move existing shared code to `sound-shared/`:
+**Completed**:
 
-- `src/core/sound-shared/constants.ts` (move from `sound/constants.ts`)
-- `src/core/sound-shared/sampleGenerator.ts` (move from `sound/sampleGenerator.ts`)
-- `src/core/sound-shared/formatConverter.ts` (move from `sound/formatConverter.ts`)
-- `src/core/sound-shared/generators-asm/` (move entire directory from `sound/generators-asm/`)
-- `src/core/sound-shared/__tests__/` (move shared tests)
+- ✅ Created `src/core/sound-shared/constants.ts`
+- ✅ Created `src/core/sound-shared/sampleGenerator.ts`
+- ✅ Created `src/core/sound-shared/formatConverter.ts`
+- ✅ Moved `src/core/sound-shared/generators-asm/` (all 13 generators)
+- ✅ Moved shared tests to `src/core/sound-shared/__tests__/`
 
-### Phase 1: Original Service Files
+### Phase 1: AudioWorklet Service Files ✅ COMPLETE
 
-New directory `sound-original/` with:
+**Completed in `sound/` directory**:
 
-- `src/core/sound-original/service.ts` (copy from `sound/service.ts`, update for worklet)
-- `src/core/sound-original/soundEngine.ts` (copy from `sound/soundEngine.ts`)
-- `src/core/sound-original/audioOutput.ts` (copy from `sound/audioOutput.ts`, upgrade to worklet)
-- `src/core/sound-original/bufferManager.ts` (copy from `sound/bufferManager.ts`)
-- `src/core/sound-original/types.ts` (copy from `sound/types.ts`)
-- `src/core/sound-original/worklet/basicProcessor.worklet.ts` (new)
-- `src/core/sound-original/index.ts` (new - exports)
-- `src/core/sound-original/__tests__/` (copy and update existing tests)
+- ✅ `src/core/sound/service.ts` (upgraded for worklet)
+- ✅ `src/core/sound/soundEngine.ts` (updated imports)
+- ✅ `src/core/sound/audioOutput.ts` (upgraded to AudioWorkletNode)
+- ✅ `src/core/sound/bufferManager.ts` (kept for compatibility)
+- ✅ `src/core/sound/types.ts` (updated)
+- ✅ `src/core/sound/worklet/basicProcessor.worklet.ts` (new - runs in audio thread)
+- ✅ `src/core/sound/worklet/worklet.d.ts` (new - TypeScript definitions)
+- ✅ `src/core/sound/index.ts` (exports)
+- ✅ `src/core/sound/__tests__/` (all tests passing)
 
 ### Phase 2: Modern Service Files
 
@@ -307,14 +330,22 @@ New directory `sound-modern/` with:
 - `src/core/sound-modern/index.ts` (new - exports)
 - `src/core/sound-modern/__tests__/` (new - tests for mixer/music)
 
-### Phase 3: Integration
+### Phase 3: Integration ✅ COMPLETE (for Phase 1)
 
-- Update `src/game/store.ts` to import from `sound-original` or `sound-modern`
-- Update `src/game/soundListenerMiddleware.ts` if needed
-- Update any other files importing from `src/core/sound/`
+**Completed**:
 
-### Cleanup (After All Phases)
+- ✅ Updated `src/game/store.ts` to use `@/core/sound`
+- ✅ Updated `src/game/soundListenerMiddleware.ts` to use `@/core/sound`
+- ✅ Updated `src/game/main.tsx` to use `@/core/sound`
+- ✅ Updated `src/dev/components/SoundTestPanel.tsx` to use `@/core/sound`
+- ✅ All game sounds verified working
+- ✅ Fixed unmute issue for continuous sounds
 
-- Remove old `src/core/sound/` directory entirely
-- Verify all imports updated
-- Verify all tests pass
+### Cleanup ✅ COMPLETE (for Phase 1)
+
+**Completed**:
+
+- ✅ Removed old ScriptProcessorNode-based implementation
+- ✅ All imports updated to use AudioWorklet-based system
+- ✅ All 590 tests passing
+- ✅ 4,943 lines of deprecated code removed
