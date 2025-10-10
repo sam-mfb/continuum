@@ -18,17 +18,16 @@ import { isTouchDevice } from './mobile/deviceDetection'
 import { setHighScore } from '@/core/highscore'
 import { shipSlice } from '@/core/ship'
 import { invalidateHighScore } from './gameSlice'
-import { type SoundService } from '@/core/sound'
 import { type SpriteService } from '@/core/sprites'
 import { useAppDispatch, useAppSelector } from './store'
-import type { GameRenderLoop } from './types'
+import type { GameRenderLoop, GameSoundService } from './types'
 import type { CollisionService } from '@/core/collision'
 import { useResponsiveScale } from './hooks/useResponsiveScale'
 import { BASE_GAME_WIDTH, BASE_TOTAL_HEIGHT } from './constants/dimensions'
 
 type AppProps = {
   renderer: GameRenderLoop
-  soundService: SoundService
+  soundService: GameSoundService
   spriteService: SpriteService
   collisionService: CollisionService
 }

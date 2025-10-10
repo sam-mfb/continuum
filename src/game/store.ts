@@ -10,7 +10,7 @@ import {
 import type { GalaxyService } from '@core/galaxy'
 import type { SpriteService } from '@core/sprites'
 import type { FizzTransitionService } from '@core/transition'
-import type { SoundService } from '@/core/sound'
+import type { GameSoundService } from './types'
 
 // Import all reducers
 import { gameSlice } from './gameSlice'
@@ -48,7 +48,7 @@ export type GameServices = {
   galaxyService: GalaxyService
   spriteService: SpriteService
   fizzTransitionService: FizzTransitionService
-  soundService: SoundService
+  soundService: GameSoundService
   collisionService: CollisionService
 }
 

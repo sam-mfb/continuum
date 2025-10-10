@@ -1,12 +1,12 @@
 /**
- * @fileoverview Sound service with singleton pattern
+ * @fileoverview Sound service implementation
  *
  * Provides a clean, synchronous API for playing game sounds.
  * Handles sound engine initialization and high-priority sound blocking.
  */
 
 import { createAudioOutput, type AudioOutput } from './audioOutput'
-import type { GameSoundType } from './types'
+import type { GameSoundType, SoundService } from './types'
 import {
   SoundType,
   SOUND_PRIORITIES,
@@ -15,44 +15,6 @@ import {
 
 // Vertical blanking interval for screen interrupts on original Mac
 const VERT_BLANK_PER_SEC = 60
-
-/**
- * Sound service interface
- * All methods are synchronous - async operations handled internally
- */
-export type SoundService = {
-  // Ship sounds
-  playShipFire(): void
-  playShipThrust(): void
-  playShipShield(): void
-  playShipExplosion(): void
-  stopShipThrust(): void
-  stopShipShield(): void
-
-  // Bunker sounds
-  playBunkerShoot(): void
-  playBunkerExplosion(): void
-  playBunkerSoft(): void
-
-  // Pickup sounds
-  playFuelCollect(): void
-
-  // Level sounds
-  playLevelComplete(): void // Crack sound
-  playLevelTransition(): void // Fizz sound
-  playEcho(): void
-
-  // Alien sounds
-  playAlienExplosion(): void
-
-  // Control methods
-  clearSound(): void // Matches original game's clear_sound()
-  setVolume(volume: number): void
-  setMuted(muted: boolean): void
-
-  // Cleanup method
-  cleanup(): void
-}
 
 /**
  * Map SoundType enum to engine sound types
