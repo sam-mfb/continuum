@@ -3,7 +3,7 @@
  * Phase 1: Minimal types for Redux integration
  */
 
-import type { SoundType } from './constants'
+import type { SoundType } from '@/core/sound-shared'
 
 /**
  * Represents the current state of the sound system
@@ -30,7 +30,7 @@ export type SoundEngine = {
    * @throws Logs an error if volume is not a valid number between 0.0 and 1.0
    */
   setVolume: (volume: number) => void
-  start: () => void // Start audio playback
+  start: () => Promise<void> // Start audio playback (async for worklet loading)
   stop: () => void // Stop audio playback
   play: (soundType: GameSoundType, onEnded?: () => void) => void // Play a sound
   resumeContext: () => Promise<void> // Resume suspended audio context

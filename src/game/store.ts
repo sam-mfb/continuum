@@ -10,7 +10,7 @@ import {
 import type { GalaxyService } from '@core/galaxy'
 import type { SpriteService } from '@core/sprites'
 import type { FizzTransitionService } from '@core/transition'
-import type { SoundService } from '@core/sound'
+import type { SoundService } from '@/core/sound'
 
 // Import all reducers
 import { gameSlice } from './gameSlice'
