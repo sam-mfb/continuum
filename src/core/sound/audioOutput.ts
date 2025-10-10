@@ -50,11 +50,7 @@ export type AudioOutput = {
   /**
    * Send message to worklet to set generator
    */
-  setGenerator(
-    generatorType: string,
-    priority: number,
-    onEnded?: () => void
-  ): void
+  setGenerator(generatorType: string, onEnded?: () => void): void
 
   /**
    * Send message to worklet to clear sound
@@ -77,6 +73,7 @@ export type AudioOutput = {
 export const createAudioOutput = (): AudioOutput => {
   let audioContext: AudioContext | null = null
   let workletNode: AudioWorkletNode | null = null
+  let gainNode: GainNode | null = null
   let isPlaying = false
   let workletLoaded = false
 
@@ -89,6 +86,7 @@ export const createAudioOutput = (): AudioOutput => {
 
   // Constants
   const SAMPLE_RATE = 22200 // Original Mac sample rate
+  const MASTER_GAIN_SCALE = 0.5 // Scale down overall volume (100% = 50% of max)
 
   /**
    * Load the audio worklet module
@@ -155,9 +153,13 @@ export const createAudioOutput = (): AudioOutput => {
         }
       }
 
-      // Connect worklet directly to destination
-      // Note: Volume is handled inside the worklet (matches MASTER_GAIN_SCALE behavior)
-      workletNode.connect(audioContext.destination)
+      // Create gain node for volume control
+      gainNode = audioContext.createGain()
+      gainNode.gain.value = 1.0 * MASTER_GAIN_SCALE // Default to scaled full volume
+
+      // Connect audio chain: Worklet → GainNode → Destination
+      workletNode.connect(gainNode)
+      gainNode.connect(audioContext.destination)
 
       isPlaying = true
 
@@ -181,6 +183,11 @@ export const createAudioOutput = (): AudioOutput => {
       workletNode.disconnect()
       workletNode.port.onmessage = null
       workletNode = null
+    }
+
+    if (gainNode) {
+      gainNode.disconnect()
+      gainNode = null
     }
 
     isPlaying = false
@@ -237,32 +244,25 @@ export const createAudioOutput = (): AudioOutput => {
       )
     }
 
-    // Send volume message to worklet
-    if (workletNode) {
+    // Set gain node volume (with master gain scaling)
+    if (gainNode) {
       const clampedVolume = Math.max(0, Math.min(1, volume))
-      workletNode.port.postMessage({
-        type: 'setVolume',
-        volume: clampedVolume
-      })
+      // Apply master gain scaling to reduce overall volume
+      gainNode.gain.value = clampedVolume * MASTER_GAIN_SCALE
     }
   }
 
   /**
    * Send message to worklet to set generator
    */
-  const setGenerator = (
-    generatorType: string,
-    priority: number,
-    onEnded?: () => void
-  ): void => {
+  const setGenerator = (generatorType: string, onEnded?: () => void): void => {
     // Store the callback to invoke when worklet reports sound ended
     onSoundEndedCallback = onEnded || null
 
     if (workletNode) {
       workletNode.port.postMessage({
         type: 'setGenerator',
-        generatorType,
-        priority
+        generatorType
       })
     }
   }

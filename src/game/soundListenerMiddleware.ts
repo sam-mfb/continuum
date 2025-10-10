@@ -5,7 +5,7 @@
  * through the sound service at appropriate times
  */
 
-import type { SoundService } from '@/core/sound'
+import type { GameSoundService } from './types'
 import { shotsSlice, isNewShot } from '@/core/shots'
 import { SCRWTH, VIEWHT, SOFTBORDER } from '@/core/screen'
 import type { AppDispatch, RootState } from './store'
@@ -26,7 +26,7 @@ type SoundStartListening = TypedStartListening<RootState, AppDispatch>
  */
 export function setupSoundListener(
   soundStartListening: SoundStartListening,
-  soundService: SoundService
+  soundService: GameSoundService
 ): void {
   // adjust volume controls based on redux state
   soundStartListening({

@@ -1,58 +1,20 @@
 /**
- * @fileoverview Sound service with singleton pattern
+ * @fileoverview Sound service implementation
  *
  * Provides a clean, synchronous API for playing game sounds.
  * Handles sound engine initialization and high-priority sound blocking.
  */
 
-import { createSoundEngine, type GameSoundType } from './soundEngine'
+import { createAudioOutput, type AudioOutput } from './audioOutput'
+import type { GameSoundType, SoundService } from './types'
 import {
   SoundType,
   SOUND_PRIORITIES,
   SOUND_PRIORITY_DECAY
 } from '@/core/sound-shared'
-import type { SoundEngine } from './types'
 
 // Vertical blanking interval for screen interrupts on original Mac
 const VERT_BLANK_PER_SEC = 60
-
-/**
- * Sound service interface
- * All methods are synchronous - async operations handled internally
- */
-export type SoundService = {
-  // Ship sounds
-  playShipFire(): void
-  playShipThrust(): void
-  playShipShield(): void
-  playShipExplosion(): void
-  stopShipThrust(): void
-  stopShipShield(): void
-
-  // Bunker sounds
-  playBunkerShoot(): void
-  playBunkerExplosion(): void
-  playBunkerSoft(): void
-
-  // Pickup sounds
-  playFuelCollect(): void
-
-  // Level sounds
-  playLevelComplete(): void // Crack sound
-  playLevelTransition(): void // Fizz sound
-  playEcho(): void
-
-  // Alien sounds
-  playAlienExplosion(): void
-
-  // Control methods
-  clearSound(): void // Matches original game's clear_sound()
-  setVolume(volume: number): void
-  setMuted(muted: boolean): void
-
-  // Cleanup method
-  cleanup(): void
-}
 
 /**
  * Map SoundType enum to engine sound types
@@ -82,7 +44,7 @@ export async function createSoundService(initialSettings: {
   muted: boolean
 }): Promise<SoundService> {
   // Internal state for this instance
-  let soundEngine: SoundEngine
+  let audioOutput: AudioOutput
   let currentSound: SoundType | null = null
   let currentSoundPriority = 0
   let isEngineRunning = false
@@ -91,20 +53,20 @@ export async function createSoundService(initialSettings: {
   let decayIntervalId: NodeJS.Timeout | null = null
 
   try {
-    // Create and initialize the sound engine
-    soundEngine = createSoundEngine()
+    // Create and initialize the audio output
+    audioOutput = createAudioOutput()
 
     // Apply initial volume
-    soundEngine.setVolume(currentVolume)
+    audioOutput.setVolume(currentVolume)
 
     /**
      * Internal helper to play a sound by engine type
      */
     async function playSoundByType(soundType: GameSoundType): Promise<void> {
-      if (!soundEngine) return
+      if (!audioOutput) return
 
       // Try to resume audio context on any play attempt (in case it's suspended)
-      await soundEngine.resumeContext()
+      await audioOutput.resumeContext()
 
       // Check if muted
       if (isMuted) {
@@ -113,8 +75,8 @@ export async function createSoundService(initialSettings: {
 
       // Start the engine first if not already running
       if (!isEngineRunning) {
-        await soundEngine.start()
-        soundEngine.setVolume(currentVolume)
+        await audioOutput.start()
+        audioOutput.setVolume(currentVolume)
         isEngineRunning = true
       }
 
@@ -127,13 +89,13 @@ export async function createSoundService(initialSettings: {
 
       if (needsCallback) {
         // Add callback to clear state when sound ends (like original's clear_sound())
-        soundEngine.play(soundType, () => {
+        audioOutput.setGenerator(soundType, () => {
           currentSound = null
           currentSoundPriority = 0
         })
       } else {
         // Continuous sounds and silence play without callbacks
-        soundEngine.play(soundType)
+        audioOutput.setGenerator(soundType)
       }
     }
 
@@ -215,6 +177,24 @@ export async function createSoundService(initialSettings: {
 
     // Create the service instance
     const serviceInstance: SoundService = {
+      // Engine lifecycle
+      startEngine: async (): Promise<void> => {
+        // Don't start if muted (audio will start when unmuted)
+        if (isMuted) {
+          return
+        }
+
+        // Resume context if suspended (user gesture requirement)
+        await audioOutput.resumeContext()
+
+        // Start the engine if not already running
+        if (!isEngineRunning) {
+          await audioOutput.start()
+          audioOutput.setVolume(currentVolume)
+          isEngineRunning = true
+        }
+      },
+
       // Ship sounds
       playShipFire: (): void => {
         playSound(SoundType.FIRE_SOUND)
@@ -276,14 +256,14 @@ export async function createSoundService(initialSettings: {
 
       setVolume: (volume: number): void => {
         currentVolume = volume
-        soundEngine.setVolume(volume)
+        audioOutput.setVolume(volume)
       },
 
       setMuted: (muted: boolean): void => {
         isMuted = muted
         if (muted && isEngineRunning) {
           // Stop all sounds when muting
-          soundEngine.stop()
+          audioOutput.stop()
           isEngineRunning = false
           currentSound = null
           currentSoundPriority = 0
@@ -294,7 +274,7 @@ export async function createSoundService(initialSettings: {
         }
       },
 
-      // Cleanup method - stops sounds and timer but keeps engine alive for reuse
+      // Cleanup method - stops sounds and timer but keeps audio output alive for reuse
       cleanup: (): void => {
         // Clear the decay timer
         if (decayIntervalId) {
@@ -303,9 +283,9 @@ export async function createSoundService(initialSettings: {
         }
 
         if (isEngineRunning) {
-          soundEngine.stop()
+          audioOutput.stop()
         }
-        // Don't null out soundEngine - keep it alive for next game
+        // Don't null out audioOutput - keep it alive for next game
         currentSound = null
         currentSoundPriority = 0
         isEngineRunning = false
