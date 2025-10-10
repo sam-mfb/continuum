@@ -3,23 +3,22 @@
  */
 
 import type { SoundEngine } from './types'
-import { createBufferManager } from './bufferManager'
 import { createAudioOutput } from './audioOutput'
-import type { SampleGenerator } from './sampleGenerator'
-import { createSilenceGenerator } from './generators-asm/silenceGenerator'
-import { createFireGenerator } from './generators-asm/fireGenerator'
+import type { SampleGenerator } from '@/core/sound-shared'
 import {
+  createSilenceGenerator,
+  createFireGenerator,
   createExplosionGenerator,
-  ExplosionType
-} from './generators-asm/explosionGenerator'
-import { createThrusterGenerator } from './generators-asm/thrusterGenerator'
-import { createShieldGenerator } from './generators-asm/shieldGenerator'
-import { createBunkerGenerator } from './generators-asm/bunkerGenerator'
-import { createSoftGenerator } from './generators-asm/softGenerator'
-import { createFuelGenerator } from './generators-asm/fuelGenerator'
-import { createCrackGenerator } from './generators-asm/crackGenerator'
-import { createFizzGenerator } from './generators-asm/fizzGenerator'
-import { createEchoGenerator } from './generators-asm/echoGenerator'
+  ExplosionType,
+  createThrusterGenerator,
+  createShieldGenerator,
+  createBunkerGenerator,
+  createSoftGenerator,
+  createFuelGenerator,
+  createCrackGenerator,
+  createFizzGenerator,
+  createEchoGenerator
+} from '@/core/sound-shared'
 
 /**
  * Sound types available in the engine
@@ -63,11 +62,8 @@ export const createSoundEngine = (): SoundEngine => {
     echo: createEchoGenerator()
   }
 
-  // Initialize buffer manager with silence
-  const bufferManager = createBufferManager(generators.silence)
-
-  // Initialize audio output
-  const audioOutput = createAudioOutput(bufferManager)
+  // Initialize audio output (buffer manager is now inside the worklet)
+  const audioOutput = createAudioOutput()
 
   // Keep track of current generator
   let currentGenerator: SampleGenerator & {
@@ -100,8 +96,8 @@ export const createSoundEngine = (): SoundEngine => {
   /**
    * Start audio playback
    */
-  const start = (): void => {
-    audioOutput.start()
+  const start = async (): Promise<void> => {
+    await audioOutput.start()
   }
 
   /**
@@ -119,7 +115,7 @@ export const createSoundEngine = (): SoundEngine => {
 
     // Reset to silence
     currentGenerator = generators.silence
-    bufferManager.setGenerator(currentGenerator)
+    audioOutput.clearSound()
   }
 
   /**
@@ -159,7 +155,9 @@ export const createSoundEngine = (): SoundEngine => {
     }
 
     currentGenerator = generator
-    bufferManager.setGenerator(currentGenerator, onEnded)
+
+    // Send message to worklet to set generator with optional callback
+    audioOutput.setGenerator(soundType, 0, onEnded)
   }
 
   /**

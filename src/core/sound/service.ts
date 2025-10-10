@@ -6,7 +6,11 @@
  */
 
 import { createSoundEngine, type GameSoundType } from './soundEngine'
-import { SoundType, SOUND_PRIORITIES, SOUND_PRIORITY_DECAY } from './constants'
+import {
+  SoundType,
+  SOUND_PRIORITIES,
+  SOUND_PRIORITY_DECAY
+} from '@/core/sound-shared'
 import type { SoundEngine } from './types'
 
 // Vertical blanking interval for screen interrupts on original Mac
@@ -100,7 +104,7 @@ export async function createSoundService(initialSettings: {
       if (!soundEngine) return
 
       // Try to resume audio context on any play attempt (in case it's suspended)
-      soundEngine.resumeContext().then(() => {
+      soundEngine.resumeContext().then(async () => {
         // Check if muted
         if (isMuted) {
           return
@@ -108,7 +112,7 @@ export async function createSoundService(initialSettings: {
 
         // Start the engine first if not already running
         if (!isEngineRunning) {
-          soundEngine.start()
+          await soundEngine.start()
           soundEngine.setVolume(currentVolume)
           isEngineRunning = true
         }
@@ -281,6 +285,10 @@ export async function createSoundService(initialSettings: {
           // Stop all sounds when muting
           soundEngine.stop()
           isEngineRunning = false
+          currentSound = null
+          currentSoundPriority = 0
+        } else if (!muted) {
+          // When unmuting, clear the current sound state so new sounds can play
           currentSound = null
           currentSoundPriority = 0
         }

@@ -5,7 +5,7 @@
  * through the sound service at appropriate times
  */
 
-import type { SoundService } from '@/core/sound-original'
+import type { SoundService } from '@/core/sound'
 import { shotsSlice, isNewShot } from '@/core/shots'
 import { SCRWTH, VIEWHT, SOFTBORDER } from '@/core/screen'
 import type { AppDispatch, RootState } from './store'

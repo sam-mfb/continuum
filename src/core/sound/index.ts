@@ -1,28 +1,13 @@
 /**
- * Sound module exports
- * Central export point for all sound-related functionality
+ * Sound-original module exports
+ * AudioWorklet-based sound service (Phase 1)
  */
 
-// Constants
-export * from './constants'
-
-// Types
-export * from './types'
-
-// Sound Service - Primary API for game code
+// Export the sound service
 export { createSoundService, type SoundService } from './service'
 
-// Sound engine - Internal, exposed for test panel
-export * from './soundEngine'
+// Export constants and types from shared
+export * from '@/core/sound-shared'
 
-// Audio output (Phase 6)
-export * from './audioOutput'
-
-// Buffer manager (Phase 4)
-export * from './bufferManager'
-
-// Sample generator (Phase 2)
-export * from './sampleGenerator'
-
-// Format converter (Phase 3)
-export * from './formatConverter'
+// Export sound engine types (for test panel)
+export type { GameSoundType } from './soundEngine'
