@@ -1,5 +1,5 @@
 /**
- * Sound-original module exports
+ * Sound module exports
  * AudioWorklet-based sound service (Phase 1)
  */
 
@@ -9,5 +9,5 @@ export { createSoundService, type SoundService } from './service'
 // Export constants and types from shared
 export * from '@/core/sound-shared'
 
-// Export sound engine types (for test panel)
-export type { GameSoundType } from './soundEngine'
+// Export sound types (for test panel)
+export type { GameSoundType } from './types'

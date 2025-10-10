@@ -50,11 +50,7 @@ export type AudioOutput = {
   /**
    * Send message to worklet to set generator
    */
-  setGenerator(
-    generatorType: string,
-    priority: number,
-    onEnded?: () => void
-  ): void
+  setGenerator(generatorType: string, onEnded?: () => void): void
 
   /**
    * Send message to worklet to clear sound
@@ -250,19 +246,14 @@ export const createAudioOutput = (): AudioOutput => {
   /**
    * Send message to worklet to set generator
    */
-  const setGenerator = (
-    generatorType: string,
-    priority: number,
-    onEnded?: () => void
-  ): void => {
+  const setGenerator = (generatorType: string, onEnded?: () => void): void => {
     // Store the callback to invoke when worklet reports sound ended
     onSoundEndedCallback = onEnded || null
 
     if (workletNode) {
       workletNode.port.postMessage({
         type: 'setGenerator',
-        generatorType,
-        priority
+        generatorType
       })
     }
   }

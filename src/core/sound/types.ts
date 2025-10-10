@@ -17,21 +17,20 @@ export type SoundState = {
   activeSource: AudioBufferSourceNode | null // Currently playing audio source
 }
 
-import type { GameSoundType } from './soundEngine'
-
 /**
- * The main sound engine interface
- * Exposes only the methods needed by external consumers
+ * Sound types available in the engine
  */
-export type SoundEngine = {
-  /**
-   * Set the master volume level
-   * @param volume - Volume level between 0.0 (muted) and 1.0 (full volume)
-   * @throws Logs an error if volume is not a valid number between 0.0 and 1.0
-   */
-  setVolume: (volume: number) => void
-  start: () => Promise<void> // Start audio playback (async for worklet loading)
-  stop: () => void // Stop audio playback
-  play: (soundType: GameSoundType, onEnded?: () => void) => void // Play a sound
-  resumeContext: () => Promise<void> // Resume suspended audio context
-}
+export type GameSoundType =
+  | 'silence'
+  | 'fire'
+  | 'thruster'
+  | 'shield'
+  | 'explosionBunker'
+  | 'explosionShip'
+  | 'explosionAlien'
+  | 'bunker'
+  | 'soft'
+  | 'fuel'
+  | 'crack'
+  | 'fizz'
+  | 'echo'

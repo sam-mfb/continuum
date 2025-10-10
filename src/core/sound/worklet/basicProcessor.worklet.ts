@@ -43,7 +43,7 @@ const CENTER_VALUE = 128
  * Message types from main thread to worklet
  */
 type MainToWorkletMessage =
-  | { type: 'setGenerator'; generatorType: string; priority: number }
+  | { type: 'setGenerator'; generatorType: string }
   | { type: 'setVolume'; volume: number }
   | { type: 'clearSound' }
 
