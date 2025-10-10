@@ -86,7 +86,7 @@ export const createAudioOutput = (): AudioOutput => {
 
   // Constants
   const SAMPLE_RATE = 22200 // Original Mac sample rate
-  const MASTER_GAIN_SCALE = 0.5 // Scale down overall volume (100% = 60% of max)
+  const MASTER_GAIN_SCALE = 0.5 // Scale down overall volume (100% = 50% of max)
 
   /**
    * Load the audio worklet module
