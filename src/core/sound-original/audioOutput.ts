@@ -138,7 +138,7 @@ export const createAudioOutput = (): AudioOutput => {
       workletNode = new AudioWorkletNode(audioContext, 'basic-audio-processor')
 
       // Listen for messages from worklet
-      workletNode.port.onmessage = (event: MessageEvent) => {
+      workletNode.port.onmessage = (event: MessageEvent): void => {
         const message = event.data
         switch (message.type) {
           case 'soundEnded':

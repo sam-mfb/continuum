@@ -91,7 +91,7 @@ class BasicAudioProcessor extends AudioWorkletProcessor {
     this.fillBufferWithSilence(BUFFER_SIZE)
 
     // Listen for messages from main thread
-    this.port.onmessage = (event: MessageEvent<MainToWorkletMessage>) => {
+    this.port.onmessage = (event: MessageEvent<MainToWorkletMessage>): void => {
       this.handleMessage(event.data)
     }
   }
