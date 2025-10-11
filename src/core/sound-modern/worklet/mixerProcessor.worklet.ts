@@ -145,9 +145,12 @@ class MixerAudioProcessor extends AudioWorkletProcessor {
     channel.active = true
     channel.hasReportedEnded = false
 
-    // Clear buffer (synchronize positions without filling with silence)
-    // Then immediately generate new samples to eliminate latency
-    // This prevents artifacts from old samples while maintaining zero latency
+    /**
+     * Critical timing: clear() must be called immediately before generateChunk() to ensure zero-latency sound start.
+     * Unlike the typical reset() usage (which fills the buffer with silence and resets positions), clear() only synchronizes buffer positions
+     * without filling with silence. This allows us to immediately generate new samples for the sound, eliminating any delay or leftover artifacts
+     * from previous sounds. This pattern is essential for real-time responsiveness and differs from reset(), which is used for full buffer reinitialization.
+     */
     channel.buffer.clear()
     this.generateChunk(channelId)
   }
