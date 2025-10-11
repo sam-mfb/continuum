@@ -27,8 +27,8 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
           y: 0
         },
         end: {
-          x: 50,
-          y: 50
+          x: 650,
+          y: 650
         },
         width: 2,
         color: 'yellow'

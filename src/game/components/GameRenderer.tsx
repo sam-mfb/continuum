@@ -288,7 +288,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
             renderedBitmap.width * scale,
             renderedBitmap.height * scale
           )
-          drawFrameToCanvas(renderedFrame, ctx)
+          drawFrameToCanvas(renderedFrame, ctx, scale)
 
           lastFrameTimeRef.current = currentTime
           frameCountRef.current++
