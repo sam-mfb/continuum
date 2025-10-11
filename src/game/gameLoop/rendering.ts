@@ -19,7 +19,7 @@ import {
   shiftFigure
 } from '@render/ship'
 import { SCENTER } from '@core/figs'
-import { drawShipShot, drawStrafe, drawDotSafe } from '@core/shots/render'
+import { drawShipShot, drawStrafe, drawDotSafe } from '@render/shots'
 import { doBunks, drawCraters, drawFuels } from '@core/planet/render'
 import { drawExplosions } from '@core/explosions/render'
 import { updateSbar, sbarClear } from '@core/status/render'

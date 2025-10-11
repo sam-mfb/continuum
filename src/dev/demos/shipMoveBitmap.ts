@@ -9,9 +9,9 @@
 import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
 import { createGameBitmap } from '@lib/bitmap'
 import { fullFigure } from '@render/ship'
-import { drawShipShot } from '@core/shots/render'
-import { drawStrafe } from '@core/shots/render'
-import { drawDotSafe } from '@core/shots/render'
+import { drawShipShot } from '@render/shots'
+import { drawStrafe } from '@render/shots'
+import { drawDotSafe } from '@render/shots'
 import { shipSlice } from '@core/ship'
 import {
   planetSlice,
