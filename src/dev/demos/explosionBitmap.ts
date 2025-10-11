@@ -24,9 +24,9 @@ import {
   startExplosion,
   updateExplosions
 } from '@core/explosions'
-import { drawExplosions } from '@core/explosions/render'
+import { drawExplosions } from '@render/explosions'
 import type { ExplosionsState } from '@core/explosions'
-import { drawBunker } from '@core/planet/render'
+import { drawBunker } from '@render/planet'
 import { viewClear } from '@render/screen'
 import { ASSET_PATHS } from '@/dev/constants'
 

@@ -8,7 +8,7 @@
 
 import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
 import { createGameBitmap } from '@lib/bitmap'
-import { doBunks } from '@core/planet/render'
+import { doBunks } from '@render/planet'
 import { configureStore } from '@reduxjs/toolkit'
 import type { SpriteService } from '@core/sprites'
 import {

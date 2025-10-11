@@ -6,7 +6,7 @@ import type {
 } from '@lib/bitmap'
 import { createGameBitmap } from '@lib/bitmap'
 import type { ShardSpriteSet, ShardSprite } from '@core/figs'
-import { drawShard } from '@core/explosions/render'
+import { drawShard } from '@render/explosions'
 import { SHARDHT } from '@core/figs'
 import type { SpriteService } from '@core/sprites'
 import { viewClear } from '@render/screen'

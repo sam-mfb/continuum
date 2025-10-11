@@ -51,9 +51,9 @@ import { updateSbar, sbarClear } from '@core/status/render'
 import { statusSlice } from '@core/status'
 import { checkFigure } from '@core/ship'
 import { checkForBounce } from '@core/ship'
-import { doBunks } from '@core/planet/render'
-import { drawCraters } from '@core/planet/render'
-import { drawFuels } from '@core/planet/render'
+import { doBunks } from '@render/planet'
+import { drawCraters } from '@render/planet'
+import { drawFuels } from '@render/planet'
 import { rint } from '@core/shared'
 import {
   startShipDeath,
@@ -63,7 +63,7 @@ import {
   resetSparksAlive,
   clearShards
 } from '@core/explosions'
-import { drawExplosions } from '@core/explosions/render'
+import { drawExplosions } from '@render/explosions'
 import type { ShardSprite, ShardSpriteSet } from '@core/figs'
 import { SKILLBRADIUS } from '@core/ship'
 import { xyindist } from '@core/shots'

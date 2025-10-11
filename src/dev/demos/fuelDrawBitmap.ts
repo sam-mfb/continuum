@@ -9,7 +9,7 @@
 
 import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
 import { createGameBitmap } from '@lib/bitmap'
-import { drawFuels } from '@core/planet/render'
+import { drawFuels } from '@render/planet'
 import { configureStore } from '@reduxjs/toolkit'
 import { planetSlice, loadPlanet, updateFuelAnimations } from '@core/planet'
 import type { Fuel, PlanetState } from '@core/planet'
