@@ -36,8 +36,7 @@ import type {
   WorkletMessage,
   WorkletEvent,
   PlayMessage,
-  StopMessage,
-  SetVolumeMessage
+  StopMessage
 } from '../types'
 import { WorkletMessageType, WorkletEventType, MAX_CHANNELS } from '../types'
 
@@ -63,9 +62,6 @@ class MixerAudioProcessor extends AudioWorkletProcessor {
   // 8 audio channels
   private channels: ChannelData[]
 
-  // Global volume (0-1, controlled by main thread)
-  private volume: number
-
   // Performance tracking
   private totalCallbacks: number
 
@@ -86,7 +82,6 @@ class MixerAudioProcessor extends AudioWorkletProcessor {
       channel.buffer.fillWithSilence(BUFFER_SIZE)
     }
 
-    this.volume = 1.0
     this.totalCallbacks = 0
 
     // Listen for messages from main thread
@@ -110,10 +105,6 @@ class MixerAudioProcessor extends AudioWorkletProcessor {
 
       case WorkletMessageType.CLEAR:
         this.handleClear()
-        break
-
-      case WorkletMessageType.SET_VOLUME:
-        this.handleSetVolume(message)
         break
 
       default:
@@ -191,13 +182,6 @@ class MixerAudioProcessor extends AudioWorkletProcessor {
       channel.hasReportedEnded = false
       channel.buffer.reset()
     }
-  }
-
-  /**
-   * Handle SET_VOLUME message
-   */
-  private handleSetVolume(message: SetVolumeMessage): void {
-    this.volume = Math.max(0, Math.min(1, message.volume))
   }
 
   /**
@@ -348,9 +332,10 @@ class MixerAudioProcessor extends AudioWorkletProcessor {
         }
       }
 
-      // Apply global volume and clip to [-1, 1]
+      // Clip to [-1, 1] to prevent distortion
+      // Volume is handled by GainNode in main thread (not here)
       for (let i = 0; i < sampleCount; i++) {
-        let sample = outputChannel[i]! * this.volume
+        let sample = outputChannel[i]!
 
         // Clip to prevent distortion
         if (sample > 1.0) sample = 1.0

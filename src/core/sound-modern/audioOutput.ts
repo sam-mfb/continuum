@@ -276,16 +276,9 @@ export const createAudioOutput = (): AudioOutput => {
     const clampedVolume = Math.max(0, Math.min(1, volume))
 
     // Set gain node volume (with master gain scaling)
+    // Volume is ONLY controlled by GainNode, not in the worklet
     if (gainNode) {
       gainNode.gain.value = clampedVolume * MASTER_GAIN_SCALE
-    }
-
-    // Also send to worklet (it might need it for internal processing)
-    if (workletNode) {
-      workletNode.port.postMessage({
-        type: WorkletMessageType.SET_VOLUME,
-        volume: clampedVolume
-      })
     }
   }
 
