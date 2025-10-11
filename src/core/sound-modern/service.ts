@@ -87,10 +87,6 @@ export async function createModernSoundService(initialSettings: {
   let currentVolume = initialSettings.volume
   let decayIntervalId: NodeJS.Timeout | null = null
 
-  // Track which continuous sounds should be playing
-  // (for re-triggering after being interrupted by higher priority sounds)
-  const continuousSounds = new Set<SoundType>()
-
   try {
     // Create and initialize the audio output
     audioOutput = createAudioOutput()
@@ -211,15 +207,10 @@ export async function createModernSoundService(initialSettings: {
       },
 
       playShipThrust: (): void => {
-        // Mark as wanting to play
-        continuousSounds.add(SoundType.THRU_SOUND)
         playSound(SoundType.THRU_SOUND, true)
       },
 
       stopShipThrust: (): void => {
-        // Clear the "want to play" flag
-        continuousSounds.delete(SoundType.THRU_SOUND)
-
         // Stop the sound if it's playing
         audioOutput.stopSound({
           soundType: SoundType.THRU_SOUND
@@ -230,15 +221,10 @@ export async function createModernSoundService(initialSettings: {
       },
 
       playShipShield: (): void => {
-        // Mark as wanting to play
-        continuousSounds.add(SoundType.SHLD_SOUND)
         playSound(SoundType.SHLD_SOUND, true)
       },
 
       stopShipShield: (): void => {
-        // Clear the "want to play" flag
-        continuousSounds.delete(SoundType.SHLD_SOUND)
-
         // Stop the sound if it's playing
         audioOutput.stopSound({
           soundType: SoundType.SHLD_SOUND
@@ -293,9 +279,6 @@ export async function createModernSoundService(initialSettings: {
         // Clear all channels
         audioOutput.clearAllSounds()
         mixer.clearAll()
-
-        // Clear continuous sound tracking
-        continuousSounds.clear()
       },
 
       setVolume: (volume: number): void => {
@@ -310,11 +293,9 @@ export async function createModernSoundService(initialSettings: {
           audioOutput.stop()
           isEngineRunning = false
           mixer.clearAll()
-          continuousSounds.clear()
         } else if (!muted) {
           // When unmuting, clear state so new sounds can play
           mixer.clearAll()
-          continuousSounds.clear()
         }
       },
 
@@ -332,7 +313,6 @@ export async function createModernSoundService(initialSettings: {
 
         // Clear all channels
         mixer.clearAll()
-        continuousSounds.clear()
 
         // Don't null out audioOutput - keep it alive for next game
         isEngineRunning = false
