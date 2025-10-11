@@ -455,6 +455,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   )
                 </span>
               </div>
+              <div
+                style={{
+                  marginTop: `${3 * scale}px`,
+                  color: '#ffaa00',
+                  fontSize: `${5 * scale}px`
+                }}
+              >
+                Note: Reload page after changing to apply
+              </div>
             </div>
 
             {/* Sound Mode Section */}
@@ -492,6 +501,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     : 'Original single-channel with priorities'}
                   )
                 </span>
+              </div>
+              <div
+                style={{
+                  marginTop: `${3 * scale}px`,
+                  color: '#ffaa00',
+                  fontSize: `${5 * scale}px`
+                }}
+              >
+                Note: Reload page after changing to apply
               </div>
             </div>
 
