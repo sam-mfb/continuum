@@ -332,17 +332,8 @@ class MixerAudioProcessor extends AudioWorkletProcessor {
         }
       }
 
-      // Clip to [-1, 1] to prevent distortion
-      // Volume is handled by GainNode in main thread (not here)
-      for (let i = 0; i < sampleCount; i++) {
-        let sample = outputChannel[i]!
-
-        // Clip to prevent distortion
-        if (sample > 1.0) sample = 1.0
-        if (sample < -1.0) sample = -1.0
-
-        outputChannel[i] = sample
-      }
+      // No clipping - matches original system behavior
+      // Volume and any necessary limiting handled by GainNode in main thread
 
       // Copy to other channels if stereo
       for (let channel = 1; channel < output.length; channel++) {
