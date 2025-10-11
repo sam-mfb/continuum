@@ -153,7 +153,10 @@ class MixerAudioProcessor extends AudioWorkletProcessor {
     channel.soundType = soundType
     channel.active = true
     channel.hasReportedEnded = false
-    channel.buffer.reset()
+
+    // Don't reset the buffer - let new sound overwrite old samples
+    // This eliminates the latency gap and provides seamless transition
+    // channel.buffer.reset()
   }
 
   /**
