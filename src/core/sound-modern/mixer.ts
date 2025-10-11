@@ -29,12 +29,11 @@ export function createMixer(): {
   /** Allocate a channel for a sound, returns channel ID or null if can't play */
   allocateChannel(
     soundType: SoundType,
-    generator: SampleGenerator,
-    continuous?: boolean
+    generator: SampleGenerator
   ): PlayRequest | null
 
-  /** Stop a continuous sound if it's playing */
-  stopContinuousSound(soundType: SoundType): StopRequest | null
+  /** Stop a sound if it's playing */
+  stopSound(soundType: SoundType): StopRequest | null
 
   /** Clear all channels (like original clear_sound()) */
   clearAll(): void
@@ -56,7 +55,6 @@ export function createMixer(): {
       soundType: SoundType.NO_SOUND,
       priority: 0,
       active: false,
-      continuous: false,
       generator: null
     })
   )
@@ -106,13 +104,11 @@ export function createMixer(): {
    *
    * @param soundType - Type of sound to play
    * @param generator - Generator for producing samples
-   * @param continuous - Whether this is a continuous sound (thrust/shield)
    * @returns PlayRequest if channel allocated, null if sound should be dropped
    */
   function allocateChannel(
     soundType: SoundType,
-    generator: SampleGenerator,
-    continuous = false
+    generator: SampleGenerator
   ): PlayRequest | null {
     // Get initial priority for this sound type
     const priority = SOUND_PRIORITIES[soundType]
@@ -129,32 +125,28 @@ export function createMixer(): {
     channel.soundType = soundType
     channel.priority = priority
     channel.active = true
-    channel.continuous = continuous
     channel.generator = generator
 
     return {
       channelId,
       soundType,
       priority,
-      continuous,
       generator
     }
   }
 
   /**
-   * Stop a continuous sound if it's currently playing
+   * Stop a sound if it's currently playing
    *
-   * This is used for stopShipThrust() and stopShipShield() to clear
-   * the "want to play" flag and stop the sound if it's active.
+   * This is used for stopShipThrust() and stopShipShield() to stop
+   * the sound if it's active.
    *
-   * @param soundType - Type of continuous sound to stop
+   * @param soundType - Type of sound to stop
    * @returns StopRequest if sound was playing, null otherwise
    */
-  function stopContinuousSound(soundType: SoundType): StopRequest | null {
+  function stopSound(soundType: SoundType): StopRequest | null {
     // Find channel playing this sound
-    const channel = channels.find(
-      ch => ch.active && ch.soundType === soundType && ch.continuous
-    )
+    const channel = channels.find(ch => ch.active && ch.soundType === soundType)
 
     if (!channel) {
       // Sound not currently playing
@@ -165,7 +157,6 @@ export function createMixer(): {
     channel.active = false
     channel.soundType = SoundType.NO_SOUND
     channel.priority = 0
-    channel.continuous = false
     channel.generator = null
 
     return { soundType }
@@ -182,7 +173,6 @@ export function createMixer(): {
       channel.active = false
       channel.soundType = SoundType.NO_SOUND
       channel.priority = 0
-      channel.continuous = false
       channel.generator = null
     }
   }
@@ -204,7 +194,6 @@ export function createMixer(): {
     channel.active = false
     channel.soundType = SoundType.NO_SOUND
     channel.priority = 0
-    channel.continuous = false
     channel.generator = null
   }
 
@@ -241,7 +230,7 @@ export function createMixer(): {
   return {
     getChannels: () => channels as ReadonlyArray<ChannelState>,
     allocateChannel,
-    stopContinuousSound,
+    stopSound,
     clearAll,
     markChannelEnded,
     updatePriorities,

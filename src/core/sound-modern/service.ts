@@ -111,7 +111,7 @@ export async function createModernSoundService(initialSettings: {
      * Internal helper to play a sound
      * @returns true if sound was played, false if blocked/dropped
      */
-    function playSound(soundType: SoundType, continuous = false): boolean {
+    function playSound(soundType: SoundType): boolean {
       // Ensure the decay timer is running when sounds are being played
       ensureDecayTimer()
 
@@ -142,7 +142,7 @@ export async function createModernSoundService(initialSettings: {
       const generator = createGeneratorForSound(soundType)
 
       // Try to allocate a channel from the mixer
-      const request = mixer.allocateChannel(soundType, generator, continuous)
+      const request = mixer.allocateChannel(soundType, generator)
 
       if (!request) {
         // No channel available (all busy with higher priority sounds)
@@ -153,8 +153,7 @@ export async function createModernSoundService(initialSettings: {
       audioOutput.playOnChannel({
         channelId: request.channelId,
         soundType: request.soundType,
-        priority: request.priority,
-        continuous: request.continuous
+        priority: request.priority
       })
 
       return true
@@ -203,75 +202,71 @@ export async function createModernSoundService(initialSettings: {
 
       // Ship sounds
       playShipFire: (): void => {
-        playSound(SoundType.FIRE_SOUND, false)
+        playSound(SoundType.FIRE_SOUND)
       },
 
       playShipThrust: (): void => {
-        playSound(SoundType.THRU_SOUND, true)
+        playSound(SoundType.THRU_SOUND)
       },
 
       stopShipThrust: (): void => {
         // Stop the sound if it's playing
-        audioOutput.stopSound({
-          soundType: SoundType.THRU_SOUND
-        })
-
-        // Notify mixer
-        mixer.stopContinuousSound(SoundType.THRU_SOUND)
+        const stopRequest = mixer.stopSound(SoundType.THRU_SOUND)
+        if (stopRequest) {
+          audioOutput.stopSound({ soundType: SoundType.THRU_SOUND })
+        }
       },
 
       playShipShield: (): void => {
-        playSound(SoundType.SHLD_SOUND, true)
+        playSound(SoundType.SHLD_SOUND)
       },
 
       stopShipShield: (): void => {
         // Stop the sound if it's playing
-        audioOutput.stopSound({
-          soundType: SoundType.SHLD_SOUND
-        })
-
-        // Notify mixer
-        mixer.stopContinuousSound(SoundType.SHLD_SOUND)
+        const stopRequest = mixer.stopSound(SoundType.SHLD_SOUND)
+        if (stopRequest) {
+          audioOutput.stopSound({ soundType: SoundType.SHLD_SOUND })
+        }
       },
 
       playShipExplosion: (): void => {
-        playSound(SoundType.EXP2_SOUND, false)
+        playSound(SoundType.EXP2_SOUND)
       },
 
       // Bunker sounds
       playBunkerShoot: (): void => {
-        playSound(SoundType.BUNK_SOUND, false)
+        playSound(SoundType.BUNK_SOUND)
       },
 
       playBunkerExplosion: (): void => {
-        playSound(SoundType.EXP1_SOUND, false)
+        playSound(SoundType.EXP1_SOUND)
       },
 
       playBunkerSoft: (): void => {
-        playSound(SoundType.SOFT_SOUND, false)
+        playSound(SoundType.SOFT_SOUND)
       },
 
       // Pickup sounds
       playFuelCollect: (): void => {
-        playSound(SoundType.FUEL_SOUND, false)
+        playSound(SoundType.FUEL_SOUND)
       },
 
       // Level sounds
       playLevelComplete: (): void => {
-        playSound(SoundType.CRACK_SOUND, false)
+        playSound(SoundType.CRACK_SOUND)
       },
 
       playLevelTransition: (): void => {
-        playSound(SoundType.FIZZ_SOUND, false)
+        playSound(SoundType.FIZZ_SOUND)
       },
 
       playEcho: (): void => {
-        playSound(SoundType.ECHO_SOUND, false)
+        playSound(SoundType.ECHO_SOUND)
       },
 
       // Alien sounds
       playAlienExplosion: (): void => {
-        playSound(SoundType.EXP3_SOUND, false)
+        playSound(SoundType.EXP3_SOUND)
       },
 
       // Control methods

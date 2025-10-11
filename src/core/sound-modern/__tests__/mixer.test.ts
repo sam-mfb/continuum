@@ -127,19 +127,16 @@ describe('createMixer', () => {
       )
     })
 
-    it('handles continuous flag correctly', () => {
+    it('allocates thrust sound (no special continuous handling)', () => {
       const generator = createFireGenerator()
-      const request = mixer.allocateChannel(
-        SoundType.THRU_SOUND,
-        generator,
-        true // continuous
-      )
+      const request = mixer.allocateChannel(SoundType.THRU_SOUND, generator)
 
       expect(request).not.toBeNull()
-      expect(request!.continuous).toBe(true)
+      expect(request!.soundType).toBe(SoundType.THRU_SOUND)
 
       const channels = mixer.getChannels()
-      expect(channels[request!.channelId]!.continuous).toBe(true)
+      expect(channels[request!.channelId]!.active).toBe(true)
+      expect(channels[request!.channelId]!.soundType).toBe(SoundType.THRU_SOUND)
     })
 
     it('interrupts channel with exactly equal priority', () => {
@@ -193,13 +190,12 @@ describe('createMixer', () => {
     })
   })
 
-  describe('stopContinuousSound', () => {
-    it('stops a playing continuous sound', () => {
+  describe('stopSound', () => {
+    it('stops a playing sound by type', () => {
       // Start thrust sound
       const request = mixer.allocateChannel(
         SoundType.THRU_SOUND,
-        createFireGenerator(),
-        true
+        createFireGenerator()
       )
       expect(request).not.toBeNull()
 
@@ -207,7 +203,7 @@ describe('createMixer', () => {
       expect(mixer.getChannels()[channelId]!.active).toBe(true)
 
       // Stop it
-      const stopRequest = mixer.stopContinuousSound(SoundType.THRU_SOUND)
+      const stopRequest = mixer.stopSound(SoundType.THRU_SOUND)
       expect(stopRequest).not.toBeNull()
       expect(stopRequest!.soundType).toBe(SoundType.THRU_SOUND)
 
@@ -216,21 +212,21 @@ describe('createMixer', () => {
     })
 
     it('returns null if sound not playing', () => {
-      const stopRequest = mixer.stopContinuousSound(SoundType.THRU_SOUND)
+      const stopRequest = mixer.stopSound(SoundType.THRU_SOUND)
       expect(stopRequest).toBeNull()
     })
 
-    it('only stops continuous sounds, not one-shot sounds', () => {
-      // Play a one-shot fire sound
-      mixer.allocateChannel(SoundType.FIRE_SOUND, createFireGenerator(), false)
+    it('stops any sound type (not just continuous sounds)', () => {
+      // Play a fire sound
+      mixer.allocateChannel(SoundType.FIRE_SOUND, createFireGenerator())
 
-      // Try to stop it with stopContinuousSound
-      const stopRequest = mixer.stopContinuousSound(SoundType.FIRE_SOUND)
-      expect(stopRequest).toBeNull()
+      // Stop it with stopSound
+      const stopRequest = mixer.stopSound(SoundType.FIRE_SOUND)
+      expect(stopRequest).not.toBeNull()
 
-      // Sound should still be playing
+      // Sound should be stopped
       const channels = mixer.getChannels()
-      expect(channels[0]!.active).toBe(true)
+      expect(channels[0]!.active).toBe(false)
     })
   })
 

@@ -31,9 +31,6 @@ export type ChannelState = {
   /** Whether this channel is currently active */
   active: boolean
 
-  /** Whether this is a continuous sound (thrust/shield) */
-  continuous: boolean
-
   /** Generator instance for this channel (null if inactive) */
   generator: SampleGenerator | null
 }
@@ -50,9 +47,6 @@ export type PlayRequest = {
 
   /** Initial priority */
   priority: number
-
-  /** Whether this is a continuous sound */
-  continuous: boolean
 
   /** Generator for producing samples */
   generator: SampleGenerator
@@ -116,7 +110,6 @@ export type PlayMessage = {
   channelId: number
   soundType: SoundType
   priority: number
-  continuous: boolean
 }
 
 /**
