@@ -23,7 +23,7 @@ import { SCRWTH, VIEWHT } from '@core/screen'
 import type { SpriteService } from '@core/sprites'
 import { SCENTER } from '@core/figs'
 import { cloneBitmap } from '@lib/bitmap'
-import { starBackground } from '@/core/transition/render'
+import { starBackground } from '@render/transition'
 
 // State for tracking the transition - persists across render calls
 type TransitionState = {
