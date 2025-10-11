@@ -49,11 +49,19 @@ export const SoundTestPanel: React.FC = () => {
       setSoundSystemLabel(label)
 
       factory({ volume: masterVolume, muted: !enabled })
-        .then(service => {
+        .then(async service => {
           setSoundService(service)
           // Sync initial state
           service.setVolume(masterVolume)
           service.setMuted(!enabled) // enabled=true means not muted
+
+          // Pre-start the audio engine to eliminate first-sound delay
+          try {
+            await service.startEngine()
+          } catch (error) {
+            console.error('Failed to start audio engine:', error)
+          }
+
           setIsInitialized(true)
         })
         .catch(error => {
