@@ -9,8 +9,8 @@
 import { createGameBitmap, type MonochromeBitmap } from '@lib/bitmap'
 import { SCRWTH, VIEWHT } from '@core/screen'
 import { rint } from '@core/shared'
-import { setScreen } from '@core/screen/render/setScreen'
-import { clearPoint } from '@core/screen/render/clearPoint'
+import { setScreen } from '@render/screen/setScreen'
+import { clearPoint } from '@render/screen/clearPoint'
 
 /**
  * Creates a star background - black screen with random white stars.

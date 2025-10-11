@@ -25,7 +25,7 @@ import { drawStrafe } from '@core/shots/render'
 import { rint } from '@core/shared'
 import { SBARHT } from '@core/screen'
 import { isOnRightSide } from '@core/shared/viewport'
-import { viewClear } from '@core/screen/render'
+import { viewClear } from '@render/screen'
 
 // Create store with planet and shots slices
 const store = configureStore({

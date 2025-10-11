@@ -27,7 +27,7 @@ import {
 } from '@core/planet'
 import { drawFuels } from '@core/planet/render'
 import { drawCraters } from '@core/planet/render'
-import { viewClear } from '@core/screen/render'
+import { viewClear } from '@render/screen'
 
 // Create store with planet slice
 const bunkerStore = configureStore({

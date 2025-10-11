@@ -16,7 +16,7 @@ import type { Fuel, PlanetState } from '@core/planet'
 import { isOnRightSide } from '@core/shared/viewport'
 import { FUELFRAMES } from '@core/figs'
 import type { SpriteService } from '@core/sprites'
-import { viewClear } from '@core/screen/render'
+import { viewClear } from '@render/screen'
 
 // Create store with planet slice
 const store = configureStore({

@@ -14,7 +14,7 @@ import { wallsActions } from '@core/walls'
 import { buildGameStore } from '@dev/store'
 import { LINE_KIND, NEW_TYPE } from '@core/walls'
 import { createWall } from '@core/walls'
-import { viewClear } from '@core/screen/render'
+import { viewClear } from '@render/screen'
 import { createCollisionService, Collision } from '@core/collision'
 
 // Create store instance

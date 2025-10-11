@@ -13,7 +13,7 @@
 import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
 import { createGameBitmap } from '@lib/bitmap'
 import { cloneBitmap } from '@lib/bitmap'
-import { viewClear } from '@core/screen/render'
+import { viewClear } from '@render/screen'
 import { newSbar } from '@core/status/render'
 import type { SpriteService } from '@core/sprites'
 

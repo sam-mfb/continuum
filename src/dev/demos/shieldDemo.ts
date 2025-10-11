@@ -14,7 +14,7 @@ import { shiftFigure } from '@core/ship/render'
 import type { SpriteService } from '@core/sprites'
 import { SCENTER } from '@core/figs'
 import { SCRWTH, VIEWHT } from '@core/screen'
-import { viewClear } from '@core/screen/render'
+import { viewClear } from '@render/screen'
 import { getAlignment } from '@core/shared'
 import { getBackgroundPattern } from '@core/shared'
 

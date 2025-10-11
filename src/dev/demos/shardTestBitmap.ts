@@ -9,7 +9,7 @@ import type { ShardSpriteSet, ShardSprite } from '@core/figs'
 import { drawShard } from '@core/explosions/render'
 import { SHARDHT } from '@core/figs'
 import type { SpriteService } from '@core/sprites'
-import { viewClear } from '@core/screen/render'
+import { viewClear } from '@render/screen'
 
 // Viewport state - for scrolling around
 const viewportState = {

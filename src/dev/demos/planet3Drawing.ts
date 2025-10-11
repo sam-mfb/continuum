@@ -16,7 +16,7 @@ import { LINE_KIND } from '@core/walls'
 import { Galaxy } from '@core/galaxy'
 import { parsePlanet } from '@core/planet'
 import { VIEWHT } from '@core/screen'
-import { viewClear } from '@core/screen/render'
+import { viewClear } from '@render/screen'
 import { ASSET_PATHS } from '@/dev/constants'
 
 // Create store instance
