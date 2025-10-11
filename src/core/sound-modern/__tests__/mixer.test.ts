@@ -107,9 +107,9 @@ describe('createMixer', () => {
     })
 
     it('drops sound if priority too low and all channels busy', () => {
-      // Fill all channels with high-priority sounds (EXP2_SOUND priority=100)
+      // Fill all channels with high-priority sounds (FIRE_SOUND priority=70)
       for (let i = 0; i < 8; i++) {
-        mixer.allocateChannel(SoundType.EXP2_SOUND, createFireGenerator())
+        mixer.allocateChannel(SoundType.FIRE_SOUND, createFireGenerator())
       }
 
       // Try to play low-priority sound (SOFT_SOUND priority=30)
@@ -120,9 +120,9 @@ describe('createMixer', () => {
 
       expect(request).toBeNull()
 
-      // All channels should still have EXP2_SOUND
+      // All channels should still have FIRE_SOUND
       const channels = mixer.getChannels()
-      expect(channels.every(ch => ch.soundType === SoundType.EXP2_SOUND)).toBe(
+      expect(channels.every(ch => ch.soundType === SoundType.FIRE_SOUND)).toBe(
         true
       )
     })
@@ -386,6 +386,129 @@ describe('createMixer', () => {
       const channel = mixer.findChannelPlayingSound(SoundType.FIRE_SOUND)
       expect(channel).not.toBeNull()
       expect(channel!.id).toBe(0) // First channel
+    })
+  })
+
+  describe('singleton sounds', () => {
+    it('prevents duplicate thrust sounds from playing simultaneously', () => {
+      // Allocate thrust on first channel
+      const req1 = mixer.allocateChannel(
+        SoundType.THRU_SOUND,
+        createFireGenerator()
+      )
+      expect(req1).not.toBeNull()
+      expect(req1!.channelId).toBe(0)
+
+      // Try to allocate another thrust - should be rejected
+      const req2 = mixer.allocateChannel(
+        SoundType.THRU_SOUND,
+        createFireGenerator()
+      )
+      expect(req2).toBeNull()
+
+      // Verify only one thrust sound is playing
+      const channels = mixer.getChannels()
+      const thrustChannels = channels.filter(
+        ch => ch.soundType === SoundType.THRU_SOUND
+      )
+      expect(thrustChannels).toHaveLength(1)
+    })
+
+    it('prevents duplicate shield sounds', () => {
+      mixer.allocateChannel(SoundType.SHLD_SOUND, createFireGenerator())
+      const req2 = mixer.allocateChannel(
+        SoundType.SHLD_SOUND,
+        createFireGenerator()
+      )
+      expect(req2).toBeNull()
+    })
+
+    it('prevents duplicate ship explosion sounds', () => {
+      mixer.allocateChannel(SoundType.EXP2_SOUND, createFireGenerator())
+      const req2 = mixer.allocateChannel(
+        SoundType.EXP2_SOUND,
+        createFireGenerator()
+      )
+      expect(req2).toBeNull()
+    })
+
+    it('prevents duplicate fizz sounds', () => {
+      mixer.allocateChannel(SoundType.FIZZ_SOUND, createFireGenerator())
+      const req2 = mixer.allocateChannel(
+        SoundType.FIZZ_SOUND,
+        createFireGenerator()
+      )
+      expect(req2).toBeNull()
+    })
+
+    it('prevents duplicate echo sounds', () => {
+      mixer.allocateChannel(SoundType.ECHO_SOUND, createFireGenerator())
+      const req2 = mixer.allocateChannel(
+        SoundType.ECHO_SOUND,
+        createFireGenerator()
+      )
+      expect(req2).toBeNull()
+    })
+
+    it('allows multiple fire sounds (not a singleton)', () => {
+      const req1 = mixer.allocateChannel(
+        SoundType.FIRE_SOUND,
+        createFireGenerator()
+      )
+      const req2 = mixer.allocateChannel(
+        SoundType.FIRE_SOUND,
+        createFireGenerator()
+      )
+
+      expect(req1).not.toBeNull()
+      expect(req2).not.toBeNull()
+      expect(req1!.channelId).not.toBe(req2!.channelId)
+
+      const channels = mixer.getChannels()
+      const fireChannels = channels.filter(
+        ch => ch.soundType === SoundType.FIRE_SOUND
+      )
+      expect(fireChannels).toHaveLength(2)
+    })
+
+    it('allows multiple bunker explosions (not a singleton)', () => {
+      const req1 = mixer.allocateChannel(
+        SoundType.EXP1_SOUND,
+        createFireGenerator()
+      )
+      const req2 = mixer.allocateChannel(
+        SoundType.EXP1_SOUND,
+        createFireGenerator()
+      )
+
+      expect(req1).not.toBeNull()
+      expect(req2).not.toBeNull()
+    })
+
+    it('allows singleton to play again after previous instance ends', () => {
+      // Play thrust
+      const req1 = mixer.allocateChannel(
+        SoundType.THRU_SOUND,
+        createFireGenerator()
+      )
+      expect(req1).not.toBeNull()
+
+      // Try to play again - blocked
+      const req2 = mixer.allocateChannel(
+        SoundType.THRU_SOUND,
+        createFireGenerator()
+      )
+      expect(req2).toBeNull()
+
+      // End the first thrust
+      mixer.markChannelEnded(req1!.channelId)
+
+      // Now we can play thrust again
+      const req3 = mixer.allocateChannel(
+        SoundType.THRU_SOUND,
+        createFireGenerator()
+      )
+      expect(req3).not.toBeNull()
     })
   })
 

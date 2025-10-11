@@ -11,7 +11,8 @@
 import {
   SoundType,
   SOUND_PRIORITIES,
-  SOUND_PRIORITY_DECAY
+  SOUND_PRIORITY_DECAY,
+  SINGLETON_SOUNDS
 } from '@/core/sound-shared'
 import type { SampleGenerator } from '@/core/sound-shared'
 import type { ChannelState, PlayRequest, StopRequest } from './types'
@@ -97,10 +98,11 @@ export function createMixer(): {
    * Allocate a channel for playing a sound
    *
    * This implements the priority-based channel allocation system:
-   * 1. Find first available (inactive) channel
-   * 2. If all busy, find channel with lowest priority
-   * 3. If new sound priority > channel priority, claim that channel
-   * 4. Otherwise, drop the new sound
+   * 1. Check if this is a singleton sound already playing - if so, drop request
+   * 2. Find first available (inactive) channel
+   * 3. If all busy, find channel with lowest priority
+   * 4. If new sound priority > channel priority, claim that channel
+   * 5. Otherwise, drop the new sound
    *
    * @param soundType - Type of sound to play
    * @param generator - Generator for producing samples
@@ -110,6 +112,18 @@ export function createMixer(): {
     soundType: SoundType,
     generator: SampleGenerator
   ): PlayRequest | null {
+    // Check if this is a singleton sound that's already playing
+    // Singleton sounds (thrust, shield, ship explosion, etc.) can only play one instance
+    if (SINGLETON_SOUNDS.has(soundType)) {
+      const existingChannel = channels.find(
+        ch => ch.active && ch.soundType === soundType
+      )
+      if (existingChannel) {
+        // Singleton already playing - drop this request
+        return null
+      }
+    }
+
     // Get initial priority for this sound type
     const priority = SOUND_PRIORITIES[soundType]
 
