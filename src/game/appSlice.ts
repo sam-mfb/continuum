@@ -56,7 +56,7 @@ const initialState: AppState = {
   alignmentMode: 'screen-fixed', // Default to screen-fixed (not original)
   showInGameControls: true,
   scaleMode: 'auto', // Default to responsive auto-scaling
-  soundMode: 'original', // Default to original single-channel sound
+  soundMode: 'modern',
   volume: 0,
   soundOn: true,
   touchControlsEnabled: false, // Will be set based on device detection
