@@ -31,7 +31,7 @@ import { LINE_KIND } from '@core/walls'
 import { getAlignment, getBackgroundPattern } from '@core/shared'
 import { triggerShipDeath } from '../shipDeath'
 import { FIZZ_DURATION } from '@core/transition'
-import { starBackground } from '@core/transition/render'
+import { starBackground } from '@render/transition'
 
 export type RenderOriginalContext = {
   bitmap: MonochromeBitmap
