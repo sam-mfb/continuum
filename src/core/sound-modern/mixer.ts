@@ -1,0 +1,250 @@
+/**
+ * Multi-channel audio mixer
+ *
+ * Manages allocation of 8 audio channels for simultaneous sound playback.
+ * Implements priority-based channel selection where higher-priority sounds
+ * can interrupt lower-priority sounds.
+ *
+ * Traced from: orig/Sources/Sound.c (priority system)
+ */
+
+import {
+  SoundType,
+  SOUND_PRIORITIES,
+  SOUND_PRIORITY_DECAY
+} from '@/core/sound-shared'
+import type { SampleGenerator } from '@/core/sound-shared'
+import type { ChannelState, PlayRequest, StopRequest } from './types'
+import { MAX_CHANNELS } from './types'
+
+/**
+ * Creates a mixer instance for managing multiple audio channels
+ *
+ * @returns Mixer instance with channel management methods
+ */
+export function createMixer(): {
+  /** Get current state of all channels */
+  getChannels(): ReadonlyArray<ChannelState>
+
+  /** Allocate a channel for a sound, returns channel ID or null if can't play */
+  allocateChannel(
+    soundType: SoundType,
+    generator: SampleGenerator,
+    continuous?: boolean
+  ): PlayRequest | null
+
+  /** Stop a continuous sound if it's playing */
+  stopContinuousSound(soundType: SoundType): StopRequest | null
+
+  /** Clear all channels (like original clear_sound()) */
+  clearAll(): void
+
+  /** Mark a channel as ended (called when sound completes) */
+  markChannelEnded(channelId: number): void
+
+  /** Update priority decay for all active channels (called per frame) */
+  updatePriorities(): void
+
+  /** Get the channel currently playing a specific sound type (if any) */
+  findChannelPlayingSound(soundType: SoundType): ChannelState | null
+} {
+  // Initialize 8 channels, all inactive
+  const channels: ChannelState[] = Array.from(
+    { length: MAX_CHANNELS },
+    (_, i) => ({
+      id: i,
+      soundType: SoundType.NO_SOUND,
+      priority: 0,
+      active: false,
+      continuous: false,
+      generator: null
+    })
+  )
+
+  /**
+   * Find an available channel or the lowest priority channel
+   * Returns null if no suitable channel found (new sound priority too low)
+   */
+  function findChannelForSound(
+    _soundType: SoundType,
+    priority: number
+  ): number | null {
+    // First, try to find an inactive channel
+    const inactiveChannel = channels.find(ch => !ch.active)
+    if (inactiveChannel) {
+      return inactiveChannel.id
+    }
+
+    // All channels busy - find lowest priority channel
+    let lowestPriorityChannel: ChannelState | null = null
+    let lowestPriority = priority // Only consider channels with lower priority
+
+    for (const channel of channels) {
+      if (channel.priority < lowestPriority) {
+        lowestPriority = channel.priority
+        lowestPriorityChannel = channel
+      }
+    }
+
+    // If we found a channel with lower priority, we can claim it
+    if (lowestPriorityChannel) {
+      return lowestPriorityChannel.id
+    }
+
+    // No suitable channel found
+    return null
+  }
+
+  /**
+   * Allocate a channel for playing a sound
+   *
+   * This implements the priority-based channel allocation system:
+   * 1. Find first available (inactive) channel
+   * 2. If all busy, find channel with lowest priority
+   * 3. If new sound priority > channel priority, claim that channel
+   * 4. Otherwise, drop the new sound
+   *
+   * @param soundType - Type of sound to play
+   * @param generator - Generator for producing samples
+   * @param continuous - Whether this is a continuous sound (thrust/shield)
+   * @returns PlayRequest if channel allocated, null if sound should be dropped
+   */
+  function allocateChannel(
+    soundType: SoundType,
+    generator: SampleGenerator,
+    continuous = false
+  ): PlayRequest | null {
+    // Get initial priority for this sound type
+    const priority = SOUND_PRIORITIES[soundType]
+
+    // Find a suitable channel
+    const channelId = findChannelForSound(soundType, priority)
+    if (channelId === null) {
+      // No channel available, drop this sound
+      return null
+    }
+
+    // Claim the channel
+    const channel = channels[channelId]!
+    channel.soundType = soundType
+    channel.priority = priority
+    channel.active = true
+    channel.continuous = continuous
+    channel.generator = generator
+
+    return {
+      channelId,
+      soundType,
+      priority,
+      continuous,
+      generator
+    }
+  }
+
+  /**
+   * Stop a continuous sound if it's currently playing
+   *
+   * This is used for stopShipThrust() and stopShipShield() to clear
+   * the "want to play" flag and stop the sound if it's active.
+   *
+   * @param soundType - Type of continuous sound to stop
+   * @returns StopRequest if sound was playing, null otherwise
+   */
+  function stopContinuousSound(soundType: SoundType): StopRequest | null {
+    // Find channel playing this sound
+    const channel = channels.find(
+      ch => ch.active && ch.soundType === soundType && ch.continuous
+    )
+
+    if (!channel) {
+      // Sound not currently playing
+      return null
+    }
+
+    // Mark channel as inactive
+    channel.active = false
+    channel.soundType = SoundType.NO_SOUND
+    channel.priority = 0
+    channel.continuous = false
+    channel.generator = null
+
+    return { soundType }
+  }
+
+  /**
+   * Clear all channels
+   *
+   * Implements the original game's clear_sound() function which stops
+   * all currently playing sounds.
+   */
+  function clearAll(): void {
+    for (const channel of channels) {
+      channel.active = false
+      channel.soundType = SoundType.NO_SOUND
+      channel.priority = 0
+      channel.continuous = false
+      channel.generator = null
+    }
+  }
+
+  /**
+   * Mark a channel as ended
+   *
+   * Called when a sound completes playing (generator returns true from generateChunk)
+   *
+   * @param channelId - Channel that ended
+   */
+  function markChannelEnded(channelId: number): void {
+    if (channelId < 0 || channelId >= MAX_CHANNELS) {
+      console.warn(`[Mixer] Invalid channel ID: ${channelId}`)
+      return
+    }
+
+    const channel = channels[channelId]!
+    channel.active = false
+    channel.soundType = SoundType.NO_SOUND
+    channel.priority = 0
+    channel.continuous = false
+    channel.generator = null
+  }
+
+  /**
+   * Update priority decay for all active channels
+   *
+   * Based on orig/Sources/Sound.c priority decay system.
+   * Some sounds have their priority decrease over time, allowing
+   * sounds of the same type to interrupt each other.
+   *
+   * Should be called once per game frame.
+   */
+  function updatePriorities(): void {
+    for (const channel of channels) {
+      if (!channel.active) continue
+
+      const decay = SOUND_PRIORITY_DECAY[channel.soundType]
+      if (decay !== undefined) {
+        channel.priority = Math.max(0, channel.priority - decay)
+      }
+    }
+  }
+
+  /**
+   * Find the channel currently playing a specific sound type
+   *
+   * @param soundType - Sound type to search for
+   * @returns Channel state if found, null otherwise
+   */
+  function findChannelPlayingSound(soundType: SoundType): ChannelState | null {
+    return channels.find(ch => ch.active && ch.soundType === soundType) ?? null
+  }
+
+  return {
+    getChannels: () => channels as ReadonlyArray<ChannelState>,
+    allocateChannel,
+    stopContinuousSound,
+    clearAll,
+    markChannelEnded,
+    updatePriorities,
+    findChannelPlayingSound
+  }
+}
