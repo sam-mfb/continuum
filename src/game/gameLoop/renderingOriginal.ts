@@ -17,21 +17,21 @@ import {
   grayFigure,
   eraseFigure,
   shiftFigure
-} from '@core/ship/render'
+} from '@render/ship'
 import { checkForBounce, checkFigure } from '@core/ship'
 import { SCENTER } from '@core/figs'
-import { drawShipShot, drawStrafe, drawDotSafe } from '@core/shots/render'
-import { doBunks, drawCraters, drawFuels } from '@core/planet/render'
-import { drawExplosions } from '@core/explosions/render'
-import { updateSbar, sbarClear } from '@core/status/render'
+import { drawShipShot, drawStrafe, drawDotSafe } from '@render/shots'
+import { doBunks, drawCraters, drawFuels } from '@render/planet'
+import { drawExplosions } from '@render/explosions'
+import { updateSbar, sbarClear } from '@render/status'
 import { SCRWTH, VIEWHT } from '@core/screen'
-import { viewClear, viewWhite } from '@core/screen/render'
-import { whiteTerrain, blackTerrain } from '@core/walls/render'
+import { viewClear, viewWhite } from '@render/screen'
+import { whiteTerrain, blackTerrain } from '@render/walls'
 import { LINE_KIND } from '@core/walls'
 import { getAlignment, getBackgroundPattern } from '@core/shared'
 import { triggerShipDeath } from '../shipDeath'
 import { FIZZ_DURATION } from '@core/transition'
-import { starBackground } from '@core/transition/render'
+import { starBackground } from '@render/transition'
 
 export type RenderOriginalContext = {
   bitmap: MonochromeBitmap

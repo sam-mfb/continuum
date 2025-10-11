@@ -8,7 +8,7 @@
 
 import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
 import { createGameBitmap } from '@lib/bitmap'
-import { drawStrafe } from '@core/shots/render'
+import { drawStrafe } from '@render/shots'
 
 // Define a simple world
 const WORLD_WIDTH = 512

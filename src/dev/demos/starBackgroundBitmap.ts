@@ -13,17 +13,17 @@
 
 import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
 import { createGameBitmap } from '@lib/bitmap'
-import { viewClear } from '@core/screen/render'
+import { viewClear } from '@render/screen'
 import {
   createFizzTransitionService,
   type FizzTransitionService
 } from '@core/transition'
-import { fullFigure } from '@core/ship/render'
+import { fullFigure } from '@render/ship'
 import { SCRWTH, VIEWHT } from '@core/screen'
 import type { SpriteService } from '@core/sprites'
 import { SCENTER } from '@core/figs'
 import { cloneBitmap } from '@lib/bitmap'
-import { starBackground } from '@/core/transition/render'
+import { starBackground } from '@render/transition'
 
 // State for tracking the transition - persists across render calls
 type TransitionState = {

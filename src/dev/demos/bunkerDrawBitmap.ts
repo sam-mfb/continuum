@@ -8,7 +8,7 @@
 
 import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
 import { createGameBitmap } from '@lib/bitmap'
-import { doBunks } from '@core/planet/render'
+import { doBunks } from '@render/planet'
 import { configureStore } from '@reduxjs/toolkit'
 import type { SpriteService } from '@core/sprites'
 import {
@@ -20,12 +20,12 @@ import {
 import { shotsSlice, bunkShoot, moveBullets, doStrafes } from '@core/shots'
 import { BunkerKind } from '@core/figs'
 import type { Bunker, PlanetState } from '@core/planet'
-import { drawDotSafe } from '@core/shots/render'
-import { drawStrafe } from '@core/shots/render'
+import { drawDotSafe } from '@render/shots'
+import { drawStrafe } from '@render/shots'
 import { rint } from '@core/shared'
 import { SBARHT } from '@core/screen'
 import { isOnRightSide } from '@core/shared/viewport'
-import { viewClear } from '@core/screen/render'
+import { viewClear } from '@render/screen'
 
 // Create store with planet and shots slices
 const store = configureStore({

@@ -1,5 +1,9 @@
 # Changes
 
+## 1.1.1 - 2025.10.11
+
+Reorganize rendering code
+
 ## 1.1.0 - 2025.10.11
 
 Add new multi-channel audio system to allowing mixing sounds

@@ -11,7 +11,7 @@ import type { LineRec } from '../types'
 import { LINE_KIND, NEW_TYPE } from '../types'
 import { createWall } from '../unpack'
 import { initWalls } from '../init'
-import { whiteTerrain, blackTerrain } from '../render'
+import { whiteTerrain, blackTerrain } from '@render/walls'
 import { SBARHT } from '@core/screen'
 
 const main = (): void => {
