@@ -17,7 +17,7 @@ import {
   grayFigure,
   eraseFigure,
   shiftFigure
-} from '@core/ship/render'
+} from '@render/ship'
 import { SCENTER } from '@core/figs'
 import { drawShipShot, drawStrafe, drawDotSafe } from '@core/shots/render'
 import { doBunks, drawCraters, drawFuels } from '@core/planet/render'

@@ -18,7 +18,7 @@ import {
   createFizzTransitionService,
   type FizzTransitionService
 } from '@core/transition'
-import { fullFigure } from '@core/ship/render'
+import { fullFigure } from '@render/ship'
 import { SCRWTH, VIEWHT } from '@core/screen'
 import type { SpriteService } from '@core/sprites'
 import { SCENTER } from '@core/figs'
