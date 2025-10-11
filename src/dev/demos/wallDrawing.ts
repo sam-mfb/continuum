@@ -9,7 +9,7 @@
 import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
 import { createGameBitmap } from '@lib/bitmap'
 import type { LineRec } from '@core/walls'
-import { whiteTerrain, blackTerrain } from '@core/walls/render'
+import { whiteTerrain, blackTerrain } from '@render/walls'
 import { wallsActions } from '@core/walls'
 import { buildGameStore } from '@dev/store'
 import { LINE_KIND, NEW_TYPE } from '@core/walls'
