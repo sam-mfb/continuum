@@ -179,6 +179,10 @@ export function setupSoundListener(
   soundStartListening({
     actionCreator: shipSlice.actions.collectFuel,
     effect: () => {
+      // this is for the modern service to ensure that
+      // fuel sounds "override" shield which was the
+      // feeling in the original game
+      soundService.stopShipShield()
       soundService.playFuelCollect()
     }
   })
