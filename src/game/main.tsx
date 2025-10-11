@@ -11,7 +11,9 @@ import { createSpriteService } from '@core/sprites'
 import { createGalaxyService } from '@core/galaxy'
 import { createFizzTransitionService } from '@core/transition'
 import { createSoundService } from '@/core/sound'
+import { createModernSoundService } from '@/core/sound-modern'
 import { createGameRenderer } from './gameLoop'
+import { loadAppSettings } from './appMiddleware'
 import { setAlignmentMode } from '@/core/shared'
 import { createGameStore } from './store'
 import {
@@ -54,11 +56,22 @@ try {
   const fizzTransitionService = createFizzTransitionService()
   console.log('Fizz transition service created')
 
-  const soundService = await createSoundService({
-    volume: DEFAULT_SOUND_VOLUME,
-    muted: DEFAULT_SOUND_MUTED
-  })
-  console.log('Sound service created')
+  // Load persisted sound mode setting
+  const persistedSettings = loadAppSettings()
+  const soundMode = persistedSettings.soundMode ?? 'original'
+
+  // Create appropriate sound service based on mode
+  const soundService =
+    soundMode === 'modern'
+      ? await createModernSoundService({
+          volume: DEFAULT_SOUND_VOLUME,
+          muted: DEFAULT_SOUND_MUTED
+        })
+      : await createSoundService({
+          volume: DEFAULT_SOUND_VOLUME,
+          muted: DEFAULT_SOUND_MUTED
+        })
+  console.log(`Sound service created (${soundMode} mode)`)
 
   const collisionService = createCollisionService()
   collisionService.initialize({ width: SCRWTH, height: VIEWHT })
