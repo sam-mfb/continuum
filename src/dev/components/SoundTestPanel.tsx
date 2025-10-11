@@ -36,12 +36,6 @@ export const SoundTestPanel: React.FC = () => {
     'Original (Single-Channel)'
   )
 
-  // Diagnostic state
-  const [lastClickTime, setLastClickTime] = useState<number | null>(null)
-  const [clickToSoundDelay, setClickToSoundDelay] = useState<number | null>(
-    null
-  )
-
   useEffect(() => {
     // Initialize sound service on mount or when sound system changes
     if (!isInitialized) {
@@ -110,36 +104,6 @@ export const SoundTestPanel: React.FC = () => {
     setSoundService(null)
   }
 
-  // Helper to play a sound with timing measurement
-  const playSound = (playFunc: () => void): void => {
-    const clickTime = performance.now()
-    setLastClickTime(clickTime)
-    playFunc()
-
-    // Estimate delay (very rough - actual sound starts after worklet processes)
-    requestAnimationFrame(() => {
-      const delay = performance.now() - clickTime
-      setClickToSoundDelay(delay)
-    })
-  }
-
-  // Test latency with precise measurement
-  const handleLatencyTest = (): void => {
-    if (!soundService) return
-    console.log('[Latency Test] Click captured at:', performance.now())
-    const clickTime = performance.now()
-    soundService.playShipFire()
-    const callTime = performance.now()
-    console.log('[Latency Test] playShipFire() returned at:', callTime)
-    console.log(
-      '[Latency Test] Function call took:',
-      callTime - clickTime,
-      'ms'
-    )
-    setLastClickTime(clickTime)
-    setClickToSoundDelay(callTime - clickTime)
-  }
-
   const handleStopSound = (): void => {
     if (!soundService) return
     soundService.clearSound()
@@ -153,13 +117,6 @@ export const SoundTestPanel: React.FC = () => {
       soundType: Number(key) as SoundType,
       priority
     }))
-
-  // Helper to get status style with color
-  const getStatusStyle = (status: boolean): React.CSSProperties => ({
-    ...styles.diagnosticValue,
-    color: status ? '#4CAF50' : '#f44336',
-    fontWeight: 'bold'
-  })
 
   return (
     <div style={styles.container}>
@@ -214,57 +171,6 @@ export const SoundTestPanel: React.FC = () => {
         </div>
       </div>
 
-      {/* Latency Diagnostics */}
-      <div style={styles.section}>
-        <h3>Latency Diagnostics</h3>
-
-        <div style={styles.diagnosticGrid}>
-          <div style={styles.diagnosticItem}>
-            <span style={styles.diagnosticLabel}>Service Initialized:</span>
-            <span style={getStatusStyle(isInitialized)}>
-              {isInitialized ? '✓ Yes' : '✗ No'}
-            </span>
-          </div>
-
-          {lastClickTime !== null && (
-            <>
-              <div style={styles.diagnosticItem}>
-                <span style={styles.diagnosticLabel}>Last Click Time:</span>
-                <span style={styles.diagnosticValue}>
-                  {lastClickTime.toFixed(2)}ms
-                </span>
-              </div>
-
-              {clickToSoundDelay !== null && (
-                <div style={styles.diagnosticItem}>
-                  <span style={styles.diagnosticLabel}>Call Delay:</span>
-                  <span style={styles.diagnosticValue}>
-                    {clickToSoundDelay.toFixed(2)}ms
-                  </span>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        <div style={styles.diagnosticControls}>
-          <button
-            onClick={handleLatencyTest}
-            style={styles.diagnosticButton}
-            disabled={!soundService}
-          >
-            Test Click-to-Sound Latency
-          </button>
-        </div>
-
-        <p style={styles.diagnosticNote}>
-          Note: The "Call Delay" shows how long the playSound() function takes
-          to return, NOT the actual audio latency. Actual audio latency is
-          determined by the browser's AudioContext and is typically 5-50ms.
-          Check browser console for detailed timing logs.
-        </p>
-      </div>
-
       {/* Sound Priorities */}
       <div style={styles.section}>
         <h3>Sound Priorities</h3>
@@ -286,28 +192,28 @@ export const SoundTestPanel: React.FC = () => {
         <h3>Ship Sounds</h3>
         <div style={styles.soundGrid}>
           <button
-            onClick={() => playSound(() => soundService?.playShipFire())}
+            onClick={() => soundService?.playShipFire()}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Fire
           </button>
           <button
-            onClick={() => playSound(() => soundService?.playShipThrust())}
+            onClick={() => soundService?.playShipThrust()}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Thrust
           </button>
           <button
-            onClick={() => playSound(() => soundService?.playShipShield())}
+            onClick={() => soundService?.playShipShield()}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Shield
           </button>
           <button
-            onClick={() => playSound(() => soundService?.playShipExplosion())}
+            onClick={() => soundService?.playShipExplosion()}
             style={styles.soundButton}
             disabled={!soundService}
           >
@@ -321,21 +227,21 @@ export const SoundTestPanel: React.FC = () => {
         <h3>Bunker Sounds</h3>
         <div style={styles.soundGrid}>
           <button
-            onClick={() => playSound(() => soundService?.playBunkerShoot())}
+            onClick={() => soundService?.playBunkerShoot()}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Bunker Shoot
           </button>
           <button
-            onClick={() => playSound(() => soundService?.playBunkerExplosion())}
+            onClick={() => soundService?.playBunkerExplosion()}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Bunker Explosion
           </button>
           <button
-            onClick={() => playSound(() => soundService?.playBunkerSoft())}
+            onClick={() => soundService?.playBunkerSoft()}
             style={styles.soundButton}
             disabled={!soundService}
           >
@@ -349,35 +255,35 @@ export const SoundTestPanel: React.FC = () => {
         <h3>Other Game Sounds</h3>
         <div style={styles.soundGrid}>
           <button
-            onClick={() => playSound(() => soundService?.playFuelCollect())}
+            onClick={() => soundService?.playFuelCollect()}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Fuel Collect
           </button>
           <button
-            onClick={() => playSound(() => soundService?.playAlienExplosion())}
+            onClick={() => soundService?.playAlienExplosion()}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Alien Explosion
           </button>
           <button
-            onClick={() => playSound(() => soundService?.playLevelComplete())}
+            onClick={() => soundService?.playLevelComplete()}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Level Complete
           </button>
           <button
-            onClick={() => playSound(() => soundService?.playLevelTransition())}
+            onClick={() => soundService?.playLevelTransition()}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Level Transition
           </button>
           <button
-            onClick={() => playSound(() => soundService?.playEcho())}
+            onClick={() => soundService?.playEcho()}
             style={styles.soundButton}
             disabled={!soundService}
           >
@@ -587,50 +493,5 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '4px',
     fontSize: '14px',
     color: '#1976d2'
-  },
-  diagnosticGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-    gap: '10px',
-    marginBottom: '15px'
-  },
-  diagnosticItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    padding: '8px 12px',
-    backgroundColor: '#f5f5f5',
-    borderRadius: '4px',
-    fontSize: '13px'
-  },
-  diagnosticLabel: {
-    fontWeight: '500',
-    color: '#555'
-  },
-  diagnosticValue: {
-    fontFamily: 'monospace',
-    color: '#333'
-  },
-  diagnosticControls: {
-    display: 'flex',
-    gap: '10px',
-    marginBottom: '15px'
-  },
-  diagnosticButton: {
-    padding: '10px 20px',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    backgroundColor: '#2196F3',
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: '14px',
-    transition: 'all 0.2s'
-  },
-  diagnosticNote: {
-    fontSize: '12px',
-    fontStyle: 'italic',
-    color: '#666',
-    lineHeight: '1.6',
-    margin: '10px 0 0 0'
   }
 }
