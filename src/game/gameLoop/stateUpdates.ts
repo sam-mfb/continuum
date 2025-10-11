@@ -68,7 +68,7 @@ export type StateUpdateContext = {
   controls: ControlMatrix
   bitmap: MonochromeBitmap
   galaxyService: GalaxyService
-  fizzTransitionService?: FizzTransitionService
+  fizzTransitionService: FizzTransitionService
 }
 
 /**
@@ -79,7 +79,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
     context
 
   if (controls.quit) {
-    handleGameOver(store)
+    handleGameOver(store, fizzTransitionService)
   }
 
   if (controls.extraLife) {
@@ -126,7 +126,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
     state.ship.lives <= 0 &&
     state.ship.deadCount === 0
   ) {
-    handleGameOver(store)
+    handleGameOver(store, fizzTransitionService)
   }
 
   // Handle ship movement and controls
@@ -342,7 +342,10 @@ const handleLevelCompletion = (
 /**
  * Handle game over condition
  */
-const handleGameOver = (store: GameStore): void => {
+const handleGameOver = (
+  store: GameStore,
+  transitionService: FizzTransitionService
+): void => {
   const state = store.getState()
 
   store.dispatch(triggerGameOver())
@@ -376,6 +379,8 @@ const handleGameOver = (store: GameStore): void => {
 
   // Reset everything for a new game
   store.dispatch(resetGame())
+  store.dispatch(resetTransition())
+  transitionService.reset()
   store.dispatch(shipSlice.actions.setLives(TOTAL_INITIAL_LIVES))
   store.dispatch(shipSlice.actions.resetFuel())
   store.dispatch(statusSlice.actions.initStatus())

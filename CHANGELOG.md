@@ -1,5 +1,9 @@
 # Changes
 
+## 1.1.2 - 2025.10.11
+
+Fix transition state bug
+
 ## 1.1.1 - 2025.10.11
 
 Reorganize rendering code
