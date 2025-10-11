@@ -71,6 +71,13 @@ export type RingBuffer = {
    * Reset buffer to initial state (filled with silence)
    */
   reset(): void
+
+  /**
+   * Clear buffer by synchronizing read/write positions
+   * Fast operation that doesn't fill with silence - use when you'll
+   * immediately write new samples via generateChunk
+   */
+  clear(): void
 }
 
 /**
@@ -185,6 +192,16 @@ export function createRingBuffer(size: number): RingBuffer {
     fillWithSilence(size)
   }
 
+  /**
+   * Clear buffer by synchronizing positions (no silence fill)
+   * This makes the buffer "empty" without writing silence samples
+   */
+  function clear(): void {
+    // Synchronize read and write positions
+    readPosition = writePosition
+    count = 0
+  }
+
   // Fill buffer array with silence values (but don't advance positions/count)
   // This ensures the buffer contains silence for any uninitialized reads
   for (let i = 0; i < size; i++) {
@@ -200,6 +217,7 @@ export function createRingBuffer(size: number): RingBuffer {
     getAvailableSamples,
     isFull,
     isEmpty,
-    reset
+    reset,
+    clear
   }
 }
