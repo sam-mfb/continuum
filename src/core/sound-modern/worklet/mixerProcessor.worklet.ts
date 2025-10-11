@@ -241,7 +241,6 @@ class MixerAudioProcessor extends AudioWorkletProcessor {
     // Check if sound has ended
     if (!channel.hasReportedEnded && channel.generator.hasEnded()) {
       channel.hasReportedEnded = true
-      channel.active = false
 
       // Notify main thread
       this.port.postMessage({
@@ -250,7 +249,8 @@ class MixerAudioProcessor extends AudioWorkletProcessor {
         soundType: channel.soundType
       } as WorkletEvent)
 
-      // Clear channel
+      // Clear generator but keep channel active so buffer can drain
+      // Channel will become inactive when buffer is empty
       channel.generator = null
       channel.soundType = SoundType.NO_SOUND
     }
