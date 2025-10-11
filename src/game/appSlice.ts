@@ -10,6 +10,8 @@ export type GameMode = 'start' | 'playing' | 'highScoreEntry' | 'gameOver'
 
 export type CollisionMode = 'modern' | 'original'
 
+export type SoundMode = 'modern' | 'original'
+
 export type ScaleMode = 'auto' | 1 | 2 | 3
 
 export type MostRecentScore = {
@@ -28,6 +30,7 @@ export type AppState = {
   scaleMode: ScaleMode
 
   // Sound settings
+  soundMode: SoundMode
   volume: number
   soundOn: boolean
 
@@ -53,6 +56,7 @@ const initialState: AppState = {
   alignmentMode: 'screen-fixed', // Default to screen-fixed (not original)
   showInGameControls: true,
   scaleMode: 'auto', // Default to responsive auto-scaling
+  soundMode: 'modern',
   volume: 0,
   soundOn: true,
   touchControlsEnabled: false, // Will be set based on device detection
@@ -77,6 +81,15 @@ export const appSlice = createSlice({
       state.collisionMode =
         state.collisionMode === 'modern' ? 'original' : 'modern'
     },
+
+    // Sound settings
+    setSoundMode: (state, action: PayloadAction<SoundMode>) => {
+      state.soundMode = action.payload
+    },
+    toggleSoundMode: state => {
+      state.soundMode = state.soundMode === 'modern' ? 'original' : 'modern'
+    },
+
     // Display settings
     setAlignmentMode: (state, action: PayloadAction<AlignmentMode>) => {
       state.alignmentMode = action.payload
@@ -95,7 +108,7 @@ export const appSlice = createSlice({
       state.scaleMode = action.payload
     },
 
-    // Sound settings
+    // Volume settings
     setVolume: (state, action: PayloadAction<number>) => {
       state.volume = action.payload
     },
@@ -166,6 +179,8 @@ export const appSlice = createSlice({
 export const {
   setCollisionMode,
   toggleCollisionMode,
+  setSoundMode,
+  toggleSoundMode,
   setAlignmentMode,
   toggleAlignmentMode,
   toggleInGameControls,

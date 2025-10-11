@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../store'
 import {
   toggleCollisionMode,
+  toggleSoundMode,
   toggleAlignmentMode,
   toggleInGameControls,
   setScaleMode,
@@ -107,6 +108,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const dispatch = useAppDispatch()
   const collisionMode = useAppSelector(state => state.app.collisionMode)
+  const soundMode = useAppSelector(state => state.app.soundMode)
   const alignmentMode = useAppSelector(state => state.app.alignmentMode)
   const scaleMode = useAppSelector(state => state.app.scaleMode)
   const showInGameControls = useAppSelector(
@@ -452,6 +454,62 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     : 'Original render-time collision detection'}
                   )
                 </span>
+              </div>
+              <div
+                style={{
+                  marginTop: `${3 * scale}px`,
+                  color: '#ffaa00',
+                  fontSize: `${5 * scale}px`
+                }}
+              >
+                Note: Reload page after changing to apply
+              </div>
+            </div>
+
+            {/* Sound Mode Section */}
+            <div style={sectionStyle}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: `${5 * scale}px`
+                }}
+              >
+                <span>SOUND MODE:</span>
+                <button
+                  onClick={() => dispatch(toggleSoundMode())}
+                  style={toggleButtonStyle}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = '#333'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = '#000'
+                  }}
+                >
+                  {soundMode === 'modern' ? 'MODERN' : 'ORIGINAL'}
+                </button>
+                <span
+                  style={{
+                    color: '#666',
+                    fontSize: `${5 * scale}px`,
+                    marginLeft: `${5 * scale}px`
+                  }}
+                >
+                  (
+                  {soundMode === 'modern'
+                    ? 'Modern multi-channel mixer (8 simultaneous sounds)'
+                    : 'Original single-channel with priorities'}
+                  )
+                </span>
+              </div>
+              <div
+                style={{
+                  marginTop: `${3 * scale}px`,
+                  color: '#ffaa00',
+                  fontSize: `${5 * scale}px`
+                }}
+              >
+                Note: Reload page after changing to apply
               </div>
             </div>
 

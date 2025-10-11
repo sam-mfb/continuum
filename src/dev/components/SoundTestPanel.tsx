@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { createSoundService, type SoundService } from '@/core/sound'
+import { createModernSoundService } from '@/core/sound-modern'
 import { SOUND_PRIORITIES, SoundType } from '@/core/sound-shared'
 
 // Map SoundType enum values to display names
@@ -30,16 +31,37 @@ export const SoundTestPanel: React.FC = () => {
   const [isInitialized, setIsInitialized] = useState(false)
   const [masterVolume, setMasterVolume] = useState(1.0)
   const [enabled, setEnabled] = useState(true)
+  const [useModernSound, setUseModernSound] = useState(false)
+  const [soundSystemLabel, setSoundSystemLabel] = useState(
+    'Original (Single-Channel)'
+  )
 
   useEffect(() => {
-    // Initialize sound service on mount
+    // Initialize sound service on mount or when sound system changes
     if (!isInitialized) {
-      createSoundService({ volume: masterVolume, muted: !enabled })
-        .then(service => {
+      const factory = useModernSound
+        ? createModernSoundService
+        : createSoundService
+      const label = useModernSound
+        ? 'Modern (Multi-Channel)'
+        : 'Original (Single-Channel)'
+
+      setSoundSystemLabel(label)
+
+      factory({ volume: masterVolume, muted: !enabled })
+        .then(async service => {
           setSoundService(service)
           // Sync initial state
           service.setVolume(masterVolume)
           service.setMuted(!enabled) // enabled=true means not muted
+
+          // Pre-start the audio engine to eliminate first-sound delay
+          try {
+            await service.startEngine()
+          } catch (error) {
+            console.error('Failed to start audio engine:', error)
+          }
+
           setIsInitialized(true)
         })
         .catch(error => {
@@ -47,7 +69,7 @@ export const SoundTestPanel: React.FC = () => {
         })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isInitialized]) // Only depend on isInitialized, not volume/enabled
+  }, [isInitialized, useModernSound]) // Depend on isInitialized and useModernSound
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const volume = parseFloat(e.target.value)
@@ -67,9 +89,19 @@ export const SoundTestPanel: React.FC = () => {
     }
   }
 
-  // Helper to play a sound
-  const playSound = (playFunc: () => void): void => {
-    playFunc()
+  const handleSoundSystemToggle = (): void => {
+    // Cleanup current service
+    if (soundService) {
+      soundService.cleanup()
+    }
+
+    // Toggle the sound system
+    const newUseModern = !useModernSound
+    setUseModernSound(newUseModern)
+
+    // Reset initialization to trigger service recreation
+    setIsInitialized(false)
+    setSoundService(null)
   }
 
   const handleStopSound = (): void => {
@@ -102,6 +134,14 @@ export const SoundTestPanel: React.FC = () => {
             />
             Muted
           </label>
+          <label style={styles.label}>
+            <input
+              type="checkbox"
+              checked={useModernSound}
+              onChange={handleSoundSystemToggle}
+            />
+            Use Modern Sound System
+          </label>
           <button
             onClick={handleStopSound}
             style={styles.stopButton}
@@ -109,6 +149,10 @@ export const SoundTestPanel: React.FC = () => {
           >
             Stop Sound
           </button>
+        </div>
+
+        <div style={styles.systemInfo}>
+          <strong>Active System:</strong> {soundSystemLabel}
         </div>
 
         <div style={styles.volumeControl}>
@@ -148,28 +192,28 @@ export const SoundTestPanel: React.FC = () => {
         <h3>Ship Sounds</h3>
         <div style={styles.soundGrid}>
           <button
-            onClick={() => playSound(() => soundService?.playShipFire())}
+            onClick={() => soundService?.playShipFire()}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Fire
           </button>
           <button
-            onClick={() => playSound(() => soundService?.playShipThrust())}
+            onClick={() => soundService?.playShipThrust()}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Thrust
           </button>
           <button
-            onClick={() => playSound(() => soundService?.playShipShield())}
+            onClick={() => soundService?.playShipShield()}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Shield
           </button>
           <button
-            onClick={() => playSound(() => soundService?.playShipExplosion())}
+            onClick={() => soundService?.playShipExplosion()}
             style={styles.soundButton}
             disabled={!soundService}
           >
@@ -183,21 +227,21 @@ export const SoundTestPanel: React.FC = () => {
         <h3>Bunker Sounds</h3>
         <div style={styles.soundGrid}>
           <button
-            onClick={() => playSound(() => soundService?.playBunkerShoot())}
+            onClick={() => soundService?.playBunkerShoot()}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Bunker Shoot
           </button>
           <button
-            onClick={() => playSound(() => soundService?.playBunkerExplosion())}
+            onClick={() => soundService?.playBunkerExplosion()}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Bunker Explosion
           </button>
           <button
-            onClick={() => playSound(() => soundService?.playBunkerSoft())}
+            onClick={() => soundService?.playBunkerSoft()}
             style={styles.soundButton}
             disabled={!soundService}
           >
@@ -211,35 +255,35 @@ export const SoundTestPanel: React.FC = () => {
         <h3>Other Game Sounds</h3>
         <div style={styles.soundGrid}>
           <button
-            onClick={() => playSound(() => soundService?.playFuelCollect())}
+            onClick={() => soundService?.playFuelCollect()}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Fuel Collect
           </button>
           <button
-            onClick={() => playSound(() => soundService?.playAlienExplosion())}
+            onClick={() => soundService?.playAlienExplosion()}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Alien Explosion
           </button>
           <button
-            onClick={() => playSound(() => soundService?.playLevelComplete())}
+            onClick={() => soundService?.playLevelComplete()}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Level Complete
           </button>
           <button
-            onClick={() => playSound(() => soundService?.playLevelTransition())}
+            onClick={() => soundService?.playLevelTransition()}
             style={styles.soundButton}
             disabled={!soundService}
           >
             Level Transition
           </button>
           <button
-            onClick={() => playSound(() => soundService?.playEcho())}
+            onClick={() => soundService?.playEcho()}
             style={styles.soundButton}
             disabled={!soundService}
           >
@@ -260,6 +304,13 @@ export const SoundTestPanel: React.FC = () => {
             sound (equivalent to original game's clear_sound)
           </li>
           <li>
+            <strong>Sound System Toggle:</strong> Check "Use Modern Sound
+            System" to switch to the multi-channel mixer (Phase 2). This allows
+            up to 8 simultaneous sounds to play at once. Uncheck to use the
+            original single-channel service (Phase 1). The service will be
+            reinitialized when you toggle.
+          </li>
+          <li>
             <strong>All Sounds:</strong> Click any button to play that sound.
             Thrust and Shield will continue playing until interrupted or
             stopped.
@@ -271,7 +322,7 @@ export const SoundTestPanel: React.FC = () => {
             (30) can be interrupted by almost any other sound.
           </li>
           <li>
-            <strong>Testing Scenarios:</strong>
+            <strong>Testing Original (Single-Channel):</strong>
             <ul>
               <li>
                 Play Thrust, then click Shield - Shield (70) interrupts Thrust
@@ -291,6 +342,39 @@ export const SoundTestPanel: React.FC = () => {
                 original game)
               </li>
               <li>Use Stop Sound button to clear any playing sound</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Testing Modern (Multi-Channel):</strong>
+            <ul>
+              <li>
+                Click Ship Fire multiple times rapidly - you should hear
+                multiple shots overlapping
+              </li>
+              <li>
+                Click Bunker Shoot + Bunker Explosion together - both should
+                play simultaneously
+              </li>
+              <li>
+                Click Thrust twice - only one plays (singleton sound - only one
+                instance allowed)
+              </li>
+              <li>
+                Click Shield while Thrust is playing - both should play together
+                (both are singleton but different sound types)
+              </li>
+              <li>
+                Try clicking Ship Explosion multiple times - only one plays
+                (singleton)
+              </li>
+              <li>
+                Singleton sounds: Thrust, Shield, Ship Explosion, Fizz, Echo,
+                Level Complete, Fuel Collect
+              </li>
+              <li>
+                Multi-instance sounds: Ship Fire, Bunker Shoot, Bunker
+                Explosion, Bunker Soft, Alien Explosion
+              </li>
             </ul>
           </li>
         </ul>
@@ -400,5 +484,14 @@ const styles: Record<string, React.CSSProperties> = {
     fontStyle: 'italic',
     color: '#666',
     marginTop: '10px'
+  },
+  systemInfo: {
+    marginTop: '10px',
+    marginBottom: '10px',
+    padding: '8px',
+    backgroundColor: '#e3f2fd',
+    borderRadius: '4px',
+    fontSize: '14px',
+    color: '#1976d2'
   }
 }

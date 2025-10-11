@@ -70,3 +70,29 @@ export const SOUND_PRIORITY_DECAY: Partial<Record<SoundType, number>> = {
   // Note: EXP2_SOUND excluded per Sound.c:173-174 (ship explosion doesn't decay)
   // Other sounds (THRU, SHLD, FUEL, CRACK, FIZZ, ECHO) have no decay
 }
+
+/**
+ * Sound types that should only play one instance at a time (singletons)
+ *
+ * Based on original Sound.c behavior where these sounds maintain state
+ * across frames (counters, phases) and can only play once.
+ *
+ * - THRU_SOUND: Checks `thrusting` flag every frame (Sound.c:120)
+ * - SHLD_SOUND: Checks `shielding` flag every frame (Sound.c:160)
+ * - EXP2_SOUND: Ship explosion - explicitly can't be interrupted (Sound.c:173)
+ * - FIZZ_SOUND: Has `fizzcount` state (Sound.c:220)
+ * - ECHO_SOUND: Has `echocount` state (Sound.c:252)
+ * - CRACK_SOUND: Has `crackcount` state (Sound.c:191)
+ * - FUEL_SOUND: Has `fuelcount` state (Sound.c:166)
+ *
+ * Other sounds (FIRE, BUNK, SOFT, EXP1, EXP3) can play multiple instances.
+ */
+export const SINGLETON_SOUNDS: ReadonlySet<SoundType> = new Set([
+  SoundType.THRU_SOUND,
+  SoundType.SHLD_SOUND,
+  SoundType.EXP2_SOUND,
+  SoundType.FIZZ_SOUND,
+  SoundType.ECHO_SOUND,
+  SoundType.CRACK_SOUND,
+  SoundType.FUEL_SOUND
+])

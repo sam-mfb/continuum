@@ -101,6 +101,8 @@ const createStoreAndListeners = (
       collisionMode:
         persistedAppSettings.collisionMode ??
         appSlice.getInitialState().collisionMode,
+      soundMode:
+        persistedAppSettings.soundMode ?? appSlice.getInitialState().soundMode,
       volume: persistedAppSettings.volume ?? initialSettings.soundVolume,
       soundOn: persistedAppSettings.soundOn ?? initialSettings.soundEnabled,
       alignmentMode:

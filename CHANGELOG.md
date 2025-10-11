@@ -1,5 +1,9 @@
 # Changes
 
+## 1.1.0 - 2025.10.11
+
+Add new multi-channel audio system to allowing mixing sounds
+
 ## 1.0.5 - 2025.10.09
 
 Upgrade Audio System to use AudioWorklet

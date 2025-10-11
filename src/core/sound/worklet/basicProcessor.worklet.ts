@@ -165,6 +165,10 @@ class BasicAudioProcessor extends AudioWorkletProcessor {
       ) {
         this.currentGenerator.reset()
       }
+
+      // Pre-generate samples immediately to eliminate first-sound latency
+      // This ensures the buffer has samples ready for the next process() callback
+      this.generateChunk()
     }
 
     this.hasReportedEnded = false
