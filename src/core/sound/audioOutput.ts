@@ -124,9 +124,13 @@ export const createAudioOutput = (): AudioOutput => {
 
       // Resume if suspended (required by some browsers)
       if (audioContext.state === 'suspended') {
-        console.log(
-          'AudioContext is suspended, will resume on user interaction'
-        )
+        console.log('AudioContext is suspended, resuming...')
+        try {
+          await audioContext.resume()
+          console.log('AudioContext resumed successfully')
+        } catch (error) {
+          console.warn('Failed to resume AudioContext during start:', error)
+        }
       }
 
       // Load worklet module
