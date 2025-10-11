@@ -1,4 +1,4 @@
-import { expandTitlePage } from '@dev/art/utils'
+import { expandTitlePage } from '@core/shared'
 import type {
   AllSprites,
   ShipSprite,

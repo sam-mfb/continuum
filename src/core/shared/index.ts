@@ -17,3 +17,10 @@ export { rint } from './rint'
 export { containShip } from './containShip'
 export { getstrafedir } from './getstrafedir'
 export { pt2line } from './pt2line'
+export {
+  bytesToImageData,
+  expandTitlePage,
+  expandTitlePageToImageData,
+  macPaintToImageData,
+  rawBitmapToImageData
+} from './bitmapUtils'
