@@ -28,7 +28,8 @@
       "@/*": ["src/*"],
       "@core/*": ["src/core/*"],
       "@lib/*": ["src/lib/*"],
-      "@dev/*": ["src/dev/*"]
+      "@dev/*": ["src/dev/*"],
+      "@render/*": ["src/render/*"]
     }
   },
   "include": ["src/**/*"],
