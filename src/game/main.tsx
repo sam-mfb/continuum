@@ -12,7 +12,7 @@ import { createGalaxyService } from '@core/galaxy'
 import { createFizzTransitionService } from '@core/transition'
 import { createSoundService } from '@/core/sound'
 import { createModernSoundService } from '@/core/sound-modern'
-import { createGameRenderer } from './gameLoop'
+import { createGameRenderer, createGameRendererNew } from './gameLoop'
 import { loadAppSettings } from './appMiddleware'
 import { setAlignmentMode } from '@/core/shared'
 import { createGameStore } from './store'
@@ -116,6 +116,12 @@ try {
     galaxyService,
     fizzTransitionService
   )
+  const rendererNew = createGameRendererNew(
+    store,
+    spriteService,
+    galaxyService,
+    fizzTransitionService
+  )
 
   // Set up alignment mode subscription
   let currentAlignmentMode = store.getState().app.alignmentMode
@@ -135,6 +141,7 @@ try {
     <Provider store={store}>
       <App
         renderer={renderer}
+        rendererNew={rendererNew}
         collisionService={collisionService}
         soundService={soundService}
         spriteService={spriteService}

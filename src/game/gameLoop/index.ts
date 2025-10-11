@@ -13,8 +13,10 @@ import type { GameStore } from '../store'
 
 import { updateGameState } from './stateUpdates'
 import { renderGame } from './rendering'
-import type { GameRenderLoop } from '../types'
+import type { GameRenderLoop, NewGameRenderLoop } from '../types'
 import { renderGameOriginal } from './renderingOriginal'
+import type { Frame } from '@/lib/frame/types'
+import { renderGameNew } from './renderingNew'
 
 export const createGameRenderer = (
   store: GameStore,
@@ -31,7 +33,6 @@ export const createGameRenderer = (
       store,
       frame,
       controls,
-      bitmap,
       galaxyService,
       fizzTransitionService
     })
@@ -63,5 +64,33 @@ export const createGameRenderer = (
 
     // Return the final rendered bitmap
     return bitmap
+  }
+}
+
+export const createGameRendererNew = (
+  store: GameStore,
+  spriteService: SpriteService,
+  _galaxyService: GalaxyService,
+  fizzTransitionService: FizzTransitionService
+): NewGameRenderLoop => {
+  return (_frame, _controls) => {
+    // Create a fresh frame
+    const startFrame: Frame = {
+      width: 512,
+      height: 342,
+      drawables: []
+    }
+
+    // Get current state after updates
+    const state = store.getState()
+
+    const newFrame = renderGameNew({
+      frame: startFrame,
+      state,
+      spriteService,
+      fizzTransitionService
+    })
+
+    return newFrame
   }
 }

@@ -17,9 +17,12 @@ import type { SpriteService } from '@/core/sprites'
 import { SCENTER } from '@/core/figs'
 import { useStore } from 'react-redux'
 import { TouchControlsOverlay } from '../mobile/TouchControlsOverlay'
+import type { Frame } from '@/lib/frame/types'
+import { drawFrameToCanvas } from '@/lib/frame/drawFrameToCanvas'
 
 type GameRendererProps = {
   renderer: (frame: FrameInfo, controls: ControlMatrix) => MonochromeBitmap
+  rendererNew: (frame: FrameInfo, controls: ControlMatrix) => Frame
   collisionService: CollisionService
   spriteService: SpriteService
   width: number
@@ -34,6 +37,7 @@ type GameRendererProps = {
  */
 const GameRenderer: React.FC<GameRendererProps> = ({
   renderer,
+  rendererNew,
   collisionService,
   spriteService,
   width,
@@ -168,6 +172,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
         if (!paused) {
           // Render game and get the resulting bitmap
           const renderedBitmap = renderer(frameInfo, controls)
+          const renderedFrame = rendererNew(frameInfo, controls)
 
           const collisionMap = collisionService.getMap()
 
@@ -283,6 +288,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
             renderedBitmap.width * scale,
             renderedBitmap.height * scale
           )
+          drawFrameToCanvas(renderedFrame, ctx)
 
           lastFrameTimeRef.current = currentTime
           frameCountRef.current++
@@ -319,7 +325,8 @@ const GameRenderer: React.FC<GameRendererProps> = ({
     collisionService,
     spriteService,
     store,
-    touchControls
+    touchControls,
+    rendererNew
   ])
 
   return (

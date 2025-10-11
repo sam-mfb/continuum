@@ -1,10 +1,16 @@
 import type { ControlMatrix } from '@/core/controls'
 import type { FrameInfo, MonochromeBitmap } from '@/lib/bitmap'
+import type { Frame } from '@/lib/frame/types'
 
 export type GameRenderLoop = (
   frame: FrameInfo,
   controls: ControlMatrix
 ) => MonochromeBitmap
+
+export type NewGameRenderLoop = (
+  frame: FrameInfo,
+  controls: ControlMatrix
+) => Frame
 
 /**
  * Sound service interface required by the game

@@ -20,13 +20,18 @@ import { shipSlice } from '@/core/ship'
 import { invalidateHighScore } from './gameSlice'
 import { type SpriteService } from '@/core/sprites'
 import { useAppDispatch, useAppSelector } from './store'
-import type { GameRenderLoop, GameSoundService } from './types'
+import type {
+  GameRenderLoop,
+  GameSoundService,
+  NewGameRenderLoop
+} from './types'
 import type { CollisionService } from '@/core/collision'
 import { useResponsiveScale } from './hooks/useResponsiveScale'
 import { BASE_GAME_WIDTH, BASE_TOTAL_HEIGHT } from './constants/dimensions'
 
 type AppProps = {
   renderer: GameRenderLoop
+  rendererNew: NewGameRenderLoop
   soundService: GameSoundService
   spriteService: SpriteService
   collisionService: CollisionService
@@ -34,6 +39,7 @@ type AppProps = {
 
 export const App: React.FC<AppProps> = ({
   renderer,
+  rendererNew,
   collisionService,
   soundService,
   spriteService
@@ -183,6 +189,7 @@ export const App: React.FC<AppProps> = ({
           >
             <GameRenderer
               renderer={renderer}
+              rendererNew={rendererNew}
               collisionService={collisionService}
               spriteService={spriteService}
               width={512}

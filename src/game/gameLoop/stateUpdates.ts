@@ -7,7 +7,7 @@
 
 import type { GalaxyService } from '@core/galaxy'
 import type { GameStore, RootState } from '../store'
-import type { MonochromeBitmap, FrameInfo } from '@lib/bitmap'
+import type { FrameInfo } from '@lib/bitmap'
 import type { FizzTransitionService } from '@core/transition'
 
 import { shipSlice, shipControl, CRITFUEL, handleBounceState } from '@core/ship'
@@ -66,7 +66,6 @@ export type StateUpdateContext = {
   store: GameStore
   frame: FrameInfo
   controls: ControlMatrix
-  bitmap: MonochromeBitmap
   galaxyService: GalaxyService
   fizzTransitionService: FizzTransitionService
 }
