@@ -15,7 +15,8 @@ export default defineConfig({
       '@': resolve(__dirname, './src'),
       '@core': resolve(__dirname, './src/core'),
       '@lib': resolve(__dirname, './src/lib'),
-      '@dev': resolve(__dirname, './src/dev')
+      '@dev': resolve(__dirname, './src/dev'),
+      '@render': resolve(__dirname, './src/render')
     }
   }
 })

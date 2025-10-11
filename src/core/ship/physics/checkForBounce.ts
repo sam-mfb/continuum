@@ -6,7 +6,7 @@
 import type { Store } from '@reduxjs/toolkit'
 import type { MonochromeBitmap } from '@core/walls'
 import type { ShipState } from '@core/ship'
-import { blackTerrain } from '@render/walls/blackTerrain'
+import { blackTerrain } from '@render/walls'
 import { checkFigure, shipSlice } from '@core/ship'
 import { eraseFigure } from '@render/ship'
 import { SCENTER } from '@core/figs'
