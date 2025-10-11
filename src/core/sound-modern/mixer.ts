@@ -112,6 +112,17 @@ export function createMixer(): {
     soundType: SoundType,
     generator: SampleGenerator
   ): PlayRequest | null {
+    // Special case: fuel blocks shield from playing
+    // If shield is trying to play while fuel is active, drop the shield request
+    if (soundType === SoundType.SHLD_SOUND) {
+      const isFuelPlaying = channels.some(
+        ch => ch.active && ch.soundType === SoundType.FUEL_SOUND
+      )
+      if (isFuelPlaying) {
+        return null // Drop shield play request
+      }
+    }
+
     // Check if this is a singleton sound that's already playing
     // Singleton sounds (thrust, shield, ship explosion, etc.) can only play one instance
     if (SINGLETON_SOUNDS.has(soundType)) {
