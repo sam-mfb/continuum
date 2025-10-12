@@ -440,14 +440,21 @@ export const createExplosionFrameRenderer =
     const extendedState = state as ExtendedGameState
 
     // Convert bunker configs to Bunker array for frame renderer
-    const bunkerArray: Bunker[] = bunkers.map(b => ({
-      x: b.x + state.screen.screenx,
-      y: b.y + state.screen.screeny,
-      rot: b.rotation,
-      kind: b.kind,
-      alive: b.alive,
-      ranges: [] // Not needed for rendering
-    }))
+    // bunkers array stores top-left corner in screen coordinates
+    // Frame renderer expects world coordinates as if passed through doBunks which would subtract ycenter
+    // But our bunkers are already top-left, so we need to add ycenter back to make them "center" coordinates
+    const bunkerArray: Bunker[] = bunkers.map(b => {
+      const ycenter = ybcenter[b.kind]?.[b.rotation] ?? 24
+      const xcenter = xbcenter[b.kind]?.[b.rotation] ?? 24
+      return {
+        x: b.x + xcenter,
+        y: b.y + ycenter,
+        rot: b.rotation,
+        kind: b.kind,
+        alive: b.alive,
+        ranges: [] // Not needed for rendering
+      }
+    })
 
     // Create viewport
     const viewport = {
@@ -465,18 +472,20 @@ export const createExplosionFrameRenderer =
     }
 
     // Draw bunkers
+    // bunkers are in screen coordinates, so screenX/screenY should be 0
     frame = drawBunkers({
       bunkers: bunkerArray,
-      screenX: state.screen.screenx,
-      screenY: state.screen.screeny,
+      screenX: 0,
+      screenY: 0,
       viewport: viewport
     })(frame)
 
     // Draw shards
+    // Shards are in world coordinates, screen position is 0
     frame = drawShards({
       shards: extendedState.explosions.shards,
-      screenX: state.screen.screenx,
-      screenY: state.screen.screeny,
+      screenX: 0,
+      screenY: 0,
       worldwidth: state.planet.worldwidth,
       worldwrap: state.planet.worldwrap
     })(frame)
