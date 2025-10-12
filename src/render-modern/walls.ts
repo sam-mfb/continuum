@@ -3,7 +3,7 @@
  */
 
 import type { Frame } from '@/lib/frame'
-import { LINE_KIND, type NEW_TYPE, type LineRec } from '@core/walls'
+import { LINE_KIND, NEW_TYPE, type LineRec, type NewType } from '@core/walls'
 import { Z } from './z'
 import { SBARHT } from '@/core/screen'
 
@@ -168,7 +168,7 @@ function drawWall(deps: {
         break
     }
     newFrame.drawables.push({
-      id: line.id,
+      id: `${line.id}-black`,
       type: 'line',
       start: tweaked.start,
       end: tweaked.end,
@@ -177,8 +177,121 @@ function drawWall(deps: {
       alpha: 1,
       z: zindex
     })
+    newFrame.drawables.push({
+      id: `${line.id}-white`,
+      type: 'shape',
+      points: wallShape(tweaked, line.newtype),
+      strokeColor: 'black',
+      strokeWidth: 1,
+      fillColor: 'white',
+      alpha: 1,
+      z: zindex
+    })
     return newFrame
   }
+}
+
+/**
+ * Calculate the 4 corner points for a wall shape with 3D perspective
+ *
+ * The shape represents the white "underside" of a raised platform wall.
+ * To create a 3D effect, the wall extends from the top edge line at an angle
+ * approximately 26.6° below the perpendicular (based on original game's 2:1 slope).
+ *
+ * For a 12-pixel depth:
+ * - Perpendicular component: ~11 pixels (cos 26.6°)
+ * - Downward component: ~5 pixels (sin 26.6°)
+ *
+ * @param line - The line with start and end points
+ * @param type - The NEW_TYPE determining the line orientation
+ * @returns Array of 4 points forming a quadrilateral (clockwise from top-left)
+ */
+function wallShape(
+  line: {
+    start: { x: number; y: number }
+    end: { x: number; y: number }
+  },
+  type: NewType
+): [
+  { x: number; y: number },
+  { x: number; y: number },
+  { x: number; y: number },
+  { x: number; y: number }
+] {
+  // 3D perspective: wall extends ~26.6° below perpendicular
+  // For 12px depth: perpendicular = 11px, downward = 5px
+  const PERP = 11 // Perpendicular component
+  const DOWN = 5 // Downward component (creates 3D effect)
+
+  let offsetX = 0
+  let offsetY = 0
+
+  switch (type) {
+    case NEW_TYPE.S: // South (vertical line)
+      // Line direction: straight down (0°)
+      // Perpendicular: right (+x), Downward: down (+y)
+      offsetX = Math.round(PERP * 0.9) // ~10
+      offsetY = Math.round(DOWN * 0.8) // ~4
+      break
+
+    case NEW_TYPE.SSE: // South-Southeast (~22.5° from vertical)
+      // Line direction: down-right at 22.5°
+      // Should extend slightly more east and less downward
+      offsetX = Math.round(PERP * 0.924 + DOWN * 0.3) // ~12
+      offsetY = Math.round(PERP * 0.3 + DOWN * 0.82) // ~8
+      break
+
+    case NEW_TYPE.SE: // Southeast (45° diagonal)
+      // Line direction: down-right at 45°
+      // Should extend more to the east and less downward
+      offsetX = Math.round(PERP * 0.924 + DOWN * 0.707) // ~13
+      offsetY = Math.round(PERP * 0.707 + DOWN * 0.383) // ~10
+      break
+
+    case NEW_TYPE.ESE: // East-Southeast (~67.5° from vertical)
+      // Line direction: mostly right at 67.5°
+      // Should extend more to the right and less downward
+      offsetX = Math.round(PERP * 0.924 + DOWN * 0.707) // ~13
+      offsetY = Math.round(PERP * 0.707 + DOWN * 0.208) // ~9
+      break
+
+    case NEW_TYPE.E: // East (horizontal line)
+      // Line direction: right (90°)
+      // Should extend at ~12° angle (mostly rightward with slight downward)
+      offsetX = Math.round(PERP * 0.978 + DOWN * 0.1) // ~11
+      offsetY = Math.round(PERP * 0.1 + DOWN * 0.978) // ~6
+      break
+
+    case NEW_TYPE.ENE: // East-Northeast (~112.5° from vertical)
+      // Line direction: right and up at 112.5°
+      // Should extend at ~45° to the right/east with reduced height
+      offsetX = Math.round(PERP * 0.707 + DOWN * 0.2) // ~9
+      offsetY = Math.round(PERP * 0.2 + DOWN * 0.707) // ~6
+      break
+
+    case NEW_TYPE.NE: // Northeast (135° from vertical, 45° upward)
+      // Line direction: up-right at 135°
+      // Should extend slightly more east and less downward
+      offsetX = Math.round(PERP * 0.82 + DOWN * 0.2) // ~10
+      offsetY = Math.round(PERP * 0.2 + DOWN * 0.2) // ~3
+      break
+
+    case NEW_TYPE.NNE: // North-Northeast (~157.5° from vertical)
+      // Line direction: mostly up at 157.5°
+      // Adjusted coefficients for visual correctness
+      offsetX = Math.round(PERP * 0.82 + DOWN * 0.2) // ~10
+      offsetY = Math.round(PERP * 0.2 + DOWN * 0.3) // ~4
+      break
+  }
+
+  // Return 4 corners forming a trapezoid that extends from the line
+  // with a 3D perspective effect
+  return [
+    { x: line.start.x, y: line.start.y }, // Top-left (line start)
+    { x: line.end.x, y: line.end.y }, // Top-right (line end)
+    { x: line.end.x + offsetX, y: line.end.y + offsetY }, // Bottom-right
+    { x: line.start.x + offsetX, y: line.start.y + offsetY } // Bottom-left
+  ]
 }
 
 function lineTweaks(
@@ -200,6 +313,9 @@ function lineTweaks(
     >
   > = {
     // Example: [NEW_TYPE.S]: { start: { x: 1, y: 0 }, end: { x: 0, y: 1 } }
+    [NEW_TYPE.SE]: { start: { x: 1, y: 0 }, end: { x: 1, y: 0 } },
+    [NEW_TYPE.ESE]: { start: { x: 0, y: -1 }, end: { x: 0, y: -1 } },
+    [NEW_TYPE.ENE]: { start: { x: 0, y: -1 }, end: { x: 0, y: -1 } }
   }
 
   const typeDelta = typeDeltas[line.newtype] || {
