@@ -38,6 +38,7 @@ export type DrawableShape = DrawableBase & {
 type DrawablePoint = {
   x: number
   y: number
+  strokeAfter?: boolean // Whether to stroke the edge from this point to the next (default: true)
 }
 
 type DrawableColor = string

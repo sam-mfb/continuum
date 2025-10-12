@@ -213,10 +213,10 @@ function wallShape(
   },
   type: NewType
 ): [
-  { x: number; y: number },
-  { x: number; y: number },
-  { x: number; y: number },
-  { x: number; y: number }
+  { x: number; y: number; strokeAfter?: boolean },
+  { x: number; y: number; strokeAfter?: boolean },
+  { x: number; y: number; strokeAfter?: boolean },
+  { x: number; y: number; strokeAfter?: boolean }
 ] {
   // 3D perspective: wall extends ~26.6° below perpendicular
   // For 12px depth: perpendicular = 11px, downward = 5px
@@ -286,10 +286,11 @@ function wallShape(
 
   // Return 4 corners forming a trapezoid that extends from the line
   // with a 3D perspective effect
+  // The bottom edge (from bottom-right to bottom-left) should not be stroked
   return [
     { x: line.start.x, y: line.start.y }, // Top-left (line start)
     { x: line.end.x, y: line.end.y }, // Top-right (line end)
-    { x: line.end.x + offsetX, y: line.end.y + offsetY }, // Bottom-right
+    { x: line.end.x + offsetX, y: line.end.y + offsetY, strokeAfter: false }, // Bottom-right (don't stroke to bottom-left)
     { x: line.start.x + offsetX, y: line.start.y + offsetY } // Bottom-left
   ]
 }

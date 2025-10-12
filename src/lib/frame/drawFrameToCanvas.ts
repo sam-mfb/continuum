@@ -53,7 +53,7 @@ function drawShape(
 
   canvas.globalAlpha = debug ? 0.5 * shape.alpha : shape.alpha
 
-  // Draw the shape path
+  // Draw the shape path for filling
   canvas.beginPath()
   const firstPoint = shape.points[0]
   if (!firstPoint) {
@@ -77,11 +77,29 @@ function drawShape(
     canvas.fill()
   }
 
-  // Stroke if strokeColor and strokeWidth are provided
+  // Stroke edges individually based on strokeAfter flags
   if (shape.strokeColor && shape.strokeWidth > 0) {
     canvas.strokeStyle = debug ? 'red' : shape.strokeColor
     canvas.lineWidth = shape.strokeWidth * scale
-    canvas.stroke()
+
+    for (let i = 0; i < shape.points.length; i++) {
+      const point = shape.points[i]
+      const nextPoint = shape.points[(i + 1) % shape.points.length]
+
+      if (!point || !nextPoint) {
+        continue
+      }
+
+      // Default to stroking if strokeAfter is not specified
+      const shouldStroke = point.strokeAfter ?? true
+
+      if (shouldStroke) {
+        canvas.beginPath()
+        canvas.moveTo(point.x * scale, point.y * scale)
+        canvas.lineTo(nextPoint.x * scale, nextPoint.y * scale)
+        canvas.stroke()
+      }
+    }
   }
 
   canvas.restore()
