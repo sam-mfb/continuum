@@ -10,7 +10,8 @@ describe('uiSlice', () => {
   const initialState = {
     currentView: 'game' as const,
     isGamePaused: false,
-    showDebugInfo: false
+    showDebugInfo: false,
+    showGameStats: false
   }
 
   it('should handle setCurrentView', () => {

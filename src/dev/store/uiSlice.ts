@@ -1,5 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
+import { loadUISettings } from './uiMiddleware'
 
 type UIState = {
   currentView:
@@ -12,12 +13,17 @@ type UIState = {
     | 'sprites'
   isGamePaused: boolean
   showDebugInfo: boolean
+  showGameStats: boolean
 }
 
+// Load persisted settings
+const persistedSettings = loadUISettings()
+
 const initialState: UIState = {
-  currentView: 'sound',
+  currentView: persistedSettings.currentView ?? 'sound',
   isGamePaused: false,
-  showDebugInfo: false
+  showDebugInfo: persistedSettings.showDebugInfo ?? false,
+  showGameStats: persistedSettings.showGameStats ?? false
 }
 
 export const uiSlice = createSlice({
@@ -32,10 +38,17 @@ export const uiSlice = createSlice({
     },
     toggleDebugInfo: state => {
       state.showDebugInfo = !state.showDebugInfo
+    },
+    toggleGameStats: state => {
+      state.showGameStats = !state.showGameStats
     }
   }
 })
 
 export const uiReducer = uiSlice.reducer
-export const { setCurrentView, toggleGamePause, toggleDebugInfo } =
-  uiSlice.actions
+export const {
+  setCurrentView,
+  toggleGamePause,
+  toggleDebugInfo,
+  toggleGameStats
+} = uiSlice.actions

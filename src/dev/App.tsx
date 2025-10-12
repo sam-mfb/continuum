@@ -1,8 +1,11 @@
-import { useState } from 'react'
 import { useSelector } from 'react-redux'
 import type { RootState } from './store/store'
 import { useAppDispatch } from './store/store'
-import { setCurrentView, toggleDebugInfo } from './store/uiSlice'
+import {
+  setCurrentView,
+  toggleDebugInfo,
+  toggleGameStats
+} from './store/uiSlice'
 import type { SpriteService } from '@core/sprites'
 import { GalaxySelector } from './components/GalaxySelector'
 import { PlanetList } from './components/PlanetList'
@@ -20,12 +23,7 @@ import { SoundTest } from './components/SoundTest'
 import { testGameLoop } from './demos/testGame'
 import { shipMoveGameLoop } from './demos/shipMove'
 import { bitmapTestRenderer } from './demos/bitmapTest'
-import {
-  wallDrawingRenderer,
-  collisionService,
-  viewportState,
-  wallDrawingRendererNew
-} from './demos/wallDrawing'
+import { wallDrawingRenderer, wallDrawingRendererNew } from './demos/wallDrawing'
 import { planet3DrawingRenderer } from './demos/planet3Drawing'
 import { junctionDrawRenderer } from './demos/junctionDraw'
 import { createShipMoveBitmapRenderer } from './demos/shipMoveBitmap'
@@ -44,11 +42,10 @@ type AppProps = {
 }
 
 function App({ spriteService }: AppProps): React.JSX.Element {
-  const { currentView, showDebugInfo } = useSelector(
+  const { currentView, showDebugInfo, showGameStats } = useSelector(
     (state: RootState) => state.ui
   )
   const dispatch = useAppDispatch()
-  const [showGameStats, setShowGameStats] = useState(false)
 
   return (
     <div className="app">
@@ -232,7 +229,7 @@ function App({ spriteService }: AppProps): React.JSX.Element {
                   : undefined
               }
               showGameStats={showGameStats}
-              onShowGameStatsChange={setShowGameStats}
+              onShowGameStatsChange={() => dispatch(toggleGameStats())}
               onInit={(_ctx, env) => {
                 console.log(
                   `Game initialized: ${env.width}x${env.height} @ ${env.fps}fps`
