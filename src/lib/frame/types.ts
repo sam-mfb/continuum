@@ -52,6 +52,7 @@ export type DrawableSprite = DrawableBase & {
   spriteId: SpriteRegistryId
   rotation: number
   topLeft: DrawablePoint
+  colorOverride?: string
 }
 
 export type SpriteRegistry<TSpriteFormat> = {

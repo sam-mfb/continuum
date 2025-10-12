@@ -160,6 +160,14 @@ function drawSprite(
     imageData.height * scale
   )
 
+  // Apply color override (e.g., for shadows)
+  if (sprite.colorOverride) {
+    canvas.globalCompositeOperation = 'source-in'
+    canvas.fillStyle = sprite.colorOverride
+    canvas.fillRect(0, 0, imageData.width * scale, imageData.height * scale)
+    canvas.globalCompositeOperation = 'source-over'
+  }
+
   // Apply red tint in debug mode
   if (debug) {
     canvas.globalCompositeOperation = 'multiply'
