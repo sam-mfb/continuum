@@ -27,8 +27,8 @@ function drawLine(
 ): void {
   canvas.save()
 
-  canvas.globalAlpha = debug ? 0.5 * line.alpha : line.alpha
-  canvas.strokeStyle = debug ? 'red' : line.color
+  canvas.globalAlpha = debug ? 0.7 * line.alpha : line.alpha
+  canvas.strokeStyle = debug ? 'pink' : line.color
   canvas.lineWidth = line.width * scale
 
   canvas.beginPath()
