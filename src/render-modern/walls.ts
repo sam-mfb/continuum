@@ -3,7 +3,7 @@
  */
 
 import type { Frame } from '@/lib/frame'
-import { LINE_KIND, NEW_TYPE, type LineRec } from '@core/walls'
+import { LINE_KIND, type NEW_TYPE, type LineRec } from '@core/walls'
 import { Z } from './z'
 import { SBARHT } from '@/core/screen'
 
@@ -186,24 +186,35 @@ function lineTweaks(
   start: { x: number; y: number },
   end: { x: number; y: number }
 ): { start: { x: number; y: number }; end: { x: number; y: number } } {
-  switch (line.newtype) {
-    case NEW_TYPE.S:
-      return { start, end }
-    case NEW_TYPE.SSE:
-      return { start, end }
-    case NEW_TYPE.SE:
-      return { start, end }
-    case NEW_TYPE.ESE:
-      return { start, end }
-    case NEW_TYPE.E:
-      return { start, end }
-    case NEW_TYPE.ENE:
-      return { start, end }
-    case NEW_TYPE.NE:
-      return { start, end }
-    case NEW_TYPE.NNE:
-      return { start, end }
-    default:
-      return { start, end }
+  // Global base adjustment - easy to modify
+  const baseOffset = { x: 1, y: 1 }
+
+  // Type-specific deltas (empty by default, add as needed)
+  const typeDeltas: Partial<
+    Record<
+      (typeof NEW_TYPE)[keyof typeof NEW_TYPE],
+      {
+        start: { x: number; y: number }
+        end: { x: number; y: number }
+      }
+    >
+  > = {
+    // Example: [NEW_TYPE.S]: { start: { x: 1, y: 0 }, end: { x: 0, y: 1 } }
+  }
+
+  const typeDelta = typeDeltas[line.newtype] || {
+    start: { x: 0, y: 0 },
+    end: { x: 0, y: 0 }
+  }
+
+  return {
+    start: {
+      x: start.x + baseOffset.x + typeDelta.start.x,
+      y: start.y + baseOffset.y + typeDelta.start.y
+    },
+    end: {
+      x: end.x + baseOffset.x + typeDelta.end.x,
+      y: end.y + baseOffset.y + typeDelta.end.y
+    }
   }
 }
