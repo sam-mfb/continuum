@@ -29,7 +29,7 @@ const WORLD_HEIGHT = 768
 const testShards: ShardRec[] = []
 
 // Initialize test shards once
-function initializeTestShards() {
+function initializeTestShards(): void {
   if (testShards.length > 0) return // Already initialized
 
   const kind = 0

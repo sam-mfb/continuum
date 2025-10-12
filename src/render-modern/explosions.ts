@@ -26,9 +26,12 @@ export function drawShards(deps: {
   return oldFrame => {
     const newFrame = cloneFrame(oldFrame)
 
-    // Calculate screen bounds (Terrain.c:454-455)
-    const rightShard = screenX + SCRWTH - SHARDHT
-    const botShard = screenY + VIEWHT - SHARDHT
+    // Calculate screen bounds with margins for partial rendering
+    // Allow shards to be up to SHARDHT pixels off-screen (like bunkers use 48px margin)
+    const rightShard = screenX + SCRWTH + SHARDHT
+    const botShard = screenY + VIEWHT + SHARDHT
+    const leftShard = screenX - SHARDHT
+    const topShard = screenY - SHARDHT
 
     // Draw each shard (Terrain.c:456-478)
     for (let i = 0; i < shards.length; i++) {
@@ -37,12 +40,11 @@ export function drawShards(deps: {
       // Skip inactive shards
       if (shard.lifecount <= 0) continue
 
-      // Check vertical bounds (Terrain.c:467)
-      // Must match bitmap renderer: shard.y > screeny && shard.y < botShard
-      if (!(shard.y > screenY && shard.y < botShard)) continue
+      // Check vertical bounds - allow partial rendering
+      if (shard.y <= topShard || shard.y >= botShard) continue
 
-      // Check horizontal bounds and draw (Terrain.c:468-471)
-      if (shard.x > screenX && shard.x < rightShard) {
+      // Check horizontal bounds and draw
+      if (shard.x > leftShard && shard.x < rightShard) {
         // Calculate rotation from rot16 (stored as 0-255, >> 4 gives 0-15)
         const rotation16 = shard.rot16 >> 4 // 0-15
 
@@ -75,7 +77,7 @@ export function drawShards(deps: {
       // Draw wrapped shard if needed (Terrain.c:472-476)
       if (
         worldwrap &&
-        shard.x > screenX - worldwidth &&
+        shard.x > leftShard - worldwidth &&
         shard.x < rightShard - worldwidth
       ) {
         // Calculate rotation from rot16

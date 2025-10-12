@@ -36,7 +36,10 @@ import {
   createBunkerDrawFrameRenderer
 } from './demos/bunkerDrawBitmap'
 import { createFuelDrawBitmapRenderer } from './demos/fuelDrawBitmap'
-import { createExplosionBitmapRenderer } from './demos/explosionBitmap'
+import {
+  createExplosionBitmapRenderer,
+  createExplosionFrameRenderer
+} from './demos/explosionBitmap'
 import {
   createShardTestBitmapRenderer,
   createShardTestFrameRenderer
@@ -197,7 +200,8 @@ function App({ spriteService, spriteRegistry }: AppProps): React.JSX.Element {
                 {
                   type: 'bitmap',
                   name: 'Explosion Test',
-                  bitmapRenderer: createExplosionBitmapRenderer(spriteService)
+                  bitmapRenderer: createExplosionBitmapRenderer(spriteService),
+                  frameRenderer: createExplosionFrameRenderer()
                 } as BitmapGameDefinition,
                 {
                   type: 'bitmap',

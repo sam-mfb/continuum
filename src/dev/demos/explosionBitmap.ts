@@ -29,6 +29,11 @@ import type { ExplosionsState } from '@core/explosions'
 import { drawBunker } from '@render/planet'
 import { viewClear } from '@render/screen'
 import { ASSET_PATHS } from '@/dev/constants'
+import type { Frame } from '@lib/frame'
+import { drawBunkers } from '@render-modern/bunkers'
+import { drawShards } from '@render-modern/explosions'
+import type { Bunker } from '@core/planet'
+import { SCRWTH, VIEWHT } from '@core/screen'
 
 // Configure store with explosions slice
 const store = buildGameStore({
@@ -409,4 +414,72 @@ export const createExplosionBitmapRenderer =
     // L: GENERATOR (omnidirectional)
 
     return renderedBitmap
+  }
+
+/**
+ * Frame-based renderer for explosion game
+ * Renders the same bunkers and explosions using the frame system
+ *
+ * IMPORTANT: This only RENDERS the state, it does NOT update it.
+ * All state updates happen in the bitmap renderer.
+ */
+export const createExplosionFrameRenderer =
+  (): ((frameInfo: FrameInfo, keyInfo: KeyInfo) => Frame) =>
+  (_frameInfo: FrameInfo, _keys: KeyInfo) => {
+    // Check initialization status
+    if (initializationError || !initializationComplete) {
+      return {
+        width: 512,
+        height: 342,
+        drawables: []
+      }
+    }
+
+    // Get current state (already updated by bitmap renderer)
+    const state = store.getState()
+    const extendedState = state as ExtendedGameState
+
+    // Convert bunker configs to Bunker array for frame renderer
+    const bunkerArray: Bunker[] = bunkers.map(b => ({
+      x: b.x + state.screen.screenx,
+      y: b.y + state.screen.screeny,
+      rot: b.rotation,
+      kind: b.kind,
+      alive: b.alive,
+      ranges: [] // Not needed for rendering
+    }))
+
+    // Create viewport
+    const viewport = {
+      x: state.screen.screenx,
+      y: state.screen.screeny,
+      b: state.screen.screeny + VIEWHT,
+      r: state.screen.screenx + SCRWTH
+    }
+
+    // Start with empty frame
+    let frame: Frame = {
+      width: 512,
+      height: 342,
+      drawables: []
+    }
+
+    // Draw bunkers
+    frame = drawBunkers({
+      bunkers: bunkerArray,
+      screenX: state.screen.screenx,
+      screenY: state.screen.screeny,
+      viewport: viewport
+    })(frame)
+
+    // Draw shards
+    frame = drawShards({
+      shards: extendedState.explosions.shards,
+      screenX: state.screen.screenx,
+      screenY: state.screen.screeny,
+      worldwidth: state.planet.worldwidth,
+      worldwrap: state.planet.worldwrap
+    })(frame)
+
+    return frame
   }
