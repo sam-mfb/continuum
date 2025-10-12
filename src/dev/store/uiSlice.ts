@@ -14,6 +14,7 @@ type UIState = {
   isGamePaused: boolean
   showDebugInfo: boolean
   showGameStats: boolean
+  selectedGameIndex: number
 }
 
 // Load persisted settings
@@ -23,7 +24,8 @@ const initialState: UIState = {
   currentView: persistedSettings.currentView ?? 'sound',
   isGamePaused: false,
   showDebugInfo: persistedSettings.showDebugInfo ?? false,
-  showGameStats: persistedSettings.showGameStats ?? false
+  showGameStats: persistedSettings.showGameStats ?? false,
+  selectedGameIndex: persistedSettings.selectedGameIndex ?? 6 // Default to Ship Move (Bitmap)
 }
 
 export const uiSlice = createSlice({
@@ -41,6 +43,9 @@ export const uiSlice = createSlice({
     },
     toggleGameStats: state => {
       state.showGameStats = !state.showGameStats
+    },
+    setSelectedGameIndex: (state, action: PayloadAction<number>) => {
+      state.selectedGameIndex = action.payload
     }
   }
 })
@@ -50,5 +55,6 @@ export const {
   setCurrentView,
   toggleGamePause,
   toggleDebugInfo,
-  toggleGameStats
+  toggleGameStats,
+  setSelectedGameIndex
 } = uiSlice.actions

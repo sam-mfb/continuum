@@ -90,7 +90,8 @@ export type GameViewProps = {
 
   // Game logic
   games: GameDefinition[]
-  defaultGameIndex?: number
+  selectedGameIndex?: number
+  onSelectedGameIndexChange?: (index: number) => void
 
   // Stats control
   showGameStats?: boolean
@@ -111,7 +112,8 @@ const GameView: React.FC<GameViewProps> = ({
   statsConfig,
   getCustomStats,
   games,
-  defaultGameIndex = 0,
+  selectedGameIndex = 0,
+  onSelectedGameIndexChange,
   showGameStats,
   onShowGameStatsChange,
   onInit,
@@ -119,7 +121,6 @@ const GameView: React.FC<GameViewProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationFrameRef = useRef<number>(0)
-  const [selectedGameIndex, setSelectedGameIndex] = useState(defaultGameIndex)
   const [currentFps, setCurrentFps] = useState(0)
   const [currentFrameInfo, setCurrentFrameInfo] = useState<FrameInfo>({
     frameCount: 0,
@@ -442,7 +443,12 @@ const GameView: React.FC<GameViewProps> = ({
           </label>
           <select
             value={selectedGameIndex}
-            onChange={e => setSelectedGameIndex(Number(e.target.value))}
+            onChange={e => {
+              const newIndex = Number(e.target.value)
+              if (onSelectedGameIndexChange) {
+                onSelectedGameIndexChange(newIndex)
+              }
+            }}
             style={{
               padding: '5px 10px',
               fontFamily: 'monospace',

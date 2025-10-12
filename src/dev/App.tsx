@@ -4,7 +4,8 @@ import { useAppDispatch } from './store/store'
 import {
   setCurrentView,
   toggleDebugInfo,
-  toggleGameStats
+  toggleGameStats,
+  setSelectedGameIndex
 } from './store/uiSlice'
 import type { SpriteService } from '@core/sprites'
 import { GalaxySelector } from './components/GalaxySelector'
@@ -23,7 +24,10 @@ import { SoundTest } from './components/SoundTest'
 import { testGameLoop } from './demos/testGame'
 import { shipMoveGameLoop } from './demos/shipMove'
 import { bitmapTestRenderer } from './demos/bitmapTest'
-import { wallDrawingRenderer, wallDrawingRendererNew } from './demos/wallDrawing'
+import {
+  wallDrawingRenderer,
+  wallDrawingRendererNew
+} from './demos/wallDrawing'
 import { planet3DrawingRenderer } from './demos/planet3Drawing'
 import { junctionDrawRenderer } from './demos/junctionDraw'
 import { createShipMoveBitmapRenderer } from './demos/shipMoveBitmap'
@@ -42,9 +46,8 @@ type AppProps = {
 }
 
 function App({ spriteService }: AppProps): React.JSX.Element {
-  const { currentView, showDebugInfo, showGameStats } = useSelector(
-    (state: RootState) => state.ui
-  )
+  const { currentView, showDebugInfo, showGameStats, selectedGameIndex } =
+    useSelector((state: RootState) => state.ui)
   const dispatch = useAppDispatch()
 
   return (
@@ -213,7 +216,10 @@ function App({ spriteService }: AppProps): React.JSX.Element {
                   bitmapRenderer: createShieldDemoRenderer(spriteService)
                 } as BitmapGameDefinition
               ]}
-              defaultGameIndex={6} // Ship Move (Bitmap) is at index 6
+              selectedGameIndex={selectedGameIndex}
+              onSelectedGameIndexChange={index =>
+                dispatch(setSelectedGameIndex(index))
+              }
               scale={2} // Display at 2x size (1024x684)
               pixelated={true} // Keep pixels sharp
               statsConfig={

@@ -3,7 +3,12 @@
  */
 
 import type { Middleware } from '@reduxjs/toolkit'
-import { setCurrentView, toggleDebugInfo, toggleGameStats } from './uiSlice'
+import {
+  setCurrentView,
+  toggleDebugInfo,
+  toggleGameStats,
+  setSelectedGameIndex
+} from './uiSlice'
 
 const UI_SETTINGS_STORAGE_KEY = 'continuum_dev_ui_settings'
 
@@ -18,39 +23,42 @@ export type PersistedUISettings = {
     | 'sprites'
   showDebugInfo: boolean
   showGameStats: boolean
+  selectedGameIndex: number
 }
 
 /**
  * Middleware to handle UI settings persistence to localStorage
  */
 export const uiMiddleware: Middleware = store => next => action => {
-    // Let the action pass through first
-    const result = next(action)
+  // Let the action pass through first
+  const result = next(action)
 
-    // After the action has been processed, check if we need to save
-    if (
-      setCurrentView.match(action) ||
-      toggleDebugInfo.match(action) ||
-      toggleGameStats.match(action)
-    ) {
-      const state = store.getState()
-      try {
-        const settingsToSave: PersistedUISettings = {
-          currentView: state.ui.currentView,
-          showDebugInfo: state.ui.showDebugInfo,
-          showGameStats: state.ui.showGameStats
-        }
-        localStorage.setItem(
-          UI_SETTINGS_STORAGE_KEY,
-          JSON.stringify(settingsToSave)
-        )
-      } catch (error) {
-        console.error('Failed to save UI settings to localStorage:', error)
+  // After the action has been processed, check if we need to save
+  if (
+    setCurrentView.match(action) ||
+    toggleDebugInfo.match(action) ||
+    toggleGameStats.match(action) ||
+    setSelectedGameIndex.match(action)
+  ) {
+    const state = store.getState()
+    try {
+      const settingsToSave: PersistedUISettings = {
+        currentView: state.ui.currentView,
+        showDebugInfo: state.ui.showDebugInfo,
+        showGameStats: state.ui.showGameStats,
+        selectedGameIndex: state.ui.selectedGameIndex
       }
+      localStorage.setItem(
+        UI_SETTINGS_STORAGE_KEY,
+        JSON.stringify(settingsToSave)
+      )
+    } catch (error) {
+      console.error('Failed to save UI settings to localStorage:', error)
     }
-
-    return result
   }
+
+  return result
+}
 
 /**
  * Load UI settings from localStorage
@@ -64,7 +72,8 @@ export const loadUISettings = (): Partial<PersistedUISettings> => {
       return {
         currentView: parsed.currentView,
         showDebugInfo: parsed.showDebugInfo,
-        showGameStats: parsed.showGameStats
+        showGameStats: parsed.showGameStats,
+        selectedGameIndex: parsed.selectedGameIndex
       }
     }
   } catch (error) {
