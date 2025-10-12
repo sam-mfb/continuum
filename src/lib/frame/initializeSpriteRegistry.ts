@@ -6,6 +6,187 @@ import type { SpriteRegistry } from './types'
 
 const SPRITES_BASE_PATH = '/assets/sprites_bw'
 
+// Complete list of all sprites in the sprites_bw directory (excluding title-page.png)
+const SPRITE_FILENAMES = [
+  'bunker-diff-00.png',
+  'bunker-diff-01.png',
+  'bunker-diff-02.png',
+  'bunker-follow-00.png',
+  'bunker-follow-01.png',
+  'bunker-follow-02.png',
+  'bunker-follow-03.png',
+  'bunker-follow-04.png',
+  'bunker-follow-05.png',
+  'bunker-follow-06.png',
+  'bunker-follow-07.png',
+  'bunker-generator-00.png',
+  'bunker-generator-01.png',
+  'bunker-generator-02.png',
+  'bunker-generator-03.png',
+  'bunker-generator-04.png',
+  'bunker-generator-05.png',
+  'bunker-generator-06.png',
+  'bunker-generator-07.png',
+  'bunker-ground-00.png',
+  'bunker-ground-01.png',
+  'bunker-ground-02.png',
+  'bunker-ground-03.png',
+  'bunker-ground-04.png',
+  'bunker-ground-05.png',
+  'bunker-ground-06.png',
+  'bunker-ground-07.png',
+  'bunker-wall-00.png',
+  'bunker-wall-01.png',
+  'bunker-wall-02.png',
+  'bunker-wall-03.png',
+  'crater.png',
+  'digit-0.png',
+  'digit-1.png',
+  'digit-2.png',
+  'digit-3.png',
+  'digit-4.png',
+  'digit-5.png',
+  'digit-6.png',
+  'digit-7.png',
+  'digit-8.png',
+  'digit-9.png',
+  'digit-A.png',
+  'digit-B.png',
+  'digit-C.png',
+  'digit-D.png',
+  'digit-E.png',
+  'digit-F.png',
+  'digit-G.png',
+  'digit-H.png',
+  'digit-I.png',
+  'digit-J.png',
+  'digit-K.png',
+  'digit-L.png',
+  'digit-M.png',
+  'digit-N.png',
+  'digit-O.png',
+  'digit-P.png',
+  'digit-Q.png',
+  'digit-R.png',
+  'digit-S.png',
+  'digit-SHIP.png',
+  'digit-SPACE.png',
+  'digit-T.png',
+  'digit-U.png',
+  'digit-V.png',
+  'digit-W.png',
+  'digit-X.png',
+  'digit-Y.png',
+  'digit-Z.png',
+  'flame-00.png',
+  'flame-01.png',
+  'flame-02.png',
+  'flame-03.png',
+  'flame-04.png',
+  'flame-05.png',
+  'flame-06.png',
+  'flame-07.png',
+  'flame-08.png',
+  'flame-09.png',
+  'flame-10.png',
+  'flame-11.png',
+  'flame-12.png',
+  'flame-13.png',
+  'flame-14.png',
+  'flame-15.png',
+  'flame-16.png',
+  'flame-17.png',
+  'flame-18.png',
+  'flame-19.png',
+  'flame-20.png',
+  'flame-21.png',
+  'flame-22.png',
+  'flame-23.png',
+  'flame-24.png',
+  'flame-25.png',
+  'flame-26.png',
+  'flame-27.png',
+  'flame-28.png',
+  'flame-29.png',
+  'flame-30.png',
+  'flame-31.png',
+  'fuel-00.png',
+  'fuel-01.png',
+  'fuel-02.png',
+  'fuel-03.png',
+  'fuel-04.png',
+  'fuel-05.png',
+  'fuel-06.png',
+  'fuel-07.png',
+  'fuel-08.png',
+  'shard-0-00.png',
+  'shard-0-01.png',
+  'shard-0-02.png',
+  'shard-0-03.png',
+  'shard-1-00.png',
+  'shard-1-01.png',
+  'shard-1-02.png',
+  'shard-1-03.png',
+  'shard-2-00.png',
+  'shard-2-01.png',
+  'shard-2-02.png',
+  'shard-2-03.png',
+  'shard-3-00.png',
+  'shard-3-01.png',
+  'shard-3-02.png',
+  'shard-3-03.png',
+  'shard-4-00.png',
+  'shard-4-01.png',
+  'shard-4-02.png',
+  'shard-4-03.png',
+  'shard-5-00.png',
+  'shard-5-01.png',
+  'shard-5-02.png',
+  'shard-5-03.png',
+  'shard-6-00.png',
+  'shard-6-01.png',
+  'shard-6-02.png',
+  'shard-6-03.png',
+  'shield.png',
+  'ship-00.png',
+  'ship-01.png',
+  'ship-02.png',
+  'ship-03.png',
+  'ship-04.png',
+  'ship-05.png',
+  'ship-06.png',
+  'ship-07.png',
+  'ship-08.png',
+  'ship-09.png',
+  'ship-10.png',
+  'ship-11.png',
+  'ship-12.png',
+  'ship-13.png',
+  'ship-14.png',
+  'ship-15.png',
+  'ship-16.png',
+  'ship-17.png',
+  'ship-18.png',
+  'ship-19.png',
+  'ship-20.png',
+  'ship-21.png',
+  'ship-22.png',
+  'ship-23.png',
+  'ship-24.png',
+  'ship-25.png',
+  'ship-26.png',
+  'ship-27.png',
+  'ship-28.png',
+  'ship-29.png',
+  'ship-30.png',
+  'ship-31.png',
+  'status-bar.png',
+  'strafe-00.png',
+  'strafe-01.png',
+  'strafe-02.png',
+  'strafe-03.png'
+]
+
 /**
  * Initialize sprite registry with all sprites from the sprites_bw directory
  * Excludes title-page.png as it's loaded separately
@@ -15,83 +196,15 @@ export async function initializeSpriteRegistry(): Promise<
 > {
   const registry = createSpriteRegistryCanvas()
 
-  // Generate sprite definitions from known naming patterns
-  const spriteDefinitions: Array<{ id: string; path: string }> = []
-
-  // We'll need to enumerate the sprites manually or use a build-time script
-  // For now, let's use a pattern-based approach for the known sprite types
-
-  // Bunker sprites
-  const bunkerTypes = ['diff', 'follow', 'generator', 'shoot', 'smart']
-  const bunkerMaxFrames: Record<string, number> = {
-    diff: 3,
-    follow: 8,
-    generator: 6,
-    shoot: 4,
-    smart: 4
-  }
-
-  for (const type of bunkerTypes) {
-    const maxFrame = bunkerMaxFrames[type] ?? 0
-    for (let i = 0; i < maxFrame; i++) {
-      const frameStr = i.toString().padStart(2, '0')
-      const id = `bunker-${type}-${frameStr}`
-      spriteDefinitions.push({
-        id,
-        path: `${SPRITES_BASE_PATH}/bunker-${type}-${frameStr}.png`
-      })
+  // Convert filenames to sprite definitions
+  const spriteDefinitions = SPRITE_FILENAMES.map(filename => {
+    // Remove .png extension for the ID
+    const id = filename.replace('.png', '')
+    return {
+      id,
+      path: `${SPRITES_BASE_PATH}/${filename}`
     }
-  }
-
-  // Crater sprites
-  const craterTypes = ['half', 'large', 'medium', 'small']
-  for (const type of craterTypes) {
-    const id = `crater-${type}`
-    spriteDefinitions.push({
-      id,
-      path: `${SPRITES_BASE_PATH}/crater-${type}.png`
-    })
-  }
-
-  // Explosion sprites (shards)
-  for (let i = 0; i < 20; i++) {
-    const frameStr = i.toString().padStart(2, '0')
-    const id = `explosion-shard-${frameStr}`
-    spriteDefinitions.push({
-      id,
-      path: `${SPRITES_BASE_PATH}/explosion-shard-${frameStr}.png`
-    })
-  }
-
-  // Fuel sprites
-  for (let i = 0; i < 4; i++) {
-    const frameStr = i.toString().padStart(2, '0')
-    const id = `fuel-${frameStr}`
-    spriteDefinitions.push({
-      id,
-      path: `${SPRITES_BASE_PATH}/fuel-${frameStr}.png`
-    })
-  }
-
-  // Ship sprites (36 rotations)
-  for (let i = 0; i < 36; i++) {
-    const frameStr = i.toString().padStart(2, '0')
-    const id = `ship-${frameStr}`
-    spriteDefinitions.push({
-      id,
-      path: `${SPRITES_BASE_PATH}/ship-${frameStr}.png`
-    })
-  }
-
-  // Ship thrust sprites (36 rotations)
-  for (let i = 0; i < 36; i++) {
-    const frameStr = i.toString().padStart(2, '0')
-    const id = `ship-thrust-${frameStr}`
-    spriteDefinitions.push({
-      id,
-      path: `${SPRITES_BASE_PATH}/ship-thrust-${frameStr}.png`
-    })
-  }
+  })
 
   // Add all sprites to registry
   addMultipleSprites(registry, spriteDefinitions)
