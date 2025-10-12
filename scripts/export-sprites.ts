@@ -55,6 +55,7 @@ function saveBitmapAsPNG(
 
   // Convert monochrome bitmap to RGBA
   // Process byte by byte, bit by bit (MSB to LSB within each byte)
+  // This matches the bytesToImageData function used in the working code
   let pixelIndex = 0
   for (let byteIndex = 0; byteIndex < bitmap.data.length; byteIndex++) {
     const byte = bitmap.data[byteIndex]!
@@ -104,17 +105,30 @@ async function exportSprites(): Promise<void> {
 
   // Load sprite resource file
   const spriteBuffer = readFileSync(SPRITE_RESOURCE)
-  const allSprites = extractAllSprites(spriteBuffer.buffer)
+  const spriteArrayBuffer = spriteBuffer.buffer.slice(
+    spriteBuffer.byteOffset,
+    spriteBuffer.byteOffset + spriteBuffer.byteLength
+  )
+  const allSprites = extractAllSprites(spriteArrayBuffer)
 
   // Load status bar
   const statusBarBuffer = readFileSync(STATUS_BAR_RESOURCE)
-  const statusBarData = expandTitlePage(statusBarBuffer.buffer, 24)
+  // Use buffer.slice() to get a proper ArrayBuffer without offset issues
+  const statusBarArrayBuffer = statusBarBuffer.buffer.slice(
+    statusBarBuffer.byteOffset,
+    statusBarBuffer.byteOffset + statusBarBuffer.byteLength
+  )
+  const statusBarData = expandTitlePage(statusBarArrayBuffer, 24)
   const statusBar = createMonochromeBitmap(512, 24)
   statusBar.data.set(statusBarData)
 
   // Load title page
   const titlePageBuffer = readFileSync(TITLE_PAGE_RESOURCE)
-  const titlePageData = expandTitlePage(titlePageBuffer.buffer, 342)
+  const titlePageArrayBuffer = titlePageBuffer.buffer.slice(
+    titlePageBuffer.byteOffset,
+    titlePageBuffer.byteOffset + titlePageBuffer.byteLength
+  )
+  const titlePageData = expandTitlePage(titlePageArrayBuffer, 342)
   const titlePage = createMonochromeBitmap(512, 342)
   titlePage.data.set(titlePageData)
 
@@ -327,9 +341,6 @@ async function exportSprites(): Promise<void> {
 
   // Export status bar
   console.log('Exporting status bar...')
-  console.log(
-    `Status bar: ${statusBar.width}x${statusBar.height}, rowBytes: ${statusBar.rowBytes}, data length: ${statusBar.data.length}`
-  )
   saveBitmapAsPNG(statusBar, join(outputDir, 'status-bar.png'))
 
   // Export title page
