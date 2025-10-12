@@ -6,5 +6,7 @@ export const Z = {
   NORMAL_WALL: 50,
   BUNKER: 60,
   SHOT: 70,
-  SHIP: 80
+  SHADOW: 80,
+  SHIP: 90,
+  SHIELD: 100
 }

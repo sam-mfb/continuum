@@ -160,5 +160,13 @@ function drawSprite(
     imageData.height * scale
   )
 
+  // Apply red tint in debug mode
+  if (debug) {
+    canvas.globalCompositeOperation = 'multiply'
+    canvas.fillStyle = 'rgba(255, 100, 100, 1)'
+    canvas.fillRect(0, 0, imageData.width * scale, imageData.height * scale)
+    canvas.globalCompositeOperation = 'source-over'
+  }
+
   canvas.restore()
 }
