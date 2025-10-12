@@ -38,7 +38,8 @@ export function drawShards(deps: {
       if (shard.lifecount <= 0) continue
 
       // Check vertical bounds (Terrain.c:467)
-      if (shard.y <= screenY || shard.y >= botShard) continue
+      // Must match bitmap renderer: shard.y > screeny && shard.y < botShard
+      if (!(shard.y > screenY && shard.y < botShard)) continue
 
       // Check horizontal bounds and draw (Terrain.c:468-471)
       if (shard.x > screenX && shard.x < rightShard) {
