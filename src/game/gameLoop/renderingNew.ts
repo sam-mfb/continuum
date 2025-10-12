@@ -30,6 +30,7 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
     viewport: viewport,
     worldwidth: state.planet.worldwidth
   })(frame)
+
   newFrame = blackTerrain({
     thekind: LINE_KIND.BOUNCE,
     kindPointers: state.walls.kindPointers,
@@ -37,6 +38,7 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
     viewport: viewport,
     worldwidth: state.planet.worldwidth
   })(newFrame)
+
   newFrame = blackTerrain({
     thekind: LINE_KIND.GHOST,
     kindPointers: state.walls.kindPointers,
@@ -44,6 +46,7 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
     viewport: viewport,
     worldwidth: state.planet.worldwidth
   })(newFrame)
+
   newFrame = drawShip({
     x: state.ship.shipx - SCENTER,
     y: state.ship.shipy - SCENTER,

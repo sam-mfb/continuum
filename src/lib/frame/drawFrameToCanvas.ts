@@ -151,6 +151,13 @@ function drawSprite(
   const tempCtx = tempCanvas.getContext('2d')!
   tempCtx.putImageData(imageData, 0, 0)
 
+  // Apply color override on temporary canvas (e.g., for shadows)
+  if (sprite.colorOverride) {
+    tempCtx.globalCompositeOperation = 'source-in'
+    tempCtx.fillStyle = sprite.colorOverride
+    tempCtx.fillRect(0, 0, imageData.width, imageData.height)
+  }
+
   // Draw the sprite with scaling
   canvas.drawImage(
     tempCanvas,
@@ -159,14 +166,6 @@ function drawSprite(
     imageData.width * scale,
     imageData.height * scale
   )
-
-  // Apply color override (e.g., for shadows)
-  if (sprite.colorOverride) {
-    canvas.globalCompositeOperation = 'source-in'
-    canvas.fillStyle = sprite.colorOverride
-    canvas.fillRect(0, 0, imageData.width * scale, imageData.height * scale)
-    canvas.globalCompositeOperation = 'source-over'
-  }
 
   // Apply red tint in debug mode
   if (debug) {
