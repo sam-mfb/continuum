@@ -1,2 +1,7 @@
-export type { Frame } from './types'
+export type { Frame, SpriteRegistry } from './types'
 export { drawFrameToCanvas } from './drawFrameToCanvas'
+export {
+  createSpriteRegistryCanvas,
+  addMultipleSprites
+} from './spriteRegistryCanvas'
+export { initializeSpriteRegistry } from './initializeSpriteRegistry'

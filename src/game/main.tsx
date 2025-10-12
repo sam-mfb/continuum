@@ -32,6 +32,7 @@ import {
 import { getDefaultGalaxy } from './galaxyConfig'
 import { createCollisionService } from '@/core/collision'
 import { SCRWTH, VIEWHT } from '@/core/screen'
+import { initializeSpriteRegistry } from '@/lib/frame/initializeSpriteRegistry'
 //import { enableDebugOption } from './debug'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
@@ -47,6 +48,10 @@ try {
     titlePageResource: ASSET_PATHS.TITLE_PAGE_RESOURCE
   })
   console.log('Sprite service created')
+
+  // Initialize sprite registry
+  const spriteRegistry = await initializeSpriteRegistry()
+  console.log('Sprite registry initialized')
 
   // Load default galaxy
   const defaultGalaxy = getDefaultGalaxy()
@@ -145,6 +150,7 @@ try {
         collisionService={collisionService}
         soundService={soundService}
         spriteService={spriteService}
+        spriteRegistry={spriteRegistry}
       />
     </Provider>
   )

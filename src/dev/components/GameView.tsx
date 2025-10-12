@@ -13,7 +13,7 @@ import {
   type StatsConfig,
   type CustomStats
 } from './StatsOverlay'
-import type { Frame } from '@/lib/frame'
+import type { Frame, SpriteRegistry } from '@/lib/frame'
 import { drawFrameToCanvas } from '@/lib/frame'
 
 /**
@@ -84,6 +84,9 @@ export type GameViewProps = {
   pixelated?: boolean // Enable pixel-perfect rendering (default: true)
   scale?: number // Display scale factor (default: 1)
 
+  // Sprite registry
+  spriteRegistry: SpriteRegistry<ImageData>
+
   // Stats overlay
   statsConfig?: StatsConfig
   getCustomStats?: (frameInfo: FrameInfo, env: GameEnvironment) => CustomStats
@@ -109,6 +112,7 @@ const GameView: React.FC<GameViewProps> = ({
   backgroundColor = '#000000',
   pixelated = true,
   scale = 1,
+  spriteRegistry,
   statsConfig,
   getCustomStats,
   games,
@@ -349,7 +353,7 @@ const GameView: React.FC<GameViewProps> = ({
               // If frameRenderer is provided, render the frame on top
               if (game.frameRenderer) {
                 const renderedFrame = game.frameRenderer(frameInfo, keyInfo)
-                drawFrameToCanvas(renderedFrame, ctx, 1, true)
+                drawFrameToCanvas(renderedFrame, ctx, 1, spriteRegistry, true)
               }
               break
           }
@@ -401,6 +405,7 @@ const GameView: React.FC<GameViewProps> = ({
     backgroundColor,
     pixelated,
     scale,
+    spriteRegistry,
     statsConfig,
     games,
     selectedGameIndex,

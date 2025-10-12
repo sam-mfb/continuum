@@ -39,13 +39,15 @@ import { strafeTestBitmapRenderer } from './demos/strafeTestBitmap'
 import { createStarBackgroundBitmapRenderer } from './demos/starBackgroundBitmap'
 import { createStatusBarDemo } from './demos/statusBarDemo'
 import { createShieldDemoRenderer } from './demos/shieldDemo'
+import type { SpriteRegistry } from '@/lib/frame/types'
 import './index.css'
 
 type AppProps = {
   spriteService: SpriteService
+  spriteRegistry: SpriteRegistry<ImageData>
 }
 
-function App({ spriteService }: AppProps): React.JSX.Element {
+function App({ spriteService, spriteRegistry }: AppProps): React.JSX.Element {
   const { currentView, showDebugInfo, showGameStats, selectedGameIndex } =
     useSelector((state: RootState) => state.ui)
   const dispatch = useAppDispatch()
@@ -132,6 +134,7 @@ function App({ spriteService }: AppProps): React.JSX.Element {
 
           {currentView === 'game' && (
             <GameView
+              spriteRegistry={spriteRegistry}
               games={[
                 {
                   type: 'canvas',

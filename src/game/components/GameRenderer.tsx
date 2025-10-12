@@ -17,7 +17,7 @@ import type { SpriteService } from '@/core/sprites'
 import { SCENTER } from '@/core/figs'
 import { useStore } from 'react-redux'
 import { TouchControlsOverlay } from '../mobile/TouchControlsOverlay'
-import type { Frame } from '@/lib/frame/types'
+import type { Frame, SpriteRegistry } from '@/lib/frame/types'
 import { drawFrameToCanvas } from '@/lib/frame/drawFrameToCanvas'
 
 type GameRendererProps = {
@@ -25,6 +25,7 @@ type GameRendererProps = {
   rendererNew: (frame: FrameInfo, controls: ControlMatrix) => Frame
   collisionService: CollisionService
   spriteService: SpriteService
+  spriteRegistry: SpriteRegistry<ImageData>
   width: number
   height: number
   scale: number
@@ -40,6 +41,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
   rendererNew,
   collisionService,
   spriteService,
+  spriteRegistry,
   width,
   height,
   scale,
@@ -288,7 +290,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
             renderedBitmap.width * scale,
             renderedBitmap.height * scale
           )
-          drawFrameToCanvas(renderedFrame, ctx, scale, true)
+          drawFrameToCanvas(renderedFrame, ctx, scale, spriteRegistry, true)
 
           lastFrameTimeRef.current = currentTime
           frameCountRef.current++
@@ -324,6 +326,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
     dispatch,
     collisionService,
     spriteService,
+    spriteRegistry,
     store,
     touchControls,
     rendererNew

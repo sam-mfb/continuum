@@ -28,6 +28,7 @@ import type {
 import type { CollisionService } from '@/core/collision'
 import { useResponsiveScale } from './hooks/useResponsiveScale'
 import { BASE_GAME_WIDTH, BASE_TOTAL_HEIGHT } from './constants/dimensions'
+import type { SpriteRegistry } from '@/lib/frame/types'
 
 type AppProps = {
   renderer: GameRenderLoop
@@ -35,6 +36,7 @@ type AppProps = {
   soundService: GameSoundService
   spriteService: SpriteService
   collisionService: CollisionService
+  spriteRegistry: SpriteRegistry<ImageData>
 }
 
 export const App: React.FC<AppProps> = ({
@@ -42,7 +44,8 @@ export const App: React.FC<AppProps> = ({
   rendererNew,
   collisionService,
   soundService,
-  spriteService
+  spriteService,
+  spriteRegistry
 }) => {
   const dispatch = useAppDispatch()
   const gameMode = useAppSelector(state => state.app.mode)
@@ -192,6 +195,7 @@ export const App: React.FC<AppProps> = ({
               rendererNew={rendererNew}
               collisionService={collisionService}
               spriteService={spriteService}
+              spriteRegistry={spriteRegistry}
               width={512}
               height={342}
               scale={scale}
