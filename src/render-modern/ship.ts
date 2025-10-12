@@ -5,14 +5,24 @@ import { Z } from './z'
 const SHADOW_OFFSET_X = 8
 const SHADOW_OFFSET_Y = 5
 
+const FCENTER = 12
+
+// From orig/Sources/Draw.c:467-469
+const flamexdisp = [
+  0, -1, -3, -4, -7, -8, -9, -9, -10, -9, -9, -8, -7, -4, -3, -1, 0, 1, 3, 4, 7,
+  8, 9, 9, 10, 9, 9, 8, 7, 4, 3, 1
+]
+
 export function drawShip(deps: {
   x: number
   y: number
   rotation: number
+  thrusting: boolean
 }): (frame: Frame) => Frame {
-  const { x, y, rotation } = deps
+  const { x, y, rotation, thrusting } = deps
 
-  const spriteId = `ship-${rotation > 9 ? rotation : '0' + rotation}`
+  const shipSpriteId = `ship-${rotation > 9 ? rotation : '0' + rotation}`
+  const flameSpriteId = `flame-${rotation > 9 ? rotation : '0' + rotation}`
 
   const adjustedY = y + SBARHT
 
@@ -20,9 +30,9 @@ export function drawShip(deps: {
     const newFrame = cloneFrame(oldFrame)
 
     newFrame.drawables.push({
-      id: spriteId,
+      id: shipSpriteId,
       type: 'sprite',
-      spriteId,
+      spriteId: shipSpriteId,
       z: Z.SHIP,
       alpha: 1,
       topLeft: { x, y: adjustedY },
@@ -30,15 +40,34 @@ export function drawShip(deps: {
     })
 
     newFrame.drawables.push({
-      id: spriteId,
+      id: `shadow-${shipSpriteId}`,
       type: 'sprite',
-      spriteId,
+      spriteId: shipSpriteId,
       z: Z.SHADOW,
       alpha: 1,
       topLeft: { x: x + SHADOW_OFFSET_X, y: adjustedY + SHADOW_OFFSET_Y },
       rotation: 0,
       colorOverride: 'black'
     })
+
+    // x += flamexdisp[rot] - FCENTER
+    const flameX = x + flamexdisp[rotation]! + FCENTER
+
+    // y += flamexdisp[(rot+(32-8)) & 31] - FCENTER
+    // Note: (32-8) = 24, and we need to mask with 31 to keep in bounds
+    const flameY = adjustedY + flamexdisp[(rotation + 24) & 31]! + FCENTER
+
+    if (thrusting) {
+      newFrame.drawables.push({
+        id: flameSpriteId,
+        type: 'sprite',
+        spriteId: flameSpriteId,
+        z: Z.SHIP,
+        alpha: 1,
+        topLeft: { x: flameX, y: flameY },
+        rotation: 0
+      })
+    }
 
     return newFrame
   }

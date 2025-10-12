@@ -47,10 +47,14 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
     worldwidth: state.planet.worldwidth
   })(newFrame)
 
-  newFrame = drawShip({
-    x: state.ship.shipx - SCENTER,
-    y: state.ship.shipy - SCENTER,
-    rotation: state.ship.shiprot
-  })(newFrame)
+  if (state.ship.deadCount === 0) {
+    newFrame = drawShip({
+      x: state.ship.shipx - SCENTER,
+      y: state.ship.shipy - SCENTER,
+      rotation: state.ship.shiprot,
+      thrusting: state.ship.flaming
+    })(newFrame)
+  }
+
   return newFrame
 }
