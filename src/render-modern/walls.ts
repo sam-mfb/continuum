@@ -230,14 +230,14 @@ function wallShape(
     case NEW_TYPE.S: // South (vertical line)
       // Line direction: straight down (0°)
       // Perpendicular: right (+x), Downward: down (+y)
-      offsetX = Math.round(PERP * 0.9) // ~10
+      offsetX = Math.round(PERP * 0.9 - 1) // ~9
       offsetY = Math.round(DOWN * 0.9) // ~5
       break
 
     case NEW_TYPE.SSE: // South-Southeast (~22.5° from vertical)
       // Line direction: down-right at 22.5°
       // Should extend slightly more east and less downward
-      offsetX = Math.round(PERP * 0.924 + DOWN * 0.3) // ~12
+      offsetX = Math.round(PERP * 0.924 + DOWN * 0.3 - 2) // ~10
       offsetY = Math.round(PERP * 0.3 + DOWN * 0.82) // ~8
       break
 
@@ -252,14 +252,14 @@ function wallShape(
       // Line direction: mostly right at 67.5°
       // Should extend more to the right and less downward
       offsetX = Math.round(PERP * 0.924 + DOWN * 0.707) // ~13
-      offsetY = Math.round(PERP * 0.707 + DOWN * 0.208) // ~9
+      offsetY = Math.round(PERP * 0.707 + DOWN * 0.208) + 1 // ~10
       break
 
     case NEW_TYPE.E: // East (horizontal line)
       // Line direction: right (90°)
       // Should extend at ~12° angle (mostly rightward with slight downward)
-      offsetX = Math.round(PERP * 0.978 + DOWN * 0.1) // ~11
-      offsetY = Math.round(PERP * 0.1 + DOWN * 0.978) // ~6
+      offsetX = Math.round(PERP * 0.978 + DOWN * 0.1) - 1 // ~10
+      offsetY = Math.round(PERP * 0.1 + DOWN * 0.978) - 1 // ~5
       break
 
     case NEW_TYPE.ENE: // East-Northeast (~112.5° from vertical)
@@ -279,7 +279,7 @@ function wallShape(
     case NEW_TYPE.NNE: // North-Northeast (~157.5° from vertical)
       // Line direction: mostly up at 157.5°
       // Adjusted coefficients for visual correctness
-      offsetX = Math.round(PERP * 0.82 + DOWN * 0.2) // ~10
+      offsetX = Math.round(PERP * 0.82 + DOWN * 0.2) - 1 // ~9
       offsetY = Math.round(PERP * 0.2 + DOWN * 0.3) // ~4
       break
   }
