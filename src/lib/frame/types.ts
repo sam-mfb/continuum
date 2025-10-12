@@ -57,4 +57,6 @@ export type DrawableSprite = DrawableBase & {
 export type SpriteRegistry<TSpriteFormat> = {
   addSprite: (args: { id: SpriteRegistryId; path: string }) => void
   getSprite: (id: SpriteRegistryId) => TSpriteFormat
+  loadSprites: () => Promise<void>
+  unloadSprites: () => void
 }
