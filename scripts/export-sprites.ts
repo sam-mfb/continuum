@@ -20,7 +20,7 @@ import type { MonochromeBitmap } from '../src/lib/bitmap/types.js'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const projectRoot = join(__dirname, '..')
-const outputDir = join(projectRoot, 'public/assets/sprites')
+const outputDir = join(projectRoot, 'public/assets/sprites_orig')
 
 // Resource file paths
 const SPRITE_RESOURCE = join(projectRoot, 'src/dev/public/rsrc_260.bin')
@@ -49,18 +49,17 @@ function saveBitmapAsPNG(bitmap: MonochromeBitmap, filepath: string): void {
   const pixels = imageData.data
 
   // Convert monochrome bitmap to RGBA
-  for (let y = 0; y < bitmap.height; y++) {
-    for (let x = 0; x < bitmap.width; x++) {
-      const byteIndex = y * bitmap.rowBytes + Math.floor(x / 8)
-      const bitMask = 0x80 >> x % 8
-      const isSet =
-        byteIndex < bitmap.data.length &&
-        (bitmap.data[byteIndex]! & bitMask) !== 0
+  // Process byte by byte, bit by bit (MSB to LSB within each byte)
+  let pixelIndex = 0
+  for (let byteIndex = 0; byteIndex < bitmap.data.length; byteIndex++) {
+    const byte = bitmap.data[byteIndex]!
 
-      const pixelIndex = (y * bitmap.width + x) * 4
+    // Process 8 bits in this byte (MSB first: bit 7 down to bit 0)
+    for (let bitPos = 7; bitPos >= 0; bitPos--) {
+      const isSet = (byte >>> bitPos) & 1
 
       // Black pixels for set bits, white for unset
-      if (isSet) {
+      if (isSet === 1) {
         pixels[pixelIndex] = 0 // R
         pixels[pixelIndex + 1] = 0 // G
         pixels[pixelIndex + 2] = 0 // B
@@ -71,6 +70,8 @@ function saveBitmapAsPNG(bitmap: MonochromeBitmap, filepath: string): void {
         pixels[pixelIndex + 2] = 255 // B
         pixels[pixelIndex + 3] = 255 // A
       }
+
+      pixelIndex += 4
     }
   }
 
@@ -304,6 +305,9 @@ async function exportSprites(): Promise<void> {
 
   // Export status bar
   console.log('Exporting status bar...')
+  console.log(
+    `Status bar: ${statusBar.width}x${statusBar.height}, rowBytes: ${statusBar.rowBytes}, data length: ${statusBar.data.length}`
+  )
   saveBitmapAsPNG(statusBar, join(outputDir, 'status-bar.png'))
 
   // Export title page
