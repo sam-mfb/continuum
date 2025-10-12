@@ -23,9 +23,11 @@ import type { Bunker, PlanetState } from '@core/planet'
 import { drawDotSafe } from '@render/shots'
 import { drawStrafe } from '@render/shots'
 import { rint } from '@core/shared'
-import { SBARHT } from '@core/screen'
+import { SBARHT, SCRWTH, VIEWHT } from '@core/screen'
 import { isOnRightSide } from '@core/shared/viewport'
 import { viewClear } from '@render/screen'
+import type { Frame } from '@/lib/frame'
+import { drawBunkers } from '@/render-modern/bunkers'
 
 // Create store with planet and shots slices
 const store = configureStore({
@@ -526,4 +528,128 @@ export const createBunkerDrawBitmapRenderer =
     }
 
     return finalBitmap
+  }
+
+/**
+ * Frame-based renderer for bunker drawing game
+ * This uses the new sprite-based rendering system
+ */
+export const createBunkerDrawFrameRenderer =
+  (): ((frameInfo: FrameInfo, keyInfo: KeyInfo) => Frame) =>
+  (_frameInfo: FrameInfo, keys: KeyInfo) => {
+    // Check initialization status
+    if (initializationError || !initializationComplete) {
+      return {
+        width: 512,
+        height: 342,
+        drawables: []
+      }
+    }
+
+    const state = store.getState()
+    const planetState = state.planet
+
+    // Handle keyboard input for viewport movement (same as bitmap version)
+    const moveSpeed = 5
+    const bitmap = { width: 512, height: 342 } // For bounds checking
+
+    if (keys.keysDown.has('ArrowUp')) {
+      viewportState.y = Math.max(0, viewportState.y - moveSpeed)
+    }
+    if (keys.keysDown.has('ArrowDown')) {
+      viewportState.y = Math.min(
+        WORLD_HEIGHT - bitmap.height,
+        viewportState.y + moveSpeed
+      )
+    }
+    if (keys.keysDown.has('ArrowLeft')) {
+      viewportState.x -= moveSpeed
+      if (planetState.worldwrap) {
+        viewportState.x =
+          ((viewportState.x % WORLD_WIDTH) + WORLD_WIDTH) % WORLD_WIDTH
+      } else {
+        viewportState.x = Math.max(0, viewportState.x)
+      }
+    }
+    if (keys.keysDown.has('ArrowRight')) {
+      viewportState.x += moveSpeed
+      if (planetState.worldwrap) {
+        viewportState.x = viewportState.x % WORLD_WIDTH
+      } else {
+        viewportState.x = Math.min(WORLD_WIDTH - bitmap.width, viewportState.x)
+      }
+    }
+
+    // Update animation state
+    const globalx = viewportState.x + bitmap.width / 2
+    const globaly = viewportState.y + bitmap.height / 2 - SBARHT
+
+    store.dispatch(updateBunkerRotations({ globalx, globaly }))
+
+    // Check if bunkers should shoot (same logic as bitmap version)
+    if (rint(100) < planetState.shootslow * 5) {
+      const screenb = viewportState.y + bitmap.height
+      const screenr = viewportState.x + bitmap.width
+
+      store.dispatch(
+        bunkShoot({
+          screenx: viewportState.x,
+          screenr: screenr,
+          screeny: viewportState.y,
+          screenb: screenb,
+          bunkrecs: planetState.bunkers,
+          walls: planetState.lines,
+          worldwidth: planetState.worldwidth,
+          worldwrap: planetState.worldwrap,
+          globalx: globalx,
+          globaly: globaly
+        })
+      )
+    }
+
+    // Move bullets and update strafes
+    store.dispatch(
+      moveBullets({
+        worldwidth: planetState.worldwidth,
+        worldwrap: planetState.worldwrap,
+        walls: planetState.lines
+      })
+    )
+    store.dispatch(doStrafes())
+
+    // Create viewport for bunker rendering
+    const viewport = {
+      x: viewportState.x,
+      y: viewportState.y,
+      b: viewportState.y + VIEWHT,
+      r: viewportState.x + SCRWTH
+    }
+
+    // Start with empty frame
+    let frame: Frame = {
+      width: 512,
+      height: 342,
+      drawables: []
+    }
+
+    // Draw bunkers at normal position
+    frame = drawBunkers({
+      bunkers: planetState.bunkers,
+      screenX: viewportState.x,
+      screenY: viewportState.y,
+      viewport: viewport
+    })(frame)
+
+    // Handle world wrapping for bunkers
+    const on_right_side = viewportState.x > planetState.worldwidth - SCRWTH
+    if (on_right_side && planetState.worldwrap) {
+      frame = drawBunkers({
+        bunkers: planetState.bunkers,
+        screenX: viewportState.x - planetState.worldwidth,
+        screenY: viewportState.y,
+        viewport: viewport
+      })(frame)
+    }
+
+    return frame
   }

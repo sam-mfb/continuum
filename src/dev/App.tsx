@@ -31,7 +31,10 @@ import {
 import { planet3DrawingRenderer } from './demos/planet3Drawing'
 import { junctionDrawRenderer } from './demos/junctionDraw'
 import { createShipMoveBitmapRenderer } from './demos/shipMoveBitmap'
-import { createBunkerDrawBitmapRenderer } from './demos/bunkerDrawBitmap'
+import {
+  createBunkerDrawBitmapRenderer,
+  createBunkerDrawFrameRenderer
+} from './demos/bunkerDrawBitmap'
 import { createFuelDrawBitmapRenderer } from './demos/fuelDrawBitmap'
 import { createExplosionBitmapRenderer } from './demos/explosionBitmap'
 import { createShardTestBitmapRenderer } from './demos/shardTestBitmap'
@@ -180,7 +183,8 @@ function App({ spriteService, spriteRegistry }: AppProps): React.JSX.Element {
                 {
                   type: 'bitmap',
                   name: 'Bunker Draw',
-                  bitmapRenderer: createBunkerDrawBitmapRenderer(spriteService)
+                  bitmapRenderer: createBunkerDrawBitmapRenderer(spriteService),
+                  frameRenderer: createBunkerDrawFrameRenderer()
                 } as BitmapGameDefinition,
                 {
                   type: 'bitmap',
