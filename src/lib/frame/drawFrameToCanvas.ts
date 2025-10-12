@@ -3,7 +3,8 @@ import type { DrawableLine, DrawableShape, Frame } from './types'
 export function drawFrameToCanvas(
   frame: Frame,
   canvas: CanvasRenderingContext2D,
-  scale: number
+  scale: number,
+  debug?: boolean
 ): void {
   // Sort drawables by z index (lower z draws first, so higher z appears on top)
   const sortedDrawables = [...frame.drawables].sort((a, b) => a.z - b.z)
@@ -11,9 +12,9 @@ export function drawFrameToCanvas(
   // Draw each drawable
   for (const drawable of sortedDrawables) {
     if (drawable.type === 'line') {
-      drawLine(drawable, canvas, scale)
+      drawLine(drawable, canvas, scale, debug ?? false)
     } else if (drawable.type === 'shape') {
-      drawShape(drawable, canvas, scale)
+      drawShape(drawable, canvas, scale, debug ?? false)
     }
   }
 }
@@ -21,12 +22,13 @@ export function drawFrameToCanvas(
 function drawLine(
   line: DrawableLine,
   canvas: CanvasRenderingContext2D,
-  scale: number
+  scale: number,
+  debug: boolean
 ): void {
   canvas.save()
 
-  canvas.globalAlpha = line.alpha
-  canvas.strokeStyle = line.color
+  canvas.globalAlpha = debug ? 0.5 * line.alpha : line.alpha
+  canvas.strokeStyle = debug ? 'red' : line.color
   canvas.lineWidth = line.width * scale
 
   canvas.beginPath()
@@ -40,7 +42,8 @@ function drawLine(
 function drawShape(
   shape: DrawableShape,
   canvas: CanvasRenderingContext2D,
-  scale: number
+  scale: number,
+  debug: boolean
 ): void {
   if (shape.points.length === 0) {
     return
@@ -48,7 +51,7 @@ function drawShape(
 
   canvas.save()
 
-  canvas.globalAlpha = shape.alpha
+  canvas.globalAlpha = debug ? 0.5 * shape.alpha : shape.alpha
 
   // Draw the shape path
   canvas.beginPath()
@@ -70,13 +73,13 @@ function drawShape(
 
   // Fill if fillColor is provided
   if (shape.fillColor) {
-    canvas.fillStyle = shape.fillColor
+    canvas.fillStyle = debug ? 'yellow' : shape.fillColor
     canvas.fill()
   }
 
   // Stroke if strokeColor and strokeWidth are provided
   if (shape.strokeColor && shape.strokeWidth > 0) {
-    canvas.strokeStyle = shape.strokeColor
+    canvas.strokeStyle = debug ? 'red' : shape.strokeColor
     canvas.lineWidth = shape.strokeWidth * scale
     canvas.stroke()
   }

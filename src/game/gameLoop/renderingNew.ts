@@ -2,7 +2,9 @@ import type { Frame } from '@/lib/frame/types'
 import type { RootState } from '../store'
 import type { SpriteService } from '@/core/sprites'
 import type { FizzTransitionService } from '@/core/transition'
-import { nanoid } from '@reduxjs/toolkit'
+import { LINE_KIND } from '@/core/shared'
+import { SCRWTH, VIEWHT } from '@/core/screen'
+import { blackTerrain } from '@/render-modern/walls'
 
 export type RenderContextNew = {
   frame: Frame
@@ -12,28 +14,19 @@ export type RenderContextNew = {
 }
 
 export const renderGameNew = (context: RenderContextNew): Frame => {
-  let { frame } = context
-  const newFrame: Frame = {
-    width: frame.width,
-    height: frame.height,
-    drawables: [
-      {
-        id: nanoid(),
-        z: 1,
-        alpha: 0.5,
-        type: 'line',
-        start: {
-          x: 0,
-          y: 0
-        },
-        end: {
-          x: 650,
-          y: 650
-        },
-        width: 2,
-        color: 'yellow'
-      }
-    ]
+  let { frame, state } = context
+  const viewport = {
+    x: state.screen.screenx,
+    y: state.screen.screeny,
+    b: state.screen.screeny + VIEWHT,
+    r: state.screen.screenx + SCRWTH
   }
+  const newFrame = blackTerrain({
+    thekind: LINE_KIND.NORMAL,
+    kindPointers: state.walls.kindPointers,
+    organizedWalls: state.walls.organizedWalls,
+    viewport: viewport,
+    worldwidth: state.planet.worldwidth
+  })(frame)
   return newFrame
 }
