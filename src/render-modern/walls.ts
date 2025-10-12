@@ -145,6 +145,14 @@ function drawWall(deps: {
     const startY = line.starty - scry + SBARHT
     const endX = line.endx - scrx
     const endY = line.endy - scry + SBARHT
+
+    // Apply line tweaks to adjust coordinates based on direction
+    const tweaked = lineTweaks(
+      line,
+      { x: startX, y: startY },
+      { x: endX, y: endY }
+    )
+
     let zindex: number = 0
     switch (line.kind) {
       case LINE_KIND.BOUNCE:
@@ -162,8 +170,8 @@ function drawWall(deps: {
     newFrame.drawables.push({
       id: line.id,
       type: 'line',
-      start: { x: startX, y: startY },
-      end: { x: endX, y: endY },
+      start: tweaked.start,
+      end: tweaked.end,
       width: 2,
       color: 'black',
       alpha: 1,

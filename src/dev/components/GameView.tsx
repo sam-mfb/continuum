@@ -13,6 +13,8 @@ import {
   type StatsConfig,
   type CustomStats
 } from './StatsOverlay'
+import type { Frame } from '@/lib/frame'
+import { drawFrameToCanvas } from '@/lib/frame'
 
 /**
  * GameView Component
@@ -60,6 +62,7 @@ export type BitmapGameDefinition = {
   type: 'bitmap'
   name: string
   bitmapRenderer: BitmapRenderer
+  frameRenderer?: (frameInfo: FrameInfo, keyInfo: KeyInfo) => Frame
   bitmapOptions?: BitmapToCanvasOptions
   collisionService?: {
     getMap: () => number[][]
@@ -340,6 +343,12 @@ const GameView: React.FC<GameViewProps> = ({
               } else {
                 // Standard bitmap to canvas conversion
                 bitmapToCanvas(renderedBitmap, ctx, game.bitmapOptions)
+              }
+
+              // If frameRenderer is provided, render the frame on top
+              if (game.frameRenderer) {
+                const renderedFrame = game.frameRenderer(frameInfo, keyInfo)
+                drawFrameToCanvas(renderedFrame, ctx, 1, true)
               }
               break
           }

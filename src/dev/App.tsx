@@ -23,7 +23,8 @@ import { bitmapTestRenderer } from './demos/bitmapTest'
 import {
   wallDrawingRenderer,
   collisionService,
-  viewportState
+  viewportState,
+  wallDrawingRendererNew
 } from './demos/wallDrawing'
 import { planet3DrawingRenderer } from './demos/planet3Drawing'
 import { junctionDrawRenderer } from './demos/junctionDraw'
@@ -151,11 +152,12 @@ function App({ spriteService }: AppProps): React.JSX.Element {
                   type: 'bitmap',
                   name: 'Wall Drawing',
                   bitmapRenderer: wallDrawingRenderer,
-                  collisionService: {
-                    getMap: () => collisionService.getMap(),
-                    viewportOffset: viewportState,
-                    statusBarHeight: 24
-                  }
+                  frameRenderer: wallDrawingRendererNew
+                  // collisionService: {
+                  //   getMap: () => collisionService.getMap(),
+                  //   viewportOffset: viewportState,
+                  //   statusBarHeight: 24
+                  // }
                 } as BitmapGameDefinition,
                 {
                   type: 'bitmap',
