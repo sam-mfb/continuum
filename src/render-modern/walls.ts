@@ -231,7 +231,7 @@ function wallShape(
       // Line direction: straight down (0°)
       // Perpendicular: right (+x), Downward: down (+y)
       offsetX = Math.round(PERP * 0.9) // ~10
-      offsetY = Math.round(DOWN * 0.8) // ~4
+      offsetY = Math.round(DOWN * 0.9) // ~5
       break
 
     case NEW_TYPE.SSE: // South-Southeast (~22.5° from vertical)
@@ -273,7 +273,7 @@ function wallShape(
       // Line direction: up-right at 135°
       // Should extend slightly more east and less downward
       offsetX = Math.round(PERP * 0.82 + DOWN * 0.2) // ~10
-      offsetY = Math.round(PERP * 0.2 + DOWN * 0.2) // ~3
+      offsetY = Math.round(PERP * 0.2 + DOWN * 0.3) // ~4
       break
 
     case NEW_TYPE.NNE: // North-Northeast (~157.5° from vertical)
@@ -312,8 +312,9 @@ function lineTweaks(
       }
     >
   > = {
-    // Example: [NEW_TYPE.S]: { start: { x: 1, y: 0 }, end: { x: 0, y: 1 } }
-    [NEW_TYPE.SE]: { start: { x: 1, y: 0 }, end: { x: 1, y: 0 } },
+    [NEW_TYPE.S]: { start: { x: 0, y: -1 }, end: { x: 0, y: 1 } },
+    [NEW_TYPE.SSE]: { start: { x: 0, y: -1 }, end: { x: 0, y: 0 } },
+    [NEW_TYPE.SE]: { start: { x: 1, y: -1 }, end: { x: 1, y: 0 } },
     [NEW_TYPE.ESE]: { start: { x: 0, y: -1 }, end: { x: 0, y: -1 } },
     [NEW_TYPE.ENE]: { start: { x: 0, y: -1 }, end: { x: 0, y: -1 } }
   }
