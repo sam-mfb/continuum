@@ -71,20 +71,22 @@ export function drawBunkers(deps: {
                 baseRotation < 10 ? `0${baseRotation}` : `${baseRotation}`
               spriteId = `bunker-${kindName}-${rotStr}`
             } else {
-              // DIFF: 3 sprites representing difficulty tiers, not rotations
-              // The sprite is determined by (rot & 3) which sets hit points:
-              //   0 = easy (10pts, 1 hit)
-              //   1 = medium (200pts, 1 hit)
-              //   2 = hard (300pts, 3 hits)
-              //   3 = medium (200pts, 1 hit)
-              const difficultyTier = bp.rot & 3
-              const spriteIndex = difficultyTier === 3 ? 1 : difficultyTier
+              // DIFF: 3 base sprites distributed across 16 rotations, similar to WALL
+              // Sprite selection: use modulo to cycle through 3 sprites
+              // Canvas rotation: apply additional rotation for positions beyond the 3 base sprites
+              const baseRotation = bp.rot % 3
 
-              // Rotation uses full rot value (0-15) at 22.5° per step
-              spriteRotation = bp.rot * (Math.PI / 8)
+              // For every 3 rotations, we add one full rotation step
+              // Since we have 16 rotations total and 3 sprites:
+              // - Rotations 0,1,2 use sprites 0,1,2 with 0° rotation
+              // - Rotations 3,4,5 use sprites 0,1,2 with 67.5° rotation (3 * 22.5°)
+              // - Rotations 6,7,8 use sprites 0,1,2 with 135° rotation (6 * 22.5°)
+              // - etc.
+              const rotationSteps = Math.floor(bp.rot / 3)
+              spriteRotation = rotationSteps * 3 * (Math.PI / 16)
 
               const rotStr =
-                spriteIndex < 10 ? `0${spriteIndex}` : `${spriteIndex}`
+                baseRotation < 10 ? `0${baseRotation}` : `${baseRotation}`
               spriteId = `bunker-${kindName}-${rotStr}`
             }
           } else {
