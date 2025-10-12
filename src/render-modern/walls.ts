@@ -252,6 +252,7 @@ function wallShape(
       // Should extend more to the east and less downward
       offsetX = Math.round(PERP * 0.924 + DOWN * 0.707) // ~13
       offsetY = Math.round(PERP * 0.707 + DOWN * 0.383) // ~10
+      bottomRightAdjust = { x: -4, y: -4 }
       break
 
     case NEW_TYPE.ESE: // East-Southeast (~67.5° from vertical)
