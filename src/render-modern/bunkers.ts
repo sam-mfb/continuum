@@ -13,7 +13,7 @@ import type { Bunker } from '@/core/planet'
  *
  * IMPORTANT SPRITE MAPPING:
  * - WALL bunkers: 4 base sprites (bunker-wall-00 through 03), use rotation property for rotations 4-15
- * - DIFF bunkers: 3 base sprites (bunker-diff-00 through 02), use rotation property for rotations 3-15
+ * - DIFF bunkers: 4 base sprites (bunker-diff-00 through 03), use rotation property for rotations 4-15
  * - GROUND/FOLLOW/GENERATOR: 8 sprites each (00-07), bunker.rot IS the animation frame number
  */
 export function drawBunkers(deps: {
@@ -59,36 +59,16 @@ export function drawBunkers(deps: {
             // WALL and DIFF - rotating bunkers with limited base sprites
             const kindName = bp.kind === BunkerKind.WALL ? 'wall' : 'diff'
 
-            if (bp.kind === BunkerKind.WALL) {
-              // WALL: 4 base sprites (0-3) evenly distributed across 16 rotations
-              const baseRotation = bp.rot % 4
-              const rotationQuadrants = Math.floor(bp.rot / 4)
+            // Both WALL and DIFF have 4 base sprites (0-3) evenly distributed across 16 rotations
+            const baseRotation = bp.rot % 4
+            const rotationQuadrants = Math.floor(bp.rot / 4)
 
-              // Each quadrant is 90 degrees (π/2 radians)
-              spriteRotation = rotationQuadrants * (Math.PI / 2)
+            // Each quadrant is 90 degrees (π/2 radians)
+            spriteRotation = rotationQuadrants * (Math.PI / 2)
 
-              const rotStr =
-                baseRotation < 10 ? `0${baseRotation}` : `${baseRotation}`
-              spriteId = `bunker-${kindName}-${rotStr}`
-            } else {
-              // DIFF: 3 base sprites distributed across 16 rotations, similar to WALL
-              // Sprite selection: use modulo to cycle through 3 sprites
-              // Canvas rotation: apply additional rotation for positions beyond the 3 base sprites
-              const baseRotation = bp.rot % 3
-
-              // For every 3 rotations, we add one full rotation step
-              // Since we have 16 rotations total and 3 sprites:
-              // - Rotations 0,1,2 use sprites 0,1,2 with 0° rotation
-              // - Rotations 3,4,5 use sprites 0,1,2 with 67.5° rotation (3 * 22.5°)
-              // - Rotations 6,7,8 use sprites 0,1,2 with 135° rotation (6 * 22.5°)
-              // - etc.
-              const rotationSteps = Math.floor(bp.rot / 3)
-              spriteRotation = rotationSteps * 3 * (Math.PI / 16)
-
-              const rotStr =
-                baseRotation < 10 ? `0${baseRotation}` : `${baseRotation}`
-              spriteId = `bunker-${kindName}-${rotStr}`
-            }
+            const rotStr =
+              baseRotation < 10 ? `0${baseRotation}` : `${baseRotation}`
+            spriteId = `bunker-${kindName}-${rotStr}`
           } else {
             // GROUND, FOLLOW, GENERATOR - animated bunkers
             // bunker.rot IS the animation frame (0-7)

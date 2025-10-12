@@ -11,6 +11,7 @@ const SPRITE_FILENAMES = [
   'bunker-diff-00.png',
   'bunker-diff-01.png',
   'bunker-diff-02.png',
+  'bunker-diff-03.png',
   'bunker-follow-00.png',
   'bunker-follow-01.png',
   'bunker-follow-02.png',
