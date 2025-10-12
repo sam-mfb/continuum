@@ -5,3 +5,4 @@ export {
   addMultipleSprites
 } from './spriteRegistryCanvas'
 export { initializeSpriteRegistry } from './initializeSpriteRegistry'
+export { cloneFrame } from './cloneFrame'
