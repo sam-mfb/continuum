@@ -31,6 +31,13 @@ const TITLE_PAGE_RESOURCE = join(
 )
 
 /**
+ * Pad a number with leading zeros
+ */
+function padNumber(num: number, width: number): string {
+  return num.toString().padStart(width, '0')
+}
+
+/**
  * Convert MonochromeBitmap to PNG and save to file
  */
 function saveBitmapAsPNG(bitmap: MonochromeBitmap, filepath: string): void {
@@ -111,7 +118,10 @@ async function exportSprites(): Promise<void> {
       height: 32,
       rowBytes: 4
     }
-    saveBitmapAsPNG(bitmap, join(outputDir, `ship-${rotation}.png`))
+    saveBitmapAsPNG(
+      bitmap,
+      join(outputDir, `ship-${padNumber(rotation, 2)}.png`)
+    )
   }
 
   // Export bunker sprites
@@ -133,7 +143,7 @@ async function exportSprites(): Promise<void> {
         }
         saveBitmapAsPNG(
           bitmap,
-          join(outputDir, `bunker-${kindName}-${rotation}.png`)
+          join(outputDir, `bunker-${kindName}-${padNumber(rotation, 2)}.png`)
         )
       }
     } else {
@@ -148,7 +158,7 @@ async function exportSprites(): Promise<void> {
         }
         saveBitmapAsPNG(
           bitmap,
-          join(outputDir, `bunker-${kindName}-${frame}.png`)
+          join(outputDir, `bunker-${kindName}-${padNumber(frame, 2)}.png`)
         )
       }
     }
@@ -167,7 +177,7 @@ async function exportSprites(): Promise<void> {
       height: 32,
       rowBytes: 4
     }
-    saveBitmapAsPNG(bitmap, join(outputDir, `fuel-${frame}.png`))
+    saveBitmapAsPNG(bitmap, join(outputDir, `fuel-${padNumber(frame, 2)}.png`))
   }
 
   // Export shard sprites (7 kinds, 16 rotations each)
@@ -181,7 +191,10 @@ async function exportSprites(): Promise<void> {
         height: 16,
         rowBytes: 2
       }
-      saveBitmapAsPNG(bitmap, join(outputDir, `shard-${kind}-${rotation}.png`))
+      saveBitmapAsPNG(
+        bitmap,
+        join(outputDir, `shard-${kind}-${padNumber(rotation, 2)}.png`)
+      )
     }
   }
 
@@ -215,7 +228,7 @@ async function exportSprites(): Promise<void> {
       height: flameData.height,
       rowBytes: flameData.width / 8
     }
-    saveBitmapAsPNG(bitmap, join(outputDir, `flame-${frame}.png`))
+    saveBitmapAsPNG(bitmap, join(outputDir, `flame-${padNumber(frame, 2)}.png`))
   }
 
   // Export strafe sprites (16 rotations)
@@ -228,7 +241,10 @@ async function exportSprites(): Promise<void> {
       height: 8,
       rowBytes: 1
     }
-    saveBitmapAsPNG(bitmap, join(outputDir, `strafe-${rotation}.png`))
+    saveBitmapAsPNG(
+      bitmap,
+      join(outputDir, `strafe-${padNumber(rotation, 2)}.png`)
+    )
   }
 
   // Export digit sprites
