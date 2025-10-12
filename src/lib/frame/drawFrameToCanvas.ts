@@ -51,7 +51,7 @@ function drawShape(
 
   canvas.save()
 
-  canvas.globalAlpha = debug ? 0.5 * shape.alpha : shape.alpha
+  canvas.globalAlpha = debug ? 0.7 * shape.alpha : shape.alpha
 
   // Draw the shape path for filling
   canvas.beginPath()
