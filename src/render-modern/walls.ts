@@ -226,12 +226,17 @@ function wallShape(
   let offsetX = 0
   let offsetY = 0
 
+  // Per-corner adjustments (applied after base offsets)
+  let bottomRightAdjust = { x: 0, y: 0 }
+  let bottomLeftAdjust = { x: 0, y: 0 }
+
   switch (type) {
     case NEW_TYPE.S: // South (vertical line)
       // Line direction: straight down (0°)
       // Perpendicular: right (+x), Downward: down (+y)
       offsetX = Math.round(PERP * 0.9 - 1) // ~9
       offsetY = Math.round(DOWN * 0.9) // ~5
+      bottomRightAdjust = { x: 0, y: -1 } // SE corner up 1px
       break
 
     case NEW_TYPE.SSE: // South-Southeast (~22.5° from vertical)
@@ -239,6 +244,7 @@ function wallShape(
       // Should extend slightly more east and less downward
       offsetX = Math.round(PERP * 0.924 + DOWN * 0.3 - 2) // ~10
       offsetY = Math.round(PERP * 0.3 + DOWN * 0.82) // ~8
+      bottomRightAdjust = { x: 0, y: -1 } // SE corner up 1px
       break
 
     case NEW_TYPE.SE: // Southeast (45° diagonal)
@@ -290,8 +296,15 @@ function wallShape(
   return [
     { x: line.start.x, y: line.start.y }, // Top-left (line start)
     { x: line.end.x, y: line.end.y }, // Top-right (line end)
-    { x: line.end.x + offsetX, y: line.end.y + offsetY, strokeAfter: false }, // Bottom-right (don't stroke to bottom-left)
-    { x: line.start.x + offsetX, y: line.start.y + offsetY } // Bottom-left
+    {
+      x: line.end.x + offsetX + bottomRightAdjust.x,
+      y: line.end.y + offsetY + bottomRightAdjust.y,
+      strokeAfter: false
+    }, // Bottom-right (don't stroke to bottom-left)
+    {
+      x: line.start.x + offsetX + bottomLeftAdjust.x,
+      y: line.start.y + offsetY + bottomLeftAdjust.y
+    } // Bottom-left
   ]
 }
 
