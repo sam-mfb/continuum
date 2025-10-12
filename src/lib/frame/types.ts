@@ -8,7 +8,7 @@ export type Frame = {
   drawables: Drawable[]
 }
 
-type Drawable = DrawableLine | DrawableShape
+type Drawable = DrawableLine | DrawableShape | DrawableSprite
 
 type DrawableType = 'line' | 'shape' | 'sprite'
 
@@ -47,6 +47,7 @@ type DrawableColor = string
 export type SpriteRegistryId = string
 
 export type DrawableSprite = DrawableBase & {
+  type: 'sprite'
   id: string
   spriteId: SpriteRegistryId
   rotation: number

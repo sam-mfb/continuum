@@ -1,9 +1,16 @@
-import type { DrawableLine, DrawableShape, Frame } from './types'
+import type {
+  DrawableLine,
+  DrawableShape,
+  DrawableSprite,
+  Frame,
+  SpriteRegistry
+} from './types'
 
 export function drawFrameToCanvas(
   frame: Frame,
   canvas: CanvasRenderingContext2D,
   scale: number,
+  spriteRegistry: SpriteRegistry<ImageData>,
   debug?: boolean
 ): void {
   // Sort drawables by z index (lower z draws first, so higher z appears on top)
@@ -11,10 +18,16 @@ export function drawFrameToCanvas(
 
   // Draw each drawable
   for (const drawable of sortedDrawables) {
-    if (drawable.type === 'line') {
-      drawLine(drawable, canvas, scale, debug ?? false)
-    } else if (drawable.type === 'shape') {
-      drawShape(drawable, canvas, scale, debug ?? false)
+    switch (drawable.type) {
+      case 'line':
+        drawLine(drawable, canvas, scale, debug ?? false)
+        break
+      case 'shape':
+        drawShape(drawable, canvas, scale, debug ?? false)
+        break
+      case 'sprite':
+        drawSprite(drawable, canvas, scale, spriteRegistry, debug ?? false)
+        break
     }
   }
 }
@@ -101,6 +114,51 @@ function drawShape(
       }
     }
   }
+
+  canvas.restore()
+}
+
+function drawSprite(
+  sprite: DrawableSprite,
+  canvas: CanvasRenderingContext2D,
+  scale: number,
+  spriteRegistry: SpriteRegistry<ImageData>,
+  debug: boolean
+): void {
+  const imageData = spriteRegistry.getSprite(sprite.spriteId)
+
+  canvas.save()
+
+  canvas.globalAlpha = debug ? 0.7 * sprite.alpha : sprite.alpha
+
+  // Translate to the sprite position
+  canvas.translate(sprite.topLeft.x * scale, sprite.topLeft.y * scale)
+
+  // Apply rotation if needed
+  if (sprite.rotation !== 0) {
+    // Rotate around the center of the sprite
+    const centerX = (imageData.width / 2) * scale
+    const centerY = (imageData.height / 2) * scale
+    canvas.translate(centerX, centerY)
+    canvas.rotate(sprite.rotation)
+    canvas.translate(-centerX, -centerY)
+  }
+
+  // Create a temporary canvas to draw the ImageData
+  const tempCanvas = document.createElement('canvas')
+  tempCanvas.width = imageData.width
+  tempCanvas.height = imageData.height
+  const tempCtx = tempCanvas.getContext('2d')!
+  tempCtx.putImageData(imageData, 0, 0)
+
+  // Draw the sprite with scaling
+  canvas.drawImage(
+    tempCanvas,
+    0,
+    0,
+    imageData.width * scale,
+    imageData.height * scale
+  )
 
   canvas.restore()
 }
