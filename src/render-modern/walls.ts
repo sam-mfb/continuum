@@ -256,9 +256,8 @@ function wallShape(
 
     case NEW_TYPE.ESE: // East-Southeast (~67.5° from vertical)
       // Line direction: mostly right at 67.5°
-      // Should extend more to the right and less downward
-      offsetX = Math.round(PERP * 0.924 + DOWN * 0.707) // ~13
-      offsetY = Math.round(PERP * 0.707 + DOWN * 0.208) + 1 // ~10
+      offsetX = 9 // Relative to line.end (NE corner)
+      offsetY = 7
       break
 
     case NEW_TYPE.E: // East (horizontal line)
