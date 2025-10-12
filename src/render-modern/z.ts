@@ -5,6 +5,7 @@ export const Z = {
   BOUNCE_WALL: 40,
   NORMAL_WALL: 50,
   BUNKER: 60,
+  SHARD: 65,
   SHOT: 70,
   SHADOW: 80,
   SHIP: 90,

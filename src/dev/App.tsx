@@ -37,7 +37,10 @@ import {
 } from './demos/bunkerDrawBitmap'
 import { createFuelDrawBitmapRenderer } from './demos/fuelDrawBitmap'
 import { createExplosionBitmapRenderer } from './demos/explosionBitmap'
-import { createShardTestBitmapRenderer } from './demos/shardTestBitmap'
+import {
+  createShardTestBitmapRenderer,
+  createShardTestFrameRenderer
+} from './demos/shardTestBitmap'
 import { strafeTestBitmapRenderer } from './demos/strafeTestBitmap'
 import { createStarBackgroundBitmapRenderer } from './demos/starBackgroundBitmap'
 import { createStatusBarDemo } from './demos/statusBarDemo'
@@ -199,7 +202,8 @@ function App({ spriteService, spriteRegistry }: AppProps): React.JSX.Element {
                 {
                   type: 'bitmap',
                   name: 'Shard Test',
-                  bitmapRenderer: createShardTestBitmapRenderer(spriteService)
+                  bitmapRenderer: createShardTestBitmapRenderer(spriteService),
+                  frameRenderer: createShardTestFrameRenderer()
                 } as BitmapGameDefinition,
                 {
                   type: 'bitmap',
