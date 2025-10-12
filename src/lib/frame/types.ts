@@ -10,7 +10,7 @@ export type Frame = {
 
 type Drawable = DrawableLine | DrawableShape
 
-type DrawableType = 'line' | 'shape'
+type DrawableType = 'line' | 'shape' | 'sprite'
 
 type DrawableBase = {
   id: string
@@ -29,7 +29,7 @@ export type DrawableLine = DrawableBase & {
 
 export type DrawableShape = DrawableBase & {
   type: 'shape'
-  points: DrawablePoint[]
+  points: DrawableShapePoint[]
   strokeColor: DrawableColor
   strokeWidth: number
   fillColor: DrawableColor
@@ -38,7 +38,22 @@ export type DrawableShape = DrawableBase & {
 type DrawablePoint = {
   x: number
   y: number
-  strokeAfter?: boolean // Whether to stroke the edge from this point to the next (default: true)
 }
 
+type DrawableShapePoint = DrawablePoint & { strokeAfter?: boolean }
+
 type DrawableColor = string
+
+export type SpriteRegistryId = string
+
+export type DrawableSprite = DrawableBase & {
+  id: string
+  spriteId: SpriteRegistryId
+  rotation: number
+  topLeft: DrawablePoint
+}
+
+export type SpriteRegistry<TSpriteFormat> = {
+  addSprite: (args: { id: SpriteRegistryId; path: string }) => void
+  getSprite: (id: SpriteRegistryId) => TSpriteFormat
+}
