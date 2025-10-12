@@ -59,20 +59,34 @@ export function drawBunkers(deps: {
             // WALL and DIFF - rotating bunkers with limited base sprites
             const kindName = bp.kind === BunkerKind.WALL ? 'wall' : 'diff'
 
-            // WALL has 4 base sprites (0-3), DIFF has 3 base sprites (0-2)
-            const baseSprites = bp.kind === BunkerKind.WALL ? 4 : 3
+            if (bp.kind === BunkerKind.WALL) {
+              // WALL: 4 base sprites (0-3) evenly distributed across 16 rotations
+              const baseRotation = bp.rot % 4
+              const rotationQuadrants = Math.floor(bp.rot / 4)
 
-            // Calculate which base sprite to use and how much additional rotation
-            const baseRotation = bp.rot % baseSprites
-            const rotationQuadrants = Math.floor(bp.rot / baseSprites)
+              // Each quadrant is 90 degrees (π/2 radians)
+              spriteRotation = rotationQuadrants * (Math.PI / 2)
 
-            // Each quadrant is 90 degrees (π/2 radians)
-            spriteRotation = rotationQuadrants * (Math.PI / 2)
+              const rotStr =
+                baseRotation < 10 ? `0${baseRotation}` : `${baseRotation}`
+              spriteId = `bunker-${kindName}-${rotStr}`
+            } else {
+              // DIFF: 3 sprites representing difficulty tiers, not rotations
+              // The sprite is determined by (rot & 3) which sets hit points:
+              //   0 = easy (10pts, 1 hit)
+              //   1 = medium (200pts, 1 hit)
+              //   2 = hard (300pts, 3 hits)
+              //   3 = medium (200pts, 1 hit)
+              const difficultyTier = bp.rot & 3
+              const spriteIndex = difficultyTier === 3 ? 1 : difficultyTier
 
-            // Format sprite ID with leading zero
-            const rotStr =
-              baseRotation < 10 ? `0${baseRotation}` : `${baseRotation}`
-            spriteId = `bunker-${kindName}-${rotStr}`
+              // Rotation uses full rot value (0-15) at 22.5° per step
+              spriteRotation = bp.rot * (Math.PI / 8)
+
+              const rotStr =
+                spriteIndex < 10 ? `0${spriteIndex}` : `${spriteIndex}`
+              spriteId = `bunker-${kindName}-${rotStr}`
+            }
           } else {
             // GROUND, FOLLOW, GENERATOR - animated bunkers
             // bunker.rot IS the animation frame (0-7)
