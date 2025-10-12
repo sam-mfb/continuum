@@ -39,8 +39,13 @@ function padNumber(num: number, width: number): string {
 
 /**
  * Convert MonochromeBitmap to PNG and save to file
+ * If mask is provided, uses it to determine transparency
  */
-function saveBitmapAsPNG(bitmap: MonochromeBitmap, filepath: string): void {
+function saveBitmapAsPNG(
+  bitmap: MonochromeBitmap,
+  filepath: string,
+  mask?: Uint8Array
+): void {
   const canvas = createCanvas(bitmap.width, bitmap.height)
   const ctx = canvas.getContext('2d')
 
@@ -53,10 +58,12 @@ function saveBitmapAsPNG(bitmap: MonochromeBitmap, filepath: string): void {
   let pixelIndex = 0
   for (let byteIndex = 0; byteIndex < bitmap.data.length; byteIndex++) {
     const byte = bitmap.data[byteIndex]!
+    const maskByte = mask ? mask[byteIndex]! : 0xff
 
     // Process 8 bits in this byte (MSB first: bit 7 down to bit 0)
     for (let bitPos = 7; bitPos >= 0; bitPos--) {
       const isSet = (byte >>> bitPos) & 1
+      const inMask = (maskByte >>> bitPos) & 1
 
       // Black pixels for set bits, white for unset
       if (isSet === 1) {
@@ -64,11 +71,18 @@ function saveBitmapAsPNG(bitmap: MonochromeBitmap, filepath: string): void {
         pixels[pixelIndex + 1] = 0 // G
         pixels[pixelIndex + 2] = 0 // B
         pixels[pixelIndex + 3] = 255 // A
-      } else {
+      } else if (inMask === 1) {
+        // White pixel within mask
         pixels[pixelIndex] = 255 // R
         pixels[pixelIndex + 1] = 255 // G
         pixels[pixelIndex + 2] = 255 // B
         pixels[pixelIndex + 3] = 255 // A
+      } else {
+        // Transparent pixel outside mask
+        pixels[pixelIndex] = 0 // R
+        pixels[pixelIndex + 1] = 0 // G
+        pixels[pixelIndex + 2] = 0 // B
+        pixels[pixelIndex + 3] = 0 // A (transparent)
       }
 
       pixelIndex += 4
@@ -121,7 +135,8 @@ async function exportSprites(): Promise<void> {
     }
     saveBitmapAsPNG(
       bitmap,
-      join(outputDir, `ship-${padNumber(rotation, 2)}.png`)
+      join(outputDir, `ship-${padNumber(rotation, 2)}.png`),
+      sprite.mask
     )
   }
 
@@ -144,7 +159,8 @@ async function exportSprites(): Promise<void> {
         }
         saveBitmapAsPNG(
           bitmap,
-          join(outputDir, `bunker-${kindName}-${padNumber(rotation, 2)}.png`)
+          join(outputDir, `bunker-${kindName}-${padNumber(rotation, 2)}.png`),
+          sprite.mask
         )
       }
     } else {
@@ -159,7 +175,8 @@ async function exportSprites(): Promise<void> {
         }
         saveBitmapAsPNG(
           bitmap,
-          join(outputDir, `bunker-${kindName}-${padNumber(frame, 2)}.png`)
+          join(outputDir, `bunker-${kindName}-${padNumber(frame, 2)}.png`),
+          sprite.mask
         )
       }
     }
@@ -178,7 +195,11 @@ async function exportSprites(): Promise<void> {
       height: 32,
       rowBytes: 4
     }
-    saveBitmapAsPNG(bitmap, join(outputDir, `fuel-${padNumber(frame, 2)}.png`))
+    saveBitmapAsPNG(
+      bitmap,
+      join(outputDir, `fuel-${padNumber(frame, 2)}.png`),
+      sprite.mask
+    )
   }
 
   // Export shard sprites (7 kinds, 16 rotations each)
@@ -194,7 +215,8 @@ async function exportSprites(): Promise<void> {
       }
       saveBitmapAsPNG(
         bitmap,
-        join(outputDir, `shard-${kind}-${padNumber(rotation, 2)}.png`)
+        join(outputDir, `shard-${kind}-${padNumber(rotation, 2)}.png`),
+        sprite.mask
       )
     }
   }
@@ -207,7 +229,7 @@ async function exportSprites(): Promise<void> {
     height: 32,
     rowBytes: 4
   }
-  saveBitmapAsPNG(crater, join(outputDir, 'crater.png'))
+  saveBitmapAsPNG(crater, join(outputDir, 'crater.png'), allSprites.crater.mask)
 
   // Export shield
   console.log('Exporting shield...')
