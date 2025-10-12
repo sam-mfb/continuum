@@ -533,10 +533,13 @@ export const createBunkerDrawBitmapRenderer =
 /**
  * Frame-based renderer for bunker drawing game
  * This uses the new sprite-based rendering system
+ *
+ * IMPORTANT: This only RENDERS the state, it does NOT update it.
+ * All state updates happen in the bitmap renderer.
  */
 export const createBunkerDrawFrameRenderer =
   (): ((frameInfo: FrameInfo, keyInfo: KeyInfo) => Frame) =>
-  (_frameInfo: FrameInfo, keys: KeyInfo) => {
+  (_frameInfo: FrameInfo, _keys: KeyInfo) => {
     // Check initialization status
     if (initializationError || !initializationComplete) {
       return {
@@ -546,76 +549,9 @@ export const createBunkerDrawFrameRenderer =
       }
     }
 
+    // Get current state (already updated by bitmap renderer)
     const state = store.getState()
     const planetState = state.planet
-
-    // Handle keyboard input for viewport movement (same as bitmap version)
-    const moveSpeed = 5
-    const bitmap = { width: 512, height: 342 } // For bounds checking
-
-    if (keys.keysDown.has('ArrowUp')) {
-      viewportState.y = Math.max(0, viewportState.y - moveSpeed)
-    }
-    if (keys.keysDown.has('ArrowDown')) {
-      viewportState.y = Math.min(
-        WORLD_HEIGHT - bitmap.height,
-        viewportState.y + moveSpeed
-      )
-    }
-    if (keys.keysDown.has('ArrowLeft')) {
-      viewportState.x -= moveSpeed
-      if (planetState.worldwrap) {
-        viewportState.x =
-          ((viewportState.x % WORLD_WIDTH) + WORLD_WIDTH) % WORLD_WIDTH
-      } else {
-        viewportState.x = Math.max(0, viewportState.x)
-      }
-    }
-    if (keys.keysDown.has('ArrowRight')) {
-      viewportState.x += moveSpeed
-      if (planetState.worldwrap) {
-        viewportState.x = viewportState.x % WORLD_WIDTH
-      } else {
-        viewportState.x = Math.min(WORLD_WIDTH - bitmap.width, viewportState.x)
-      }
-    }
-
-    // Update animation state
-    const globalx = viewportState.x + bitmap.width / 2
-    const globaly = viewportState.y + bitmap.height / 2 - SBARHT
-
-    store.dispatch(updateBunkerRotations({ globalx, globaly }))
-
-    // Check if bunkers should shoot (same logic as bitmap version)
-    if (rint(100) < planetState.shootslow * 5) {
-      const screenb = viewportState.y + bitmap.height
-      const screenr = viewportState.x + bitmap.width
-
-      store.dispatch(
-        bunkShoot({
-          screenx: viewportState.x,
-          screenr: screenr,
-          screeny: viewportState.y,
-          screenb: screenb,
-          bunkrecs: planetState.bunkers,
-          walls: planetState.lines,
-          worldwidth: planetState.worldwidth,
-          worldwrap: planetState.worldwrap,
-          globalx: globalx,
-          globaly: globaly
-        })
-      )
-    }
-
-    // Move bullets and update strafes
-    store.dispatch(
-      moveBullets({
-        worldwidth: planetState.worldwidth,
-        worldwrap: planetState.worldwrap,
-        walls: planetState.lines
-      })
-    )
-    store.dispatch(doStrafes())
 
     // Create viewport for bunker rendering
     const viewport = {
