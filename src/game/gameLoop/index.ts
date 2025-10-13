@@ -70,10 +70,19 @@ export const createGameRenderer = (
 export const createGameRendererNew = (
   store: GameStore,
   spriteService: SpriteService,
-  _galaxyService: GalaxyService,
+  galaxyService: GalaxyService,
   fizzTransitionService: FizzTransitionService
 ): NewGameRenderLoop => {
-  return (_frame, _controls) => {
+  return (frame, controls) => {
+    // This handles all game logic, physics, and state changes
+    updateGameState({
+      store,
+      frame,
+      controls,
+      galaxyService,
+      fizzTransitionService
+    })
+
     // Create a fresh frame
     const startFrame: Frame = {
       width: 512,

@@ -52,6 +52,7 @@ export const App: React.FC<AppProps> = ({
   const currentGalaxyId = useAppSelector(state => state.app.currentGalaxyId)
   const volume = useAppSelector(state => state.app.volume)
   const soundMuted = useAppSelector(state => !state.app.soundOn)
+  const renderMode = useAppSelector(state => state.app.renderMode)
   const showInGameControls = useAppSelector(
     state => state.app.showInGameControls
   )
@@ -78,6 +79,27 @@ export const App: React.FC<AppProps> = ({
       dispatch(disableTouchControls())
     }
   }, [touchControlsOverride, dispatch])
+
+  // Manage sprite registry loading based on render mode
+  useEffect(() => {
+    const loadOrUnloadSprites = async (): Promise<void> => {
+      if (renderMode === 'modern') {
+        // Load sprites for modern renderer
+        try {
+          await spriteRegistry.loadSprites()
+          console.log('Sprites loaded for modern renderer')
+        } catch (error) {
+          console.error('Failed to load sprites:', error)
+        }
+      } else {
+        // Unload sprites when switching back to original renderer
+        spriteRegistry.unloadSprites()
+        console.log('Sprites unloaded for original renderer')
+      }
+    }
+
+    loadOrUnloadSprites()
+  }, [renderMode, spriteRegistry])
 
   // Track if we should show the resize hint
   const [showResizeHint, setShowResizeHint] = useState(false)
@@ -196,6 +218,7 @@ export const App: React.FC<AppProps> = ({
               collisionService={collisionService}
               spriteService={spriteService}
               spriteRegistry={spriteRegistry}
+              renderMode={renderMode}
               width={512}
               height={342}
               scale={scale}

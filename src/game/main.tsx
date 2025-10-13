@@ -49,9 +49,9 @@ try {
   })
   console.log('Sprite service created')
 
-  // Initialize sprite registry
-  const spriteRegistry = await initializeSpriteRegistry()
-  console.log('Sprite registry initialized')
+  // Initialize sprite registry (but don't load sprites yet - App.tsx will handle loading based on renderMode)
+  const spriteRegistry = initializeSpriteRegistry()
+  console.log('Sprite registry initialized (sprites not loaded yet)')
 
   // Load default galaxy
   const defaultGalaxy = getDefaultGalaxy()

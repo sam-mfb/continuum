@@ -192,10 +192,9 @@ const SPRITE_FILENAMES = [
 /**
  * Initialize sprite registry with all sprites from the sprites_bw directory
  * Excludes title-page.png as it's loaded separately
+ * Note: Sprites are registered but not loaded until loadSprites() is called
  */
-export async function initializeSpriteRegistry(): Promise<
-  SpriteRegistry<ImageData>
-> {
+export function initializeSpriteRegistry(): SpriteRegistry<ImageData> {
   const registry = createSpriteRegistryCanvas()
 
   // Convert filenames to sprite definitions
@@ -208,11 +207,8 @@ export async function initializeSpriteRegistry(): Promise<
     }
   })
 
-  // Add all sprites to registry
+  // Add all sprites to registry (but don't load them yet)
   addMultipleSprites(registry, spriteDefinitions)
-
-  // Load all sprites into memory
-  await registry.loadSprites()
 
   return registry
 }

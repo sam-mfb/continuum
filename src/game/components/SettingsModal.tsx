@@ -3,6 +3,7 @@ import { useAppDispatch, useAppSelector } from '../store'
 import {
   toggleCollisionMode,
   toggleSoundMode,
+  toggleRenderMode,
   toggleAlignmentMode,
   toggleInGameControls,
   setScaleMode,
@@ -109,6 +110,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const dispatch = useAppDispatch()
   const collisionMode = useAppSelector(state => state.app.collisionMode)
   const soundMode = useAppSelector(state => state.app.soundMode)
+  const renderMode = useAppSelector(state => state.app.renderMode)
   const alignmentMode = useAppSelector(state => state.app.alignmentMode)
   const scaleMode = useAppSelector(state => state.app.scaleMode)
   const showInGameControls = useAppSelector(
@@ -510,6 +512,44 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 }}
               >
                 Note: Reload page after changing to apply
+              </div>
+            </div>
+
+            {/* Render Mode Section */}
+            <div style={sectionStyle}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: `${5 * scale}px`
+                }}
+              >
+                <span>RENDER MODE:</span>
+                <button
+                  onClick={() => dispatch(toggleRenderMode())}
+                  style={toggleButtonStyle}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = '#333'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = '#000'
+                  }}
+                >
+                  {renderMode === 'modern' ? 'MODERN' : 'ORIGINAL'}
+                </button>
+                <span
+                  style={{
+                    color: '#666',
+                    fontSize: `${5 * scale}px`,
+                    marginLeft: `${5 * scale}px`
+                  }}
+                >
+                  (
+                  {renderMode === 'modern'
+                    ? 'Modern frame-based renderer (experimental)'
+                    : 'Original bitmap renderer'}
+                  )
+                </span>
               </div>
             </div>
 
