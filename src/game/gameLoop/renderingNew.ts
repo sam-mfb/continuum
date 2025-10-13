@@ -9,6 +9,8 @@ import { drawShip } from '@/render-modern/ship'
 import { drawCraters } from '@/render-modern/craters'
 import { drawFuels } from '@/render-modern/fuel'
 import { drawBunkers } from '@/render-modern/bunkers'
+import { drawShards } from '@/render-modern/explosions'
+import { drawStrafes } from '@/render-modern/shots'
 import { SCENTER } from '@/core/figs'
 
 export type RenderContextNew = {
@@ -105,6 +107,26 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
       y: state.ship.shipy - SCENTER,
       rotation: state.ship.shiprot,
       thrusting: state.ship.flaming
+    })(newFrame)
+  }
+
+  // Draw strafes (from rendering.ts line 493-505)
+  newFrame = drawStrafes({
+    strafes: state.shots.strafes,
+    screenX: state.screen.screenx,
+    screenY: state.screen.screeny,
+    worldwidth: state.planet.worldwidth,
+    worldwrap: state.planet.worldwrap
+  })(newFrame)
+
+  // Draw explosions - shards (from rendering.ts line 507-546)
+  if (state.explosions.shards.some(s => s.lifecount > 0)) {
+    newFrame = drawShards({
+      shards: state.explosions.shards,
+      screenX: state.screen.screenx,
+      screenY: state.screen.screeny,
+      worldwidth: state.planet.worldwidth,
+      worldwrap: state.planet.worldwrap
     })(newFrame)
   }
 
