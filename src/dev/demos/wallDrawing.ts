@@ -10,7 +10,7 @@ import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
 import { createGameBitmap } from '@lib/bitmap'
 import type { LineRec } from '@core/walls'
 import { whiteTerrain, blackTerrain } from '@render/walls'
-import { blackTerrain as blackTerrainNew } from '@render-modern/walls'
+import { drawWalls } from '@render-modern/walls'
 import { wallsActions } from '@core/walls'
 import { buildGameStore } from '@dev/store'
 import { LINE_KIND, NEW_TYPE } from '@core/walls'
@@ -181,7 +181,7 @@ export const wallDrawingRendererNew = (
   }
 
   // Render black terrain (top surfaces) for normal lines using modern renderer
-  resultFrame = blackTerrainNew({
+  resultFrame = drawWalls({
     thekind: LINE_KIND.NORMAL, // Draw only normal lines
     kindPointers: wallState.kindPointers,
     organizedWalls: wallState.organizedWalls,

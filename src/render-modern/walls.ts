@@ -22,7 +22,7 @@ const TOP_MARGIN = 6 // Pixels to check above screen
  *   @param worldwidth - World width for wrapping
  * @returns A curried function that takes a screen and returns a new MonochromeBitmap
  */
-export const blackTerrain =
+export const drawWalls =
   (deps: {
     thekind: number
     kindPointers: Record<number, string | null>

@@ -4,7 +4,7 @@ import type { SpriteService } from '@/core/sprites'
 import type { FizzTransitionService } from '@/core/transition'
 import { LINE_KIND } from '@/core/shared'
 import { SCRWTH, VIEWHT } from '@/core/screen'
-import { blackTerrain } from '@/render-modern/walls'
+import { drawWalls } from '@/render-modern/walls'
 import { drawShip, drawShield } from '@/render-modern/ship'
 import { drawCraters } from '@/render-modern/craters'
 import { drawFuels } from '@/render-modern/fuel'
@@ -60,7 +60,7 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
   })(frame)
 
   // Draw walls
-  newFrame = blackTerrain({
+  newFrame = drawWalls({
     thekind: LINE_KIND.NORMAL,
     kindPointers: state.walls.kindPointers,
     organizedWalls: state.walls.organizedWalls,
@@ -68,7 +68,7 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
     worldwidth: state.planet.worldwidth
   })(newFrame)
 
-  newFrame = blackTerrain({
+  newFrame = drawWalls({
     thekind: LINE_KIND.BOUNCE,
     kindPointers: state.walls.kindPointers,
     organizedWalls: state.walls.organizedWalls,
@@ -76,7 +76,7 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
     worldwidth: state.planet.worldwidth
   })(newFrame)
 
-  newFrame = blackTerrain({
+  newFrame = drawWalls({
     thekind: LINE_KIND.GHOST,
     kindPointers: state.walls.kindPointers,
     organizedWalls: state.walls.organizedWalls,
