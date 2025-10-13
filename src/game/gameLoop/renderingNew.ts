@@ -16,6 +16,8 @@ import {
   drawBunkerShots
 } from '@/render-modern/shots'
 import { SCENTER } from '@/core/figs'
+import { createGameBitmap } from '@/lib/bitmap'
+import { FIZZ_DURATION } from '@/core/transition'
 
 export type RenderContextNew = {
   frame: Frame
@@ -25,12 +27,25 @@ export type RenderContextNew = {
 }
 
 export const renderGameNew = (context: RenderContextNew): Frame => {
-  let { frame, state } = context
+  let { frame, state, fizzTransitionService } = context
   const viewport = {
     x: state.screen.screenx,
     y: state.screen.screeny,
     b: state.screen.screeny + VIEWHT,
     r: state.screen.screenx + SCRWTH
+  }
+
+  // Handle fizz transition
+  // This is critical for level transitions to work - the fizz service must be initialized
+  // and we must call nextFrame() to advance it, otherwise it never completes
+  if (state.transition.status === 'fizz') {
+    if (!fizzTransitionService.isInitialized) {
+      // Initialize with dummy bitmaps (modern renderer doesn't display the fizz animation)
+      const dummyBitmap = createGameBitmap()
+      fizzTransitionService.initialize(dummyBitmap, dummyBitmap, FIZZ_DURATION)
+    }
+    // Must call nextFrame() to advance the transition - stateUpdates.ts checks isComplete
+    fizzTransitionService.nextFrame()
   }
 
   // Calculate if we're on the right side for world wrapping
