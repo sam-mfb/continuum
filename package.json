@@ -18,7 +18,8 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "export-sprites": "tsx scripts/export-sprites.ts",
-    "convert-sprites": "tsx scripts/convert-white-to-transparent.ts"
+    "convert-sprites": "tsx scripts/convert-white-to-transparent.ts",
+    "convert-digits": "tsx scripts/convert-digit-sprites.ts"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.8.2",
