@@ -175,7 +175,7 @@ function drawWall(deps: {
       width: 2,
       color: 'black',
       alpha: 1,
-      z: zindex
+      z: Z.WALL_TOP
     })
     newFrame.drawables.push({
       id: `${line.id}-white`,
@@ -244,15 +244,15 @@ function wallShape(
       // Should extend slightly more east and less downward
       offsetX = Math.round(PERP * 0.924 + DOWN * 0.3 - 2) // ~10
       offsetY = Math.round(PERP * 0.3 + DOWN * 0.82) // ~8
-      bottomRightAdjust = { x: 0, y: -1 } // SE corner up 1px
+      bottomRightAdjust = { x: -1, y: -1 } // SE corner up 1px
       break
 
     case NEW_TYPE.SE: // Southeast (45° diagonal)
       // Line direction: down-right at 45°
       // Should extend more to the east and less downward
       offsetX = Math.round(PERP * 0.924 + DOWN * 0.707) // ~13
-      offsetY = Math.round(PERP * 0.707 + DOWN * 0.383) // ~10
-      bottomRightAdjust = { x: -4, y: -4 }
+      offsetY = Math.round(PERP * 0.557 + DOWN * 0.383) // ~10
+      bottomRightAdjust = { x: -4, y: -2 }
       break
 
     case NEW_TYPE.ESE: // East-Southeast (~67.5° from vertical)
@@ -328,7 +328,7 @@ function lineTweaks(
   > = {
     [NEW_TYPE.S]: { start: { x: 0, y: -1 }, end: { x: 0, y: 1 } },
     [NEW_TYPE.SSE]: { start: { x: 0, y: -1 }, end: { x: 0, y: 0 } },
-    [NEW_TYPE.SE]: { start: { x: 1, y: -1 }, end: { x: 1, y: 0 } },
+    [NEW_TYPE.SE]: { start: { x: 0, y: 0 }, end: { x: 0, y: 0 } },
     [NEW_TYPE.ESE]: { start: { x: 0, y: -1 }, end: { x: 0, y: -1 } },
     [NEW_TYPE.ENE]: { start: { x: 0, y: -1 }, end: { x: 0, y: -1 } }
   }
