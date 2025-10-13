@@ -19,6 +19,7 @@ import { SCENTER } from '@/core/figs'
 import { createGameBitmap } from '@/lib/bitmap'
 import { FIZZ_DURATION } from '@/core/transition'
 import { viewClear } from '@/render-modern/viewClear'
+import { drawStatusBar } from '@/render-modern/statusBar'
 
 export type RenderContextNew = {
   frame: Frame
@@ -207,6 +208,16 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
       worldwrap: state.planet.worldwrap
     })(newFrame)
   }
+
+  // Draw status bar (renders on top of everything)
+  newFrame = drawStatusBar({
+    lives: state.ship.lives,
+    score: state.status.score,
+    fuel: state.ship.fuel,
+    bonus: state.status.planetbonus,
+    level: state.status.currentlevel,
+    message: state.status.curmessage
+  })(newFrame)
 
   return newFrame
 }
