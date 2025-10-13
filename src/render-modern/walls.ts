@@ -12,8 +12,6 @@ const LEFT_MARGIN = 10 // Pixels to check left of screen
 const TOP_MARGIN = 6 // Pixels to check above screen
 
 /**
- * Draws all black terrain elements (top surfaces) of a specific kind
- * @see orig/Sources/Terrain.c:46 black_terrain()
  * @param deps - Dependencies object containing:
  *   @param thekind - The line kind to draw (L_NORMAL, L_BOUNCE, etc.)
  *   @param kindPointers - Map of kind to first line ID
@@ -221,89 +219,32 @@ function wallShape(
   // 3D perspective: wall extends ~26.6° below perpendicular
   // For 12px depth: perpendicular = 11px, downward = 5px
   const PERP = 11 // Perpendicular component
-  const DOWN = 5 // Downward component (creates 3D effect)
+  const DOWN = 6 // Downward component (creates 3D effect)
 
-  let offsetX = 0
-  let offsetY = 0
+  let offsetX = PERP
+  let offsetY = DOWN
 
-  // Per-corner adjustments (applied after base offsets)
-  let bottomRightAdjust = { x: 0, y: 0 }
-  let bottomLeftAdjust = { x: 0, y: 0 }
-
-  switch (type) {
-    case NEW_TYPE.S: // South (vertical line)
-      // Line direction: straight down (0°)
-      // Perpendicular: right (+x), Downward: down (+y)
-      offsetX = Math.round(PERP * 0.9 - 1) // ~9
-      offsetY = Math.round(DOWN * 0.9) // ~5
-      bottomRightAdjust = { x: 0, y: -1 } // SE corner up 1px
-      break
-
-    case NEW_TYPE.SSE: // South-Southeast (~22.5° from vertical)
-      // Line direction: down-right at 22.5°
-      // Should extend slightly more east and less downward
-      offsetX = Math.round(PERP * 0.924 + DOWN * 0.3 - 2) // ~10
-      offsetY = Math.round(PERP * 0.3 + DOWN * 0.82) // ~8
-      bottomRightAdjust = { x: -1, y: -1 } // SE corner up 1px
-      break
-
-    case NEW_TYPE.SE: // Southeast (45° diagonal)
-      // Line direction: down-right at 45°
-      // Should extend more to the east and less downward
-      offsetX = Math.round(PERP * 0.924 + DOWN * 0.707) // ~13
-      offsetY = Math.round(PERP * 0.557 + DOWN * 0.383) // ~10
-      bottomRightAdjust = { x: -4, y: -2 }
-      break
-
-    case NEW_TYPE.ESE: // East-Southeast (~67.5° from vertical)
-      // Line direction: mostly right at 67.5°
-      offsetX = 9 // Relative to line.end (NE corner)
-      offsetY = 7
-      break
-
-    case NEW_TYPE.E: // East (horizontal line)
-      // Line direction: right (90°)
-      // Should extend at ~12° angle (mostly rightward with slight downward)
-      offsetX = Math.round(PERP * 0.978 + DOWN * 0.1) - 1 // ~10
-      offsetY = Math.round(PERP * 0.1 + DOWN * 0.978) - 1 // ~5
-      break
-
-    case NEW_TYPE.ENE: // East-Northeast (~112.5° from vertical)
-      // Line direction: right and up at 112.5°
-      // Should extend at ~45° to the right/east with reduced height
-      offsetX = Math.round(PERP * 0.707 + DOWN * 0.2) // ~9
-      offsetY = Math.round(PERP * 0.2 + DOWN * 0.707) // ~6
-      break
-
-    case NEW_TYPE.NE: // Northeast (135° from vertical, 45° upward)
-      // Line direction: up-right at 135°
-      // Should extend slightly more east and less downward
-      offsetX = Math.round(PERP * 0.82 + DOWN * 0.2) // ~10
-      offsetY = Math.round(PERP * 0.2 + DOWN * 0.3) // ~4
-      break
-
-    case NEW_TYPE.NNE: // North-Northeast (~157.5° from vertical)
-      // Line direction: mostly up at 157.5°
-      // Adjusted coefficients for visual correctness
-      offsetX = Math.round(PERP * 0.82 + DOWN * 0.2) - 1 // ~9
-      offsetY = Math.round(PERP * 0.2 + DOWN * 0.3) // ~4
-      break
+  // not strictly geometrically correct, but this gives the
+  // ESE line a little bit of depth
+  if (type === NEW_TYPE.ESE) {
+    offsetX = 9 // Relative to line.end (NE corner)
+    offsetY = 7
   }
 
   // Return 4 corners forming a trapezoid that extends from the line
   // with a 3D perspective effect
   // The bottom edge (from bottom-right to bottom-left) should not be stroked
   return [
-    { x: line.start.x, y: line.start.y }, // Top-left (line start)
+    { x: line.start.x, y: line.start.y, strokeAfter: false }, // Top-left (line start)
     { x: line.end.x, y: line.end.y }, // Top-right (line end)
     {
-      x: line.end.x + offsetX + bottomRightAdjust.x,
-      y: line.end.y + offsetY + bottomRightAdjust.y,
+      x: line.end.x + offsetX,
+      y: line.end.y + offsetY,
       strokeAfter: false
     }, // Bottom-right (don't stroke to bottom-left)
     {
-      x: line.start.x + offsetX + bottomLeftAdjust.x,
-      y: line.start.y + offsetY + bottomLeftAdjust.y
+      x: line.start.x + offsetX,
+      y: line.start.y + offsetY
     } // Bottom-left
   ]
 }
