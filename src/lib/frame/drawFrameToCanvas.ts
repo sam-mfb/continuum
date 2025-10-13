@@ -65,7 +65,62 @@ function drawRect(
   canvas.save()
 
   canvas.globalAlpha = debug ? 0.7 * rect.alpha : rect.alpha
-  canvas.fillStyle = debug ? 'cyan' : rect.fillColor
+
+  if (rect.fillPattern === 'crosshatch') {
+    // Create crosshatch pattern using the two background patterns
+    // Pattern 0: 0xaaaaaaaa (binary: 10101010...) - alternating pixels horizontally
+    // Pattern 1: 0x55555555 (binary: 01010101...) - inverse alternating pixels
+    // The pattern alternates by scanline (row), creating a diagonal checkerboard
+    const patternCanvas = document.createElement('canvas')
+    patternCanvas.width = 32 * scale // Scale the pattern width
+    patternCanvas.height = 2 * scale // Scale the pattern height
+    const patternCtx = patternCanvas.getContext('2d')!
+    patternCtx.imageSmoothingEnabled = false // Keep pixels crisp
+
+    // Create the pattern at 1:1 scale first
+    const unscaledCanvas = document.createElement('canvas')
+    unscaledCanvas.width = 32
+    unscaledCanvas.height = 2
+    const unscaledCtx = unscaledCanvas.getContext('2d')!
+    const patternData = unscaledCtx.createImageData(32, 2)
+
+    // Determine which pattern starts first based on alignment
+    const alignment = rect.patternAlignment ?? 0
+    const firstPattern = alignment === 0 ? 0xaaaaaaaa : 0x55555555
+    const secondPattern = alignment === 0 ? 0x55555555 : 0xaaaaaaaa
+
+    // Fill first row (32 pixels using firstPattern)
+    for (let x = 0; x < 32; x++) {
+      const bit = (firstPattern >>> (31 - x)) & 1
+      const color = bit ? 0 : 255 // bit 1 = black, bit 0 = white
+      const idx = x * 4
+      patternData.data[idx] = color // R
+      patternData.data[idx + 1] = color // G
+      patternData.data[idx + 2] = color // B
+      patternData.data[idx + 3] = 255 // A
+    }
+
+    // Fill second row (32 pixels using secondPattern)
+    for (let x = 0; x < 32; x++) {
+      const bit = (secondPattern >>> (31 - x)) & 1
+      const color = bit ? 0 : 255 // bit 1 = black, bit 0 = white
+      const idx = (32 + x) * 4 // Second row starts at pixel 32
+      patternData.data[idx] = color // R
+      patternData.data[idx + 1] = color // G
+      patternData.data[idx + 2] = color // B
+      patternData.data[idx + 3] = 255 // A
+    }
+
+    unscaledCtx.putImageData(patternData, 0, 0)
+
+    // Scale up the pattern
+    patternCtx.drawImage(unscaledCanvas, 0, 0, 32 * scale, 2 * scale)
+
+    const pattern = canvas.createPattern(patternCanvas, 'repeat')!
+    canvas.fillStyle = pattern
+  } else {
+    canvas.fillStyle = debug ? 'cyan' : rect.fillColor
+  }
 
   canvas.fillRect(
     rect.topLeft.x * scale,

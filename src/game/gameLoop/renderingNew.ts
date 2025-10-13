@@ -18,6 +18,7 @@ import {
 import { SCENTER } from '@/core/figs'
 import { createGameBitmap } from '@/lib/bitmap'
 import { FIZZ_DURATION } from '@/core/transition'
+import { viewClear } from '@/render-modern/viewClear'
 
 export type RenderContextNew = {
   frame: Frame
@@ -51,14 +52,20 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
   // Calculate if we're on the right side for world wrapping
   const on_right_side = state.screen.screenx > state.planet.worldwidth - SCRWTH
 
+  // 1. viewClear - Create crosshatch gray background
+  let newFrame = viewClear({
+    screenX: state.screen.screenx,
+    screenY: state.screen.screeny
+  })(frame)
+
   // Draw walls
-  let newFrame = blackTerrain({
+  newFrame = blackTerrain({
     thekind: LINE_KIND.NORMAL,
     kindPointers: state.walls.kindPointers,
     organizedWalls: state.walls.organizedWalls,
     viewport: viewport,
     worldwidth: state.planet.worldwidth
-  })(frame)
+  })(newFrame)
 
   newFrame = blackTerrain({
     thekind: LINE_KIND.BOUNCE,

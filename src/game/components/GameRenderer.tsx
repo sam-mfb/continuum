@@ -296,11 +296,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
             // Modern frame-based renderer
             const renderedFrame = rendererNew(frameInfo, controls)
 
-            // Clear canvas
-            ctx.fillStyle = 'white'
-            ctx.fillRect(0, 0, width * scale, height * scale)
-
-            // Draw frame to canvas
+            // Draw frame to canvas (background clearing is handled by viewClear in renderingNew.ts)
             drawFrameToCanvas(renderedFrame, ctx, scale, spriteRegistry, false)
           }
 

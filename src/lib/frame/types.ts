@@ -33,6 +33,8 @@ export type DrawableRect = DrawableBase & {
   width: number
   height: number
   fillColor: DrawableColor
+  fillPattern?: 'crosshatch'
+  patternAlignment?: number
 }
 
 export type DrawableShape = DrawableBase & {
