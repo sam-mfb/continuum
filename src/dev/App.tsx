@@ -28,6 +28,10 @@ import {
   wallDrawingRenderer,
   wallDrawingRendererNew
 } from './demos/wallDrawing'
+import {
+  wallDrawingModernRenderer,
+  wallDrawingModernBitmapRenderer
+} from './demos/wallDrawingModern'
 import { planet3DrawingRenderer } from './demos/planet3Drawing'
 import { junctionDrawRenderer } from './demos/junctionDraw'
 import { createShipMoveBitmapRenderer } from './demos/shipMoveBitmap'
@@ -173,6 +177,12 @@ function App({ spriteService, spriteRegistry }: AppProps): React.JSX.Element {
                   //   viewportOffset: viewportState,
                   //   statusBarHeight: 24
                   // }
+                } as BitmapGameDefinition,
+                {
+                  type: 'bitmap',
+                  name: 'Wall Drawing Modern (All 256 Junctions)',
+                  bitmapRenderer: wallDrawingModernBitmapRenderer,
+                  frameRenderer: wallDrawingModernRenderer
                 } as BitmapGameDefinition,
                 {
                   type: 'bitmap',
