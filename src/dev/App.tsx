@@ -44,7 +44,10 @@ import {
   createShardTestBitmapRenderer,
   createShardTestFrameRenderer
 } from './demos/shardTestBitmap'
-import { strafeTestBitmapRenderer } from './demos/strafeTestBitmap'
+import {
+  strafeTestBitmapRenderer,
+  createStrafeTestFrameRenderer
+} from './demos/strafeTestBitmap'
 import { createStarBackgroundBitmapRenderer } from './demos/starBackgroundBitmap'
 import { createStatusBarDemo } from './demos/statusBarDemo'
 import { createShieldDemoRenderer } from './demos/shieldDemo'
@@ -212,7 +215,8 @@ function App({ spriteService, spriteRegistry }: AppProps): React.JSX.Element {
                 {
                   type: 'bitmap',
                   name: 'Strafe Test',
-                  bitmapRenderer: strafeTestBitmapRenderer
+                  bitmapRenderer: strafeTestBitmapRenderer,
+                  frameRenderer: createStrafeTestFrameRenderer()
                 } as BitmapGameDefinition,
                 {
                   type: 'bitmap',
