@@ -181,6 +181,7 @@ const SPRITE_FILENAMES = [
   'ship-29.png',
   'ship-30.png',
   'ship-31.png',
+  'shipshot-00.png',
   'status-bar.png',
   'strafe-00.png',
   'strafe-01.png',

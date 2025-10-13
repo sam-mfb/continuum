@@ -7,7 +7,10 @@ export const Z = {
   BUNKER: 60,
   SHARD: 65,
   STRAFE: 67,
+  BUNKER_SHOT: 68,
+  SHIP_SHOT: 69,
   SHOT: 70,
+  SPARK: 75,
   SHADOW: 80,
   SHIP: 90,
   SHIELD: 100

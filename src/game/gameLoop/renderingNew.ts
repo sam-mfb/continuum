@@ -9,8 +9,12 @@ import { drawShip } from '@/render-modern/ship'
 import { drawCraters } from '@/render-modern/craters'
 import { drawFuels } from '@/render-modern/fuel'
 import { drawBunkers } from '@/render-modern/bunkers'
-import { drawShards } from '@/render-modern/explosions'
-import { drawStrafes } from '@/render-modern/shots'
+import { drawShards, drawSparks } from '@/render-modern/explosions'
+import {
+  drawStrafes,
+  drawShipShots,
+  drawBunkerShots
+} from '@/render-modern/shots'
 import { SCENTER } from '@/core/figs'
 
 export type RenderContextNew = {
@@ -100,6 +104,17 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
     })(newFrame)
   }
 
+  // Draw bunker shots BEFORE ship if NOT shielding (from rendering.ts line 335-373)
+  if (!state.ship.shielding) {
+    newFrame = drawBunkerShots({
+      shots: state.shots.bunkshots,
+      screenX: state.screen.screenx,
+      screenY: state.screen.screeny,
+      worldwidth: state.planet.worldwidth,
+      worldwrap: state.planet.worldwrap
+    })(newFrame)
+  }
+
   // Draw ship
   if (state.ship.deadCount === 0) {
     newFrame = drawShip({
@@ -109,6 +124,26 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
       thrusting: state.ship.flaming
     })(newFrame)
   }
+
+  // Draw bunker shots AFTER ship/shield if shielding (from rendering.ts line 401-437)
+  if (state.ship.shielding) {
+    newFrame = drawBunkerShots({
+      shots: state.shots.bunkshots,
+      screenX: state.screen.screenx,
+      screenY: state.screen.screeny,
+      worldwidth: state.planet.worldwidth,
+      worldwrap: state.planet.worldwrap
+    })(newFrame)
+  }
+
+  // Draw ship shots (from rendering.ts line 439-475)
+  newFrame = drawShipShots({
+    shots: state.shots.shipshots,
+    screenX: state.screen.screenx,
+    screenY: state.screen.screeny,
+    worldwidth: state.planet.worldwidth,
+    worldwrap: state.planet.worldwrap
+  })(newFrame)
 
   // Draw strafes (from rendering.ts line 493-505)
   newFrame = drawStrafes({
@@ -123,6 +158,19 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
   if (state.explosions.shards.some(s => s.lifecount > 0)) {
     newFrame = drawShards({
       shards: state.explosions.shards,
+      screenX: state.screen.screenx,
+      screenY: state.screen.screeny,
+      worldwidth: state.planet.worldwidth,
+      worldwrap: state.planet.worldwrap
+    })(newFrame)
+  }
+
+  // Draw explosions - sparks (from rendering.ts line 507-546)
+  if (state.explosions.sparksalive > 0) {
+    newFrame = drawSparks({
+      sparks: state.explosions.sparks,
+      sparksalive: state.explosions.sparksalive,
+      totalsparks: state.explosions.totalsparks,
       screenX: state.screen.screenx,
       screenY: state.screen.screeny,
       worldwidth: state.planet.worldwidth,

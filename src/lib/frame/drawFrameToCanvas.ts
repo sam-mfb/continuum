@@ -1,5 +1,6 @@
 import type {
   DrawableLine,
+  DrawableRect,
   DrawableShape,
   DrawableSprite,
   Frame,
@@ -21,6 +22,9 @@ export function drawFrameToCanvas(
     switch (drawable.type) {
       case 'line':
         drawLine(drawable, canvas, scale, debug ?? false)
+        break
+      case 'rect':
+        drawRect(drawable, canvas, scale, debug ?? false)
         break
       case 'shape':
         drawShape(drawable, canvas, scale, debug ?? false)
@@ -48,6 +52,27 @@ function drawLine(
   canvas.moveTo(line.start.x * scale, line.start.y * scale)
   canvas.lineTo(line.end.x * scale, line.end.y * scale)
   canvas.stroke()
+
+  canvas.restore()
+}
+
+function drawRect(
+  rect: DrawableRect,
+  canvas: CanvasRenderingContext2D,
+  scale: number,
+  debug: boolean
+): void {
+  canvas.save()
+
+  canvas.globalAlpha = debug ? 0.7 * rect.alpha : rect.alpha
+  canvas.fillStyle = debug ? 'cyan' : rect.fillColor
+
+  canvas.fillRect(
+    rect.topLeft.x * scale,
+    rect.topLeft.y * scale,
+    rect.width * scale,
+    rect.height * scale
+  )
 
   canvas.restore()
 }

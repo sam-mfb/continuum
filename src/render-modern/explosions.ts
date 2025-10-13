@@ -4,6 +4,15 @@ import { cloneFrame, type Frame } from '@/lib/frame'
 import { Z } from './z'
 import type { ShardRec } from '@/core/explosions'
 
+// Spark type from ExplosionsState
+type SparkRec = {
+  x: number
+  y: number
+  v: number
+  h: number
+  lifecount: number
+}
+
 /**
  * Frame-based rendering for explosion shards
  * Based on shard rendering from draw_explosions() in orig/Sources/Terrain.c:456-478
@@ -106,6 +115,89 @@ export function drawShards(deps: {
             y: shard.y - screenY + SBARHT
           },
           rotation: spriteRotation
+        })
+      }
+    }
+
+    return newFrame
+  }
+}
+
+/**
+ * Draw explosion sparks (2x2 white dots) using frame-based rendering
+ * Based on spark rendering from draw_explosions() in orig/Sources/Terrain.c:482-502
+ * and draw_spark_safe() in orig/Sources/Draw.c:600-614
+ */
+export function drawSparks(deps: {
+  readonly sparks: readonly SparkRec[]
+  readonly sparksalive: number
+  readonly totalsparks: number
+  screenX: number
+  screenY: number
+  worldwidth: number
+  worldwrap: boolean
+}): (frame: Frame) => Frame {
+  const {
+    sparks,
+    sparksalive,
+    totalsparks,
+    screenX,
+    screenY,
+    worldwidth,
+    worldwrap
+  } = deps
+
+  return oldFrame => {
+    // Early return if no sparks alive
+    if (sparksalive <= 0) return oldFrame
+
+    const newFrame = cloneFrame(oldFrame)
+
+    // Calculate screen bounds
+    const rightSpark = screenX + SCRWTH - 1
+    const botSpark = screenY + VIEWHT - 1
+    const onRightSide = screenX > worldwidth - SCRWTH
+
+    // Draw each spark (Terrain.c:482-502)
+    for (let i = 0; i < totalsparks && i < sparks.length; i++) {
+      const spark = sparks[i]!
+
+      // Skip inactive sparks
+      if (spark.lifecount <= 0) continue
+
+      // Check vertical bounds (Terrain.c:496)
+      if (spark.y < screenY || spark.y >= botSpark) continue
+
+      // Check horizontal bounds and draw (Terrain.c:497-498)
+      if (spark.x >= screenX && spark.x < rightSpark) {
+        newFrame.drawables.push({
+          id: `spark-${i}`,
+          type: 'rect',
+          z: Z.SPARK,
+          alpha: 1,
+          topLeft: {
+            x: spark.x - screenX,
+            y: spark.y - screenY + SBARHT
+          },
+          width: 2,
+          height: 2,
+          fillColor: 'white'
+        })
+      }
+      // Draw wrapped spark if needed (Terrain.c:499-501)
+      else if (worldwrap && onRightSide && spark.x < rightSpark - worldwidth) {
+        newFrame.drawables.push({
+          id: `spark-${i}-wrap`,
+          type: 'rect',
+          z: Z.SPARK,
+          alpha: 1,
+          topLeft: {
+            x: spark.x - screenX + worldwidth,
+            y: spark.y - screenY + SBARHT
+          },
+          width: 2,
+          height: 2,
+          fillColor: 'white'
         })
       }
     }
