@@ -72,3 +72,32 @@ export function drawShip(deps: {
     return newFrame
   }
 }
+
+/**
+ * Draw shield sprite around ship
+ * Based on erase_figure() in orig/Sources/Draw.c:67-97
+ */
+export function drawShield(deps: {
+  x: number
+  y: number
+}): (frame: Frame) => Frame {
+  const { x, y } = deps
+
+  const adjustedY = y + SBARHT
+
+  return oldFrame => {
+    const newFrame = cloneFrame(oldFrame)
+
+    newFrame.drawables.push({
+      id: 'shield',
+      type: 'sprite',
+      spriteId: 'shield',
+      z: Z.SHIELD,
+      alpha: 1,
+      topLeft: { x, y: adjustedY },
+      rotation: 0
+    })
+
+    return newFrame
+  }
+}

@@ -5,7 +5,7 @@ import type { FizzTransitionService } from '@/core/transition'
 import { LINE_KIND } from '@/core/shared'
 import { SCRWTH, VIEWHT } from '@/core/screen'
 import { blackTerrain } from '@/render-modern/walls'
-import { drawShip } from '@/render-modern/ship'
+import { drawShip, drawShield } from '@/render-modern/ship'
 import { drawCraters } from '@/render-modern/craters'
 import { drawFuels } from '@/render-modern/fuel'
 import { drawBunkers } from '@/render-modern/bunkers'
@@ -122,6 +122,14 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
       y: state.ship.shipy - SCENTER,
       rotation: state.ship.shiprot,
       thrusting: state.ship.flaming
+    })(newFrame)
+  }
+
+  // Draw shield if active (from rendering.ts line 392-400)
+  if (state.ship.shielding) {
+    newFrame = drawShield({
+      x: state.ship.shipx - SCENTER,
+      y: state.ship.shipy - SCENTER
     })(newFrame)
   }
 
