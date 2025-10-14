@@ -73,6 +73,21 @@ export type WallsState = {
   whites: WhiteRec[]
   /** Walls with updated h1/h2 optimization values */
   updatedWalls: LineRec[]
+  /** Update wall endpoints for alternate rendering */
+  altEndpoints: Record<string, LineAlt>
+}
+
+/**
+ * Additional record to allow for alternate rendering of lines
+ * using junction endpoints
+ */
+export type LineAlt = {
+  /* Line id for lookup */
+  id: string
+  startX?: number
+  startY?: number
+  endX?: number
+  endY?: number
 }
 
 // Re-export MonochromeBitmap from bitmap module

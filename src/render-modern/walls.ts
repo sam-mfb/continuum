@@ -3,7 +3,13 @@
  */
 
 import type { Frame } from '@/lib/frame'
-import { LINE_KIND, NEW_TYPE, type LineRec, type NewType } from '@core/walls'
+import {
+  LINE_KIND,
+  NEW_TYPE,
+  type LineAlt,
+  type LineRec,
+  type NewType
+} from '@core/walls'
 import { Z } from './z'
 import { SBARHT } from '@/core/screen'
 
@@ -27,9 +33,17 @@ export const drawWalls =
     organizedWalls: Record<string, LineRec>
     viewport: { x: number; y: number; b: number; r: number }
     worldwidth: number
+    altEndpoints: Record<string, LineAlt>
   }) =>
   (oldFrame: Frame): Frame => {
-    const { thekind, kindPointers, organizedWalls, viewport, worldwidth } = deps
+    const {
+      thekind,
+      kindPointers,
+      organizedWalls,
+      viewport,
+      worldwidth,
+      altEndpoints
+    } = deps
     let newFrame: Frame = {
       width: oldFrame.width,
       height: oldFrame.height,
@@ -58,16 +72,34 @@ export const drawWalls =
 
       // Fast forward to first line that might be visible (assembly loop)
       while (lineId !== null) {
-        const line: LineRec | undefined = organizedWalls[lineId]
-        if (!line) break
+        const origLine: LineRec | undefined = organizedWalls[lineId]
+        if (!origLine) break
+        // use alternate endpoints to join junctions
+        const altLine = altEndpoints[origLine.id]
+        const line: LineRec = {
+          ...origLine,
+          startx: altLine?.startX ?? origLine.startx,
+          endx: altLine?.endX ?? origLine.endx,
+          starty: altLine?.startY ?? origLine.starty,
+          endy: altLine?.endY ?? origLine.endy
+        }
         if (line.endx > left) break // Found one that might be visible
         lineId = line.nextId
       }
 
       // Draw visible lines (lines 71-75)
       while (lineId !== null) {
-        const line: LineRec | undefined = organizedWalls[lineId]
-        if (!line) break
+        const origLine: LineRec | undefined = organizedWalls[lineId]
+        if (!origLine) break
+        // use alternate endpoints to join junctions
+        const altLine = altEndpoints[origLine.id]
+        const line: LineRec = {
+          ...origLine,
+          startx: altLine?.startX ?? origLine.startx,
+          endx: altLine?.endX ?? origLine.endx,
+          starty: altLine?.startY ?? origLine.starty,
+          endy: altLine?.endY ?? origLine.endy
+        }
         if (line.startx >= right) break // Past right edge, stop
 
         // Visibility check (lines 72-74)
@@ -99,7 +131,17 @@ export const drawWalls =
     let lineId: string | null = firstLineId
 
     while (lineId !== null) {
-      const line: LineRec | undefined = organizedWalls[lineId]
+      const origLine: LineRec | undefined = organizedWalls[lineId]
+      if (!origLine) break
+      // use alternate endpoints to join junctions
+      const altLine = altEndpoints[origLine.id]
+      const line: LineRec = {
+        ...origLine,
+        startx: altLine?.startX ?? origLine.startx,
+        endx: altLine?.endX ?? origLine.endx,
+        starty: altLine?.startY ?? origLine.starty,
+        endy: altLine?.endY ?? origLine.endy
+      }
       if (!line) break
 
       // This is the continuation condition from the C `for` loop: `p->startx < right`.
@@ -267,11 +309,11 @@ function lineTweaks(
       }
     >
   > = {
-    [NEW_TYPE.S]: { start: { x: 0, y: -1 }, end: { x: 0, y: 1 } },
-    [NEW_TYPE.SSE]: { start: { x: 0, y: -1 }, end: { x: 0, y: 0 } },
-    [NEW_TYPE.SE]: { start: { x: 0, y: 0 }, end: { x: 0, y: 0 } },
-    [NEW_TYPE.ESE]: { start: { x: 0, y: -1 }, end: { x: 0, y: -1 } },
-    [NEW_TYPE.ENE]: { start: { x: 0, y: -1 }, end: { x: 0, y: -1 } }
+    //    [NEW_TYPE.S]: { start: { x: 0, y: -1 }, end: { x: 0, y: 1 } },
+    //    [NEW_TYPE.SSE]: { start: { x: 0, y: -1 }, end: { x: 0, y: 0 } },
+    //    [NEW_TYPE.SE]: { start: { x: 0, y: 0 }, end: { x: 0, y: 0 } },
+    //    [NEW_TYPE.ESE]: { start: { x: 0, y: -1 }, end: { x: 0, y: -1 } },
+    //    [NEW_TYPE.ENE]: { start: { x: 0, y: -1 }, end: { x: 0, y: -1 } }
   }
 
   const typeDelta = typeDeltas[line.newtype] || {

@@ -1,4 +1,10 @@
-import type { LineRec, JunctionRec, LineKind, WallsState } from '../types'
+import type {
+  LineRec,
+  JunctionRec,
+  LineKind,
+  WallsState,
+  LineAlt
+} from '../types'
 import { initWhites } from './initWhites'
 import { LINE_KIND_EXT, NEW_TYPE } from '../constants'
 
@@ -17,7 +23,7 @@ export function initWalls(walls: LineRec[]): WallsState {
     findFirstWhiteWalls(walls)
 
   // Step 3: Detect wall junctions - use walls array since we only need endpoint info
-  const junctions = detectWallJunctions(walls)
+  const { junctions, altEndpoints } = detectWallJunctions(walls)
 
   // Step 4: Initialize whites - pass the walls with white links
   const { whites, updatedWalls } = initWhites(
@@ -53,7 +59,8 @@ export function initWalls(walls: LineRec[]): WallsState {
     firstWhite: firstWhiteId,
     junctions,
     whites,
-    updatedWalls
+    updatedWalls,
+    altEndpoints
   }
 }
 
@@ -169,10 +176,17 @@ export function findFirstWhiteWalls(walls: LineRec[]): {
  * within 3 pixels of each other to avoid duplicates.
  * Sorts junctions by x-coordinate for efficient rendering.
  *
+ * Not in the original, but adds alternate, junction-coincident
+ * endpoints for lines for an alternate rendering scheme
+ *
  * @see Junctions.c:63-93 - Junction detection and sorting
  */
-export function detectWallJunctions(walls: LineRec[]): JunctionRec[] {
+export function detectWallJunctions(walls: LineRec[]): {
+  junctions: JunctionRec[]
+  altEndpoints: Record<string, LineAlt>
+} {
   const junctions: JunctionRec[] = []
+  let altEndpoints: Record<string, LineAlt> = {}
 
   // Check each wall endpoint
   for (const wall of walls) {
@@ -190,6 +204,23 @@ export function detectWallJunctions(walls: LineRec[]): JunctionRec[] {
           junction.y <= y + 3 &&
           junction.y >= y - 3
         ) {
+          const origAlt = altEndpoints[wall.id]
+          const newAlt = {
+            id: wall.id,
+            startX: i ? undefined : junction.x,
+            startY: i ? undefined : junction.y,
+            endX: i ? junction.x : undefined,
+            endY: i ? junction.y : undefined
+          }
+          altEndpoints[wall.id] = origAlt
+            ? {
+                ...origAlt,
+                startX: newAlt.startX ?? origAlt.startX,
+                endX: newAlt.endX ?? origAlt.endX,
+                startY: newAlt.startY ?? origAlt.startY,
+                endY: newAlt.endY ?? origAlt.endY
+              }
+            : newAlt
           found = true
           break
         }
@@ -198,6 +229,23 @@ export function detectWallJunctions(walls: LineRec[]): JunctionRec[] {
       // Add new junction if not found
       if (!found) {
         junctions.push({ x, y })
+        const origAlt = altEndpoints[wall.id]
+        const newAlt = {
+          id: wall.id,
+          startX: i ? undefined : x,
+          startY: i ? undefined : y,
+          endX: i ? x : undefined,
+          endY: i ? y : undefined
+        }
+        altEndpoints[wall.id] = origAlt
+          ? {
+              ...origAlt,
+              startX: newAlt.startX ?? origAlt.startX,
+              endX: newAlt.endX ?? origAlt.endX,
+              startY: newAlt.startY ?? origAlt.startY,
+              endY: newAlt.endY ?? origAlt.endY
+            }
+          : newAlt
       }
     }
   }
@@ -226,5 +274,5 @@ export function detectWallJunctions(walls: LineRec[]): JunctionRec[] {
     junctions.push({ x: 20000, y: 0 })
   }
 
-  return junctions
+  return { junctions, altEndpoints }
 }

@@ -65,7 +65,8 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
     kindPointers: state.walls.kindPointers,
     organizedWalls: state.walls.organizedWalls,
     viewport: viewport,
-    worldwidth: state.planet.worldwidth
+    worldwidth: state.planet.worldwidth,
+    altEndpoints: state.walls.altEndpoints
   })(newFrame)
 
   newFrame = drawWalls({
@@ -73,7 +74,8 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
     kindPointers: state.walls.kindPointers,
     organizedWalls: state.walls.organizedWalls,
     viewport: viewport,
-    worldwidth: state.planet.worldwidth
+    worldwidth: state.planet.worldwidth,
+    altEndpoints: state.walls.altEndpoints
   })(newFrame)
 
   newFrame = drawWalls({
@@ -81,7 +83,8 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
     kindPointers: state.walls.kindPointers,
     organizedWalls: state.walls.organizedWalls,
     viewport: viewport,
-    worldwidth: state.planet.worldwidth
+    worldwidth: state.planet.worldwidth,
+    altEndpoints: state.walls.altEndpoints
   })(newFrame)
 
   // Draw craters
