@@ -8,8 +8,10 @@
 
 import type { DrawablePixel, Frame, Drawable } from '@lib/frame/types'
 import { generateStarmapPixels } from '@render/transition/starmapPixels'
-import { generatePixelSequence } from './lfsrUtils'
-import { SCRWTH, VIEWHT, SBARHT } from '@/core/screen'
+import { starmapPixelsToBitmap } from '@render/transition/starmapToBitmap'
+import { advanceLFSR, shouldSkipSeed } from './lfsrUtils'
+import { SCRWTH, VIEWHT, SBARHT, SBARSIZE } from '@/core/screen'
+import type { MonochromeBitmap } from '@/lib/bitmap'
 
 /**
  * Service type for managing Frame-based fizz transitions
@@ -60,14 +62,96 @@ export function createFizzTransitionServiceFrame(
   // Service state
   let fromFrameDrawables: Drawable[] = []
   let shipDrawables: Drawable[] = []
-  let starPositions: Set<number> = new Set() // Set of linear indices that are stars
-  let totalPixels = 0 // Total pixels in viewport (SCRWTH × VIEWHT)
-  let pixelRevealSequence: number[] = []
-  let currentSeedIndex = 0
+  let toBitmap: MonochromeBitmap | null = null // Starmap bitmap (black background + white stars)
+  let accumulatedPixels: DrawablePixel[] = [] // Persistent accumulated pixels (like workingBitmap in original)
+  let currentSeed = seed // Current LFSR seed position
   let seedsPerFrame = 0
   let durationFrames = 0
   let framesGenerated = 0
+  let firstIteration = true
   let initialized = false
+
+  /**
+   * Process LFSR seed position and return DrawablePixels, matching original bitmap algorithm.
+   * Each seed represents a bit position that spans multiple scanlines.
+   *
+   * @param s LFSR seed value (0-8191)
+   * @returns Array of DrawablePixel for this seed position
+   */
+  const processSeedPosition = (s: number): DrawablePixel[] => {
+    if (!toBitmap) return []
+
+    // Skip seeds that are out of range
+    if (shouldSkipSeed(s)) return []
+
+    // Process 10 scanlines for most positions, 9 for edge cases
+    const linesToProcess = s < 8040 ? 10 : 9
+
+    // Convert seed to byte offset and bit position (same as original)
+    const byteOffset = (s >> 3) << 1 // Divide by 8, multiply by 2 for word alignment
+    const bitPosition = s & 7
+
+    // Create bit mask for the specific bit (same as original)
+    const bitMask = 0x8080 >> bitPosition
+
+    const pixels: DrawablePixel[] = []
+
+    // Process multiple scanlines for this bit position
+    for (let line = 0; line < linesToProcess; line++) {
+      // Calculate the actual byte offset in the bitmap (same as original)
+      const offset = SBARSIZE + byteOffset + line * 2038 // 2038 = 2048-10, from original
+
+      // Make sure we're within bounds
+      if (offset + 1 < toBitmap.data.length) {
+        // Extract high and low byte masks
+        const highByteMask = (bitMask >> 8) & 0xff
+        const lowByteMask = bitMask & 0xff
+
+        // Extract bits from each byte
+        const highByte = toBitmap.data[offset]!
+        const lowByte = toBitmap.data[offset + 1]!
+        const highBit = highByte & highByteMask
+        const lowBit = lowByte & lowByteMask
+
+        // Convert bitmap offset to base coordinates
+        const viewportOffset = offset - SBARSIZE
+        const row = Math.floor(viewportOffset / 64) // 64 bytes per row (512px / 8)
+        const colByte = viewportOffset % 64
+
+        // Create pixel from high byte
+        const col1 = colByte * 8 + bitPosition
+        if (row < VIEWHT && col1 < SCRWTH) {
+          // Non-zero bit = black background, zero bit = white star
+          const color1 = highBit !== 0 ? 'black' : 'white'
+          pixels.push({
+            id: `fizz-pixel-${col1}-${row}`,
+            type: 'pixel',
+            z: zIndex,
+            alpha: 1,
+            point: { x: col1, y: row + SBARHT },
+            color: color1
+          })
+        }
+
+        // Create pixel from low byte (8 pixels to the right)
+        const col2 = colByte * 8 + bitPosition + 8
+        if (row < VIEWHT && col2 < SCRWTH) {
+          // Non-zero bit = black background, zero bit = white star
+          const color2 = lowBit !== 0 ? 'black' : 'white'
+          pixels.push({
+            id: `fizz-pixel-${col2}-${row}`,
+            type: 'pixel',
+            z: zIndex,
+            alpha: 1,
+            point: { x: col2, y: row + SBARHT },
+            color: color2
+          })
+        }
+      }
+    }
+
+    return pixels
+  }
 
   return {
     initialize(
@@ -108,138 +192,114 @@ export function createFizzTransitionServiceFrame(
         fromFrameDrawables = [...fromFrame.drawables]
       }
 
-      // Generate random star coordinates
+      // Generate random star coordinates and create "to" bitmap (same as original)
       const starPixels = generateStarmapPixels(starCount)
+      toBitmap = starmapPixelsToBitmap(starPixels)
 
-      // Calculate total pixels in viewport
-      totalPixels = SCRWTH * VIEWHT
-
-      // Convert star coordinates to linear indices and store in Set for fast lookup
-      starPositions = new Set()
-      for (const star of starPixels) {
-        const linearIndex = star.y * SCRWTH + star.x
-        starPositions.add(linearIndex)
-      }
-
-      // Generate LFSR-based reveal sequence for ALL screen pixels
-      pixelRevealSequence = generatePixelSequence(totalPixels, seed)
+      // Reset accumulated pixels (like cloning workingBitmap in original)
+      accumulatedPixels = []
 
       durationFrames = duration
-      currentSeedIndex = 0
+      currentSeed = seed
       framesGenerated = 0
+      firstIteration = true
 
       // Calculate how many seeds to advance per frame (matching original logic)
+      // Original uses 8192 LFSR seed positions
       if (duration > 0) {
-        seedsPerFrame = Math.floor(totalPixels / duration)
+        seedsPerFrame = Math.floor(8192 / duration)
       } else {
-        seedsPerFrame = totalPixels
+        seedsPerFrame = 8192
       }
 
       initialized = true
     },
 
     getNextFrameDrawables(): Drawable[] {
-      if (!initialized) {
+      if (!initialized || !toBitmap) {
         throw new Error('FizzTransitionServiceFrame not initialized')
       }
 
-      // Handle instant transition
+      // Handle instant transition - process all seeds at once
       if (durationFrames === 0) {
-        const result: Drawable[] = [...fromFrameDrawables]
-        // Add all pixels immediately (black background + white stars)
-        for (let linearIndex = 0; linearIndex < totalPixels; linearIndex++) {
-          const x = linearIndex % SCRWTH
-          const y = Math.floor(linearIndex / SCRWTH) + SBARHT
-          const isStarPosition = starPositions.has(linearIndex)
+        // Clear and rebuild accumulated pixels with all seeds
+        accumulatedPixels = []
+        let s = seed
+        let first = true
 
-          result.push({
-            id: `fizz-pixel-${linearIndex}`,
-            type: 'pixel',
-            z: zIndex,
-            alpha: 1,
-            point: { x, y },
-            color: isStarPosition ? 'white' : 'black'
-          })
+        while (first || s !== seed) {
+          const pixels = processSeedPosition(s)
+          accumulatedPixels.push(...pixels)
+          s = advanceLFSR(s)
+          first = false
         }
-        // Add ship drawables (already at SHIP_FIZZ z-order)
-        result.push(...shipDrawables)
-        return result
-      }
 
-      // If not complete, advance the seed index for this frame
-      if (framesGenerated < durationFrames) {
-        currentSeedIndex = Math.min(
-          currentSeedIndex + seedsPerFrame,
-          totalPixels
-        )
+        framesGenerated = durationFrames
+      }
+      // Process seeds for this frame (matching original logic)
+      else if (framesGenerated < durationFrames) {
+        let seedsThisFrame = 0
+
+        while (seedsThisFrame < seedsPerFrame) {
+          // If we've cycled back to start (but not on first iteration), we're done
+          if (!firstIteration && currentSeed === seed) {
+            framesGenerated = durationFrames // Force completion
+            break
+          }
+
+          // Process the position(s) for current seed and ADD to accumulated pixels
+          const pixels = processSeedPosition(currentSeed)
+          accumulatedPixels.push(...pixels)
+          seedsThisFrame++
+
+          // Always advance LFSR
+          currentSeed = advanceLFSR(currentSeed)
+          firstIteration = false
+        }
+
         framesGenerated++
       }
 
-      // Start with cloned from frame drawables
-      const drawables: Drawable[] = [...fromFrameDrawables]
-
-      // Add ALL fizz pixels revealed so far (up to currentSeedIndex)
-      for (let i = 0; i < currentSeedIndex; i++) {
-        const linearIndex = pixelRevealSequence[i]
-        if (linearIndex !== undefined && linearIndex < totalPixels) {
-          // Convert linear index to x, y coordinates
-          const x = linearIndex % SCRWTH
-          const y = Math.floor(linearIndex / SCRWTH) + SBARHT
-
-          // Check if this position is a star (white) or background (black)
-          const isStarPosition = starPositions.has(linearIndex)
-
-          drawables.push({
-            id: `fizz-pixel-${linearIndex}`,
-            type: 'pixel',
-            z: zIndex,
-            alpha: 1,
-            point: { x, y },
-            color: isStarPosition ? 'white' : 'black'
-          })
-        }
-      }
-
-      // Add ship drawables (already at SHIP_FIZZ z-order)
-      drawables.push(...shipDrawables)
+      // Build final drawables: fromFrame + ALL accumulated pixels + ship
+      const drawables: Drawable[] = [
+        ...fromFrameDrawables,
+        ...accumulatedPixels,
+        ...shipDrawables
+      ]
 
       return drawables
     },
 
     getAllStarmapPixels(): DrawablePixel[] {
-      if (!initialized) {
+      if (!initialized || !toBitmap) {
         throw new Error('FizzTransitionServiceFrame not initialized')
       }
 
-      // Return all pixels (black background + white stars)
+      // Process all LFSR seeds to generate complete starmap
       const pixels: DrawablePixel[] = []
-      for (let linearIndex = 0; linearIndex < totalPixels; linearIndex++) {
-        const x = linearIndex % SCRWTH
-        const y = Math.floor(linearIndex / SCRWTH) + SBARHT
-        const isStarPosition = starPositions.has(linearIndex)
+      let s = seed
+      let first = true
 
-        pixels.push({
-          id: `starmap-pixel-${linearIndex}`,
-          type: 'pixel' as const,
-          z: zIndex,
-          alpha: 1,
-          point: { x, y },
-          color: isStarPosition ? 'white' : 'black'
-        })
+      while (first || s !== seed) {
+        const newPixels = processSeedPosition(s)
+        pixels.push(...newPixels)
+        s = advanceLFSR(s)
+        first = false
       }
+
       return pixels
     },
 
     reset(): void {
       fromFrameDrawables = []
       shipDrawables = []
-      starPositions = new Set()
-      totalPixels = 0
-      pixelRevealSequence = []
-      currentSeedIndex = 0
+      toBitmap = null
+      accumulatedPixels = []
+      currentSeed = seed
       seedsPerFrame = 0
       durationFrames = 0
       framesGenerated = 0
+      firstIteration = true
       initialized = false
     },
 
