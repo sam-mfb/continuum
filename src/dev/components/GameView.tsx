@@ -63,6 +63,7 @@ export type BitmapGameDefinition = {
   name: string
   bitmapRenderer: BitmapRenderer
   frameRenderer?: (frameInfo: FrameInfo, keyInfo: KeyInfo) => Frame
+  debug?: boolean
   bitmapOptions?: BitmapToCanvasOptions
   collisionService?: {
     getMap: () => number[][]
@@ -353,7 +354,13 @@ const GameView: React.FC<GameViewProps> = ({
               // If frameRenderer is provided, render the frame on top
               if (game.frameRenderer) {
                 const renderedFrame = game.frameRenderer(frameInfo, keyInfo)
-                drawFrameToCanvas(renderedFrame, ctx, 1, spriteRegistry, true)
+                drawFrameToCanvas(
+                  renderedFrame,
+                  ctx,
+                  1,
+                  spriteRegistry,
+                  game.debug
+                )
               }
               break
           }

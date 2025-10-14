@@ -186,13 +186,6 @@ function drawWall(deps: {
     const endX = line.endx - scrx
     const endY = line.endy - scry + SBARHT
 
-    // Apply line tweaks to adjust coordinates based on direction
-    const tweaked = lineTweaks(
-      line,
-      { x: startX, y: startY },
-      { x: endX, y: endY }
-    )
-
     let zindex: number = 0
     switch (line.kind) {
       case LINE_KIND.BOUNCE:
@@ -210,8 +203,8 @@ function drawWall(deps: {
     newFrame.drawables.push({
       id: `${line.id}-black`,
       type: 'line',
-      start: tweaked.start,
-      end: tweaked.end,
+      start: { x: startX, y: startY },
+      end: { x: endX, y: endY },
       width: 2,
       color: 'black',
       alpha: 1,
@@ -220,7 +213,10 @@ function drawWall(deps: {
     newFrame.drawables.push({
       id: `${line.id}-white`,
       type: 'shape',
-      points: wallShape(tweaked, line.newtype),
+      points: wallShape(
+        { start: { x: startX, y: startY }, end: { x: endX, y: endY } },
+        line.newtype
+      ),
       strokeColor: 'black',
       strokeWidth: 1,
       fillColor: 'white',
@@ -263,14 +259,18 @@ function wallShape(
   const PERP = 11 // Perpendicular component
   const DOWN = 6 // Downward component (creates 3D effect)
 
-  let offsetX = PERP
-  let offsetY = DOWN
+  let offsetXstart = PERP
+  let offsetXend = PERP
+  let offsetYstart = DOWN
+  let offsetYend = DOWN
 
   // not strictly geometrically correct, but this gives the
   // ESE line a little bit of depth
   if (type === NEW_TYPE.ESE) {
-    offsetX = 9 // Relative to line.end (NE corner)
-    offsetY = 7
+    offsetXstart = 9 // Relative to line.end (NE corner)
+    offsetYstart = 8
+    offsetXend = 9 // Relative to line.end (NE corner)
+    offsetYend = 4
   }
 
   // Return 4 corners forming a trapezoid that extends from the line
@@ -280,55 +280,14 @@ function wallShape(
     { x: line.start.x, y: line.start.y, strokeAfter: false }, // Top-left (line start)
     { x: line.end.x, y: line.end.y }, // Top-right (line end)
     {
-      x: line.end.x + offsetX,
-      y: line.end.y + offsetY,
+      x: line.end.x + offsetXend,
+      y: line.end.y + offsetYend,
       strokeAfter: false
     }, // Bottom-right (don't stroke to bottom-left)
     {
-      x: line.start.x + offsetX,
-      y: line.start.y + offsetY
+      x: line.start.x + offsetXstart,
+      y: line.start.y + offsetYstart,
+      strokeAfter: type === NEW_TYPE.ESE ? false : true
     } // Bottom-left
   ]
-}
-
-function lineTweaks(
-  line: LineRec,
-  start: { x: number; y: number },
-  end: { x: number; y: number }
-): { start: { x: number; y: number }; end: { x: number; y: number } } {
-  // Global base adjustment - easy to modify
-  const baseOffset = { x: 1, y: 1 }
-
-  // Type-specific deltas (empty by default, add as needed)
-  const typeDeltas: Partial<
-    Record<
-      (typeof NEW_TYPE)[keyof typeof NEW_TYPE],
-      {
-        start: { x: number; y: number }
-        end: { x: number; y: number }
-      }
-    >
-  > = {
-    //    [NEW_TYPE.S]: { start: { x: 0, y: -1 }, end: { x: 0, y: 1 } },
-    //    [NEW_TYPE.SSE]: { start: { x: 0, y: -1 }, end: { x: 0, y: 0 } },
-    //    [NEW_TYPE.SE]: { start: { x: 0, y: 0 }, end: { x: 0, y: 0 } },
-    //    [NEW_TYPE.ESE]: { start: { x: 0, y: -1 }, end: { x: 0, y: -1 } },
-    //    [NEW_TYPE.ENE]: { start: { x: 0, y: -1 }, end: { x: 0, y: -1 } }
-  }
-
-  const typeDelta = typeDeltas[line.newtype] || {
-    start: { x: 0, y: 0 },
-    end: { x: 0, y: 0 }
-  }
-
-  return {
-    start: {
-      x: start.x + baseOffset.x + typeDelta.start.x,
-      y: start.y + baseOffset.y + typeDelta.start.y
-    },
-    end: {
-      x: end.x + baseOffset.x + typeDelta.end.x,
-      y: end.y + baseOffset.y + typeDelta.end.y
-    }
-  }
 }
