@@ -18,6 +18,30 @@ const LEFT_MARGIN = 10 // Pixels to check left of screen
 const TOP_MARGIN = 6 // Pixels to check above screen
 
 /**
+ * Gets a line record with alternate endpoints applied if available.
+ * Returns null if the line doesn't exist.
+ */
+function getLineWithAltEndpoints(
+  lineId: string,
+  organizedWalls: Record<string, LineRec>,
+  altEndpoints: Record<string, LineAlt>
+): LineRec | null {
+  const origLine = organizedWalls[lineId]
+  if (!origLine) return null
+
+  const altLine = altEndpoints[origLine.id]
+  if (!altLine) return origLine
+
+  return {
+    ...origLine,
+    startx: altLine.startX ?? origLine.startx,
+    endx: altLine.endX ?? origLine.endx,
+    starty: altLine.startY ?? origLine.starty,
+    endy: altLine.endY ?? origLine.endy
+  }
+}
+
+/**
  * @param deps - Dependencies object containing:
  *   @param thekind - The line kind to draw (L_NORMAL, L_BOUNCE, etc.)
  *   @param kindPointers - Map of kind to first line ID
@@ -72,34 +96,24 @@ export const drawWalls =
 
       // Fast forward to first line that might be visible (assembly loop)
       while (lineId !== null) {
-        const origLine: LineRec | undefined = organizedWalls[lineId]
-        if (!origLine) break
-        // use alternate endpoints to join junctions
-        const altLine = altEndpoints[origLine.id]
-        const line: LineRec = {
-          ...origLine,
-          startx: altLine?.startX ?? origLine.startx,
-          endx: altLine?.endX ?? origLine.endx,
-          starty: altLine?.startY ?? origLine.starty,
-          endy: altLine?.endY ?? origLine.endy
-        }
+        const line = getLineWithAltEndpoints(
+          lineId,
+          organizedWalls,
+          altEndpoints
+        )
+        if (!line) break
         if (line.endx > left) break // Found one that might be visible
         lineId = line.nextId
       }
 
       // Draw visible lines (lines 71-75)
       while (lineId !== null) {
-        const origLine: LineRec | undefined = organizedWalls[lineId]
-        if (!origLine) break
-        // use alternate endpoints to join junctions
-        const altLine = altEndpoints[origLine.id]
-        const line: LineRec = {
-          ...origLine,
-          startx: altLine?.startX ?? origLine.startx,
-          endx: altLine?.endX ?? origLine.endx,
-          starty: altLine?.startY ?? origLine.starty,
-          endy: altLine?.endY ?? origLine.endy
-        }
+        const line = getLineWithAltEndpoints(
+          lineId,
+          organizedWalls,
+          altEndpoints
+        )
+        if (!line) break
         if (line.startx >= right) break // Past right edge, stop
 
         // Visibility check (lines 72-74)
@@ -131,17 +145,7 @@ export const drawWalls =
     let lineId: string | null = firstLineId
 
     while (lineId !== null) {
-      const origLine: LineRec | undefined = organizedWalls[lineId]
-      if (!origLine) break
-      // use alternate endpoints to join junctions
-      const altLine = altEndpoints[origLine.id]
-      const line: LineRec = {
-        ...origLine,
-        startx: altLine?.startX ?? origLine.startx,
-        endx: altLine?.endX ?? origLine.endx,
-        starty: altLine?.startY ?? origLine.starty,
-        endy: altLine?.endY ?? origLine.endy
-      }
+      const line = getLineWithAltEndpoints(lineId, organizedWalls, altEndpoints)
       if (!line) break
 
       // This is the continuation condition from the C `for` loop: `p->startx < right`.
@@ -268,7 +272,7 @@ function wallShape(
 ] {
   // 3D perspective: wall extends ~26.6° below perpendicular
   // For 12px depth: perpendicular = 11px, downward = 5px
-  const PERP = 11 // Perpendicular component
+  const PERP = 10 // Perpendicular component
   const DOWN = 6 // Downward component (creates 3D effect)
 
   let offsetXstart = PERP
