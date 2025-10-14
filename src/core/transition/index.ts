@@ -19,3 +19,4 @@ export {
   TRANSITION_DELAY_FRAMES,
   FIZZ_DURATION
 } from './constants'
+export { advanceLFSR, shouldSkipSeed, generatePixelSequence } from './lfsrUtils'
