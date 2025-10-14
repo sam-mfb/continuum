@@ -79,13 +79,13 @@ export function createFizzTransitionServiceFrame(
       fromFrameDrawables = []
 
       if (ship) {
-        // Extract ship and its shadow from the fromFrame and change their z-order
+        // Extract ship (but not shadow) from the fromFrame and change its z-order
         for (const drawable of fromFrame.drawables) {
           if (drawable.type === 'sprite') {
-            // Check if this is a ship sprite (id starts with 'ship-' or 'shadow-ship-')
+            // Check if this is a ship sprite (not shadow)
             if (
-              drawable.id.startsWith('ship-') ||
-              drawable.id.startsWith('shadow-ship-')
+              drawable.id.startsWith('ship-') &&
+              !drawable.id.startsWith('shadow-ship-')
             ) {
               // Re-add with SHIP_FIZZ z-order
               shipDrawables.push({
@@ -93,7 +93,7 @@ export function createFizzTransitionServiceFrame(
                 z: shipZIndex
               })
             } else {
-              // Not a ship - keep in fromFrame
+              // Not the ship - keep in fromFrame (including shadow)
               fromFrameDrawables.push(drawable)
             }
           } else {
