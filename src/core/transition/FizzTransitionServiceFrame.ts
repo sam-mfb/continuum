@@ -6,7 +6,7 @@
  * by progressively revealing starmap pixels in pseudo-random order.
  */
 
-import type { DrawablePixel } from '@lib/frame/types'
+import type { DrawablePixel, Frame, Drawable } from '@lib/frame/types'
 import { generateStarmapPixels } from '@render/transition/starmapPixels'
 import { generatePixelSequence } from './lfsrUtils'
 
@@ -14,11 +14,16 @@ import { generatePixelSequence } from './lfsrUtils'
  * Service type for managing Frame-based fizz transitions
  */
 export type FizzTransitionServiceFrame = {
-  /** Initialize with star count and duration */
-  initialize(starCount: number, durationFrames: number): void
+  /** Initialize with from frame, ship info, star count and duration */
+  initialize(
+    fromFrame: Frame,
+    shipInfo: { x: number; y: number; rotation: number } | null,
+    starCount: number,
+    durationFrames: number
+  ): void
 
-  /** Get drawables for next frame of progressive reveal */
-  getNextFrameDrawables(): DrawablePixel[]
+  /** Get drawables for next frame of progressive reveal (returns complete frame) */
+  getNextFrameDrawables(): Drawable[]
 
   /** Get all starmap pixels (for 'starmap' phase) */
   getAllStarmapPixels(): DrawablePixel[]
@@ -48,9 +53,12 @@ export type FizzTransitionServiceFrame = {
  */
 export function createFizzTransitionServiceFrame(
   seed = 4357,
-  zIndex = 170
+  zIndex = 170,
+  shipZIndex = 180
 ): FizzTransitionServiceFrame {
   // Service state
+  let fromFrameDrawables: Drawable[] = []
+  let shipDrawables: Drawable[] = []
   let starmapPixels: Array<{ x: number; y: number }> = []
   let pixelRevealSequence: number[] = []
   let currentSeedIndex = 0
@@ -60,7 +68,44 @@ export function createFizzTransitionServiceFrame(
   let initialized = false
 
   return {
-    initialize(starCount: number, duration: number): void {
+    initialize(
+      fromFrame: Frame,
+      ship: { x: number; y: number; rotation: number } | null,
+      starCount: number,
+      duration: number
+    ): void {
+      // Find all ship-related drawables in the fromFrame
+      shipDrawables = []
+      fromFrameDrawables = []
+
+      if (ship) {
+        // Extract ship and its shadow from the fromFrame and change their z-order
+        for (const drawable of fromFrame.drawables) {
+          if (drawable.type === 'sprite') {
+            // Check if this is a ship sprite (id starts with 'ship-' or 'shadow-ship-')
+            if (
+              drawable.id.startsWith('ship-') ||
+              drawable.id.startsWith('shadow-ship-')
+            ) {
+              // Re-add with SHIP_FIZZ z-order
+              shipDrawables.push({
+                ...drawable,
+                z: shipZIndex
+              })
+            } else {
+              // Not a ship - keep in fromFrame
+              fromFrameDrawables.push(drawable)
+            }
+          } else {
+            // Not a sprite - keep in fromFrame
+            fromFrameDrawables.push(drawable)
+          }
+        }
+      } else {
+        // No ship - just clone all drawables
+        fromFrameDrawables = [...fromFrame.drawables]
+      }
+
       // Generate random star coordinates
       starmapPixels = generateStarmapPixels(starCount)
 
@@ -82,14 +127,18 @@ export function createFizzTransitionServiceFrame(
       initialized = true
     },
 
-    getNextFrameDrawables(): DrawablePixel[] {
+    getNextFrameDrawables(): Drawable[] {
       if (!initialized) {
         throw new Error('FizzTransitionServiceFrame not initialized')
       }
 
       // Handle instant transition
       if (durationFrames === 0) {
-        return this.getAllStarmapPixels()
+        const result: Drawable[] = [...fromFrameDrawables]
+        result.push(...this.getAllStarmapPixels())
+        // Add ship drawables (already at SHIP_FIZZ z-order)
+        result.push(...shipDrawables)
+        return result
       }
 
       // If not complete, advance the seed index for this frame
@@ -101,10 +150,10 @@ export function createFizzTransitionServiceFrame(
         framesGenerated++
       }
 
-      const drawables: DrawablePixel[] = []
+      // Start with cloned from frame drawables
+      const drawables: Drawable[] = [...fromFrameDrawables]
 
-      // Return ALL pixels revealed so far (up to currentSeedIndex)
-      // This is necessary because Frame is recreated each frame
+      // Add ALL fizz pixels revealed so far (up to currentSeedIndex)
       for (let i = 0; i < currentSeedIndex; i++) {
         const pixelIndex = pixelRevealSequence[i]
         if (pixelIndex !== undefined && pixelIndex < starmapPixels.length) {
@@ -121,6 +170,9 @@ export function createFizzTransitionServiceFrame(
           }
         }
       }
+
+      // Add ship drawables (already at SHIP_FIZZ z-order)
+      drawables.push(...shipDrawables)
 
       return drawables
     },
@@ -142,6 +194,8 @@ export function createFizzTransitionServiceFrame(
     },
 
     reset(): void {
+      fromFrameDrawables = []
+      shipDrawables = []
       starmapPixels = []
       pixelRevealSequence = []
       currentSeedIndex = 0

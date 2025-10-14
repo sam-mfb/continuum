@@ -36,26 +36,25 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
     r: state.screen.screenx + SCRWTH
   }
 
-  // Handle fizz transition
-  if (state.transition.status === 'fizz') {
-    if (!fizzTransitionServiceFrame.isInitialized) {
-      fizzTransitionServiceFrame.initialize(150, FIZZ_DURATION)
-    }
+  // Initialize fizz transition when we first enter fizz status
+  // This needs to happen BEFORE we check for fizz phase rendering
+  // so we can capture the current game frame
+  if (
+    state.transition.status === 'fizz' &&
+    !fizzTransitionServiceFrame.isInitialized
+  ) {
+    // We need to render the full game scene first to get the "from" frame
+    // Continue past this block to do normal rendering, then initialize at the end
+  }
 
-    // Get progressive pixel reveal
-    const fizzPixels = fizzTransitionServiceFrame.getNextFrameDrawables()
-    frame.drawables.push(...fizzPixels)
-
-    // Draw ship on top if alive
-    if (state.ship.deadCount === 0) {
-      frame = drawShip({
-        x: state.ship.shipx - SCENTER,
-        y: state.ship.shipy - SCENTER,
-        rotation: state.ship.shiprot,
-        thrusting: false,
-        inFizz: true
-      })(frame)
-    }
+  // Handle fizz transition rendering
+  if (
+    state.transition.status === 'fizz' &&
+    fizzTransitionServiceFrame.isInitialized
+  ) {
+    // Service returns complete frame with: from + fizz pixels + ship
+    const fizzDrawables = fizzTransitionServiceFrame.getNextFrameDrawables()
+    frame.drawables = fizzDrawables
 
     // Draw status bar on top
     frame = drawStatusBar({
@@ -271,6 +270,37 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
     level: state.status.currentlevel,
     message: state.status.curmessage
   })(newFrame)
+
+  // Initialize fizz transition if we just entered fizz status
+  // This happens AFTER normal rendering so we have the complete "from" frame
+  if (
+    state.transition.status === 'fizz' &&
+    !fizzTransitionServiceFrame.isInitialized
+  ) {
+    const shipInfo =
+      state.ship.deadCount === 0
+        ? {
+            x: state.ship.shipx - SCENTER,
+            y: state.ship.shipy - SCENTER,
+            rotation: state.ship.shiprot
+          }
+        : null
+
+    fizzTransitionServiceFrame.initialize(
+      newFrame, // Use the fully rendered frame as "from"
+      shipInfo, // Ship position for SHIP_FIZZ z-order
+      150, // Star count
+      FIZZ_DURATION // Duration in frames
+    )
+
+    // Return the first fizz frame
+    const fizzDrawables = fizzTransitionServiceFrame.getNextFrameDrawables()
+    return {
+      width: newFrame.width,
+      height: newFrame.height,
+      drawables: fizzDrawables
+    }
+  }
 
   return newFrame
 }

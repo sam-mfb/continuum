@@ -29,9 +29,9 @@ export const createGameRenderer = (
 ): GameRenderLoop => {
   // Create callbacks for the bitmap-based fizz service
   const transitionCallbacks = {
-    isInitialized: () => fizzTransitionService.isInitialized,
-    isComplete: () => fizzTransitionService.isComplete,
-    reset: () => fizzTransitionService.reset()
+    isInitialized: (): boolean => fizzTransitionService.isInitialized,
+    isComplete: (): boolean => fizzTransitionService.isComplete,
+    reset: (): void => fizzTransitionService.reset()
   }
 
   return (frame, controls) => {
@@ -85,9 +85,9 @@ export const createGameRendererNew = (
 ): NewGameRenderLoop => {
   // Create callbacks for the Frame-based fizz service
   const transitionCallbacks = {
-    isInitialized: () => fizzTransitionServiceFrame.isInitialized,
-    isComplete: () => fizzTransitionServiceFrame.isComplete,
-    reset: () => fizzTransitionServiceFrame.reset()
+    isInitialized: (): boolean => fizzTransitionServiceFrame.isInitialized,
+    isComplete: (): boolean => fizzTransitionServiceFrame.isComplete,
+    reset: (): void => fizzTransitionServiceFrame.reset()
   }
 
   return (frame, controls) => {

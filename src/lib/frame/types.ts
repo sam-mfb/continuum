@@ -8,7 +8,7 @@ export type Frame = {
   drawables: Drawable[]
 }
 
-type Drawable =
+export type Drawable =
   | DrawableLine
   | DrawableRect
   | DrawableShape
