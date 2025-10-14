@@ -86,8 +86,11 @@ export type StateUpdateContext = {
 export const updateGameState = (context: StateUpdateContext): void => {
   const { store, frame, controls, galaxyService, transitionCallbacks } = context
 
+  let state = store.getState()
+
   if (controls.quit) {
     handleGameOver(store, transitionCallbacks)
+    return
   }
 
   if (controls.extraLife) {
@@ -116,7 +119,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
   handleDeathAndRespawn(store)
 
   // Get state after respawn handling
-  const state = store.getState()
+  state = store.getState()
 
   // Decrement bonus countdown every 10 frames
   if (state.transition.status === 'inactive' && frame.frameCount % 10 === 0) {
@@ -388,7 +391,7 @@ const handleGameOver = (
   store.dispatch(shipSlice.actions.setLives(TOTAL_INITIAL_LIVES))
   store.dispatch(shipSlice.actions.resetFuel())
   store.dispatch(statusSlice.actions.initStatus())
-  store.dispatch(loadLevel(1))
+  store.dispatch(shipSlice.actions.resetShip())
 }
 
 /**

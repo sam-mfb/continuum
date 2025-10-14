@@ -17,7 +17,6 @@ import { appSlice } from './appSlice'
 import { gameSlice } from './gameSlice'
 
 type SoundStartListening = TypedStartListening<RootState, AppDispatch>
-
 /**
  * Setup the sound listener with access to the sound service
  *
