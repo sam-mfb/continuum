@@ -136,7 +136,8 @@ export function setupSoundListener(
   })
 
   soundStartListening({
-    predicate: (_, currentState) => !currentState.ship.shielding,
+    predicate: (_, currentState) =>
+      currentState.game.paused || !currentState.ship.shielding,
     effect: () => {
       soundService.stopShipShield()
     }
@@ -153,7 +154,8 @@ export function setupSoundListener(
     }
   })
   soundStartListening({
-    predicate: (_, currentState) => !currentState.ship.thrusting,
+    predicate: (_, currentState) =>
+      currentState.game.paused || !currentState.ship.thrusting,
     effect: () => {
       soundService.stopShipThrust()
     }
