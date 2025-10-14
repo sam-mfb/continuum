@@ -15,5 +15,7 @@ export const Z = {
   SHARD: 92,
   SPARK: 95,
   SHIELD: 100,
-  STATUS: 200
+  FIZZ_PIXEL: 170, // Starmap pixels during fizz transition
+  SHIP_FIZZ: 180, // Ship during fizz/starmap (above everything else)
+  STATUS: 200 // Status bar (always highest)
 }

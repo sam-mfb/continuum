@@ -8,7 +8,17 @@
 import type { GalaxyService } from '@core/galaxy'
 import type { GameStore, RootState } from '../store'
 import type { FrameInfo } from '@lib/bitmap'
-import type { FizzTransitionService } from '@core/transition'
+
+/**
+ * Transition service callbacks
+ * Allows stateUpdates to work with any transition service implementation
+ * without depending on the specific service type
+ */
+export type TransitionCallbacks = {
+  isInitialized: () => boolean
+  isComplete: () => boolean
+  reset: () => void
+}
 
 import { shipSlice, shipControl, CRITFUEL, handleBounceState } from '@core/ship'
 import {
@@ -67,18 +77,17 @@ export type StateUpdateContext = {
   frame: FrameInfo
   controls: ControlMatrix
   galaxyService: GalaxyService
-  fizzTransitionService: FizzTransitionService
+  transitionCallbacks: TransitionCallbacks
 }
 
 /**
  * Main state update function
  */
 export const updateGameState = (context: StateUpdateContext): void => {
-  const { store, frame, controls, galaxyService, fizzTransitionService } =
-    context
+  const { store, frame, controls, galaxyService, transitionCallbacks } = context
 
   if (controls.quit) {
-    handleGameOver(store, fizzTransitionService)
+    handleGameOver(store, transitionCallbacks)
   }
 
   if (controls.extraLife) {
@@ -94,16 +103,14 @@ export const updateGameState = (context: StateUpdateContext): void => {
     store.dispatch(skipToNextLevel())
 
     // Reset fizz service to ensure clean state for new level
-    if (fizzTransitionService) {
-      fizzTransitionService.reset()
-    }
+    transitionCallbacks.reset()
   }
 
   // decrement death flash at start of state update
   store.dispatch(decrementShipDeathFlash())
 
   // Handle transition state updates first (pre-delay, fizz, post-delay)
-  updateTransitionState(store, galaxyService, fizzTransitionService)
+  updateTransitionState(store, galaxyService, transitionCallbacks)
 
   // Handle death countdown and respawn
   handleDeathAndRespawn(store)
@@ -117,7 +124,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
   }
 
   // Check for level completion
-  handleLevelCompletion(store, fizzTransitionService)
+  handleLevelCompletion(store, transitionCallbacks)
 
   // Check for game over
   if (
@@ -125,7 +132,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
     state.ship.lives <= 0 &&
     state.ship.deadCount === 0
   ) {
-    handleGameOver(store, fizzTransitionService)
+    handleGameOver(store, transitionCallbacks)
   }
 
   // Handle ship movement and controls
@@ -307,7 +314,7 @@ const handleDeathAndRespawn = (store: GameStore): void => {
  */
 const handleLevelCompletion = (
   store: GameStore,
-  fizzTransitionService?: FizzTransitionService
+  transitionCallbacks: TransitionCallbacks
 ): void => {
   const state = store.getState()
 
@@ -332,9 +339,7 @@ const handleLevelCompletion = (
     store.dispatch(startLevelTransition())
 
     // Reset fizz service to ensure clean state for new level
-    if (fizzTransitionService) {
-      fizzTransitionService.reset()
-    }
+    transitionCallbacks.reset()
   }
 }
 
@@ -343,7 +348,7 @@ const handleLevelCompletion = (
  */
 const handleGameOver = (
   store: GameStore,
-  transitionService: FizzTransitionService
+  transitionCallbacks: TransitionCallbacks
 ): void => {
   const state = store.getState()
 
@@ -379,7 +384,7 @@ const handleGameOver = (
   // Reset everything for a new game
   store.dispatch(resetGame())
   store.dispatch(resetTransition())
-  transitionService.reset()
+  transitionCallbacks.reset()
   store.dispatch(shipSlice.actions.setLives(TOTAL_INITIAL_LIVES))
   store.dispatch(shipSlice.actions.resetFuel())
   store.dispatch(statusSlice.actions.initStatus())
@@ -597,7 +602,7 @@ const transitionToNextLevel = (
 const updateTransitionState = (
   store: GameStore,
   galaxyService: GalaxyService,
-  fizzTransitionService?: FizzTransitionService
+  transitionCallbacks: TransitionCallbacks
 ): void => {
   const prevState = store.getState().transition
   const { status, preFizzFrames, starmapFrames } = prevState
@@ -626,9 +631,8 @@ const updateTransitionState = (
   if (status === 'fizz') {
     // Check if fizz animation is complete
     if (
-      fizzTransitionService &&
-      fizzTransitionService.isInitialized &&
-      fizzTransitionService.isComplete
+      transitionCallbacks.isInitialized() &&
+      transitionCallbacks.isComplete()
     ) {
       store.dispatch(transitionToStarmap())
     }

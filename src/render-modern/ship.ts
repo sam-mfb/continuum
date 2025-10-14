@@ -18,13 +18,18 @@ export function drawShip(deps: {
   y: number
   rotation: number
   thrusting: boolean
+  inFizz?: boolean
 }): (frame: Frame) => Frame {
-  const { x, y, rotation, thrusting } = deps
+  const { x, y, rotation, thrusting, inFizz } = deps
 
   const shipSpriteId = `ship-${rotation > 9 ? rotation : '0' + rotation}`
   const flameSpriteId = `flame-${rotation > 9 ? rotation : '0' + rotation}`
 
   const adjustedY = y + SBARHT
+
+  // Use higher z-order during fizz/starmap transitions
+  const shipZ = inFizz ? Z.SHIP_FIZZ : Z.SHIP
+  const shadowZ = inFizz ? Z.SHIP_FIZZ : Z.SHADOW
 
   return oldFrame => {
     const newFrame = cloneFrame(oldFrame)
@@ -33,7 +38,7 @@ export function drawShip(deps: {
       id: shipSpriteId,
       type: 'sprite',
       spriteId: shipSpriteId,
-      z: Z.SHIP,
+      z: shipZ,
       alpha: 1,
       topLeft: { x, y: adjustedY },
       rotation: 0
@@ -43,7 +48,7 @@ export function drawShip(deps: {
       id: `shadow-${shipSpriteId}`,
       type: 'sprite',
       spriteId: shipSpriteId,
-      z: Z.SHADOW,
+      z: shadowZ,
       alpha: 1,
       topLeft: { x: x + SHADOW_OFFSET_X, y: adjustedY + SHADOW_OFFSET_Y },
       rotation: 0,
@@ -62,7 +67,7 @@ export function drawShip(deps: {
         id: flameSpriteId,
         type: 'sprite',
         spriteId: flameSpriteId,
-        z: Z.SHIP,
+        z: shipZ,
         alpha: 1,
         topLeft: { x: flameX, y: flameY },
         rotation: 0

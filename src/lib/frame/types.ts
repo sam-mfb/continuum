@@ -8,9 +8,14 @@ export type Frame = {
   drawables: Drawable[]
 }
 
-type Drawable = DrawableLine | DrawableRect | DrawableShape | DrawableSprite
+type Drawable =
+  | DrawableLine
+  | DrawableRect
+  | DrawableShape
+  | DrawableSprite
+  | DrawablePixel
 
-type DrawableType = 'line' | 'rect' | 'shape' | 'sprite'
+type DrawableType = 'line' | 'rect' | 'shape' | 'sprite' | 'pixel'
 
 type DrawableBase = {
   id: string
@@ -43,6 +48,12 @@ export type DrawableShape = DrawableBase & {
   strokeColor: DrawableColor
   strokeWidth: number
   fillColor: DrawableColor
+}
+
+export type DrawablePixel = DrawableBase & {
+  type: 'pixel'
+  point: DrawablePoint
+  color: DrawableColor
 }
 
 type DrawablePoint = {

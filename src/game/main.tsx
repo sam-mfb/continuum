@@ -9,7 +9,10 @@ import { Provider } from 'react-redux'
 import { App } from './App'
 import { createSpriteService } from '@core/sprites'
 import { createGalaxyService } from '@core/galaxy'
-import { createFizzTransitionService } from '@core/transition'
+import {
+  createFizzTransitionService,
+  createFizzTransitionServiceFrame
+} from '@core/transition'
 import { createSoundService } from '@/core/sound'
 import { createModernSoundService } from '@/core/sound-modern'
 import { createGameRenderer, createGameRendererNew } from './gameLoop'
@@ -59,7 +62,8 @@ try {
   console.log('Galaxy service created')
 
   const fizzTransitionService = createFizzTransitionService()
-  console.log('Fizz transition service created')
+  const fizzTransitionServiceFrame = createFizzTransitionServiceFrame()
+  console.log('Fizz transition services created')
 
   // Load persisted sound mode setting
   const persistedSettings = loadAppSettings()
@@ -125,7 +129,7 @@ try {
     store,
     spriteService,
     galaxyService,
-    fizzTransitionService
+    fizzTransitionServiceFrame
   )
 
   // Set up alignment mode subscription

@@ -8,7 +8,10 @@
 import { createGameBitmap } from '@lib/bitmap'
 import type { SpriteService } from '@core/sprites'
 import type { GalaxyService } from '@core/galaxy'
-import type { FizzTransitionService } from '@core/transition'
+import type {
+  FizzTransitionService,
+  FizzTransitionServiceFrame
+} from '@core/transition'
 import type { GameStore } from '../store'
 
 import { updateGameState } from './stateUpdates'
@@ -24,6 +27,13 @@ export const createGameRenderer = (
   galaxyService: GalaxyService,
   fizzTransitionService: FizzTransitionService
 ): GameRenderLoop => {
+  // Create callbacks for the bitmap-based fizz service
+  const transitionCallbacks = {
+    isInitialized: () => fizzTransitionService.isInitialized,
+    isComplete: () => fizzTransitionService.isComplete,
+    reset: () => fizzTransitionService.reset()
+  }
+
   return (frame, controls) => {
     // Create a fresh bitmap for this frame
     let bitmap = createGameBitmap()
@@ -34,7 +44,7 @@ export const createGameRenderer = (
       frame,
       controls,
       galaxyService,
-      fizzTransitionService
+      transitionCallbacks
     })
 
     // Get current state after updates
@@ -71,8 +81,15 @@ export const createGameRendererNew = (
   store: GameStore,
   spriteService: SpriteService,
   galaxyService: GalaxyService,
-  fizzTransitionService: FizzTransitionService
+  fizzTransitionServiceFrame: FizzTransitionServiceFrame
 ): NewGameRenderLoop => {
+  // Create callbacks for the Frame-based fizz service
+  const transitionCallbacks = {
+    isInitialized: () => fizzTransitionServiceFrame.isInitialized,
+    isComplete: () => fizzTransitionServiceFrame.isComplete,
+    reset: () => fizzTransitionServiceFrame.reset()
+  }
+
   return (frame, controls) => {
     // This handles all game logic, physics, and state changes
     updateGameState({
@@ -80,7 +97,7 @@ export const createGameRendererNew = (
       frame,
       controls,
       galaxyService,
-      fizzTransitionService
+      transitionCallbacks
     })
 
     // Create a fresh frame
@@ -97,7 +114,7 @@ export const createGameRendererNew = (
       frame: startFrame,
       state,
       spriteService,
-      fizzTransitionService
+      fizzTransitionServiceFrame
     })
 
     return newFrame

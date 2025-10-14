@@ -1,7 +1,7 @@
 import type { Frame } from '@/lib/frame/types'
 import type { RootState } from '../store'
 import type { SpriteService } from '@/core/sprites'
-import type { FizzTransitionService } from '@/core/transition'
+import type { FizzTransitionServiceFrame } from '@/core/transition'
 import { LINE_KIND } from '@/core/shared'
 import { SCRWTH, VIEWHT } from '@/core/screen'
 import { drawWalls } from '@/render-modern/walls'
@@ -16,7 +16,6 @@ import {
   drawBunkerShots
 } from '@/render-modern/shots'
 import { SCENTER } from '@/core/figs'
-import { createGameBitmap } from '@/lib/bitmap'
 import { FIZZ_DURATION } from '@/core/transition'
 import { viewClear } from '@/render-modern/viewClear'
 import { drawStatusBar } from '@/render-modern/statusBar'
@@ -25,11 +24,11 @@ export type RenderContextNew = {
   frame: Frame
   state: RootState
   spriteService: SpriteService
-  fizzTransitionService: FizzTransitionService
+  fizzTransitionServiceFrame: FizzTransitionServiceFrame
 }
 
 export const renderGameNew = (context: RenderContextNew): Frame => {
-  let { frame, state, fizzTransitionService } = context
+  let { frame, state, fizzTransitionServiceFrame } = context
   const viewport = {
     x: state.screen.screenx,
     y: state.screen.screeny,
@@ -38,16 +37,67 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
   }
 
   // Handle fizz transition
-  // This is critical for level transitions to work - the fizz service must be initialized
-  // and we must call nextFrame() to advance it, otherwise it never completes
   if (state.transition.status === 'fizz') {
-    if (!fizzTransitionService.isInitialized) {
-      // Initialize with dummy bitmaps (modern renderer doesn't display the fizz animation)
-      const dummyBitmap = createGameBitmap()
-      fizzTransitionService.initialize(dummyBitmap, dummyBitmap, FIZZ_DURATION)
+    if (!fizzTransitionServiceFrame.isInitialized) {
+      fizzTransitionServiceFrame.initialize(150, FIZZ_DURATION)
     }
-    // Must call nextFrame() to advance the transition - stateUpdates.ts checks isComplete
-    fizzTransitionService.nextFrame()
+
+    // Get progressive pixel reveal
+    const fizzPixels = fizzTransitionServiceFrame.getNextFrameDrawables()
+    frame.drawables.push(...fizzPixels)
+
+    // Draw ship on top if alive
+    if (state.ship.deadCount === 0) {
+      frame = drawShip({
+        x: state.ship.shipx - SCENTER,
+        y: state.ship.shipy - SCENTER,
+        rotation: state.ship.shiprot,
+        thrusting: false,
+        inFizz: true
+      })(frame)
+    }
+
+    // Draw status bar on top
+    frame = drawStatusBar({
+      lives: state.ship.lives,
+      score: state.status.score,
+      fuel: state.ship.fuel,
+      bonus: state.status.planetbonus,
+      level: state.status.currentlevel,
+      message: state.status.curmessage
+    })(frame)
+
+    return frame
+  }
+
+  // Handle starmap phase
+  if (state.transition.status === 'starmap') {
+    // Show all starmap pixels
+    const starmapPixels = fizzTransitionServiceFrame.getAllStarmapPixels()
+    frame.drawables.push(...starmapPixels)
+
+    // Draw ship on top if alive
+    if (state.ship.deadCount === 0) {
+      frame = drawShip({
+        x: state.ship.shipx - SCENTER,
+        y: state.ship.shipy - SCENTER,
+        rotation: state.ship.shiprot,
+        thrusting: false,
+        inFizz: true
+      })(frame)
+    }
+
+    // Draw status bar on top
+    frame = drawStatusBar({
+      lives: state.ship.lives,
+      score: state.status.score,
+      fuel: state.ship.fuel,
+      bonus: state.status.planetbonus,
+      level: state.status.currentlevel,
+      message: state.status.curmessage
+    })(frame)
+
+    return frame
   }
 
   // Calculate if we're on the right side for world wrapping
