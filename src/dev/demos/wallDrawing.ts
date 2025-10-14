@@ -186,7 +186,8 @@ export const wallDrawingRendererNew = (
     kindPointers: wallState.kindPointers,
     organizedWalls: wallState.organizedWalls,
     viewport: viewport,
-    worldwidth: WORLD_WIDTH
+    worldwidth: WORLD_WIDTH,
+    altEndpoints: wallState.altEndpoints
   })(resultFrame)
 
   return resultFrame

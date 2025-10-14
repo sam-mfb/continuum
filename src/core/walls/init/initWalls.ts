@@ -186,9 +186,9 @@ export function detectWallJunctions(walls: LineRec[]): {
   altEndpoints: Record<string, LineAlt>
 } {
   const junctions: JunctionRec[] = []
-  let altEndpoints: Record<string, LineAlt> = {}
 
-  // Check each wall endpoint
+  // ORIGINAL C LOGIC: Check each wall endpoint and build junctions
+  // Keep this exactly as-is - it's from Junctions.c:63-93
   for (const wall of walls) {
     for (let i = 0; i < 2; i++) {
       const x = i ? wall.endx : wall.startx
@@ -204,23 +204,6 @@ export function detectWallJunctions(walls: LineRec[]): {
           junction.y <= y + 3 &&
           junction.y >= y - 3
         ) {
-          const origAlt = altEndpoints[wall.id]
-          const newAlt = {
-            id: wall.id,
-            startX: i ? undefined : junction.x,
-            startY: i ? undefined : junction.y,
-            endX: i ? junction.x : undefined,
-            endY: i ? junction.y : undefined
-          }
-          altEndpoints[wall.id] = origAlt
-            ? {
-                ...origAlt,
-                startX: newAlt.startX ?? origAlt.startX,
-                endX: newAlt.endX ?? origAlt.endX,
-                startY: newAlt.startY ?? origAlt.startY,
-                endY: newAlt.endY ?? origAlt.endY
-              }
-            : newAlt
           found = true
           break
         }
@@ -229,23 +212,6 @@ export function detectWallJunctions(walls: LineRec[]): {
       // Add new junction if not found
       if (!found) {
         junctions.push({ x, y })
-        const origAlt = altEndpoints[wall.id]
-        const newAlt = {
-          id: wall.id,
-          startX: i ? undefined : x,
-          startY: i ? undefined : y,
-          endX: i ? x : undefined,
-          endY: i ? y : undefined
-        }
-        altEndpoints[wall.id] = origAlt
-          ? {
-              ...origAlt,
-              startX: newAlt.startX ?? origAlt.startX,
-              endX: newAlt.endX ?? origAlt.endX,
-              startY: newAlt.startY ?? origAlt.startY,
-              endY: newAlt.endY ?? origAlt.endY
-            }
-          : newAlt
       }
     }
   }
@@ -266,6 +232,67 @@ export function detectWallJunctions(walls: LineRec[]): {
     }
 
     junctions[j + 1] = temp
+  }
+
+  // NEW LOGIC: Create altEndpoints by mapping walls to junctions
+  // This closes gaps by snapping wall endpoints to their nearest junction
+  const altEndpoints: Record<string, LineAlt> = {}
+
+  for (const wall of walls) {
+    let altStartX: number | undefined
+    let altStartY: number | undefined
+    let altEndX: number | undefined
+    let altEndY: number | undefined
+
+    // Find nearest junction for start point
+    for (const junction of junctions) {
+      if (
+        junction.x <= wall.startx + 3 &&
+        junction.x >= wall.startx - 3 &&
+        junction.y <= wall.starty + 3 &&
+        junction.y >= wall.starty - 3
+      ) {
+        // Only set alt if it differs from original
+        if (junction.x !== wall.startx || junction.y !== wall.starty) {
+          altStartX = junction.x
+          altStartY = junction.y
+        }
+        break
+      }
+    }
+
+    // Find nearest junction for end point
+    for (const junction of junctions) {
+      if (
+        junction.x <= wall.endx + 3 &&
+        junction.x >= wall.endx - 3 &&
+        junction.y <= wall.endy + 3 &&
+        junction.y >= wall.endy - 3
+      ) {
+        // Only set alt if it differs from original
+        if (junction.x !== wall.endx || junction.y !== wall.endy) {
+          altEndX = junction.x
+          altEndY = junction.y
+        }
+        break
+      }
+    }
+
+    // Only create altEndpoint if at least one coordinate differs
+    if (
+      altStartX !== undefined ||
+      altStartY !== undefined ||
+      altEndX !== undefined ||
+      altEndY !== undefined
+    ) {
+      altEndpoints[wall.id] = {
+        id: wall.id,
+        startX: altStartX,
+        startY: altStartY,
+        endX: altEndX,
+        endY: altEndY
+      }
+    }
   }
 
   // Add 18 sentinel values with x = 20000
