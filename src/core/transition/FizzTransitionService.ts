@@ -8,6 +8,7 @@
 
 import { cloneBitmap, type MonochromeBitmap } from '@lib/bitmap'
 import { SBARSIZE } from '@core/screen'
+import { advanceLFSR, shouldSkipSeed } from './lfsrUtils'
 
 /**
  * Service type for managing fizz transitions
@@ -68,8 +69,8 @@ export function createFizzTransitionService(
   const processSeedPosition = (s: number): number => {
     if (!workingBitmap || !to) return 0
 
-    // Seeds >= 8152 (8192-40) are skipped in original
-    if (s >= 8152) return 0
+    // Skip seeds that are out of range
+    if (shouldSkipSeed(s)) return 0
 
     // Process 10 scanlines for most positions, 9 for edge cases
     const linesToProcess = s < 8040 ? 10 : 9
@@ -116,20 +117,6 @@ export function createFizzTransitionService(
     }
 
     return pixelsProcessed
-  }
-
-  // Advance LFSR to next value
-  const advanceLFSR = (): void => {
-    currentSeed = currentSeed << 1
-
-    // Check bit 13 for feedback
-    if (currentSeed & (1 << 13)) {
-      // Apply XOR mask
-      currentSeed ^= 4287
-    }
-
-    // Keep within 13-bit range
-    currentSeed &= 0x1fff
   }
 
   return {
@@ -186,7 +173,7 @@ export function createFizzTransitionService(
         seedsThisFrame++
 
         // Always advance LFSR
-        advanceLFSR()
+        currentSeed = advanceLFSR(currentSeed)
         firstIteration = false
       }
 
