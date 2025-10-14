@@ -223,6 +223,18 @@ function drawWall(deps: {
       alpha: 1,
       z: zindex
     })
+    if (line.newtype === NEW_TYPE.ESE) {
+      newFrame.drawables.push({
+        id: `${line.id}-white-ese`,
+        type: 'line',
+        start: { x: startX + 7, y: startY + 5 },
+        end: { x: endX + 8, y: endY + 6 },
+        width: 2,
+        color: 'white',
+        alpha: 1,
+        z: zindex
+      })
+    }
     return newFrame
   }
 }
@@ -247,7 +259,7 @@ function wallShape(
     start: { x: number; y: number }
     end: { x: number; y: number }
   },
-  type: NewType
+  _type: NewType
 ): [
   { x: number; y: number; strokeAfter?: boolean },
   { x: number; y: number; strokeAfter?: boolean },
@@ -264,15 +276,6 @@ function wallShape(
   let offsetYstart = DOWN
   let offsetYend = DOWN
 
-  // not strictly geometrically correct, but this gives the
-  // ESE line a little bit of depth
-  if (type === NEW_TYPE.ESE) {
-    offsetXstart = 9 // Relative to line.end (NE corner)
-    offsetYstart = 8
-    offsetXend = 9 // Relative to line.end (NE corner)
-    offsetYend = 4
-  }
-
   // Return 4 corners forming a trapezoid that extends from the line
   // with a 3D perspective effect
   // The bottom edge (from bottom-right to bottom-left) should not be stroked
@@ -286,8 +289,7 @@ function wallShape(
     }, // Bottom-right (don't stroke to bottom-left)
     {
       x: line.start.x + offsetXstart,
-      y: line.start.y + offsetYstart,
-      strokeAfter: type === NEW_TYPE.ESE ? false : true
+      y: line.start.y + offsetYstart
     } // Bottom-left
   ]
 }

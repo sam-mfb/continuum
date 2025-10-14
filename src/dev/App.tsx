@@ -25,8 +25,8 @@ import { testGameLoop } from './demos/testGame'
 import { shipMoveGameLoop } from './demos/shipMove'
 import { bitmapTestRenderer } from './demos/bitmapTest'
 import {
-  wallDrawingRenderer,
-  wallDrawingRendererNew
+  wallDrawingRenderer
+  //wallDrawingRendererNew
 } from './demos/wallDrawing'
 import {
   wallDrawingModernRenderer,
@@ -170,8 +170,8 @@ function App({ spriteService, spriteRegistry }: AppProps): React.JSX.Element {
                 {
                   type: 'bitmap',
                   name: 'Wall Drawing',
-                  bitmapRenderer: wallDrawingRenderer,
-                  frameRenderer: wallDrawingRendererNew
+                  bitmapRenderer: wallDrawingRenderer
+                  //frameRenderer: wallDrawingRendererNew
                   // collisionService: {
                   //   getMap: () => collisionService.getMap(),
                   //   viewportOffset: viewportState,
