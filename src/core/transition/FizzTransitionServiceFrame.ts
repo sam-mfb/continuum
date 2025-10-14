@@ -9,6 +9,7 @@
 import type { DrawablePixel, Frame, Drawable } from '@lib/frame/types'
 import { generateStarmapPixels } from '@render/transition/starmapPixels'
 import { generatePixelSequence } from './lfsrUtils'
+import { SCRWTH, VIEWHT, SBARHT } from '@/core/screen'
 
 /**
  * Service type for managing Frame-based fizz transitions
@@ -59,7 +60,8 @@ export function createFizzTransitionServiceFrame(
   // Service state
   let fromFrameDrawables: Drawable[] = []
   let shipDrawables: Drawable[] = []
-  let starmapPixels: Array<{ x: number; y: number }> = []
+  let starPositions: Set<number> = new Set() // Set of linear indices that are stars
+  let totalPixels = 0 // Total pixels in viewport (SCRWTH × VIEWHT)
   let pixelRevealSequence: number[] = []
   let currentSeedIndex = 0
   let seedsPerFrame = 0
@@ -107,11 +109,20 @@ export function createFizzTransitionServiceFrame(
       }
 
       // Generate random star coordinates
-      starmapPixels = generateStarmapPixels(starCount)
+      const starPixels = generateStarmapPixels(starCount)
 
-      // Generate LFSR-based reveal sequence
-      // We need enough seeds to cover all our pixels
-      pixelRevealSequence = generatePixelSequence(starmapPixels.length, seed)
+      // Calculate total pixels in viewport
+      totalPixels = SCRWTH * VIEWHT
+
+      // Convert star coordinates to linear indices and store in Set for fast lookup
+      starPositions = new Set()
+      for (const star of starPixels) {
+        const linearIndex = star.y * SCRWTH + star.x
+        starPositions.add(linearIndex)
+      }
+
+      // Generate LFSR-based reveal sequence for ALL screen pixels
+      pixelRevealSequence = generatePixelSequence(totalPixels, seed)
 
       durationFrames = duration
       currentSeedIndex = 0
@@ -119,9 +130,9 @@ export function createFizzTransitionServiceFrame(
 
       // Calculate how many seeds to advance per frame (matching original logic)
       if (duration > 0) {
-        seedsPerFrame = Math.floor(starmapPixels.length / duration)
+        seedsPerFrame = Math.floor(totalPixels / duration)
       } else {
-        seedsPerFrame = starmapPixels.length
+        seedsPerFrame = totalPixels
       }
 
       initialized = true
@@ -135,7 +146,21 @@ export function createFizzTransitionServiceFrame(
       // Handle instant transition
       if (durationFrames === 0) {
         const result: Drawable[] = [...fromFrameDrawables]
-        result.push(...this.getAllStarmapPixels())
+        // Add all pixels immediately (black background + white stars)
+        for (let linearIndex = 0; linearIndex < totalPixels; linearIndex++) {
+          const x = linearIndex % SCRWTH
+          const y = Math.floor(linearIndex / SCRWTH) + SBARHT
+          const isStarPosition = starPositions.has(linearIndex)
+
+          result.push({
+            id: `fizz-pixel-${linearIndex}`,
+            type: 'pixel',
+            z: zIndex,
+            alpha: 1,
+            point: { x, y },
+            color: isStarPosition ? 'white' : 'black'
+          })
+        }
         // Add ship drawables (already at SHIP_FIZZ z-order)
         result.push(...shipDrawables)
         return result
@@ -145,7 +170,7 @@ export function createFizzTransitionServiceFrame(
       if (framesGenerated < durationFrames) {
         currentSeedIndex = Math.min(
           currentSeedIndex + seedsPerFrame,
-          starmapPixels.length
+          totalPixels
         )
         framesGenerated++
       }
@@ -155,19 +180,23 @@ export function createFizzTransitionServiceFrame(
 
       // Add ALL fizz pixels revealed so far (up to currentSeedIndex)
       for (let i = 0; i < currentSeedIndex; i++) {
-        const pixelIndex = pixelRevealSequence[i]
-        if (pixelIndex !== undefined && pixelIndex < starmapPixels.length) {
-          const pixel = starmapPixels[pixelIndex]
-          if (pixel) {
-            drawables.push({
-              id: `fizz-pixel-${pixelIndex}`,
-              type: 'pixel',
-              z: zIndex,
-              alpha: 1,
-              point: { x: pixel.x, y: pixel.y },
-              color: 'white'
-            })
-          }
+        const linearIndex = pixelRevealSequence[i]
+        if (linearIndex !== undefined && linearIndex < totalPixels) {
+          // Convert linear index to x, y coordinates
+          const x = linearIndex % SCRWTH
+          const y = Math.floor(linearIndex / SCRWTH) + SBARHT
+
+          // Check if this position is a star (white) or background (black)
+          const isStarPosition = starPositions.has(linearIndex)
+
+          drawables.push({
+            id: `fizz-pixel-${linearIndex}`,
+            type: 'pixel',
+            z: zIndex,
+            alpha: 1,
+            point: { x, y },
+            color: isStarPosition ? 'white' : 'black'
+          })
         }
       }
 
@@ -182,21 +211,30 @@ export function createFizzTransitionServiceFrame(
         throw new Error('FizzTransitionServiceFrame not initialized')
       }
 
-      // Return all pixels as DrawablePixels
-      return starmapPixels.map((pixel, index) => ({
-        id: `starmap-pixel-${index}`,
-        type: 'pixel' as const,
-        z: zIndex,
-        alpha: 1,
-        point: { x: pixel.x, y: pixel.y },
-        color: 'white'
-      }))
+      // Return all pixels (black background + white stars)
+      const pixels: DrawablePixel[] = []
+      for (let linearIndex = 0; linearIndex < totalPixels; linearIndex++) {
+        const x = linearIndex % SCRWTH
+        const y = Math.floor(linearIndex / SCRWTH) + SBARHT
+        const isStarPosition = starPositions.has(linearIndex)
+
+        pixels.push({
+          id: `starmap-pixel-${linearIndex}`,
+          type: 'pixel' as const,
+          z: zIndex,
+          alpha: 1,
+          point: { x, y },
+          color: isStarPosition ? 'white' : 'black'
+        })
+      }
+      return pixels
     },
 
     reset(): void {
       fromFrameDrawables = []
       shipDrawables = []
-      starmapPixels = []
+      starPositions = new Set()
+      totalPixels = 0
       pixelRevealSequence = []
       currentSeedIndex = 0
       seedsPerFrame = 0

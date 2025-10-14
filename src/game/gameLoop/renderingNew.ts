@@ -73,7 +73,7 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
   if (state.transition.status === 'starmap') {
     // Show all starmap pixels
     const starmapPixels = fizzTransitionServiceFrame.getAllStarmapPixels()
-    frame.drawables.push(...starmapPixels)
+    frame.drawables = frame.drawables.concat(starmapPixels)
 
     // Draw ship on top if alive
     if (state.ship.deadCount === 0) {

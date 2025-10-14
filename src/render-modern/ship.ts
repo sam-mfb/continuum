@@ -29,7 +29,7 @@ export function drawShip(deps: {
 
   // Use higher z-order during fizz/starmap transitions
   const shipZ = inFizz ? Z.SHIP_FIZZ : Z.SHIP
-  const shadowZ = inFizz ? Z.SHIP_FIZZ : Z.SHADOW
+  const shadowZ = Z.SHADOW
 
   return oldFrame => {
     const newFrame = cloneFrame(oldFrame)
