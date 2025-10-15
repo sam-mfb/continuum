@@ -1,5 +1,11 @@
 # Changes
 
+## 1.2.0 - 2025.10.14
+
+Modern rendering option
+Ability to use solid gray background (requires modern rendering option)
+Various bug fixes around level transitions
+
 ## 1.1.2 - 2025.10.11
 
 Fix transition state bug
