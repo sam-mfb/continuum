@@ -16,14 +16,19 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "export-sprites": "tsx scripts/export-sprites.ts",
+    "convert-sprites": "tsx scripts/convert-white-to-transparent.ts",
+    "convert-digits": "tsx scripts/convert-digit-sprites.ts",
+    "fix-shipshot": "tsx scripts/fix-shipshot.ts"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.8.2",
     "nipplejs": "^0.10.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-redux": "^9.2.0"
+    "react-redux": "^9.2.0",
+    "sharp": "^0.34.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.28.0",
@@ -34,6 +39,7 @@
     "@typescript-eslint/parser": "^8.33.0",
     "@vitejs/plugin-react": "^4.5.0",
     "@vitest/ui": "^3.1.4",
+    "canvas": "^3.2.0",
     "eslint": "^9.28.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",

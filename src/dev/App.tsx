@@ -1,8 +1,12 @@
-import { useState } from 'react'
 import { useSelector } from 'react-redux'
 import type { RootState } from './store/store'
 import { useAppDispatch } from './store/store'
-import { setCurrentView, toggleDebugInfo } from './store/uiSlice'
+import {
+  setCurrentView,
+  toggleDebugInfo,
+  toggleGameStats,
+  setSelectedGameIndex
+} from './store/uiSlice'
 import type { SpriteService } from '@core/sprites'
 import { GalaxySelector } from './components/GalaxySelector'
 import { PlanetList } from './components/PlanetList'
@@ -21,33 +25,48 @@ import { testGameLoop } from './demos/testGame'
 import { shipMoveGameLoop } from './demos/shipMove'
 import { bitmapTestRenderer } from './demos/bitmapTest'
 import {
-  wallDrawingRenderer,
-  collisionService,
-  viewportState
+  wallDrawingRenderer
+  //wallDrawingRendererNew
 } from './demos/wallDrawing'
+import {
+  wallDrawingModernRenderer,
+  wallDrawingModernBitmapRenderer
+} from './demos/wallDrawingModern'
 import { planet3DrawingRenderer } from './demos/planet3Drawing'
 import { junctionDrawRenderer } from './demos/junctionDraw'
 import { createShipMoveBitmapRenderer } from './demos/shipMoveBitmap'
-import { createBunkerDrawBitmapRenderer } from './demos/bunkerDrawBitmap'
+import {
+  createBunkerDrawBitmapRenderer,
+  createBunkerDrawFrameRenderer
+} from './demos/bunkerDrawBitmap'
 import { createFuelDrawBitmapRenderer } from './demos/fuelDrawBitmap'
-import { createExplosionBitmapRenderer } from './demos/explosionBitmap'
-import { createShardTestBitmapRenderer } from './demos/shardTestBitmap'
-import { strafeTestBitmapRenderer } from './demos/strafeTestBitmap'
+import {
+  createExplosionBitmapRenderer,
+  createExplosionFrameRenderer
+} from './demos/explosionBitmap'
+import {
+  createShardTestBitmapRenderer,
+  createShardTestFrameRenderer
+} from './demos/shardTestBitmap'
+import {
+  strafeTestBitmapRenderer,
+  createStrafeTestFrameRenderer
+} from './demos/strafeTestBitmap'
 import { createStarBackgroundBitmapRenderer } from './demos/starBackgroundBitmap'
 import { createStatusBarDemo } from './demos/statusBarDemo'
 import { createShieldDemoRenderer } from './demos/shieldDemo'
+import type { SpriteRegistry } from '@/lib/frame/types'
 import './index.css'
 
 type AppProps = {
   spriteService: SpriteService
+  spriteRegistry: SpriteRegistry<ImageData>
 }
 
-function App({ spriteService }: AppProps): React.JSX.Element {
-  const { currentView, showDebugInfo } = useSelector(
-    (state: RootState) => state.ui
-  )
+function App({ spriteService, spriteRegistry }: AppProps): React.JSX.Element {
+  const { currentView, showDebugInfo, showGameStats, selectedGameIndex } =
+    useSelector((state: RootState) => state.ui)
   const dispatch = useAppDispatch()
-  const [showGameStats, setShowGameStats] = useState(false)
 
   return (
     <div className="app">
@@ -131,6 +150,7 @@ function App({ spriteService }: AppProps): React.JSX.Element {
 
           {currentView === 'game' && (
             <GameView
+              spriteRegistry={spriteRegistry}
               games={[
                 {
                   type: 'canvas',
@@ -150,12 +170,19 @@ function App({ spriteService }: AppProps): React.JSX.Element {
                 {
                   type: 'bitmap',
                   name: 'Wall Drawing',
-                  bitmapRenderer: wallDrawingRenderer,
-                  collisionService: {
-                    getMap: () => collisionService.getMap(),
-                    viewportOffset: viewportState,
-                    statusBarHeight: 24
-                  }
+                  bitmapRenderer: wallDrawingRenderer
+                  //frameRenderer: wallDrawingRendererNew
+                  // collisionService: {
+                  //   getMap: () => collisionService.getMap(),
+                  //   viewportOffset: viewportState,
+                  //   statusBarHeight: 24
+                  // }
+                } as BitmapGameDefinition,
+                {
+                  type: 'bitmap',
+                  name: 'Wall Drawing Modern (All 256 Junctions)',
+                  bitmapRenderer: wallDrawingModernBitmapRenderer,
+                  frameRenderer: wallDrawingModernRenderer
                 } as BitmapGameDefinition,
                 {
                   type: 'bitmap',
@@ -175,7 +202,8 @@ function App({ spriteService }: AppProps): React.JSX.Element {
                 {
                   type: 'bitmap',
                   name: 'Bunker Draw',
-                  bitmapRenderer: createBunkerDrawBitmapRenderer(spriteService)
+                  bitmapRenderer: createBunkerDrawBitmapRenderer(spriteService),
+                  frameRenderer: createBunkerDrawFrameRenderer()
                 } as BitmapGameDefinition,
                 {
                   type: 'bitmap',
@@ -185,17 +213,20 @@ function App({ spriteService }: AppProps): React.JSX.Element {
                 {
                   type: 'bitmap',
                   name: 'Explosion Test',
-                  bitmapRenderer: createExplosionBitmapRenderer(spriteService)
+                  bitmapRenderer: createExplosionBitmapRenderer(spriteService),
+                  frameRenderer: createExplosionFrameRenderer()
                 } as BitmapGameDefinition,
                 {
                   type: 'bitmap',
                   name: 'Shard Test',
-                  bitmapRenderer: createShardTestBitmapRenderer(spriteService)
+                  bitmapRenderer: createShardTestBitmapRenderer(spriteService),
+                  frameRenderer: createShardTestFrameRenderer()
                 } as BitmapGameDefinition,
                 {
                   type: 'bitmap',
                   name: 'Strafe Test',
-                  bitmapRenderer: strafeTestBitmapRenderer
+                  bitmapRenderer: strafeTestBitmapRenderer,
+                  frameRenderer: createStrafeTestFrameRenderer()
                 } as BitmapGameDefinition,
                 {
                   type: 'bitmap',
@@ -214,7 +245,10 @@ function App({ spriteService }: AppProps): React.JSX.Element {
                   bitmapRenderer: createShieldDemoRenderer(spriteService)
                 } as BitmapGameDefinition
               ]}
-              defaultGameIndex={6} // Ship Move (Bitmap) is at index 6
+              selectedGameIndex={selectedGameIndex}
+              onSelectedGameIndexChange={index =>
+                dispatch(setSelectedGameIndex(index))
+              }
               scale={2} // Display at 2x size (1024x684)
               pixelated={true} // Keep pixels sharp
               statsConfig={
@@ -230,7 +264,7 @@ function App({ spriteService }: AppProps): React.JSX.Element {
                   : undefined
               }
               showGameStats={showGameStats}
-              onShowGameStatsChange={setShowGameStats}
+              onShowGameStatsChange={() => dispatch(toggleGameStats())}
               onInit={(_ctx, env) => {
                 console.log(
                   `Game initialized: ${env.width}x${env.height} @ ${env.fps}fps`

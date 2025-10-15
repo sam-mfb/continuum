@@ -74,6 +74,12 @@ It's not a totally easy matter to swap in a "real" grayscale background because 
 
 These were pretty easy. One cool thing is the fizz/transition that happens at the end of the level. This doesn't actually work on some emulators (at least not Basilisk II or the MACE bundle). I think the reason is because this isn't really a v-synced animation. The game just runs its little random-fizz generating algorithm and I think just depended on the slow speed of the processor to have it render as an animation. On a modern CPU it would finish in like a millisecond, so I actually had to force the animation to get spread out. To figure out what the timing of it should be, I recorded it playing on a Mac Plus I have. The video's in the repo.
 
+#### Modern Rendering Engine
+
+There is an option to turn on a "modern" rendering engine. That renders the sprites and walls using Canvas's native drawing routines rather than a pixel based approach. It is more flexible, but it isn't a pixel perfect match to the original game. If you enable the modern rendering mode, youc an also have it use a solid gray background rather than a the cross-hatch from the original game. If I extend/upgrade the games graphics this is the engine I'd use going forward...
+
+You can turn this on in the settings.
+
 ### 3. Sound
 
 The original game just wrote its sounds directly to the sound buffer of the Mac, so basically the sound equivalent of a black and white bitmap. This meant, among other things, that the frequency was totally off from the frequency used by a browser--or any modern sound system. The solution was to use a ring buffer and have the game write its sound to the buffer and then have the browser read from the buffer with the timing it wants. That worked pretty well as a concept.

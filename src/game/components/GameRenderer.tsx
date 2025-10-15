@@ -17,11 +17,16 @@ import type { SpriteService } from '@/core/sprites'
 import { SCENTER } from '@/core/figs'
 import { useStore } from 'react-redux'
 import { TouchControlsOverlay } from '../mobile/TouchControlsOverlay'
+import type { Frame, SpriteRegistry } from '@/lib/frame/types'
+import { drawFrameToCanvas } from '@/lib/frame/drawFrameToCanvas'
 
 type GameRendererProps = {
   renderer: (frame: FrameInfo, controls: ControlMatrix) => MonochromeBitmap
+  rendererNew: (frame: FrameInfo, controls: ControlMatrix) => Frame
   collisionService: CollisionService
   spriteService: SpriteService
+  spriteRegistry: SpriteRegistry<ImageData>
+  renderMode: 'original' | 'modern'
   width: number
   height: number
   scale: number
@@ -34,8 +39,11 @@ type GameRendererProps = {
  */
 const GameRenderer: React.FC<GameRendererProps> = ({
   renderer,
+  rendererNew,
   collisionService,
   spriteService,
+  spriteRegistry,
+  renderMode,
   width,
   height,
   scale,
@@ -166,123 +174,131 @@ const GameRenderer: React.FC<GameRendererProps> = ({
         }
         // Skip rendering when paused but keep the loop running
         if (!paused) {
-          // Render game and get the resulting bitmap
-          const renderedBitmap = renderer(frameInfo, controls)
+          if (renderMode === 'original') {
+            // Original bitmap renderer
+            const renderedBitmap = renderer(frameInfo, controls)
+            const collisionMap = collisionService.getMap()
 
-          const collisionMap = collisionService.getMap()
+            // Create offscreen canvas for pixel-perfect scaling
+            const offscreen = document.createElement('canvas')
+            offscreen.width = renderedBitmap.width
+            offscreen.height = renderedBitmap.height
+            const offCtx = offscreen.getContext('2d')!
 
-          // Create offscreen canvas for pixel-perfect scaling
-          const offscreen = document.createElement('canvas')
-          offscreen.width = renderedBitmap.width
-          offscreen.height = renderedBitmap.height
-          const offCtx = offscreen.getContext('2d')!
-
-          // Convert bitmap to ImageData
-          const imageData = new ImageData(
-            renderedBitmap.width,
-            renderedBitmap.height
-          )
-          const pixels = imageData.data
-
-          // Convert monochrome bitmap to RGBA
-          for (let y = 0; y < renderedBitmap.height; y++) {
-            for (let x = 0; x < renderedBitmap.width; x++) {
-              const byteIndex = y * renderedBitmap.rowBytes + Math.floor(x / 8)
-              const bitMask = 0x80 >> x % 8
-              const isSet = (renderedBitmap.data[byteIndex]! & bitMask) !== 0
-
-              const pixelIndex = (y * renderedBitmap.width + x) * 4
-              const value = isSet ? 0 : 255 // Black on white
-
-              // Set base pixel color
-              pixels[pixelIndex] = value // R
-              pixels[pixelIndex + 1] = value // G
-              pixels[pixelIndex + 2] = value // B
-              pixels[pixelIndex + 3] = 255 // A
-            }
-          }
-
-          if (getDebug()?.SHOW_COLLISION_MAP) {
-            const ship = (store.getState() as RootState).ship
-            // Get ship collision item
-            const shipBitmap = spriteService.getShipSprite(ship.shiprot, {
-              variant: 'mask'
-            }).bitmap
-            const shipItem = bitmapToCollisionItem(
-              shipBitmap,
-              Collision.NONE,
-              ship.shipx - SCENTER,
-              ship.shipy - SCENTER
+            // Convert bitmap to ImageData
+            const imageData = new ImageData(
+              renderedBitmap.width,
+              renderedBitmap.height
             )
+            const pixels = imageData.data
 
-            // Overlay collision map colors
+            // Convert monochrome bitmap to RGBA
             for (let y = 0; y < renderedBitmap.height; y++) {
               for (let x = 0; x < renderedBitmap.width; x++) {
+                const byteIndex =
+                  y * renderedBitmap.rowBytes + Math.floor(x / 8)
+                const bitMask = 0x80 >> x % 8
+                const isSet = (renderedBitmap.data[byteIndex]! & bitMask) !== 0
+
                 const pixelIndex = (y * renderedBitmap.width + x) * 4
+                const value = isSet ? 0 : 255 // Black on white
 
-                // Check if there's a collision at this point
-                // NB: collision map doesn't include status bar
-                const collision = collisionMap[x]?.[y - SBARHT] ?? 0
+                // Set base pixel color
+                pixels[pixelIndex] = value // R
+                pixels[pixelIndex + 1] = value // G
+                pixels[pixelIndex + 2] = value // B
+                pixels[pixelIndex + 3] = 255 // A
+              }
+            }
 
-                if (collision === Collision.LETHAL) {
-                  // Blend red transparently on top
-                  const alpha = 0.5 // 50% transparency
-                  pixels[pixelIndex] = Math.round(
-                    pixels[pixelIndex]! * (1 - alpha) + 255 * alpha
-                  ) // R
-                  pixels[pixelIndex + 1] = Math.round(
-                    pixels[pixelIndex + 1]! * (1 - alpha) + 0 * alpha
-                  ) // G
-                  pixels[pixelIndex + 2] = Math.round(
-                    pixels[pixelIndex + 2]! * (1 - alpha) + 0 * alpha
-                  ) // B
-                } else if (collision === Collision.BOUNCE) {
-                  // Blend green transparently on top
-                  const alpha = 0.5 // 50% transparency
-                  pixels[pixelIndex] = Math.round(
-                    pixels[pixelIndex]! * (1 - alpha) + 0 * alpha
-                  ) // R
-                  pixels[pixelIndex + 1] = Math.round(
-                    pixels[pixelIndex + 1]! * (1 - alpha) + 255 * alpha
-                  ) // G
-                  pixels[pixelIndex + 2] = Math.round(
-                    pixels[pixelIndex + 2]! * (1 - alpha) + 0 * alpha
-                  ) // B
-                }
+            if (getDebug()?.SHOW_COLLISION_MAP) {
+              const ship = (store.getState() as RootState).ship
+              // Get ship collision item
+              const shipBitmap = spriteService.getShipSprite(ship.shiprot, {
+                variant: 'mask'
+              }).bitmap
+              const shipItem = bitmapToCollisionItem(
+                shipBitmap,
+                Collision.NONE,
+                ship.shipx - SCENTER,
+                ship.shipy - SCENTER
+              )
 
-                // Check if this pixel is part of the ship collision mask
-                const isShipPixel = shipItem.some(
-                  point => point.x === x && point.y === y - SBARHT
-                )
-                if (isShipPixel) {
-                  // Blend blue transparently on top
-                  const alpha = 0.5 // 50% transparency
-                  pixels[pixelIndex] = Math.round(
-                    pixels[pixelIndex]! * (1 - alpha) + 0 * alpha
-                  ) // R
-                  pixels[pixelIndex + 1] = Math.round(
-                    pixels[pixelIndex + 1]! * (1 - alpha) + 0 * alpha
-                  ) // G
-                  pixels[pixelIndex + 2] = Math.round(
-                    pixels[pixelIndex + 2]! * (1 - alpha) + 255 * alpha
-                  ) // B
+              // Overlay collision map colors
+              for (let y = 0; y < renderedBitmap.height; y++) {
+                for (let x = 0; x < renderedBitmap.width; x++) {
+                  const pixelIndex = (y * renderedBitmap.width + x) * 4
+
+                  // Check if there's a collision at this point
+                  // NB: collision map doesn't include status bar
+                  const collision = collisionMap[x]?.[y - SBARHT] ?? 0
+
+                  if (collision === Collision.LETHAL) {
+                    // Blend red transparently on top
+                    const alpha = 0.5 // 50% transparency
+                    pixels[pixelIndex] = Math.round(
+                      pixels[pixelIndex]! * (1 - alpha) + 255 * alpha
+                    ) // R
+                    pixels[pixelIndex + 1] = Math.round(
+                      pixels[pixelIndex + 1]! * (1 - alpha) + 0 * alpha
+                    ) // G
+                    pixels[pixelIndex + 2] = Math.round(
+                      pixels[pixelIndex + 2]! * (1 - alpha) + 0 * alpha
+                    ) // B
+                  } else if (collision === Collision.BOUNCE) {
+                    // Blend green transparently on top
+                    const alpha = 0.5 // 50% transparency
+                    pixels[pixelIndex] = Math.round(
+                      pixels[pixelIndex]! * (1 - alpha) + 0 * alpha
+                    ) // R
+                    pixels[pixelIndex + 1] = Math.round(
+                      pixels[pixelIndex + 1]! * (1 - alpha) + 255 * alpha
+                    ) // G
+                    pixels[pixelIndex + 2] = Math.round(
+                      pixels[pixelIndex + 2]! * (1 - alpha) + 0 * alpha
+                    ) // B
+                  }
+
+                  // Check if this pixel is part of the ship collision mask
+                  const isShipPixel = shipItem.some(
+                    point => point.x === x && point.y === y - SBARHT
+                  )
+                  if (isShipPixel) {
+                    // Blend blue transparently on top
+                    const alpha = 0.5 // 50% transparency
+                    pixels[pixelIndex] = Math.round(
+                      pixels[pixelIndex]! * (1 - alpha) + 0 * alpha
+                    ) // R
+                    pixels[pixelIndex + 1] = Math.round(
+                      pixels[pixelIndex + 1]! * (1 - alpha) + 0 * alpha
+                    ) // G
+                    pixels[pixelIndex + 2] = Math.round(
+                      pixels[pixelIndex + 2]! * (1 - alpha) + 255 * alpha
+                    ) // B
+                  }
                 }
               }
             }
+
+            // Draw to offscreen canvas
+            offCtx.putImageData(imageData, 0, 0)
+
+            // Draw scaled to main canvas
+            ctx.imageSmoothingEnabled = false
+            ctx.drawImage(
+              offscreen,
+              0,
+              0,
+              renderedBitmap.width * scale,
+              renderedBitmap.height * scale
+            )
+          } else {
+            // Modern frame-based renderer
+            const renderedFrame = rendererNew(frameInfo, controls)
+
+            // Draw frame to canvas (background clearing is handled by viewClear in renderingNew.ts)
+            drawFrameToCanvas(renderedFrame, ctx, scale, spriteRegistry, false)
           }
-
-          // Draw to offscreen canvas
-          offCtx.putImageData(imageData, 0, 0)
-
-          // Draw scaled to main canvas
-          ctx.imageSmoothingEnabled = false
-          ctx.drawImage(
-            offscreen,
-            0,
-            0,
-            renderedBitmap.width * scale,
-            renderedBitmap.height * scale
-          )
 
           lastFrameTimeRef.current = currentTime
           frameCountRef.current++
@@ -307,6 +323,8 @@ const GameRenderer: React.FC<GameRendererProps> = ({
     }
   }, [
     renderer,
+    rendererNew,
+    renderMode,
     width,
     height,
     scale,
@@ -318,6 +336,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
     dispatch,
     collisionService,
     spriteService,
+    spriteRegistry,
     store,
     touchControls
   ])

@@ -29,7 +29,8 @@
       "@core/*": ["src/core/*"],
       "@lib/*": ["src/lib/*"],
       "@dev/*": ["src/dev/*"],
-      "@render/*": ["src/render/*"]
+      "@render/*": ["src/render/*"],
+      "@render-modern/*": ["src/render-modern/*"]
     }
   },
   "include": ["src/**/*"],

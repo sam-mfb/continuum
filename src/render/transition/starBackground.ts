@@ -4,13 +4,13 @@
  *
  * Used during planet completion to create the starfield that appears after
  * the fizz transition effect.
+ *
+ * Refactored to use shared utilities for pixel generation and bitmap conversion.
  */
 
-import { createGameBitmap, type MonochromeBitmap } from '@lib/bitmap'
-import { SCRWTH, VIEWHT } from '@core/screen'
-import { rint } from '@core/shared'
-import { setScreen } from '@render/screen/setScreen'
-import { clearPoint } from '@render/screen/clearPoint'
+import type { MonochromeBitmap } from '@lib/bitmap'
+import { generateStarmapPixels } from './starmapPixels'
+import { starmapPixelsToBitmap } from './starmapToBitmap'
 
 /**
  * Creates a star background - black screen with random white stars.
@@ -32,25 +32,9 @@ export function starBackground(deps: {
 }): MonochromeBitmap {
   const { starCount, additionalRender } = deps
 
-  const screen = createGameBitmap()
+  // Generate random star coordinates
+  const pixels = generateStarmapPixels(starCount)
 
-  // Line 1259: set_screen(back_screen, -1L)
-  // Fill screen with black (-1L = 0xFFFFFFFF = all bits set = black pixels)
-  let result = setScreen({ color: 0xffffffff })(screen)
-
-  // Lines 1260-1261: for (i=0; i<150; i++) clear_point(rint(SCRWTH), rint(VIEWHT))
-  // Add random white stars by clearing random pixels
-  for (let i = 0; i < starCount; i++) {
-    const x = rint(SCRWTH)
-    const y = rint(VIEWHT)
-    result = clearPoint({ x, y })(result)
-  }
-
-  // Lines 1262-1264: if (!dead_count) full_figure(...)
-  // Apply additional rendering if provided (e.g., ship when not dead)
-  if (additionalRender) {
-    result = additionalRender(result)
-  }
-
-  return result
+  // Convert to bitmap with optional additional rendering
+  return starmapPixelsToBitmap(pixels, additionalRender)
 }

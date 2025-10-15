@@ -10,12 +10,15 @@ import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
 import { createGameBitmap } from '@lib/bitmap'
 import type { LineRec } from '@core/walls'
 import { whiteTerrain, blackTerrain } from '@render/walls'
+import { drawWalls } from '@render-modern/walls'
 import { wallsActions } from '@core/walls'
 import { buildGameStore } from '@dev/store'
 import { LINE_KIND, NEW_TYPE } from '@core/walls'
 import { createWall } from '@core/walls'
 import { viewClear } from '@render/screen'
 import { createCollisionService, Collision } from '@core/collision'
+import type { Frame } from '@/lib/frame'
+import { SCRWTH, VIEWHT } from '@/core/screen'
 
 // Create store instance
 const store = buildGameStore()
@@ -150,4 +153,42 @@ export const wallDrawingRenderer: BitmapRenderer = (
   // - Junction hashes if any walls intersect
   // - NNE wall white undersides
   // - Collision map overlay is handled in the component layer
+}
+
+/**
+ * New renderer that returns a Frame for modern rendering
+ */
+export const wallDrawingRendererNew = (
+  _frame: FrameInfo,
+  _keys: KeyInfo
+): Frame => {
+  // Create a fresh frame
+  let resultFrame: Frame = {
+    width: SCRWTH,
+    height: VIEWHT,
+    drawables: []
+  }
+
+  // Get wall data from Redux state
+  const wallState = store.getState().walls
+
+  // Set up viewport based on state
+  const viewport = {
+    x: viewportState.x,
+    y: viewportState.y,
+    b: viewportState.y + VIEWHT, // bottom
+    r: viewportState.x + SCRWTH // right
+  }
+
+  // Render black terrain (top surfaces) for normal lines using modern renderer
+  resultFrame = drawWalls({
+    thekind: LINE_KIND.NORMAL, // Draw only normal lines
+    kindPointers: wallState.kindPointers,
+    organizedWalls: wallState.organizedWalls,
+    viewport: viewport,
+    worldwidth: WORLD_WIDTH,
+    altEndpoints: wallState.altEndpoints
+  })(resultFrame)
+
+  return resultFrame
 }

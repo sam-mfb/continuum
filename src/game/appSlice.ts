@@ -12,6 +12,8 @@ export type CollisionMode = 'modern' | 'original'
 
 export type SoundMode = 'modern' | 'original'
 
+export type RenderMode = 'original' | 'modern'
+
 export type ScaleMode = 'auto' | 1 | 2 | 3
 
 export type MostRecentScore = {
@@ -23,6 +25,10 @@ export type MostRecentScore = {
 export type AppState = {
   // Collision methodology
   collisionMode: CollisionMode
+
+  // Rendering methodology
+  renderMode: RenderMode
+  solidBackground: boolean
 
   // Display settings
   alignmentMode: AlignmentMode
@@ -53,6 +59,8 @@ export type AppState = {
 
 const initialState: AppState = {
   collisionMode: 'modern',
+  renderMode: 'original', // Default to stable original renderer
+  solidBackground: false, // Default to checkered pattern
   alignmentMode: 'screen-fixed', // Default to screen-fixed (not original)
   showInGameControls: true,
   scaleMode: 'auto', // Default to responsive auto-scaling
@@ -80,6 +88,17 @@ export const appSlice = createSlice({
     toggleCollisionMode: state => {
       state.collisionMode =
         state.collisionMode === 'modern' ? 'original' : 'modern'
+    },
+
+    // Render settings
+    setRenderMode: (state, action: PayloadAction<RenderMode>) => {
+      state.renderMode = action.payload
+    },
+    toggleRenderMode: state => {
+      state.renderMode = state.renderMode === 'original' ? 'modern' : 'original'
+    },
+    toggleSolidBackground: state => {
+      state.solidBackground = !state.solidBackground
     },
 
     // Sound settings
@@ -179,6 +198,9 @@ export const appSlice = createSlice({
 export const {
   setCollisionMode,
   toggleCollisionMode,
+  setRenderMode,
+  toggleRenderMode,
+  toggleSolidBackground,
   setSoundMode,
   toggleSoundMode,
   setAlignmentMode,

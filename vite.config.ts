@@ -16,7 +16,8 @@ export default defineConfig({
       '@core': resolve(__dirname, './src/core'),
       '@lib': resolve(__dirname, './src/lib'),
       '@dev': resolve(__dirname, './src/dev'),
-      '@render': resolve(__dirname, './src/render')
+      '@render': resolve(__dirname, './src/render'),
+      '@render-modern': resolve(__dirname, './src/render-modern')
     }
   },
   build: {

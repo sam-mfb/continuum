@@ -2,6 +2,7 @@ import { configureStore } from '@reduxjs/toolkit'
 import type { TypedUseSelectorHook } from 'react-redux'
 import { useDispatch, useSelector } from 'react-redux'
 import { uiReducer } from './uiSlice'
+import { uiMiddleware } from './uiMiddleware'
 import galaxyReducer from './galaxySlice'
 import graphicsReducer from './graphicsSlice'
 import spritesReducer from './spritesSlice'
@@ -26,7 +27,7 @@ const store = configureStore({
         ignoredActions: ['graphics/loadFile/fulfilled'],
         ignoredPaths: ['graphics.imageData', 'sound.activeSource']
       }
-    })
+    }).concat(uiMiddleware)
 })
 
 export type RootState = ReturnType<typeof store.getState>

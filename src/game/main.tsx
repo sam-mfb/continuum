@@ -9,10 +9,13 @@ import { Provider } from 'react-redux'
 import { App } from './App'
 import { createSpriteService } from '@core/sprites'
 import { createGalaxyService } from '@core/galaxy'
-import { createFizzTransitionService } from '@core/transition'
+import {
+  createFizzTransitionService,
+  createFizzTransitionServiceFrame
+} from '@core/transition'
 import { createSoundService } from '@/core/sound'
 import { createModernSoundService } from '@/core/sound-modern'
-import { createGameRenderer } from './gameLoop'
+import { createGameRenderer, createGameRendererNew } from './gameLoop'
 import { loadAppSettings } from './appMiddleware'
 import { setAlignmentMode } from '@/core/shared'
 import { createGameStore } from './store'
@@ -32,6 +35,7 @@ import {
 import { getDefaultGalaxy } from './galaxyConfig'
 import { createCollisionService } from '@/core/collision'
 import { SCRWTH, VIEWHT } from '@/core/screen'
+import { initializeSpriteRegistry } from '@/lib/frame/initializeSpriteRegistry'
 //import { enableDebugOption } from './debug'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
@@ -48,13 +52,18 @@ try {
   })
   console.log('Sprite service created')
 
+  // Initialize sprite registry (but don't load sprites yet - App.tsx will handle loading based on renderMode)
+  const spriteRegistry = initializeSpriteRegistry()
+  console.log('Sprite registry initialized (sprites not loaded yet)')
+
   // Load default galaxy
   const defaultGalaxy = getDefaultGalaxy()
   const galaxyService = await createGalaxyService(defaultGalaxy.path)
   console.log('Galaxy service created')
 
   const fizzTransitionService = createFizzTransitionService()
-  console.log('Fizz transition service created')
+  const fizzTransitionServiceFrame = createFizzTransitionServiceFrame()
+  console.log('Fizz transition services created')
 
   // Load persisted sound mode setting
   const persistedSettings = loadAppSettings()
@@ -116,6 +125,12 @@ try {
     galaxyService,
     fizzTransitionService
   )
+  const rendererNew = createGameRendererNew(
+    store,
+    spriteService,
+    galaxyService,
+    fizzTransitionServiceFrame
+  )
 
   // Set up alignment mode subscription
   let currentAlignmentMode = store.getState().app.alignmentMode
@@ -135,9 +150,11 @@ try {
     <Provider store={store}>
       <App
         renderer={renderer}
+        rendererNew={rendererNew}
         collisionService={collisionService}
         soundService={soundService}
         spriteService={spriteService}
+        spriteRegistry={spriteRegistry}
       />
     </Provider>
   )

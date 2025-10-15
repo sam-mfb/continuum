@@ -115,7 +115,13 @@ const createStoreAndListeners = (
         persistedAppSettings.scaleMode ?? appSlice.getInitialState().scaleMode,
       touchControlsOverride:
         persistedAppSettings.touchControlsOverride ??
-        appSlice.getInitialState().touchControlsOverride
+        appSlice.getInitialState().touchControlsOverride,
+      renderMode:
+        persistedAppSettings.renderMode ??
+        appSlice.getInitialState().renderMode,
+      solidBackground:
+        persistedAppSettings.solidBackground ??
+        appSlice.getInitialState().solidBackground
     },
     highscore: persistedHighScores,
     controls: {
