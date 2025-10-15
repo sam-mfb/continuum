@@ -9,6 +9,8 @@ import type { Frame } from '@/lib/frame/types'
 import { VIEWHT, SCRWTH, SBARHT } from '@/core/screen'
 import { getAlignment } from '@/core/shared'
 
+const SOLID_GRAY = '#A9A9A9'
+
 type ViewClearDeps = {
   screenX: number
   screenY: number
@@ -43,7 +45,7 @@ export function viewClear(deps: ViewClearDeps): (frame: Frame) => Frame {
           topLeft: { x: 0, y: SBARHT },
           width: SCRWTH,
           height: VIEWHT,
-          fillColor: '#808080' // Solid gray background
+          fillColor: SOLID_GRAY
         }
       : {
           id: 'view-clear-background',
