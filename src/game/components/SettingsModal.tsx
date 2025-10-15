@@ -103,6 +103,58 @@ const SpriteIcon: React.FC<{
   )
 }
 
+// ScrollableContainer component with scroll indicator
+const ScrollableContainer: React.FC<{
+  children: React.ReactNode
+  scale: number
+}> = ({ children, scale }) => {
+  const containerRef = React.useRef<HTMLDivElement>(null)
+  const [canScrollDown, setCanScrollDown] = React.useState(false)
+
+  const checkScroll = React.useCallback(() => {
+    if (!containerRef.current) return
+    const { scrollTop, scrollHeight, clientHeight } = containerRef.current
+    setCanScrollDown(scrollTop + clientHeight < scrollHeight - 1)
+  }, [])
+
+  React.useEffect(() => {
+    // Check scroll state on mount and when content changes
+    checkScroll()
+  }, [checkScroll, children])
+
+  const handleScroll = (): void => {
+    checkScroll()
+  }
+
+  const containerStyle: React.CSSProperties = {
+    height: `${220 * scale}px`,
+    overflowY: 'auto',
+    position: 'relative'
+  }
+
+  const indicatorStyle: React.CSSProperties = {
+    position: 'sticky',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    padding: `${2 * scale}px`,
+    background: 'rgba(0, 0, 0, 0.8)',
+    color: '#888',
+    fontSize: `${5 * scale}px`,
+    fontFamily: 'monospace',
+    pointerEvents: 'none',
+    borderTop: `${1 * scale}px solid #333`
+  }
+
+  return (
+    <div ref={containerRef} style={containerStyle} onScroll={handleScroll}>
+      {children}
+      {canScrollDown && <div style={indicatorStyle}>▼ MORE ▼</div>}
+    </div>
+  )
+}
+
 const SettingsModal: React.FC<SettingsModalProps> = ({
   spriteService,
   scale
@@ -313,11 +365,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     marginBottom: `${-1 * scale}px`
   })
 
-  const tabContentContainerStyle: React.CSSProperties = {
-    height: `${220 * scale}px`,
-    overflowY: 'auto'
-  }
-
   return (
     <div style={overlayStyle} onClick={() => dispatch(closeSettings())}>
       <div style={modalStyle} onClick={e => e.stopPropagation()}>
@@ -423,7 +470,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
         {/* Tab Content */}
         {activeTab === 'options' && (
-          <div style={tabContentContainerStyle}>
+          <ScrollableContainer scale={scale}>
             {/* Collision Mode Section */}
             <div style={sectionStyle}>
               <div
@@ -764,12 +811,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 )}
               </div>
             </div>
-          </div>
+          </ScrollableContainer>
         )}
 
         {/* Controls Tab Content */}
         {activeTab === 'controls' && (
-          <div style={tabContentContainerStyle}>
+          <ScrollableContainer scale={scale}>
             <div style={sectionStyle}>
               <div
                 style={{
@@ -1163,12 +1210,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
             </div>
-          </div>
+          </ScrollableContainer>
         )}
 
         {/* Tips Tab Content */}
         {activeTab === 'tips' && (
-          <div style={tabContentContainerStyle}>
+          <ScrollableContainer scale={scale}>
             <div style={sectionStyle}>
               <div
                 style={{
@@ -1245,12 +1292,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
             </div>
-          </div>
+          </ScrollableContainer>
         )}
 
         {/* Scoring Tab Content */}
         {activeTab === 'scoring' && (
-          <div style={tabContentContainerStyle}>
+          <ScrollableContainer scale={scale}>
             <div style={sectionStyle}>
               <div
                 style={{
@@ -1435,12 +1482,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
             </div>
-          </div>
+          </ScrollableContainer>
         )}
 
         {/* About Tab Content */}
         {activeTab === 'about' && (
-          <div style={tabContentContainerStyle}>
+          <ScrollableContainer scale={scale}>
             <div style={sectionStyle}>
               <div
                 style={{
@@ -1563,7 +1610,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
             </div>
-          </div>
+          </ScrollableContainer>
         )}
       </div>
     </div>
