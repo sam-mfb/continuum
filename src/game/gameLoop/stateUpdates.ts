@@ -140,6 +140,14 @@ export const updateGameState = (context: StateUpdateContext): void => {
     return
   }
 
+  // early exit in fizz or starmap
+  if (
+    state.transition.status === 'fizz' ||
+    state.transition.status === 'starmap'
+  ) {
+    return
+  }
+
   // Handle ship movement and controls
   const { globalx, globaly } = handleShipMovement(store, controls)
 
@@ -622,13 +630,13 @@ const updateTransitionState = (
   if (status === 'level-complete') {
     if (preFizzFrames > 0) {
       const prevFrames = preFizzFrames
+      // handles transition to fizz if needed
       store.dispatch(decrementPreFizz())
 
       // When countdown reaches zero, stop the ship and trigger sounds
       const newState = store.getState().transition
       if (prevFrames > 0 && newState.preFizzFrames === 0) {
         store.dispatch(shipSlice.actions.stopShipMovement())
-        // Status automatically transitions to 'fizz' in reducer
       }
     }
     return
