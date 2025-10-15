@@ -12,6 +12,7 @@ import { getAlignment } from '@/core/shared'
 type ViewClearDeps = {
   screenX: number
   screenY: number
+  solidBackground: boolean
 }
 
 /**
@@ -30,30 +31,37 @@ type ViewClearDeps = {
  */
 export function viewClear(deps: ViewClearDeps): (frame: Frame) => Frame {
   return frame => {
-    const { screenX, screenY } = deps
+    const { screenX, screenY, solidBackground } = deps
 
-    // Calculate pattern alignment based on screen position
-    // This creates the diagonal checkerboard effect
-    const screenAlignment = getAlignment({
-      x: screenX,
-      y: screenY,
-      screenX,
-      screenY
-    })
-
-    // Create a full-viewport rectangle with crosshatch pattern
-    const backgroundRect = {
-      id: 'view-clear-background',
-      z: -1000, // Render behind everything
-      type: 'rect' as const,
-      alpha: 1,
-      topLeft: { x: 0, y: SBARHT },
-      width: SCRWTH,
-      height: VIEWHT,
-      fillColor: 'black',
-      fillPattern: 'crosshatch' as const,
-      patternAlignment: screenAlignment
-    }
+    // Create a full-viewport rectangle
+    const backgroundRect = solidBackground
+      ? {
+          id: 'view-clear-background',
+          z: -1000, // Render behind everything
+          type: 'rect' as const,
+          alpha: 1,
+          topLeft: { x: 0, y: SBARHT },
+          width: SCRWTH,
+          height: VIEWHT,
+          fillColor: '#808080' // Solid gray background
+        }
+      : {
+          id: 'view-clear-background',
+          z: -1000, // Render behind everything
+          type: 'rect' as const,
+          alpha: 1,
+          topLeft: { x: 0, y: SBARHT },
+          width: SCRWTH,
+          height: VIEWHT,
+          fillColor: 'black',
+          fillPattern: 'crosshatch' as const,
+          patternAlignment: getAlignment({
+            x: screenX,
+            y: screenY,
+            screenX,
+            screenY
+          })
+        }
 
     return {
       ...frame,

@@ -28,6 +28,7 @@ export type AppState = {
 
   // Rendering methodology
   renderMode: RenderMode
+  solidBackground: boolean
 
   // Display settings
   alignmentMode: AlignmentMode
@@ -59,6 +60,7 @@ export type AppState = {
 const initialState: AppState = {
   collisionMode: 'modern',
   renderMode: 'original', // Default to stable original renderer
+  solidBackground: false, // Default to checkered pattern
   alignmentMode: 'screen-fixed', // Default to screen-fixed (not original)
   showInGameControls: true,
   scaleMode: 'auto', // Default to responsive auto-scaling
@@ -94,6 +96,9 @@ export const appSlice = createSlice({
     },
     toggleRenderMode: state => {
       state.renderMode = state.renderMode === 'original' ? 'modern' : 'original'
+    },
+    toggleSolidBackground: state => {
+      state.solidBackground = !state.solidBackground
     },
 
     // Sound settings
@@ -195,6 +200,7 @@ export const {
   toggleCollisionMode,
   setRenderMode,
   toggleRenderMode,
+  toggleSolidBackground,
   setSoundMode,
   toggleSoundMode,
   setAlignmentMode,

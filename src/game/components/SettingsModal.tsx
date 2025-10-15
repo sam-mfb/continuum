@@ -4,6 +4,7 @@ import {
   toggleCollisionMode,
   toggleSoundMode,
   toggleRenderMode,
+  toggleSolidBackground,
   toggleAlignmentMode,
   toggleInGameControls,
   setScaleMode,
@@ -163,6 +164,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const collisionMode = useAppSelector(state => state.app.collisionMode)
   const soundMode = useAppSelector(state => state.app.soundMode)
   const renderMode = useAppSelector(state => state.app.renderMode)
+  const solidBackground = useAppSelector(state => state.app.solidBackground)
   const alignmentMode = useAppSelector(state => state.app.alignmentMode)
   const scaleMode = useAppSelector(state => state.app.scaleMode)
   const showInGameControls = useAppSelector(
@@ -596,12 +598,52 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 >
                   (
                   {renderMode === 'modern'
-                    ? 'Modern frame-based renderer (experimental)'
+                    ? 'Modern frame-based renderer'
                     : 'Original bitmap renderer'}
                   )
                 </span>
               </div>
             </div>
+
+            {/* Solid Background Section - only visible in modern render mode */}
+            {renderMode === 'modern' && (
+              <div style={sectionStyle}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: `${5 * scale}px`
+                  }}
+                >
+                  <span>SOLID BACKGROUND:</span>
+                  <button
+                    onClick={() => dispatch(toggleSolidBackground())}
+                    style={toggleButtonStyle}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = '#333'
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = '#000'
+                    }}
+                  >
+                    {solidBackground ? 'ON' : 'OFF'}
+                  </button>
+                  <span
+                    style={{
+                      color: '#666',
+                      fontSize: `${5 * scale}px`,
+                      marginLeft: `${5 * scale}px`
+                    }}
+                  >
+                    (
+                    {solidBackground
+                      ? 'Solid gray background'
+                      : 'Checkered background pattern'}
+                    )
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Alignment Mode Section */}
             <div style={sectionStyle}>

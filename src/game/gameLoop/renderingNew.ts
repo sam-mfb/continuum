@@ -102,10 +102,11 @@ export const renderGameNew = (context: RenderContextNew): Frame => {
   // Calculate if we're on the right side for world wrapping
   const on_right_side = state.screen.screenx > state.planet.worldwidth - SCRWTH
 
-  // 1. viewClear - Create crosshatch gray background
+  // 1. viewClear - Create background (crosshatch or solid gray)
   let newFrame = viewClear({
     screenX: state.screen.screenx,
-    screenY: state.screen.screeny
+    screenY: state.screen.screeny,
+    solidBackground: state.app.solidBackground
   })(frame)
 
   // Draw walls

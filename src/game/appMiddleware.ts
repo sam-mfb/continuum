@@ -18,6 +18,7 @@ import {
   setTouchControlsOverride,
   setRenderMode,
   toggleRenderMode,
+  toggleSolidBackground,
   type CollisionMode,
   type SoundMode,
   type ScaleMode,
@@ -38,6 +39,7 @@ export type PersistedAppSettings = {
   soundOn: boolean
   touchControlsOverride: boolean | null
   renderMode: RenderMode
+  solidBackground: boolean
 }
 
 /**
@@ -63,7 +65,8 @@ export const appMiddleware: Middleware<{}, RootState> =
       disableSound.match(action) ||
       setTouchControlsOverride.match(action) ||
       setRenderMode.match(action) ||
-      toggleRenderMode.match(action)
+      toggleRenderMode.match(action) ||
+      toggleSolidBackground.match(action)
     ) {
       const state = store.getState()
       try {
@@ -76,7 +79,8 @@ export const appMiddleware: Middleware<{}, RootState> =
           volume: state.app.volume,
           soundOn: state.app.soundOn,
           touchControlsOverride: state.app.touchControlsOverride,
-          renderMode: state.app.renderMode
+          renderMode: state.app.renderMode,
+          solidBackground: state.app.solidBackground
         }
         localStorage.setItem(
           APP_SETTINGS_STORAGE_KEY,
@@ -108,7 +112,8 @@ export const loadAppSettings = (): Partial<PersistedAppSettings> => {
         volume: parsed.volume,
         soundOn: parsed.soundOn,
         touchControlsOverride: parsed.touchControlsOverride,
-        renderMode: parsed.renderMode
+        renderMode: parsed.renderMode,
+        solidBackground: parsed.solidBackground
       }
     }
   } catch (error) {
