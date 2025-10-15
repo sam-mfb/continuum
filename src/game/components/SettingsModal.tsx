@@ -213,9 +213,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     fontFamily: 'monospace',
     fontSize: `${6.5 * scale}px`,
     padding: `${10 * scale}px`,
-    maxWidth: `${400 * scale}px`,
-    maxHeight: '80vh',
-    overflowY: 'auto',
+    width: `${400 * scale}px`,
     position: 'relative'
   }
 
@@ -314,6 +312,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     textTransform: 'uppercase',
     marginBottom: `${-1 * scale}px`
   })
+
+  const tabContentContainerStyle: React.CSSProperties = {
+    height: `${220 * scale}px`,
+    overflowY: 'auto'
+  }
 
   return (
     <div style={overlayStyle} onClick={() => dispatch(closeSettings())}>
@@ -420,7 +423,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
         {/* Tab Content */}
         {activeTab === 'options' && (
-          <>
+          <div style={tabContentContainerStyle}>
             {/* Collision Mode Section */}
             <div style={sectionStyle}>
               <div
@@ -761,12 +764,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 )}
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {/* Controls Tab Content */}
         {activeTab === 'controls' && (
-          <>
+          <div style={tabContentContainerStyle}>
             <div style={sectionStyle}>
               <div
                 style={{
@@ -1160,77 +1163,85 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {/* Tips Tab Content */}
         {activeTab === 'tips' && (
-          <div style={sectionStyle}>
-            <div
-              style={{
-                fontSize: `${6.5 * scale}px`,
-                lineHeight: '1.8',
-                padding: `${10 * scale}px`
-              }}
-            >
-              <div style={{ marginBottom: `${10 * scale}px` }}>
-                <div
-                  style={{
-                    fontSize: `${7 * scale}px`,
-                    fontWeight: 'bold',
-                    color: '#fff',
-                    marginBottom: `${5 * scale}px`,
-                    borderBottom: `${1 * scale}px solid #444`,
-                    paddingBottom: `${2.5 * scale}px`
-                  }}
-                >
-                  BEGINNER
+          <div style={tabContentContainerStyle}>
+            <div style={sectionStyle}>
+              <div
+                style={{
+                  fontSize: `${6.5 * scale}px`,
+                  lineHeight: '1.8',
+                  padding: `${10 * scale}px`
+                }}
+              >
+                <div style={{ marginBottom: `${10 * scale}px` }}>
+                  <div
+                    style={{
+                      fontSize: `${7 * scale}px`,
+                      fontWeight: 'bold',
+                      color: '#fff',
+                      marginBottom: `${5 * scale}px`,
+                      borderBottom: `${1 * scale}px solid #444`,
+                      paddingBottom: `${2.5 * scale}px`
+                    }}
+                  >
+                    BEGINNER
+                  </div>
+                  <div
+                    style={{ color: '#ccc', marginBottom: `${3 * scale}px` }}
+                  >
+                    • Avoid the walls first; kill things second
+                  </div>
+                  <div style={{ color: '#ccc' }}>
+                    • Never thrust with the wind
+                  </div>
                 </div>
-                <div style={{ color: '#ccc', marginBottom: `${3 * scale}px` }}>
-                  • Avoid the walls first; kill things second
-                </div>
-                <div style={{ color: '#ccc' }}>
-                  • Never thrust with the wind
-                </div>
-              </div>
 
-              <div style={{ marginBottom: `${10 * scale}px` }}>
-                <div
-                  style={{
-                    fontSize: `${7 * scale}px`,
-                    fontWeight: 'bold',
-                    color: '#fff',
-                    marginBottom: `${5 * scale}px`,
-                    borderBottom: `${1 * scale}px solid #444`,
-                    paddingBottom: `${2.5 * scale}px`
-                  }}
-                >
-                  INTERMEDIATE
+                <div style={{ marginBottom: `${10 * scale}px` }}>
+                  <div
+                    style={{
+                      fontSize: `${7 * scale}px`,
+                      fontWeight: 'bold',
+                      color: '#fff',
+                      marginBottom: `${5 * scale}px`,
+                      borderBottom: `${1 * scale}px solid #444`,
+                      paddingBottom: `${2.5 * scale}px`
+                    }}
+                  >
+                    INTERMEDIATE
+                  </div>
+                  <div
+                    style={{ color: '#ccc', marginBottom: `${3 * scale}px` }}
+                  >
+                    • Take your time
+                  </div>
+                  <div style={{ color: '#ccc' }}>• Use your shield often</div>
                 </div>
-                <div style={{ color: '#ccc', marginBottom: `${3 * scale}px` }}>
-                  • Take your time
-                </div>
-                <div style={{ color: '#ccc' }}>• Use your shield often</div>
-              </div>
 
-              <div>
-                <div
-                  style={{
-                    fontSize: `${7 * scale}px`,
-                    fontWeight: 'bold',
-                    color: '#fff',
-                    marginBottom: `${5 * scale}px`,
-                    borderBottom: `${1 * scale}px solid #444`,
-                    paddingBottom: `${2.5 * scale}px`
-                  }}
-                >
-                  ADVANCED
-                </div>
-                <div style={{ color: '#ccc', marginBottom: `${3 * scale}px` }}>
-                  • Find and use bases' blind spots
-                </div>
-                <div style={{ color: '#ccc' }}>
-                  • Don't always do things the obvious way
+                <div>
+                  <div
+                    style={{
+                      fontSize: `${7 * scale}px`,
+                      fontWeight: 'bold',
+                      color: '#fff',
+                      marginBottom: `${5 * scale}px`,
+                      borderBottom: `${1 * scale}px solid #444`,
+                      paddingBottom: `${2.5 * scale}px`
+                    }}
+                  >
+                    ADVANCED
+                  </div>
+                  <div
+                    style={{ color: '#ccc', marginBottom: `${3 * scale}px` }}
+                  >
+                    • Find and use bases' blind spots
+                  </div>
+                  <div style={{ color: '#ccc' }}>
+                    • Don't always do things the obvious way
+                  </div>
                 </div>
               </div>
             </div>
@@ -1239,170 +1250,188 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
         {/* Scoring Tab Content */}
         {activeTab === 'scoring' && (
-          <div style={sectionStyle}>
-            <div
-              style={{
-                fontSize: `${6.5 * scale}px`,
-                lineHeight: '1.8',
-                padding: `${10 * scale}px`,
-                background: '#fff',
-                color: '#000'
-              }}
-            >
+          <div style={tabContentContainerStyle}>
+            <div style={sectionStyle}>
               <div
                 style={{
-                  fontWeight: 'bold',
-                  marginBottom: `${7.5 * scale}px`,
-                  fontSize: `${7 * scale}px`
-                }}
-              >
-                POINT VALUES
-              </div>
-
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)',
-                  gap: `${10 * scale}px`,
-                  justifyItems: 'center'
+                  fontSize: `${6.5 * scale}px`,
+                  lineHeight: '1.8',
+                  padding: `${10 * scale}px`,
+                  background: '#fff',
+                  color: '#000'
                 }}
               >
                 <div
                   style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: `${4 * scale}px`
+                    fontWeight: 'bold',
+                    marginBottom: `${7.5 * scale}px`,
+                    fontSize: `${7 * scale}px`
                   }}
                 >
-                  <SpriteIcon
-                    spriteService={spriteService}
-                    type="bunker"
-                    bunkerKind={BunkerKind.WALL}
-                    scale={scale}
-                  />
-                  <span style={{ color: '#000', fontWeight: 'bold' }}>100</span>
+                  POINT VALUES
                 </div>
 
                 <div
                   style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: `${4 * scale}px`
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gap: `${10 * scale}px`,
+                    justifyItems: 'center'
                   }}
                 >
-                  <SpriteIcon
-                    spriteService={spriteService}
-                    type="bunker"
-                    bunkerKind={BunkerKind.GROUND}
-                    scale={scale}
-                  />
-                  <span style={{ color: '#000', fontWeight: 'bold' }}>100</span>
-                </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: `${4 * scale}px`
+                    }}
+                  >
+                    <SpriteIcon
+                      spriteService={spriteService}
+                      type="bunker"
+                      bunkerKind={BunkerKind.WALL}
+                      scale={scale}
+                    />
+                    <span style={{ color: '#000', fontWeight: 'bold' }}>
+                      100
+                    </span>
+                  </div>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: `${4 * scale}px`
-                  }}
-                >
-                  <SpriteIcon
-                    spriteService={spriteService}
-                    type="bunker"
-                    bunkerKind={BunkerKind.DIFF}
-                    rotation={0}
-                    scale={scale}
-                  />
-                  <span style={{ color: '#000', fontWeight: 'bold' }}>10</span>
-                </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: `${4 * scale}px`
+                    }}
+                  >
+                    <SpriteIcon
+                      spriteService={spriteService}
+                      type="bunker"
+                      bunkerKind={BunkerKind.GROUND}
+                      scale={scale}
+                    />
+                    <span style={{ color: '#000', fontWeight: 'bold' }}>
+                      100
+                    </span>
+                  </div>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: `${4 * scale}px`
-                  }}
-                >
-                  <SpriteIcon
-                    spriteService={spriteService}
-                    type="bunker"
-                    bunkerKind={BunkerKind.DIFF}
-                    rotation={1}
-                    scale={scale}
-                  />
-                  <span style={{ color: '#000', fontWeight: 'bold' }}>200</span>
-                </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: `${4 * scale}px`
+                    }}
+                  >
+                    <SpriteIcon
+                      spriteService={spriteService}
+                      type="bunker"
+                      bunkerKind={BunkerKind.DIFF}
+                      rotation={0}
+                      scale={scale}
+                    />
+                    <span style={{ color: '#000', fontWeight: 'bold' }}>
+                      10
+                    </span>
+                  </div>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: `${4 * scale}px`
-                  }}
-                >
-                  <SpriteIcon
-                    spriteService={spriteService}
-                    type="bunker"
-                    bunkerKind={BunkerKind.DIFF}
-                    rotation={2}
-                    scale={scale}
-                  />
-                  <span style={{ color: '#000', fontWeight: 'bold' }}>300</span>
-                </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: `${4 * scale}px`
+                    }}
+                  >
+                    <SpriteIcon
+                      spriteService={spriteService}
+                      type="bunker"
+                      bunkerKind={BunkerKind.DIFF}
+                      rotation={1}
+                      scale={scale}
+                    />
+                    <span style={{ color: '#000', fontWeight: 'bold' }}>
+                      200
+                    </span>
+                  </div>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: `${4 * scale}px`
-                  }}
-                >
-                  <SpriteIcon
-                    spriteService={spriteService}
-                    type="bunker"
-                    bunkerKind={BunkerKind.FOLLOW}
-                    scale={scale}
-                  />
-                  <span style={{ color: '#000', fontWeight: 'bold' }}>400</span>
-                </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: `${4 * scale}px`
+                    }}
+                  >
+                    <SpriteIcon
+                      spriteService={spriteService}
+                      type="bunker"
+                      bunkerKind={BunkerKind.DIFF}
+                      rotation={2}
+                      scale={scale}
+                    />
+                    <span style={{ color: '#000', fontWeight: 'bold' }}>
+                      300
+                    </span>
+                  </div>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: `${4 * scale}px`
-                  }}
-                >
-                  <SpriteIcon
-                    spriteService={spriteService}
-                    type="bunker"
-                    bunkerKind={BunkerKind.GENERATOR}
-                    scale={scale}
-                  />
-                  <span style={{ color: '#000', fontWeight: 'bold' }}>500</span>
-                </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: `${4 * scale}px`
+                    }}
+                  >
+                    <SpriteIcon
+                      spriteService={spriteService}
+                      type="bunker"
+                      bunkerKind={BunkerKind.FOLLOW}
+                      scale={scale}
+                    />
+                    <span style={{ color: '#000', fontWeight: 'bold' }}>
+                      400
+                    </span>
+                  </div>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: `${4 * scale}px`
-                  }}
-                >
-                  <SpriteIcon
-                    spriteService={spriteService}
-                    type="fuel"
-                    scale={scale}
-                  />
-                  <span style={{ color: '#000', fontWeight: 'bold' }}>15</span>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: `${4 * scale}px`
+                    }}
+                  >
+                    <SpriteIcon
+                      spriteService={spriteService}
+                      type="bunker"
+                      bunkerKind={BunkerKind.GENERATOR}
+                      scale={scale}
+                    />
+                    <span style={{ color: '#000', fontWeight: 'bold' }}>
+                      500
+                    </span>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: `${4 * scale}px`
+                    }}
+                  >
+                    <SpriteIcon
+                      spriteService={spriteService}
+                      type="fuel"
+                      scale={scale}
+                    />
+                    <span style={{ color: '#000', fontWeight: 'bold' }}>
+                      15
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1411,125 +1440,127 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
         {/* About Tab Content */}
         {activeTab === 'about' && (
-          <div style={sectionStyle}>
-            <div
-              style={{
-                textAlign: 'center',
-                fontSize: `${6 * scale}px`,
-                lineHeight: '1.8',
-                padding: `${10 * scale}px`
-              }}
-            >
-              <h2
-                style={{
-                  fontSize: `${9 * scale}px`,
-                  marginBottom: `${10 * scale}px`,
-                  letterSpacing: '2px',
-                  fontWeight: 'bold'
-                }}
-              >
-                CONTINUUM
-              </h2>
-
-              <div style={{ marginBottom: `${7.5 * scale}px` }}>
-                <div style={{ color: '#fff', marginBottom: '5px' }}>
-                  Created by Randy and Brian Wilson
-                </div>
-                <div style={{ color: '#888', fontSize: `${5.5 * scale}px` }}>
-                  © 1987-1992
-                </div>
-              </div>
-
-              <div style={{ marginBottom: `${7.5 * scale}px` }}>
-                <div
-                  style={{
-                    color: '#aaa',
-                    marginBottom: '5px',
-                    fontSize: `${5.5 * scale}px`
-                  }}
-                >
-                  Originally released under the "Beerware" system
-                </div>
-                <div style={{ color: '#aaa', marginBottom: '5px' }}>
-                  Released into the Public Domain 2015
-                </div>
-                <a
-                  href="https://www.ski-epic.com/continuum_downloads/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    color: '#66aaff',
-                    fontSize: `${5 * scale}px`,
-                    wordBreak: 'break-all'
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.color = '#99ccff'
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.color = '#66aaff'
-                  }}
-                >
-                  https://www.ski-epic.com/continuum_downloads/
-                </a>
-              </div>
-
-              <div style={{ marginBottom: `${10 * scale}px` }}>
-                <div
-                  style={{
-                    color: '#fff',
-                    marginBottom: `${2.5 * scale}px`
-                  }}
-                >
-                  JavaScript Port by Sam Davidoff
-                </div>
-                <div style={{ color: '#888', fontSize: `${5.5 * scale}px` }}>
-                  © 2025
-                </div>
-              </div>
-
+          <div style={tabContentContainerStyle}>
+            <div style={sectionStyle}>
               <div
                 style={{
-                  borderTop: `${1 * scale}px solid #666`,
-                  paddingTop: `${10 * scale}px`,
-                  marginTop: `${10 * scale}px`
+                  textAlign: 'center',
+                  fontSize: `${6 * scale}px`,
+                  lineHeight: '1.8',
+                  padding: `${10 * scale}px`
                 }}
               >
-                <a
-                  href="https://github.com/sam-mfb/continuum"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <h2
                   style={{
-                    color: '#fff',
-                    textDecoration: 'none',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: `${4 * scale}px`,
-                    padding: `${4 * scale}px ${8 * scale}px`,
-                    border: `${1 * scale}px solid #666`,
-                    borderRadius: '0'
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.backgroundColor = '#333'
-                    e.currentTarget.style.borderColor = '#fff'
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.backgroundColor = 'transparent'
-                    e.currentTarget.style.borderColor = '#666'
+                    fontSize: `${9 * scale}px`,
+                    marginBottom: `${10 * scale}px`,
+                    letterSpacing: '2px',
+                    fontWeight: 'bold'
                   }}
                 >
-                  <svg
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
+                  CONTINUUM
+                </h2>
+
+                <div style={{ marginBottom: `${7.5 * scale}px` }}>
+                  <div style={{ color: '#fff', marginBottom: '5px' }}>
+                    Created by Randy and Brian Wilson
+                  </div>
+                  <div style={{ color: '#888', fontSize: `${5.5 * scale}px` }}>
+                    © 1987-1992
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: `${7.5 * scale}px` }}>
+                  <div
                     style={{
-                      width: `${8 * scale}px`,
-                      height: `${8 * scale}px`,
-                      fill: 'currentColor'
+                      color: '#aaa',
+                      marginBottom: '5px',
+                      fontSize: `${5.5 * scale}px`
                     }}
                   >
-                    <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
-                  </svg>
-                  View Source on GitHub
-                </a>
+                    Originally released under the "Beerware" system
+                  </div>
+                  <div style={{ color: '#aaa', marginBottom: '5px' }}>
+                    Released into the Public Domain 2015
+                  </div>
+                  <a
+                    href="https://www.ski-epic.com/continuum_downloads/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      color: '#66aaff',
+                      fontSize: `${5 * scale}px`,
+                      wordBreak: 'break-all'
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.color = '#99ccff'
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.color = '#66aaff'
+                    }}
+                  >
+                    https://www.ski-epic.com/continuum_downloads/
+                  </a>
+                </div>
+
+                <div style={{ marginBottom: `${10 * scale}px` }}>
+                  <div
+                    style={{
+                      color: '#fff',
+                      marginBottom: `${2.5 * scale}px`
+                    }}
+                  >
+                    JavaScript Port by Sam Davidoff
+                  </div>
+                  <div style={{ color: '#888', fontSize: `${5.5 * scale}px` }}>
+                    © 2025
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    borderTop: `${1 * scale}px solid #666`,
+                    paddingTop: `${10 * scale}px`,
+                    marginTop: `${10 * scale}px`
+                  }}
+                >
+                  <a
+                    href="https://github.com/sam-mfb/continuum"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      color: '#fff',
+                      textDecoration: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: `${4 * scale}px`,
+                      padding: `${4 * scale}px ${8 * scale}px`,
+                      border: `${1 * scale}px solid #666`,
+                      borderRadius: '0'
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.backgroundColor = '#333'
+                      e.currentTarget.style.borderColor = '#fff'
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.backgroundColor = 'transparent'
+                      e.currentTarget.style.borderColor = '#666'
+                    }}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                      style={{
+                        width: `${8 * scale}px`,
+                        height: `${8 * scale}px`,
+                        fill: 'currentColor'
+                      }}
+                    >
+                      <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
+                    </svg>
+                    View Source on GitHub
+                  </a>
+                </div>
               </div>
             </div>
           </div>
