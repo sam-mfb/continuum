@@ -60,7 +60,8 @@ import {
   resetGame,
   invalidateHighScore,
   killShipNextFrame,
-  resetKillShipNextFrame
+  resetKillShipNextFrame,
+  gameSlice
 } from '../gameSlice'
 import { setMode, setMostRecentScore } from '../appSlice'
 import { TOTAL_INITIAL_LIVES } from '../constants'
@@ -136,6 +137,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
     state.ship.deadCount === 0
   ) {
     handleGameOver(store, transitionCallbacks)
+    return
   }
 
   // Handle ship movement and controls
@@ -392,6 +394,8 @@ const handleGameOver = (
   store.dispatch(shipSlice.actions.resetFuel())
   store.dispatch(statusSlice.actions.initStatus())
   store.dispatch(shipSlice.actions.resetShip())
+  store.dispatch(shotsSlice.actions.clearAllShots())
+  store.dispatch(gameSlice.actions.resetKillShipNextFrame())
 }
 
 /**
