@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import { createBufferManager, type BufferManager } from '../bufferManager'
-import type { SampleGenerator } from '../sampleGenerator'
+import type { SampleGenerator } from '@/core/sound-shared'
 
 class MockGenerator implements SampleGenerator {
   private counter = 0

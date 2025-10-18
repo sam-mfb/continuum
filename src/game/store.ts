@@ -10,7 +10,7 @@ import {
 import type { GalaxyService } from '@core/galaxy'
 import type { SpriteService } from '@core/sprites'
 import type { FizzTransitionService } from '@core/transition'
-import type { SoundService } from '@core/sound'
+import type { GameSoundService } from './types'
 
 // Import all reducers
 import { gameSlice } from './gameSlice'
@@ -48,7 +48,7 @@ export type GameServices = {
   galaxyService: GalaxyService
   spriteService: SpriteService
   fizzTransitionService: FizzTransitionService
-  soundService: SoundService
+  soundService: GameSoundService
   collisionService: CollisionService
 }
 
@@ -101,6 +101,8 @@ const createStoreAndListeners = (
       collisionMode:
         persistedAppSettings.collisionMode ??
         appSlice.getInitialState().collisionMode,
+      soundMode:
+        persistedAppSettings.soundMode ?? appSlice.getInitialState().soundMode,
       volume: persistedAppSettings.volume ?? initialSettings.soundVolume,
       soundOn: persistedAppSettings.soundOn ?? initialSettings.soundEnabled,
       alignmentMode:
@@ -108,7 +110,18 @@ const createStoreAndListeners = (
         appSlice.getInitialState().alignmentMode,
       showInGameControls:
         persistedAppSettings.showInGameControls ??
-        appSlice.getInitialState().showInGameControls
+        appSlice.getInitialState().showInGameControls,
+      scaleMode:
+        persistedAppSettings.scaleMode ?? appSlice.getInitialState().scaleMode,
+      touchControlsOverride:
+        persistedAppSettings.touchControlsOverride ??
+        appSlice.getInitialState().touchControlsOverride,
+      renderMode:
+        persistedAppSettings.renderMode ??
+        appSlice.getInitialState().renderMode,
+      solidBackground:
+        persistedAppSettings.solidBackground ??
+        appSlice.getInitialState().solidBackground
     },
     highscore: persistedHighScores,
     controls: {

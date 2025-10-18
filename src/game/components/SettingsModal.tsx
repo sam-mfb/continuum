@@ -2,23 +2,31 @@ import React, { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../store'
 import {
   toggleCollisionMode,
+  toggleSoundMode,
+  toggleRenderMode,
+  toggleSolidBackground,
   toggleAlignmentMode,
   toggleInGameControls,
+  setScaleMode,
+  setTouchControlsOverride,
   closeSettings
 } from '../appSlice'
+import { isTouchDevice } from '../mobile/deviceDetection'
 import { resetHighScores } from '@/core/highscore'
 import { setBinding, resetBindings } from '@/core/controls'
 import { ControlAction } from '@/core/controls/types'
 import { type SpriteService } from '@/core/sprites'
 import { BunkerKind } from '@/core/figs'
-import { bitmapToCanvas } from '@/lib/bitmap'
 import { formatKey } from '../utils/formatKey'
 import VolumeControls from './VolumeControls'
+import { CustomDropdown, type DropdownOption } from './CustomDropdown'
+import type { ScaleMode } from '../appSlice'
 
 type Tab = 'options' | 'controls' | 'tips' | 'scoring' | 'about'
 
 type SettingsModalProps = {
   spriteService: SpriteService
+  scale: number
 }
 
 // Helper component to render a sprite to a canvas
@@ -27,9 +35,8 @@ const SpriteIcon: React.FC<{
   type: 'bunker' | 'fuel'
   bunkerKind?: BunkerKind
   rotation?: number
-  width: number
-  height: number
-}> = ({ spriteService, type, bunkerKind, rotation = 0, width, height }) => {
+  scale: number
+}> = ({ spriteService, type, bunkerKind, rotation = 0, scale }) => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null)
 
   React.useEffect(() => {
@@ -39,33 +46,57 @@ const SpriteIcon: React.FC<{
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Clear canvas with white background
-    ctx.fillStyle = '#fff'
-    ctx.fillRect(0, 0, width, height)
+    // Disable image smoothing for crisp pixels
+    ctx.imageSmoothingEnabled = false
 
-    // Get and render sprite
+    // Get sprite data
+    let spriteData
+    let spriteWidth
+    let spriteHeight
+    let rowBytes
+
     if (type === 'bunker' && bunkerKind !== undefined) {
-      const spriteData = spriteService.getBunkerSprite(bunkerKind, rotation, {
+      const sprite = spriteService.getBunkerSprite(bunkerKind, rotation, {
         variant: 'def'
       })
-      bitmapToCanvas(spriteData.bitmap, ctx, {
-        foregroundColor: 'black',
-        backgroundColor: 'white'
-      })
+      spriteData = sprite.uint8
+      spriteWidth = sprite.bitmap.width
+      spriteHeight = sprite.bitmap.height
+      rowBytes = sprite.bitmap.rowBytes
     } else if (type === 'fuel') {
-      const spriteData = spriteService.getFuelSprite(0, { variant: 'def' })
-      bitmapToCanvas(spriteData.bitmap, ctx, {
-        foregroundColor: 'black',
-        backgroundColor: 'white'
-      })
+      const sprite = spriteService.getFuelSprite(0, { variant: 'def' })
+      spriteData = sprite.uint8
+      spriteWidth = sprite.bitmap.width
+      spriteHeight = sprite.bitmap.height
+      rowBytes = sprite.bitmap.rowBytes
+    } else {
+      return
     }
-  }, [spriteService, type, bunkerKind, rotation, width, height])
+
+    // Set canvas size to exact integer multiples
+    canvas.width = spriteWidth * scale
+    canvas.height = spriteHeight * scale
+
+    // Clear canvas with white background
+    ctx.fillStyle = '#fff'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+    // Draw pixels as scaled rectangles
+    for (let y = 0; y < spriteHeight; y++) {
+      for (let x = 0; x < spriteWidth; x++) {
+        const byteIdx = y * rowBytes + Math.floor(x / 8)
+        const bitIdx = 7 - (x % 8)
+        const bit = (spriteData[byteIdx]! >> bitIdx) & 1
+
+        ctx.fillStyle = bit ? '#000' : '#fff'
+        ctx.fillRect(x * scale, y * scale, scale, scale)
+      }
+    }
+  }, [spriteService, type, bunkerKind, rotation, scale])
 
   return (
     <canvas
       ref={canvasRef}
-      width={width}
-      height={height}
       style={{
         imageRendering: 'pixelated'
       }}
@@ -73,12 +104,77 @@ const SpriteIcon: React.FC<{
   )
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
+// ScrollableContainer component with scroll indicator
+const ScrollableContainer: React.FC<{
+  children: React.ReactNode
+  scale: number
+}> = ({ children, scale }) => {
+  const containerRef = React.useRef<HTMLDivElement>(null)
+  const [canScrollDown, setCanScrollDown] = React.useState(false)
+
+  const checkScroll = React.useCallback(() => {
+    if (!containerRef.current) return
+    const { scrollTop, scrollHeight, clientHeight } = containerRef.current
+    setCanScrollDown(scrollTop + clientHeight < scrollHeight - 1)
+  }, [])
+
+  React.useEffect(() => {
+    // Check scroll state on mount and when content changes
+    checkScroll()
+  }, [checkScroll, children])
+
+  const handleScroll = (): void => {
+    checkScroll()
+  }
+
+  const containerStyle: React.CSSProperties = {
+    height: `${220 * scale}px`,
+    overflowY: 'auto',
+    position: 'relative'
+  }
+
+  const indicatorStyle: React.CSSProperties = {
+    position: 'sticky',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    padding: `${2 * scale}px`,
+    background: 'rgba(0, 0, 0, 0.8)',
+    color: '#888',
+    fontSize: `${5 * scale}px`,
+    fontFamily: 'monospace',
+    pointerEvents: 'none',
+    borderTop: `${1 * scale}px solid #333`
+  }
+
+  return (
+    <div ref={containerRef} style={containerStyle} onScroll={handleScroll}>
+      {children}
+      {canScrollDown && <div style={indicatorStyle}>▼ MORE ▼</div>}
+    </div>
+  )
+}
+
+const SettingsModal: React.FC<SettingsModalProps> = ({
+  spriteService,
+  scale
+}) => {
   const dispatch = useAppDispatch()
   const collisionMode = useAppSelector(state => state.app.collisionMode)
+  const soundMode = useAppSelector(state => state.app.soundMode)
+  const renderMode = useAppSelector(state => state.app.renderMode)
+  const solidBackground = useAppSelector(state => state.app.solidBackground)
   const alignmentMode = useAppSelector(state => state.app.alignmentMode)
+  const scaleMode = useAppSelector(state => state.app.scaleMode)
   const showInGameControls = useAppSelector(
     state => state.app.showInGameControls
+  )
+  const touchControlsOverride = useAppSelector(
+    state => state.app.touchControlsOverride
+  )
+  const touchControlsEnabled = useAppSelector(
+    state => state.app.touchControlsEnabled
   )
   const bindings = useAppSelector(state => state.controls.bindings)
   const showSettings = useAppSelector(state => state.app.showSettings)
@@ -129,7 +225,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
     }
 
     window.addEventListener('keydown', handleKeyDown)
-    return (): void => window.removeEventListener('keydown', handleKeyDown)
+    return (): void => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
   }, [dispatch, showSettings, editingControl, bindings])
 
   if (!showSettings) return null as React.ReactElement | null
@@ -164,14 +262,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
 
   const modalStyle: React.CSSProperties = {
     backgroundColor: '#000',
-    border: '2px solid #666',
+    border: `${1 * scale}px solid #666`,
     color: '#fff',
     fontFamily: 'monospace',
-    fontSize: '13px',
-    padding: '20px',
-    maxWidth: '800px',
-    maxHeight: '80vh',
-    overflowY: 'auto',
+    fontSize: `${6.5 * scale}px`,
+    padding: `${10 * scale}px`,
+    width: `${400 * scale}px`,
     position: 'relative'
   }
 
@@ -179,39 +275,39 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '20px',
-    borderBottom: '1px solid #666',
-    paddingBottom: '10px'
+    marginBottom: `${10 * scale}px`,
+    borderBottom: `${1 * scale}px solid #666`,
+    paddingBottom: `${5 * scale}px`
   }
 
   const closeButtonStyle: React.CSSProperties = {
     background: '#000',
     color: '#fff',
-    border: '1px solid #fff',
-    padding: '4px 8px',
+    border: `${1 * scale}px solid #fff`,
+    padding: `${2 * scale}px ${4 * scale}px`,
     cursor: 'pointer',
     fontFamily: 'monospace',
-    fontSize: '11px'
+    fontSize: `${5.5 * scale}px`
   }
 
   const sectionStyle: React.CSSProperties = {
-    border: '1px solid #666',
-    padding: '8px',
+    border: `${1 * scale}px solid #666`,
+    padding: `${4 * scale}px`,
     background: '#000',
-    marginBottom: '10px'
+    marginBottom: `${5 * scale}px`
   }
 
   const controlGridStyle: React.CSSProperties = {
     display: 'grid',
     gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '5px',
-    fontSize: '12px'
+    gap: `${2.5 * scale}px`,
+    fontSize: `${6 * scale}px`
   }
 
   const controlItemStyle: React.CSSProperties = {
     display: 'flex',
-    gap: '5px',
-    padding: '2px 0'
+    gap: `${2.5 * scale}px`,
+    padding: `${1 * scale}px 0`
   }
 
   const labelStyle: React.CSSProperties = {
@@ -222,15 +318,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
     color: isEditing ? '#000' : '#fff',
     fontWeight: 'bold',
     background: isEditing ? '#ffcc00' : '#333',
-    border: '1px solid ' + (isEditing ? '#ffcc00' : '#666'),
-    padding: '2px 6px',
-    borderRadius: '2px',
+    border: `${1 * scale}px solid ` + (isEditing ? '#ffcc00' : '#666'),
+    padding: `${1 * scale}px ${3 * scale}px`,
+    borderRadius: `${1 * scale}px`,
     cursor: 'pointer',
-    minWidth: '60px',
+    minWidth: `${30 * scale}px`,
     textAlign: 'center',
     display: 'inline-block',
     transition: 'all 0.15s',
-    fontSize: '11px'
+    fontSize: `${5.5 * scale}px`
   })
 
   const handleControlClick = (action: ControlAction): void => {
@@ -241,39 +337,41 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
   const toggleButtonStyle: React.CSSProperties = {
     background: '#000',
     color: '#fff',
-    border: '1px solid #fff',
-    padding: '4px 8px',
+    border: `${1 * scale}px solid #fff`,
+    padding: `${2 * scale}px ${4 * scale}px`,
     cursor: 'pointer',
     fontFamily: 'monospace',
-    fontSize: '12px',
+    fontSize: `${6 * scale}px`,
     textTransform: 'uppercase'
   }
 
   const tabContainerStyle: React.CSSProperties = {
     display: 'flex',
     gap: '0',
-    marginBottom: '20px',
-    borderBottom: '1px solid #666'
+    marginBottom: `${10 * scale}px`,
+    borderBottom: `${1 * scale}px solid #666`
   }
 
   const tabButtonStyle = (isActive: boolean): React.CSSProperties => ({
     background: isActive ? '#333' : '#000',
     color: isActive ? '#fff' : '#888',
-    border: '1px solid #666',
-    borderBottom: isActive ? '1px solid #333' : '1px solid #666',
-    padding: '8px 20px',
+    border: `${1 * scale}px solid #666`,
+    borderBottom: isActive
+      ? `${1 * scale}px solid #333`
+      : `${1 * scale}px solid #666`,
+    padding: `${4 * scale}px ${10 * scale}px`,
     cursor: 'pointer',
     fontFamily: 'monospace',
-    fontSize: '12px',
+    fontSize: `${6 * scale}px`,
     textTransform: 'uppercase',
-    marginBottom: '-1px'
+    marginBottom: `${-1 * scale}px`
   })
 
   return (
     <div style={overlayStyle} onClick={() => dispatch(closeSettings())}>
       <div style={modalStyle} onClick={e => e.stopPropagation()}>
         <div style={headerStyle}>
-          <h2 style={{ margin: 0, fontSize: '16px' }}>SETTINGS</h2>
+          <h2 style={{ margin: 0, fontSize: `${8 * scale}px` }}>SETTINGS</h2>
           <button
             onClick={() => dispatch(closeSettings())}
             style={closeButtonStyle}
@@ -374,11 +472,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
 
         {/* Tab Content */}
         {activeTab === 'options' && (
-          <>
+          <ScrollableContainer scale={scale}>
             {/* Collision Mode Section */}
             <div style={sectionStyle}>
               <div
-                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: `${5 * scale}px`
+                }}
               >
                 <span>COLLISION MODE:</span>
                 <button
@@ -396,8 +498,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                 <span
                   style={{
                     color: '#666',
-                    fontSize: '10px',
-                    marginLeft: '10px'
+                    fontSize: `${5 * scale}px`,
+                    marginLeft: `${5 * scale}px`
                   }}
                 >
                   (
@@ -407,12 +509,150 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                   )
                 </span>
               </div>
+              <div
+                style={{
+                  marginTop: `${3 * scale}px`,
+                  color: '#ffaa00',
+                  fontSize: `${5 * scale}px`
+                }}
+              >
+                Note: Reload page after changing to apply
+              </div>
             </div>
+
+            {/* Sound Mode Section */}
+            <div style={sectionStyle}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: `${5 * scale}px`
+                }}
+              >
+                <span>SOUND MODE:</span>
+                <button
+                  onClick={() => dispatch(toggleSoundMode())}
+                  style={toggleButtonStyle}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = '#333'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = '#000'
+                  }}
+                >
+                  {soundMode === 'modern' ? 'MODERN' : 'ORIGINAL'}
+                </button>
+                <span
+                  style={{
+                    color: '#666',
+                    fontSize: `${5 * scale}px`,
+                    marginLeft: `${5 * scale}px`
+                  }}
+                >
+                  (
+                  {soundMode === 'modern'
+                    ? 'Modern multi-channel mixer (8 simultaneous sounds)'
+                    : 'Original single-channel with priorities'}
+                  )
+                </span>
+              </div>
+              <div
+                style={{
+                  marginTop: `${3 * scale}px`,
+                  color: '#ffaa00',
+                  fontSize: `${5 * scale}px`
+                }}
+              >
+                Note: Reload page after changing to apply
+              </div>
+            </div>
+
+            {/* Render Mode Section */}
+            <div style={sectionStyle}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: `${5 * scale}px`
+                }}
+              >
+                <span>RENDER MODE:</span>
+                <button
+                  onClick={() => dispatch(toggleRenderMode())}
+                  style={toggleButtonStyle}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = '#333'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = '#000'
+                  }}
+                >
+                  {renderMode === 'modern' ? 'MODERN' : 'ORIGINAL'}
+                </button>
+                <span
+                  style={{
+                    color: '#666',
+                    fontSize: `${5 * scale}px`,
+                    marginLeft: `${5 * scale}px`
+                  }}
+                >
+                  (
+                  {renderMode === 'modern'
+                    ? 'Modern frame-based renderer'
+                    : 'Original bitmap renderer'}
+                  )
+                </span>
+              </div>
+            </div>
+
+            {/* Solid Background Section - only visible in modern render mode */}
+            {renderMode === 'modern' && (
+              <div style={sectionStyle}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: `${5 * scale}px`
+                  }}
+                >
+                  <span>SOLID BACKGROUND:</span>
+                  <button
+                    onClick={() => dispatch(toggleSolidBackground())}
+                    style={toggleButtonStyle}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = '#333'
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = '#000'
+                    }}
+                  >
+                    {solidBackground ? 'ON' : 'OFF'}
+                  </button>
+                  <span
+                    style={{
+                      color: '#666',
+                      fontSize: `${5 * scale}px`,
+                      marginLeft: `${5 * scale}px`
+                    }}
+                  >
+                    (
+                    {solidBackground
+                      ? 'Solid gray background'
+                      : 'Checkered background pattern'}
+                    )
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Alignment Mode Section */}
             <div style={sectionStyle}>
               <div
-                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: `${5 * scale}px`
+                }}
               >
                 <span>ALIGNMENT MODE:</span>
                 <button
@@ -432,8 +672,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                 <span
                   style={{
                     color: '#666',
-                    fontSize: '10px',
-                    marginLeft: '10px'
+                    fontSize: `${5 * scale}px`,
+                    marginLeft: `${5 * scale}px`
                   }}
                 >
                   (
@@ -445,10 +685,105 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
               </div>
             </div>
 
+            {/* Display Scale Section */}
+            <div style={sectionStyle}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: `${5 * scale}px`
+                }}
+              >
+                <span>DISPLAY SCALE:</span>
+                <CustomDropdown<ScaleMode>
+                  value={scaleMode}
+                  options={
+                    [
+                      { value: 'auto', label: 'AUTO' },
+                      { value: 1, label: '1X' },
+                      { value: 2, label: '2X' },
+                      { value: 3, label: '3X' }
+                    ] as DropdownOption<ScaleMode>[]
+                  }
+                  onChange={mode => dispatch(setScaleMode(mode))}
+                  scale={scale}
+                  minWidth={35}
+                  dataAttribute="scale-dropdown"
+                />
+                <span
+                  style={{
+                    color: '#666',
+                    fontSize: `${5 * scale}px`,
+                    marginLeft: `${5 * scale}px`
+                  }}
+                >
+                  (
+                  {scaleMode === 'auto'
+                    ? 'Auto-scale based on viewport size'
+                    : `Fixed ${scaleMode}x scale`}
+                  )
+                </span>
+              </div>
+            </div>
+
+            {/* Touch Controls Section */}
+            <div style={sectionStyle}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: `${5 * scale}px`
+                }}
+              >
+                <span>TOUCH CONTROLS:</span>
+                <CustomDropdown<string>
+                  value={
+                    touchControlsOverride === null
+                      ? 'auto'
+                      : touchControlsOverride
+                        ? 'on'
+                        : 'off'
+                  }
+                  options={[
+                    { value: 'auto', label: 'AUTO' },
+                    { value: 'on', label: 'ON' },
+                    { value: 'off', label: 'OFF' }
+                  ]}
+                  onChange={value => {
+                    const override =
+                      value === 'auto' ? null : value === 'on' ? true : false
+                    dispatch(setTouchControlsOverride(override))
+                  }}
+                  scale={scale}
+                  minWidth={35}
+                  dataAttribute="touch-controls-dropdown"
+                />
+                <span
+                  style={{
+                    color: '#666',
+                    fontSize: `${5 * scale}px`,
+                    marginLeft: `${5 * scale}px`
+                  }}
+                >
+                  (
+                  {touchControlsOverride === null
+                    ? `Auto: ${isTouchDevice() ? 'ON (touch device detected)' : 'OFF (no touch detected)'}`
+                    : touchControlsEnabled
+                      ? 'Virtual joystick and buttons enabled'
+                      : 'Touch controls disabled'}
+                  )
+                </span>
+              </div>
+            </div>
+
             {/* In-Game Controls Panel Section */}
             <div style={sectionStyle}>
               <div
-                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: `${5 * scale}px`
+                }}
               >
                 <span>SHOW IN-GAME CONTROLS:</span>
                 <button
@@ -466,8 +801,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                 <span
                   style={{
                     color: '#666',
-                    fontSize: '10px',
-                    marginLeft: '10px'
+                    fontSize: `${5 * scale}px`,
+                    marginLeft: `${5 * scale}px`
                   }}
                 >
                   (Show control hints at bottom of screen during gameplay)
@@ -476,12 +811,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
             </div>
 
             {/* Volume Controls Section */}
-            <VolumeControls />
+            <VolumeControls scale={scale} />
 
             {/* High Score Reset Section */}
             <div style={sectionStyle}>
               <div
-                style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: `${5 * scale}px`
+                }}
               >
                 <span>HIGH SCORES:</span>
                 <button
@@ -506,32 +845,34 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                   {showConfirm ? 'CONFIRM RESET' : 'RESET SCORES'}
                 </button>
                 {showConfirm && (
-                  <span style={{ color: '#ff3333', fontSize: '10px' }}>
+                  <span
+                    style={{ color: '#ff3333', fontSize: `${5 * scale}px` }}
+                  >
                     Click again to confirm or wait to cancel
                   </span>
                 )}
               </div>
             </div>
-          </>
+          </ScrollableContainer>
         )}
 
         {/* Controls Tab Content */}
         {activeTab === 'controls' && (
-          <>
+          <ScrollableContainer scale={scale}>
             <div style={sectionStyle}>
               <div
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  marginBottom: '10px'
+                  marginBottom: `${5 * scale}px`
                 }}
               >
                 <div style={{ fontWeight: 'bold' }}>
                   CONTROLS
                   <span
                     style={{
-                      fontSize: '10px',
+                      fontSize: `${5 * scale}px`,
                       color: '#888',
                       marginLeft: '10px',
                       fontWeight: 'normal'
@@ -557,11 +898,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                 <div
                   style={{
                     color: '#ff3333',
-                    fontSize: '11px',
-                    marginBottom: '8px',
-                    padding: '4px 8px',
+                    fontSize: `${5.5 * scale}px`,
+                    marginBottom: `${4 * scale}px`,
+                    padding: `${2 * scale}px ${4 * scale}px`,
                     background: 'rgba(255, 51, 51, 0.1)',
-                    border: '1px solid #ff3333'
+                    border: `${1 * scale}px solid #ff3333`
                   }}
                 >
                   {conflictError}
@@ -571,11 +912,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                 <div
                   style={{
                     color: '#ffcc00',
-                    fontSize: '11px',
-                    marginBottom: '8px',
-                    padding: '4px 8px',
+                    fontSize: `${5.5 * scale}px`,
+                    marginBottom: `${4 * scale}px`,
+                    padding: `${2 * scale}px ${4 * scale}px`,
                     background: 'rgba(255, 204, 0, 0.1)',
-                    border: '1px solid #ffcc00'
+                    border: `${1 * scale}px solid #ffcc00`
                   }}
                 >
                   Press a key to bind to this control (ESC to cancel)
@@ -588,8 +929,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                     style={{
                       ...controlItemStyle,
                       fontWeight: 'bold',
-                      borderBottom: '1px solid #333',
-                      marginBottom: '3px'
+                      borderBottom: `${1 * scale}px solid #333`,
+                      marginBottom: `${1.5 * scale}px`
                     }}
                   >
                     MOVEMENT
@@ -671,8 +1012,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                     style={{
                       ...controlItemStyle,
                       fontWeight: 'bold',
-                      borderBottom: '1px solid #333',
-                      marginBottom: '3px'
+                      borderBottom: `${1 * scale}px solid #333`,
+                      marginBottom: `${1.5 * scale}px`
                     }}
                   >
                     ACTIONS
@@ -756,8 +1097,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                     style={{
                       ...controlItemStyle,
                       fontWeight: 'bold',
-                      borderBottom: '1px solid #333',
-                      marginBottom: '3px'
+                      borderBottom: `${1 * scale}px solid #333`,
+                      marginBottom: `${1.5 * scale}px`
                     }}
                   >
                     GAME
@@ -833,16 +1174,16 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                   </div>
                   <div
                     style={{
-                      marginTop: '5px',
-                      paddingTop: '5px',
-                      borderTop: '1px solid #333'
+                      marginTop: `${2.5 * scale}px`,
+                      paddingTop: `${2.5 * scale}px`,
+                      borderTop: `${1 * scale}px solid #333`
                     }}
                   >
                     <div
                       style={{
-                        fontSize: '9px',
+                        fontSize: `${4.5 * scale}px`,
                         color: '#888',
-                        marginBottom: '3px'
+                        marginBottom: `${1.5 * scale}px`
                       }}
                     >
                       CHEATS (disables high scores):
@@ -911,380 +1252,407 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ spriteService }) => {
                 </div>
               </div>
             </div>
-          </>
+          </ScrollableContainer>
         )}
 
         {/* Tips Tab Content */}
         {activeTab === 'tips' && (
-          <div style={sectionStyle}>
-            <div
-              style={{
-                fontSize: '13px',
-                lineHeight: '1.8',
-                padding: '20px'
-              }}
-            >
-              <div style={{ marginBottom: '20px' }}>
-                <div
-                  style={{
-                    fontSize: '14px',
-                    fontWeight: 'bold',
-                    color: '#fff',
-                    marginBottom: '10px',
-                    borderBottom: '1px solid #444',
-                    paddingBottom: '5px'
-                  }}
-                >
-                  BEGINNER
+          <ScrollableContainer scale={scale}>
+            <div style={sectionStyle}>
+              <div
+                style={{
+                  fontSize: `${6.5 * scale}px`,
+                  lineHeight: '1.8',
+                  padding: `${10 * scale}px`
+                }}
+              >
+                <div style={{ marginBottom: `${10 * scale}px` }}>
+                  <div
+                    style={{
+                      fontSize: `${7 * scale}px`,
+                      fontWeight: 'bold',
+                      color: '#fff',
+                      marginBottom: `${5 * scale}px`,
+                      borderBottom: `${1 * scale}px solid #444`,
+                      paddingBottom: `${2.5 * scale}px`
+                    }}
+                  >
+                    BEGINNER
+                  </div>
+                  <div
+                    style={{ color: '#ccc', marginBottom: `${3 * scale}px` }}
+                  >
+                    • Avoid the walls first; kill things second
+                  </div>
+                  <div style={{ color: '#ccc' }}>
+                    • Never thrust with the wind
+                  </div>
                 </div>
-                <div style={{ color: '#ccc', marginBottom: '6px' }}>
-                  • Avoid the walls first; kill things second
-                </div>
-                <div style={{ color: '#ccc' }}>
-                  • Never thrust with the wind
-                </div>
-              </div>
 
-              <div style={{ marginBottom: '20px' }}>
-                <div
-                  style={{
-                    fontSize: '14px',
-                    fontWeight: 'bold',
-                    color: '#fff',
-                    marginBottom: '10px',
-                    borderBottom: '1px solid #444',
-                    paddingBottom: '5px'
-                  }}
-                >
-                  INTERMEDIATE
+                <div style={{ marginBottom: `${10 * scale}px` }}>
+                  <div
+                    style={{
+                      fontSize: `${7 * scale}px`,
+                      fontWeight: 'bold',
+                      color: '#fff',
+                      marginBottom: `${5 * scale}px`,
+                      borderBottom: `${1 * scale}px solid #444`,
+                      paddingBottom: `${2.5 * scale}px`
+                    }}
+                  >
+                    INTERMEDIATE
+                  </div>
+                  <div
+                    style={{ color: '#ccc', marginBottom: `${3 * scale}px` }}
+                  >
+                    • Take your time
+                  </div>
+                  <div style={{ color: '#ccc' }}>• Use your shield often</div>
                 </div>
-                <div style={{ color: '#ccc', marginBottom: '6px' }}>
-                  • Take your time
-                </div>
-                <div style={{ color: '#ccc' }}>• Use your shield often</div>
-              </div>
 
-              <div>
-                <div
-                  style={{
-                    fontSize: '14px',
-                    fontWeight: 'bold',
-                    color: '#fff',
-                    marginBottom: '10px',
-                    borderBottom: '1px solid #444',
-                    paddingBottom: '5px'
-                  }}
-                >
-                  ADVANCED
-                </div>
-                <div style={{ color: '#ccc', marginBottom: '6px' }}>
-                  • Find and use bases' blind spots
-                </div>
-                <div style={{ color: '#ccc' }}>
-                  • Don't always do things the obvious way
+                <div>
+                  <div
+                    style={{
+                      fontSize: `${7 * scale}px`,
+                      fontWeight: 'bold',
+                      color: '#fff',
+                      marginBottom: `${5 * scale}px`,
+                      borderBottom: `${1 * scale}px solid #444`,
+                      paddingBottom: `${2.5 * scale}px`
+                    }}
+                  >
+                    ADVANCED
+                  </div>
+                  <div
+                    style={{ color: '#ccc', marginBottom: `${3 * scale}px` }}
+                  >
+                    • Find and use bases' blind spots
+                  </div>
+                  <div style={{ color: '#ccc' }}>
+                    • Don't always do things the obvious way
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </ScrollableContainer>
         )}
 
         {/* Scoring Tab Content */}
         {activeTab === 'scoring' && (
-          <div style={sectionStyle}>
-            <div
-              style={{
-                fontSize: '13px',
-                lineHeight: '1.8',
-                padding: '20px',
-                background: '#fff',
-                color: '#000'
-              }}
-            >
+          <ScrollableContainer scale={scale}>
+            <div style={sectionStyle}>
               <div
                 style={{
-                  fontWeight: 'bold',
-                  marginBottom: '15px',
-                  fontSize: '14px'
-                }}
-              >
-                POINT VALUES
-              </div>
-
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)',
-                  gap: '20px',
-                  justifyItems: 'center'
+                  fontSize: `${6.5 * scale}px`,
+                  lineHeight: '1.8',
+                  padding: `${10 * scale}px`,
+                  background: '#fff',
+                  color: '#000'
                 }}
               >
                 <div
                   style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '8px'
+                    fontWeight: 'bold',
+                    marginBottom: `${7.5 * scale}px`,
+                    fontSize: `${7 * scale}px`
                   }}
                 >
-                  <SpriteIcon
-                    spriteService={spriteService}
-                    type="bunker"
-                    bunkerKind={BunkerKind.WALL}
-                    width={48}
-                    height={48}
-                  />
-                  <span style={{ color: '#000', fontWeight: 'bold' }}>100</span>
+                  POINT VALUES
                 </div>
 
                 <div
                   style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '8px'
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(4, 1fr)',
+                    gap: `${10 * scale}px`,
+                    justifyItems: 'center'
                   }}
                 >
-                  <SpriteIcon
-                    spriteService={spriteService}
-                    type="bunker"
-                    bunkerKind={BunkerKind.GROUND}
-                    width={48}
-                    height={48}
-                  />
-                  <span style={{ color: '#000', fontWeight: 'bold' }}>100</span>
-                </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: `${4 * scale}px`
+                    }}
+                  >
+                    <SpriteIcon
+                      spriteService={spriteService}
+                      type="bunker"
+                      bunkerKind={BunkerKind.WALL}
+                      scale={scale}
+                    />
+                    <span style={{ color: '#000', fontWeight: 'bold' }}>
+                      100
+                    </span>
+                  </div>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
-                >
-                  <SpriteIcon
-                    spriteService={spriteService}
-                    type="bunker"
-                    bunkerKind={BunkerKind.DIFF}
-                    rotation={0}
-                    width={48}
-                    height={48}
-                  />
-                  <span style={{ color: '#000', fontWeight: 'bold' }}>10</span>
-                </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: `${4 * scale}px`
+                    }}
+                  >
+                    <SpriteIcon
+                      spriteService={spriteService}
+                      type="bunker"
+                      bunkerKind={BunkerKind.GROUND}
+                      scale={scale}
+                    />
+                    <span style={{ color: '#000', fontWeight: 'bold' }}>
+                      100
+                    </span>
+                  </div>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
-                >
-                  <SpriteIcon
-                    spriteService={spriteService}
-                    type="bunker"
-                    bunkerKind={BunkerKind.DIFF}
-                    rotation={1}
-                    width={48}
-                    height={48}
-                  />
-                  <span style={{ color: '#000', fontWeight: 'bold' }}>200</span>
-                </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: `${4 * scale}px`
+                    }}
+                  >
+                    <SpriteIcon
+                      spriteService={spriteService}
+                      type="bunker"
+                      bunkerKind={BunkerKind.DIFF}
+                      rotation={0}
+                      scale={scale}
+                    />
+                    <span style={{ color: '#000', fontWeight: 'bold' }}>
+                      10
+                    </span>
+                  </div>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
-                >
-                  <SpriteIcon
-                    spriteService={spriteService}
-                    type="bunker"
-                    bunkerKind={BunkerKind.DIFF}
-                    rotation={2}
-                    width={48}
-                    height={48}
-                  />
-                  <span style={{ color: '#000', fontWeight: 'bold' }}>300</span>
-                </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: `${4 * scale}px`
+                    }}
+                  >
+                    <SpriteIcon
+                      spriteService={spriteService}
+                      type="bunker"
+                      bunkerKind={BunkerKind.DIFF}
+                      rotation={1}
+                      scale={scale}
+                    />
+                    <span style={{ color: '#000', fontWeight: 'bold' }}>
+                      200
+                    </span>
+                  </div>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
-                >
-                  <SpriteIcon
-                    spriteService={spriteService}
-                    type="bunker"
-                    bunkerKind={BunkerKind.FOLLOW}
-                    width={48}
-                    height={48}
-                  />
-                  <span style={{ color: '#000', fontWeight: 'bold' }}>400</span>
-                </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: `${4 * scale}px`
+                    }}
+                  >
+                    <SpriteIcon
+                      spriteService={spriteService}
+                      type="bunker"
+                      bunkerKind={BunkerKind.DIFF}
+                      rotation={2}
+                      scale={scale}
+                    />
+                    <span style={{ color: '#000', fontWeight: 'bold' }}>
+                      300
+                    </span>
+                  </div>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
-                >
-                  <SpriteIcon
-                    spriteService={spriteService}
-                    type="bunker"
-                    bunkerKind={BunkerKind.GENERATOR}
-                    width={48}
-                    height={48}
-                  />
-                  <span style={{ color: '#000', fontWeight: 'bold' }}>500</span>
-                </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: `${4 * scale}px`
+                    }}
+                  >
+                    <SpriteIcon
+                      spriteService={spriteService}
+                      type="bunker"
+                      bunkerKind={BunkerKind.FOLLOW}
+                      scale={scale}
+                    />
+                    <span style={{ color: '#000', fontWeight: 'bold' }}>
+                      400
+                    </span>
+                  </div>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
-                >
-                  <SpriteIcon
-                    spriteService={spriteService}
-                    type="fuel"
-                    width={32}
-                    height={32}
-                  />
-                  <span style={{ color: '#000', fontWeight: 'bold' }}>15</span>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: `${4 * scale}px`
+                    }}
+                  >
+                    <SpriteIcon
+                      spriteService={spriteService}
+                      type="bunker"
+                      bunkerKind={BunkerKind.GENERATOR}
+                      scale={scale}
+                    />
+                    <span style={{ color: '#000', fontWeight: 'bold' }}>
+                      500
+                    </span>
+                  </div>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: `${4 * scale}px`
+                    }}
+                  >
+                    <SpriteIcon
+                      spriteService={spriteService}
+                      type="fuel"
+                      scale={scale}
+                    />
+                    <span style={{ color: '#000', fontWeight: 'bold' }}>
+                      15
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </ScrollableContainer>
         )}
 
         {/* About Tab Content */}
         {activeTab === 'about' && (
-          <div style={sectionStyle}>
-            <div
-              style={{
-                textAlign: 'center',
-                fontSize: '12px',
-                lineHeight: '1.8',
-                padding: '20px'
-              }}
-            >
-              <h2
-                style={{
-                  fontSize: '18px',
-                  marginBottom: '20px',
-                  letterSpacing: '2px',
-                  fontWeight: 'bold'
-                }}
-              >
-                CONTINUUM
-              </h2>
-
-              <div style={{ marginBottom: '15px' }}>
-                <div style={{ color: '#fff', marginBottom: '5px' }}>
-                  Created by Randy and Brian Wilson
-                </div>
-                <div style={{ color: '#888', fontSize: '11px' }}>
-                  © 1987-1992
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '15px' }}>
-                <div
-                  style={{
-                    color: '#aaa',
-                    marginBottom: '5px',
-                    fontSize: '11px'
-                  }}
-                >
-                  Originally released under the "Beerware" system
-                </div>
-                <div style={{ color: '#aaa', marginBottom: '5px' }}>
-                  Released into the Public Domain 2015
-                </div>
-                <a
-                  href="https://www.ski-epic.com/continuum_downloads/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    color: '#66aaff',
-                    fontSize: '10px',
-                    wordBreak: 'break-all'
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.color = '#99ccff'
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.color = '#66aaff'
-                  }}
-                >
-                  https://www.ski-epic.com/continuum_downloads/
-                </a>
-              </div>
-
-              <div style={{ marginBottom: '20px' }}>
-                <div style={{ color: '#fff', marginBottom: '5px' }}>
-                  JavaScript Port by Sam Davidoff
-                </div>
-                <div style={{ color: '#888', fontSize: '11px' }}>© 2025</div>
-              </div>
-
+          <ScrollableContainer scale={scale}>
+            <div style={sectionStyle}>
               <div
                 style={{
-                  borderTop: '1px solid #666',
-                  paddingTop: '20px',
-                  marginTop: '20px'
+                  textAlign: 'center',
+                  fontSize: `${6 * scale}px`,
+                  lineHeight: '1.8',
+                  padding: `${10 * scale}px`
                 }}
               >
-                <a
-                  href="https://github.com/sam-mfb/continuum"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <h2
                   style={{
-                    color: '#fff',
-                    textDecoration: 'none',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '8px 16px',
-                    border: '1px solid #666',
-                    borderRadius: '0'
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.backgroundColor = '#333'
-                    e.currentTarget.style.borderColor = '#fff'
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.backgroundColor = 'transparent'
-                    e.currentTarget.style.borderColor = '#666'
+                    fontSize: `${9 * scale}px`,
+                    marginBottom: `${10 * scale}px`,
+                    letterSpacing: '2px',
+                    fontWeight: 'bold'
                   }}
                 >
-                  <svg
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
+                  CONTINUUM
+                </h2>
+
+                <div style={{ marginBottom: `${7.5 * scale}px` }}>
+                  <div style={{ color: '#fff', marginBottom: '5px' }}>
+                    Created by Randy and Brian Wilson
+                  </div>
+                  <div style={{ color: '#888', fontSize: `${5.5 * scale}px` }}>
+                    © 1987-1992
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: `${7.5 * scale}px` }}>
+                  <div
                     style={{
-                      width: '16px',
-                      height: '16px',
-                      fill: 'currentColor'
+                      color: '#aaa',
+                      marginBottom: '5px',
+                      fontSize: `${5.5 * scale}px`
                     }}
                   >
-                    <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
-                  </svg>
-                  View Source on GitHub
-                </a>
+                    Originally released under the "Beerware" system
+                  </div>
+                  <div style={{ color: '#aaa', marginBottom: '5px' }}>
+                    Released into the Public Domain 2015
+                  </div>
+                  <a
+                    href="https://www.ski-epic.com/continuum_downloads/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      color: '#66aaff',
+                      fontSize: `${5 * scale}px`,
+                      wordBreak: 'break-all'
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.color = '#99ccff'
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.color = '#66aaff'
+                    }}
+                  >
+                    https://www.ski-epic.com/continuum_downloads/
+                  </a>
+                </div>
+
+                <div style={{ marginBottom: `${10 * scale}px` }}>
+                  <div
+                    style={{
+                      color: '#fff',
+                      marginBottom: `${2.5 * scale}px`
+                    }}
+                  >
+                    JavaScript Port by Sam Davidoff
+                  </div>
+                  <div style={{ color: '#888', fontSize: `${5.5 * scale}px` }}>
+                    © 2025
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    borderTop: `${1 * scale}px solid #666`,
+                    paddingTop: `${10 * scale}px`,
+                    marginTop: `${10 * scale}px`
+                  }}
+                >
+                  <a
+                    href="https://github.com/sam-mfb/continuum"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      color: '#fff',
+                      textDecoration: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: `${4 * scale}px`,
+                      padding: `${4 * scale}px ${8 * scale}px`,
+                      border: `${1 * scale}px solid #666`,
+                      borderRadius: '0'
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.backgroundColor = '#333'
+                      e.currentTarget.style.borderColor = '#fff'
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.backgroundColor = 'transparent'
+                      e.currentTarget.style.borderColor = '#666'
+                    }}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                      style={{
+                        width: `${8 * scale}px`,
+                        height: `${8 * scale}px`,
+                        fill: 'currentColor'
+                      }}
+                    >
+                      <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
+                    </svg>
+                    View Source on GitHub
+                  </a>
+                </div>
               </div>
             </div>
-          </div>
+          </ScrollableContainer>
         )}
       </div>
     </div>

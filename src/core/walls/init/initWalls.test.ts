@@ -606,7 +606,7 @@ describe('detectWallJunctions', () => {
       }
     ]
 
-    const junctions = detectWallJunctions(walls)
+    const { junctions } = detectWallJunctions(walls)
 
     // C code creates junctions for all endpoints, merging those within 3 pixels
     // (0,0), (10,10), and (20,20) are created; (11,11) is merged with (10,10)
@@ -673,7 +673,7 @@ describe('detectWallJunctions', () => {
       }
     ]
 
-    const junctions = detectWallJunctions(walls)
+    const { junctions } = detectWallJunctions(walls)
 
     // All three walls share (10,10) as a common point - should create one junction there
     // Plus the other endpoints: (0,0), (20,20), (30,30)
@@ -757,7 +757,7 @@ describe('detectWallJunctions', () => {
       }
     ]
 
-    const junctions = detectWallJunctions(walls)
+    const { junctions } = detectWallJunctions(walls)
 
     // Endpoints: (0,0), (10,10), (15,15), (20,0), (30,10), (40,20)
     // (30,10) appears twice but gets merged, (10,10) appears twice but gets merged
@@ -812,7 +812,7 @@ describe('detectWallJunctions', () => {
       }
     ]
 
-    const junctions = detectWallJunctions(walls)
+    const { junctions } = detectWallJunctions(walls)
 
     // w1 has identical start/end at (10,10), w2 goes from (10,10) to (20,20)
     // All three (10,10) points merge into one junction
@@ -878,7 +878,7 @@ describe('detectWallJunctions', () => {
       }
     ]
 
-    const junctions = detectWallJunctions(walls)
+    const { junctions } = detectWallJunctions(walls)
 
     // Endpoints: (0,0), (50,50), (1,1), (20,20), (30,30), (51,51)
     // (1,1) merges with (0,0), (51,51) merges with (50,50)
@@ -897,7 +897,7 @@ describe('detectWallJunctions', () => {
   it('handles empty wall array', () => {
     const walls: LineRec[] = []
 
-    const junctions = detectWallJunctions(walls)
+    const { junctions } = detectWallJunctions(walls)
 
     // Even with no walls, C code adds 18 sentinel values
     expect(junctions.length).toBe(18)
@@ -942,7 +942,7 @@ describe('detectWallJunctions', () => {
       }
     ]
 
-    const junctions = detectWallJunctions(walls)
+    const { junctions } = detectWallJunctions(walls)
 
     // Each wall has two endpoints, none within 3 pixels of each other
     // Plus 18 sentinel values with x=20000
@@ -1042,7 +1042,7 @@ describe('detectWallJunctions', () => {
       }
     ]
 
-    const junctions = detectWallJunctions(walls)
+    const { junctions } = detectWallJunctions(walls)
 
     // Expected junctions at x: 10, 25, 50, 75, 100, 125, 150, 175, 200, 300
     // Plus 18 sentinel values

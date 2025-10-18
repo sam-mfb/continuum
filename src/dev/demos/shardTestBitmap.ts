@@ -6,10 +6,13 @@ import type {
 } from '@lib/bitmap'
 import { createGameBitmap } from '@lib/bitmap'
 import type { ShardSpriteSet, ShardSprite } from '@core/figs'
-import { drawShard } from '@core/explosions/render'
+import { drawShard } from '@render/explosions'
 import { SHARDHT } from '@core/figs'
 import type { SpriteService } from '@core/sprites'
-import { viewClear } from '@core/screen/render'
+import { viewClear } from '@render/screen'
+import type { ShardRec } from '@core/explosions'
+import type { Frame } from '@lib/frame'
+import { drawShards } from '@render-modern/explosions'
 
 // Viewport state - for scrolling around
 const viewportState = {
@@ -20,6 +23,90 @@ const viewportState = {
 // Define a larger world to scroll through
 const WORLD_WIDTH = 1024
 const WORLD_HEIGHT = 768
+
+// Test shards matching the bitmap renderer's pattern
+// These are placed at the same positions as in shardTestBitmap()
+const testShards: ShardRec[] = []
+
+// Initialize test shards once
+function initializeTestShards(): void {
+  if (testShards.length > 0) return // Already initialized
+
+  const kind = 0
+  const spacing = 40
+  const worldStartX = 512 - 8 // bitmap.width is 512
+  const worldStartY = 200
+
+  // 4x4 grid of rotations (16 total) - matches the bitmap renderer
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 4; col++) {
+      const rotation = row * 4 + col
+      const worldX = worldStartX + col * spacing
+      const worldY = worldStartY + row * spacing
+
+      testShards.push({
+        x: worldX,
+        y: worldY,
+        h: 0,
+        v: 0,
+        rot16: rotation << 4, // rotation * 16
+        rotspeed: 0,
+        lifecount: 100,
+        kind: kind
+      })
+    }
+  }
+
+  // Row of shards with rotation 0 at different x positions
+  const testRotation = 0
+  const testWorldY = 400
+  for (let i = 0; i < 8; i++) {
+    const worldX = worldStartX + i * 30
+    testShards.push({
+      x: worldX,
+      y: testWorldY,
+      h: 0,
+      v: 0,
+      rot16: testRotation << 4,
+      rotspeed: 0,
+      lifecount: 100,
+      kind: kind
+    })
+  }
+
+  // Phase sweep row
+  const phaseSweepY = 600
+  for (let i = 0; i < 32; i++) {
+    const worldX = worldStartX + i
+    testShards.push({
+      x: worldX,
+      y: phaseSweepY,
+      h: 0,
+      v: 0,
+      rot16: testRotation << 4,
+      rotspeed: 0,
+      lifecount: 100,
+      kind: kind
+    })
+  }
+
+  // Wrap behavior test
+  const wrapTestY = 650
+  for (let i = 0; i < 32; i++) {
+    const baseX = WORLD_WIDTH - 20
+    const worldX = baseX + i
+    testShards.push({
+      x: worldX,
+      y: wrapTestY,
+      h: 0,
+      v: 0,
+      rot16: testRotation << 4,
+      rotspeed: 0,
+      lifecount: 100,
+      kind: kind
+    })
+  }
+}
 
 /**
  * Test game for debugging shard rendering
@@ -316,4 +403,36 @@ export const createShardTestBitmapRenderer =
     }
 
     return finalBitmap
+  }
+
+/**
+ * Frame-based renderer for shard test game
+ * This uses the new sprite-based rendering system
+ *
+ * IMPORTANT: This only RENDERS the state, it does NOT update it.
+ * All state updates happen in the bitmap renderer.
+ */
+export const createShardTestFrameRenderer =
+  (): ((frameInfo: FrameInfo, keyInfo: KeyInfo) => Frame) =>
+  (_frameInfo: FrameInfo, _keys: KeyInfo) => {
+    // Initialize test shards on first call
+    initializeTestShards()
+
+    // Start with empty frame
+    let frame: Frame = {
+      width: 512,
+      height: 342,
+      drawables: []
+    }
+
+    // Draw shards using frame-based rendering
+    frame = drawShards({
+      shards: testShards,
+      screenX: viewportState.x,
+      screenY: viewportState.y,
+      worldwidth: WORLD_WIDTH,
+      worldwrap: true
+    })(frame)
+
+    return frame
   }

@@ -14,7 +14,8 @@ const initialState: WallsState = {
   firstWhite: '',
   junctions: [],
   whites: [],
-  updatedWalls: []
+  updatedWalls: [],
+  altEndpoints: {}
 }
 
 export const wallsSlice = createSlice({

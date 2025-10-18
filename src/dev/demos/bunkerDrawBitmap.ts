@@ -8,7 +8,7 @@
 
 import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
 import { createGameBitmap } from '@lib/bitmap'
-import { doBunks } from '@core/planet/render'
+import { doBunks } from '@render/planet'
 import { configureStore } from '@reduxjs/toolkit'
 import type { SpriteService } from '@core/sprites'
 import {
@@ -20,12 +20,14 @@ import {
 import { shotsSlice, bunkShoot, moveBullets, doStrafes } from '@core/shots'
 import { BunkerKind } from '@core/figs'
 import type { Bunker, PlanetState } from '@core/planet'
-import { drawDotSafe } from '@core/shots/render'
-import { drawStrafe } from '@core/shots/render'
+import { drawDotSafe } from '@render/shots'
+import { drawStrafe } from '@render/shots'
 import { rint } from '@core/shared'
-import { SBARHT } from '@core/screen'
+import { SBARHT, SCRWTH, VIEWHT } from '@core/screen'
 import { isOnRightSide } from '@core/shared/viewport'
-import { viewClear } from '@core/screen/render'
+import { viewClear } from '@render/screen'
+import type { Frame } from '@/lib/frame'
+import { drawBunkers } from '@/render-modern/bunkers'
 
 // Create store with planet and shots slices
 const store = configureStore({
@@ -526,4 +528,64 @@ export const createBunkerDrawBitmapRenderer =
     }
 
     return finalBitmap
+  }
+
+/**
+ * Frame-based renderer for bunker drawing game
+ * This uses the new sprite-based rendering system
+ *
+ * IMPORTANT: This only RENDERS the state, it does NOT update it.
+ * All state updates happen in the bitmap renderer.
+ */
+export const createBunkerDrawFrameRenderer =
+  (): ((frameInfo: FrameInfo, keyInfo: KeyInfo) => Frame) =>
+  (_frameInfo: FrameInfo, _keys: KeyInfo) => {
+    // Check initialization status
+    if (initializationError || !initializationComplete) {
+      return {
+        width: 512,
+        height: 342,
+        drawables: []
+      }
+    }
+
+    // Get current state (already updated by bitmap renderer)
+    const state = store.getState()
+    const planetState = state.planet
+
+    // Create viewport for bunker rendering
+    const viewport = {
+      x: viewportState.x,
+      y: viewportState.y,
+      b: viewportState.y + VIEWHT,
+      r: viewportState.x + SCRWTH
+    }
+
+    // Start with empty frame
+    let frame: Frame = {
+      width: 512,
+      height: 342,
+      drawables: []
+    }
+
+    // Draw bunkers at normal position
+    frame = drawBunkers({
+      bunkers: planetState.bunkers,
+      screenX: viewportState.x,
+      screenY: viewportState.y,
+      viewport: viewport
+    })(frame)
+
+    // Handle world wrapping for bunkers
+    const on_right_side = viewportState.x > planetState.worldwidth - SCRWTH
+    if (on_right_side && planetState.worldwrap) {
+      frame = drawBunkers({
+        bunkers: planetState.bunkers,
+        screenX: viewportState.x - planetState.worldwidth,
+        screenY: viewportState.y,
+        viewport: viewport
+      })(frame)
+    }
+
+    return frame
   }

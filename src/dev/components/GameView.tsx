@@ -13,6 +13,8 @@ import {
   type StatsConfig,
   type CustomStats
 } from './StatsOverlay'
+import type { Frame, SpriteRegistry } from '@/lib/frame'
+import { drawFrameToCanvas } from '@/lib/frame'
 
 /**
  * GameView Component
@@ -60,6 +62,8 @@ export type BitmapGameDefinition = {
   type: 'bitmap'
   name: string
   bitmapRenderer: BitmapRenderer
+  frameRenderer?: (frameInfo: FrameInfo, keyInfo: KeyInfo) => Frame
+  debug?: boolean
   bitmapOptions?: BitmapToCanvasOptions
   collisionService?: {
     getMap: () => number[][]
@@ -81,13 +85,17 @@ export type GameViewProps = {
   pixelated?: boolean // Enable pixel-perfect rendering (default: true)
   scale?: number // Display scale factor (default: 1)
 
+  // Sprite registry
+  spriteRegistry: SpriteRegistry<ImageData>
+
   // Stats overlay
   statsConfig?: StatsConfig
   getCustomStats?: (frameInfo: FrameInfo, env: GameEnvironment) => CustomStats
 
   // Game logic
   games: GameDefinition[]
-  defaultGameIndex?: number
+  selectedGameIndex?: number
+  onSelectedGameIndexChange?: (index: number) => void
 
   // Stats control
   showGameStats?: boolean
@@ -105,10 +113,12 @@ const GameView: React.FC<GameViewProps> = ({
   backgroundColor = '#000000',
   pixelated = true,
   scale = 1,
+  spriteRegistry,
   statsConfig,
   getCustomStats,
   games,
-  defaultGameIndex = 0,
+  selectedGameIndex = 0,
+  onSelectedGameIndexChange,
   showGameStats,
   onShowGameStatsChange,
   onInit,
@@ -116,7 +126,6 @@ const GameView: React.FC<GameViewProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationFrameRef = useRef<number>(0)
-  const [selectedGameIndex, setSelectedGameIndex] = useState(defaultGameIndex)
   const [currentFps, setCurrentFps] = useState(0)
   const [currentFrameInfo, setCurrentFrameInfo] = useState<FrameInfo>({
     frameCount: 0,
@@ -341,6 +350,18 @@ const GameView: React.FC<GameViewProps> = ({
                 // Standard bitmap to canvas conversion
                 bitmapToCanvas(renderedBitmap, ctx, game.bitmapOptions)
               }
+
+              // If frameRenderer is provided, render the frame on top
+              if (game.frameRenderer) {
+                const renderedFrame = game.frameRenderer(frameInfo, keyInfo)
+                drawFrameToCanvas(
+                  renderedFrame,
+                  ctx,
+                  1,
+                  spriteRegistry,
+                  game.debug
+                )
+              }
               break
           }
         }
@@ -391,6 +412,7 @@ const GameView: React.FC<GameViewProps> = ({
     backgroundColor,
     pixelated,
     scale,
+    spriteRegistry,
     statsConfig,
     games,
     selectedGameIndex,
@@ -433,7 +455,12 @@ const GameView: React.FC<GameViewProps> = ({
           </label>
           <select
             value={selectedGameIndex}
-            onChange={e => setSelectedGameIndex(Number(e.target.value))}
+            onChange={e => {
+              const newIndex = Number(e.target.value)
+              if (onSelectedGameIndexChange) {
+                onSelectedGameIndexChange(newIndex)
+              }
+            }}
             style={{
               padding: '5px 10px',
               fontFamily: 'monospace',

@@ -5,7 +5,7 @@
  * through the sound service at appropriate times
  */
 
-import type { SoundService } from '@/core/sound'
+import type { GameSoundService } from './types'
 import { shotsSlice, isNewShot } from '@/core/shots'
 import { SCRWTH, VIEWHT, SOFTBORDER } from '@/core/screen'
 import type { AppDispatch, RootState } from './store'
@@ -17,7 +17,6 @@ import { appSlice } from './appSlice'
 import { gameSlice } from './gameSlice'
 
 type SoundStartListening = TypedStartListening<RootState, AppDispatch>
-
 /**
  * Setup the sound listener with access to the sound service
  *
@@ -26,7 +25,7 @@ type SoundStartListening = TypedStartListening<RootState, AppDispatch>
  */
 export function setupSoundListener(
   soundStartListening: SoundStartListening,
-  soundService: SoundService
+  soundService: GameSoundService
 ): void {
   // adjust volume controls based on redux state
   soundStartListening({
@@ -136,7 +135,8 @@ export function setupSoundListener(
   })
 
   soundStartListening({
-    predicate: (_, currentState) => !currentState.ship.shielding,
+    predicate: (_, currentState) =>
+      currentState.game.paused || !currentState.ship.shielding,
     effect: () => {
       soundService.stopShipShield()
     }
@@ -153,7 +153,8 @@ export function setupSoundListener(
     }
   })
   soundStartListening({
-    predicate: (_, currentState) => !currentState.ship.thrusting,
+    predicate: (_, currentState) =>
+      currentState.game.paused || !currentState.ship.thrusting,
     effect: () => {
       soundService.stopShipThrust()
     }
@@ -179,6 +180,10 @@ export function setupSoundListener(
   soundStartListening({
     actionCreator: shipSlice.actions.collectFuel,
     effect: () => {
+      // this is for the modern service to ensure that
+      // fuel sounds "override" shield which was the
+      // feeling in the original game
+      soundService.stopShipShield()
       soundService.playFuelCollect()
     }
   })

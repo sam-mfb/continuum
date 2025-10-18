@@ -2,7 +2,7 @@
  * @fileoverview Sprite service API with pre-computed format conversions
  */
 
-import { expandTitlePage } from '@dev/art/utils'
+import { expandTitlePage } from '@core/shared'
 
 import { extractAllSprites, BunkerKind } from '@core/figs'
 import type { AllSprites } from '@core/figs'

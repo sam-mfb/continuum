@@ -2,7 +2,11 @@ import React from 'react'
 import { useAppDispatch, useAppSelector } from '../store'
 import { setVolume, enableSound, disableSound } from '../appSlice'
 
-const VolumeControls: React.FC = () => {
+type VolumeControlsProps = {
+  scale: number
+}
+
+const VolumeControls: React.FC<VolumeControlsProps> = ({ scale }) => {
   const dispatch = useAppDispatch()
   const volume = useAppSelector(state => state.app.volume)
   const soundOn = useAppSelector(state => state.app.soundOn)
@@ -20,47 +24,56 @@ const VolumeControls: React.FC = () => {
   }
 
   const sectionStyle: React.CSSProperties = {
-    border: '1px solid #666',
-    padding: '8px',
+    border: `${1 * scale}px solid #666`,
+    padding: `${4 * scale}px`,
     background: '#000',
     color: '#fff',
     fontFamily: 'monospace',
-    fontSize: '11px'
+    fontSize: `${5.5 * scale}px`,
+    marginBottom: `${5 * scale}px`
   }
 
   const toggleButtonStyle: React.CSSProperties = {
     background: soundOn ? '#000' : '#000',
     color: soundOn ? '#fff' : '#666',
-    border: soundOn ? '1px solid #fff' : '1px solid #666',
-    padding: '4px 8px',
+    border: soundOn ? `${1 * scale}px solid #fff` : `${1 * scale}px solid #666`,
+    padding: `${2 * scale}px ${4 * scale}px`,
     cursor: 'pointer',
     fontFamily: 'monospace',
-    fontSize: '11px',
-    minWidth: '50px'
+    fontSize: `${5.5 * scale}px`,
+    minWidth: `${25 * scale}px`
   }
 
   const sliderContainerStyle: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
-    marginTop: '5px'
+    gap: `${5 * scale}px`,
+    marginTop: `${2.5 * scale}px`
   }
 
   const sliderStyle: React.CSSProperties = {
-    width: '150px',
+    width: `${75 * scale}px`,
     cursor: soundOn ? 'pointer' : 'not-allowed',
     opacity: soundOn ? 1 : 0.3,
     background: '#000',
-    height: '4px',
+    height: `${2 * scale}px`,
     outline: 'none'
   }
 
   return (
     <div style={sectionStyle}>
-      <div style={{ marginBottom: '5px', fontWeight: 'bold' }}>AUDIO</div>
+      <div style={{ marginBottom: `${2.5 * scale}px`, fontWeight: 'bold' }}>
+        AUDIO
+      </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <span style={{ minWidth: '50px' }}>SOUND:</span>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: `${5 * scale}px`
+        }}
+      >
+        <span style={{ minWidth: `${25 * scale}px` }}>SOUND:</span>
         <button
           onClick={handleSoundToggle}
           style={toggleButtonStyle}
@@ -78,7 +91,7 @@ const VolumeControls: React.FC = () => {
       </div>
 
       <div style={sliderContainerStyle}>
-        <span style={{ minWidth: '50px' }}>VOLUME:</span>
+        <span style={{ minWidth: `${25 * scale}px` }}>VOLUME:</span>
         <input
           type="range"
           min="0"
@@ -91,7 +104,7 @@ const VolumeControls: React.FC = () => {
         />
         <span
           style={{
-            minWidth: '40px',
+            minWidth: `${20 * scale}px`,
             textAlign: 'right',
             color: soundOn ? '#fff' : '#666'
           }}

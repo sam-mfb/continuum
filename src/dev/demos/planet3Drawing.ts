@@ -9,14 +9,14 @@
 import type { BitmapRenderer, FrameInfo, KeyInfo } from '@lib/bitmap'
 import { createGameBitmap } from '@lib/bitmap'
 import type { PlanetState } from '@core/planet'
-import { whiteTerrain, blackTerrain } from '@core/walls/render'
+import { whiteTerrain, blackTerrain } from '@render/walls'
 import { wallsActions } from '@core/walls'
 import { buildGameStore } from '@dev/store'
 import { LINE_KIND } from '@core/walls'
 import { Galaxy } from '@core/galaxy'
 import { parsePlanet } from '@core/planet'
 import { VIEWHT } from '@core/screen'
-import { viewClear } from '@core/screen/render'
+import { viewClear } from '@render/screen'
 import { ASSET_PATHS } from '@/dev/constants'
 
 // Create store instance

@@ -10,6 +10,12 @@ export type GameMode = 'start' | 'playing' | 'highScoreEntry' | 'gameOver'
 
 export type CollisionMode = 'modern' | 'original'
 
+export type SoundMode = 'modern' | 'original'
+
+export type RenderMode = 'original' | 'modern'
+
+export type ScaleMode = 'auto' | 1 | 2 | 3
+
 export type MostRecentScore = {
   score: number
   planet: number
@@ -20,13 +26,23 @@ export type AppState = {
   // Collision methodology
   collisionMode: CollisionMode
 
+  // Rendering methodology
+  renderMode: RenderMode
+  solidBackground: boolean
+
   // Display settings
   alignmentMode: AlignmentMode
   showInGameControls: boolean
+  scaleMode: ScaleMode
 
   // Sound settings
+  soundMode: SoundMode
   volume: number
   soundOn: boolean
+
+  // Touch controls
+  touchControlsEnabled: boolean
+  touchControlsOverride: boolean | null // null = auto-detect
 
   // Game flow
   mode: GameMode
@@ -34,6 +50,7 @@ export type AppState = {
 
   // UI state
   showSettings: boolean
+  isFullscreen: boolean
 
   // Current galaxy
   currentGalaxyId: string
@@ -42,13 +59,20 @@ export type AppState = {
 
 const initialState: AppState = {
   collisionMode: 'modern',
+  renderMode: 'original', // Default to stable original renderer
+  solidBackground: false, // Default to checkered pattern
   alignmentMode: 'screen-fixed', // Default to screen-fixed (not original)
   showInGameControls: true,
+  scaleMode: 'auto', // Default to responsive auto-scaling
+  soundMode: 'modern',
   volume: 0,
   soundOn: true,
+  touchControlsEnabled: false, // Will be set based on device detection
+  touchControlsOverride: null, // null = auto-detect based on device
   mode: 'start',
   mostRecentScore: null,
   showSettings: false,
+  isFullscreen: false,
   currentGalaxyId: 'release', // Will be overridden by galaxy config
   totalLevels: 0 // Will be set when galaxy is loaded
 }
@@ -65,6 +89,26 @@ export const appSlice = createSlice({
       state.collisionMode =
         state.collisionMode === 'modern' ? 'original' : 'modern'
     },
+
+    // Render settings
+    setRenderMode: (state, action: PayloadAction<RenderMode>) => {
+      state.renderMode = action.payload
+    },
+    toggleRenderMode: state => {
+      state.renderMode = state.renderMode === 'original' ? 'modern' : 'original'
+    },
+    toggleSolidBackground: state => {
+      state.solidBackground = !state.solidBackground
+    },
+
+    // Sound settings
+    setSoundMode: (state, action: PayloadAction<SoundMode>) => {
+      state.soundMode = action.payload
+    },
+    toggleSoundMode: state => {
+      state.soundMode = state.soundMode === 'modern' ? 'original' : 'modern'
+    },
+
     // Display settings
     setAlignmentMode: (state, action: PayloadAction<AlignmentMode>) => {
       state.alignmentMode = action.payload
@@ -79,7 +123,11 @@ export const appSlice = createSlice({
       state.showInGameControls = !state.showInGameControls
     },
 
-    // Sound settings
+    setScaleMode: (state, action: PayloadAction<ScaleMode>) => {
+      state.scaleMode = action.payload
+    },
+
+    // Volume settings
     setVolume: (state, action: PayloadAction<number>) => {
       state.volume = action.payload
     },
@@ -116,6 +164,10 @@ export const appSlice = createSlice({
       state.showSettings = !state.showSettings
     },
 
+    setFullscreen: (state, action: PayloadAction<boolean>) => {
+      state.isFullscreen = action.payload
+    },
+
     // Galaxy management
     setCurrentGalaxy: (state, action: PayloadAction<string>) => {
       state.currentGalaxyId = action.payload
@@ -123,6 +175,22 @@ export const appSlice = createSlice({
 
     setTotalLevels: (state, action: PayloadAction<number>) => {
       state.totalLevels = action.payload
+    },
+
+    // Touch controls management
+    enableTouchControls: state => {
+      state.touchControlsEnabled = true
+    },
+
+    disableTouchControls: state => {
+      state.touchControlsEnabled = false
+    },
+
+    setTouchControlsOverride: (
+      state,
+      action: PayloadAction<boolean | null>
+    ) => {
+      state.touchControlsOverride = action.payload
     }
   }
 })
@@ -130,9 +198,15 @@ export const appSlice = createSlice({
 export const {
   setCollisionMode,
   toggleCollisionMode,
+  setRenderMode,
+  toggleRenderMode,
+  toggleSolidBackground,
+  setSoundMode,
+  toggleSoundMode,
   setAlignmentMode,
   toggleAlignmentMode,
   toggleInGameControls,
+  setScaleMode,
   setVolume,
   enableSound,
   disableSound,
@@ -142,6 +216,10 @@ export const {
   openSettings,
   closeSettings,
   toggleSettings,
+  setFullscreen,
   setCurrentGalaxy,
-  setTotalLevels
+  setTotalLevels,
+  enableTouchControls,
+  disableTouchControls,
+  setTouchControlsOverride
 } = appSlice.actions

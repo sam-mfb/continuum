@@ -10,6 +10,8 @@ All of the original developers files are in the `orig` folder in this repository
 
 You can try it out live at [continuumjs.com](https://continuumjs.com).
 
+NB: as explained below there are a things I have tweaked from the original implementation to make the experience a little nicer on modern systems. Specifically: (1) a fixed background, rather than moving, (2) a modern collision-map for collision detections, (3) a sound mixer. If you don't like any of these (or if you find bugs in them), you can revert to the original game implementation via options in the Settings wheel. (Of course, if you find bugs, please report!) Your settings will persist over reloads.
+
 ## Project Origin
 
 Continuum was one of my favorite games on my first computer -- a Macintosh Plus. A smooth-scrolling, physics-based "asteroids in a maze" type of game, I spent hours playing the game, trying to beat my high score, defining levels, etc. It was also one of my first, if not my actual first, experiences with a high quality shareware (ok, "beerware") game.
@@ -72,6 +74,12 @@ It's not a totally easy matter to swap in a "real" grayscale background because 
 
 These were pretty easy. One cool thing is the fizz/transition that happens at the end of the level. This doesn't actually work on some emulators (at least not Basilisk II or the MACE bundle). I think the reason is because this isn't really a v-synced animation. The game just runs its little random-fizz generating algorithm and I think just depended on the slow speed of the processor to have it render as an animation. On a modern CPU it would finish in like a millisecond, so I actually had to force the animation to get spread out. To figure out what the timing of it should be, I recorded it playing on a Mac Plus I have. The video's in the repo.
 
+#### Modern Rendering Engine
+
+There is an option to turn on a "modern" rendering engine. That renders the sprites and walls using Canvas's native drawing routines rather than a pixel based approach. It is more flexible, but it isn't a pixel perfect match to the original game. If you enable the modern rendering mode, youc an also have it use a solid gray background rather than a the cross-hatch from the original game. If I extend/upgrade the games graphics this is the engine I'd use going forward...
+
+You can turn this on in the settings.
+
 ### 3. Sound
 
 The original game just wrote its sounds directly to the sound buffer of the Mac, so basically the sound equivalent of a black and white bitmap. This meant, among other things, that the frequency was totally off from the frequency used by a browser--or any modern sound system. The solution was to use a ring buffer and have the game write its sound to the buffer and then have the browser read from the buffer with the timing it wants. That worked pretty well as a concept.
@@ -82,7 +90,9 @@ The other thing with sound was separating it out from state management. The orig
 
 This is implemented with a Redux listener that listens for the relevant events in Redux and plays sounds accordingly. Similar to the original game, this is not synced to a frame. Sounds fire whenever the redux event occurs -- however the timing may not be exactly the same largely because I can't really control how fast Redux runs vs the original Mac hardware or how our sound service plays vis a vis the timing of the original Mac sounds. (Or to be more precise, I'm not spending the time to figure things out at that level of granularity). But I think it's pretty close regardless.
 
-Interesting thing about the original game is that it didn't "mix" sounds, even though sometimes it sounds like they are. Instead, it implemented a "priority" system for determining which sounds could "override" other sounds. These priorities for certain sounds also decayed every VBS interval allowing in theory for multiple sounds of the same kind to override each other. This is all implemented in our sound service. An interesting project would be to move to a true multi-channel sound system.
+Interesting thing about the original game is that it didn't "mix" sounds, even though sometimes it sounds like they are. Instead, it implemented a "priority" system for determining which sounds could "override" other sounds. These priorities for certain sounds also decayed every VBS interval allowing in theory for multiple sounds of the same kind to override each other. This is all implemented in our sound service.
+
+There is now an implementation available that actually mixes sounds to avoid the occasional "choppiness" of the original system. I thought a bit about what the "default" should be and decided to make the default the modern system with mixed sounds. I think it is still true to the spirit of the original game, and in fact slightly enhances the air of chaos that was there when multiple shots and explosions are going on at once. If you are a purist, you can switch back to the old system in settings.
 
 ### 4. File Parsing
 

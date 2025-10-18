@@ -4,7 +4,7 @@ import {
   macPaintToImageData,
   expandTitlePageToImageData,
   rawBitmapToImageData
-} from '@dev/art/utils'
+} from '@core/shared'
 import { continuumTitleToImageData as continuumTitlePictToImageData } from '@dev/art/continuumTitlePict'
 
 type GraphicsState = {

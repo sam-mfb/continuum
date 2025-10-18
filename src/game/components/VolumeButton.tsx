@@ -1,14 +1,20 @@
 import React, { useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../store'
 import { setVolume, enableSound, disableSound } from '../appSlice'
+import { useInactivityDetection } from '../hooks/useInactivityDetection'
 import styles from './VolumeButton.module.css'
 
-const VolumeButton: React.FC = () => {
+type VolumeButtonProps = {
+  scale: number
+}
+
+const VolumeButton: React.FC<VolumeButtonProps> = ({ scale }) => {
   const dispatch = useAppDispatch()
   const volume = useAppSelector(state => state.app.volume)
   const soundOn = useAppSelector(state => state.app.soundOn)
   const [isHovered, setIsHovered] = useState(false)
   const [volumeBeforeMute, setVolumeBeforeMute] = useState(0.5)
+  const isActive = useInactivityDetection(3000)
 
   const handleVolumeChange = (newVolume: number): void => {
     dispatch(setVolume(newVolume))
@@ -40,18 +46,21 @@ const VolumeButton: React.FC = () => {
 
   const containerStyle: React.CSSProperties = {
     position: 'fixed',
-    bottom: '20px',
-    right: '20px',
+    top: `${10 * scale}px`,
+    right: `${10 * scale}px`,
     zIndex: 999,
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: '4px'
+    gap: `${4 * scale}px`,
+    opacity: isActive ? 1 : 0,
+    pointerEvents: isActive ? 'auto' : 'none',
+    transition: 'opacity 0.3s ease'
   }
 
   const buttonStyle: React.CSSProperties = {
-    width: '44px',
-    height: '44px',
+    width: `${16 * scale}px`,
+    height: `${16 * scale}px`,
     borderRadius: '50%',
     background: 'transparent',
     border: 'none',
@@ -67,60 +76,61 @@ const VolumeButton: React.FC = () => {
 
   const sliderContainerStyle: React.CSSProperties = {
     display: 'flex',
-    flexDirection: 'column',
+    flexDirection: 'row',
     alignItems: 'center',
     background: 'transparent',
     border: 'none',
-    borderRadius: '6px',
-    padding: '14px 10px',
-    gap: '10px',
-    minWidth: '50px',
+    borderRadius: `${3 * scale}px`,
+    padding: `${4 * scale}px ${6 * scale}px`,
+    gap: `${4 * scale}px`,
+    minHeight: `${20 * scale}px`,
     opacity: isHovered ? 1 : 0,
     transform: isHovered
-      ? 'translateY(0) scale(1)'
-      : 'translateY(10px) scale(0.9)',
+      ? 'translateX(0) scale(1)'
+      : `translateX(${4 * scale}px) scale(0.9)`,
     transition: 'all 0.25s ease',
     pointerEvents: isHovered ? 'auto' : 'none',
     boxShadow: 'none'
   }
 
   const sliderWrapperStyle: React.CSSProperties = {
-    width: '100px',
-    height: '100px',
+    width: `${40 * scale}px`,
+    height: `${20 * scale}px`,
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'center',
-    transform: 'rotate(-90deg)'
+    justifyContent: 'center'
   }
 
   const sliderStyle: React.CSSProperties = {
     WebkitAppearance: 'slider-horizontal',
     appearance: 'none',
-    width: '100px',
-    height: '6px',
+    width: `${40 * scale}px`,
+    height: `${3 * scale}px`,
     background: 'rgba(128, 128, 128, 0.5)',
     outline: 'none',
     cursor: 'pointer',
-    borderRadius: '3px',
-    border: '1px solid rgba(128, 128, 128, 0.7)'
+    borderRadius: `${1.5 * scale}px`,
+    border: `${1 * scale}px solid rgba(128, 128, 128, 0.7)`,
+    direction: 'rtl'
   }
 
   const volumeTextStyle: React.CSSProperties = {
     color: 'rgba(255, 255, 255, 0.95)',
-    fontSize: '12px',
+    fontSize: `${6 * scale}px`,
     fontFamily: 'monospace',
     fontWeight: 'bold',
-    letterSpacing: '0.5px'
+    letterSpacing: `${0.25 * scale}px`
   }
 
   // Speaker icon SVG
+  const iconSize = 16 * scale
   const getSpeakerIcon = (): React.ReactElement => {
     if (!soundOn || volume === 0) {
       // Muted speaker icon with diagonal line through it
       return (
         <svg
-          width="24"
-          height="24"
+          width={iconSize}
+          height={iconSize}
           viewBox="0 0 24 24"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -148,8 +158,8 @@ const VolumeButton: React.FC = () => {
       // Low volume
       return (
         <svg
-          width="24"
-          height="24"
+          width={iconSize}
+          height={iconSize}
           viewBox="0 0 24 24"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -175,8 +185,8 @@ const VolumeButton: React.FC = () => {
       // Medium volume
       return (
         <svg
-          width="24"
-          height="24"
+          width={iconSize}
+          height={iconSize}
           viewBox="0 0 24 24"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -209,8 +219,8 @@ const VolumeButton: React.FC = () => {
       // High volume
       return (
         <svg
-          width="24"
-          height="24"
+          width={iconSize}
+          height={iconSize}
           viewBox="0 0 24 24"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -255,7 +265,7 @@ const VolumeButton: React.FC = () => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Slider (appears above button on hover) */}
+      {/* Slider (appears to the left of button on hover) */}
       <div style={sliderContainerStyle}>
         <span style={volumeTextStyle}>{Math.round(volume * 100)}%</span>
         <div style={sliderWrapperStyle}>
@@ -283,8 +293,8 @@ const VolumeButton: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: '24px',
-            height: '24px'
+            width: `${16 * scale}px`,
+            height: `${16 * scale}px`
           }}
         >
           {getSpeakerIcon()}

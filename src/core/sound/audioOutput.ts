@@ -1,20 +1,25 @@
 /**
- * Audio Output Module
+ * Audio Output Module (AudioWorklet version)
  *
- * Connects the buffer manager to Web Audio API for browser playback.
- * This is the only module that knows about Web Audio API.
+ * Connects to Web Audio API using modern AudioWorkletNode.
+ * This replaces the deprecated ScriptProcessorNode approach.
  *
- * Based on Phase 6 of MIGRATION_PLAN.md
+ * The worklet handles all audio processing in the audio rendering thread:
+ * - Sample generation
+ * - Buffer management
+ * - Format conversion
+ *
+ * This module just handles control and setup from the main thread.
  */
 
-import type { BufferManager } from './bufferManager'
-import { convertBufferInPlace } from './formatConverter'
+// Import worklet with ?worker&url to let Vite bundle it with dependencies
+import workletUrl from './worklet/basicProcessor.worklet.ts?worker&url'
 
 export type AudioOutput = {
   /**
    * Start audio playback
    */
-  start(): void
+  start(): Promise<void>
 
   /**
    * Stop audio playback
@@ -37,15 +42,20 @@ export type AudioOutput = {
   getContext(): AudioContext | null
 
   /**
-   * Get the gain node for volume control
-   */
-  getGainNode(): GainNode | null
-
-  /**
    * Set the master volume
    * @param volume - Volume level between 0.0 (muted) and 1.0 (full volume)
    */
   setVolume(volume: number): void
+
+  /**
+   * Send message to worklet to set generator
+   */
+  setGenerator(generatorType: string, onEnded?: () => void): void
+
+  /**
+   * Send message to worklet to clear sound
+   */
+  clearSound(): void
 
   /**
    * Get performance statistics
@@ -58,79 +68,52 @@ export type AudioOutput = {
 }
 
 /**
- * Creates an audio output instance that connects buffer manager to Web Audio
+ * Creates an audio output instance using AudioWorklet
  */
-export const createAudioOutput = (
-  bufferManager: BufferManager
-): AudioOutput => {
+export const createAudioOutput = (): AudioOutput => {
   let audioContext: AudioContext | null = null
-  let scriptProcessor: ScriptProcessorNode | null = null
+  let workletNode: AudioWorkletNode | null = null
   let gainNode: GainNode | null = null
   let isPlaying = false
+  let workletLoaded = false
 
-  // Performance tracking
+  // Performance tracking (received from worklet)
   let underruns = 0
   let totalCallbacks = 0
-  let latencySum = 0
+
+  // Callback for when sound ends
+  let onSoundEndedCallback: (() => void) | null = null
 
   // Constants
   const SAMPLE_RATE = 22200 // Original Mac sample rate
-  const BUFFER_SIZE = 512 // Common Web Audio buffer size
-  const MASTER_GAIN_SCALE = 0.6 // Scale down overall volume (100% = 60% of max)
+  const MASTER_GAIN_SCALE = 0.5 // Scale down overall volume (100% = 50% of max)
 
   /**
-   * Audio processing callback
-   * Called by Web Audio when it needs more samples
+   * Load the audio worklet module
    */
-  const processAudio = (event: AudioProcessingEvent): void => {
-    const outputBuffer = event.outputBuffer
-    const outputChannel = outputBuffer.getChannelData(0)
+  const loadWorklet = async (): Promise<void> => {
+    if (!audioContext) {
+      throw new Error('AudioContext not initialized')
+    }
 
-    totalCallbacks++
-    const callbackStart = performance.now()
+    if (workletLoaded) {
+      return
+    }
 
     try {
-      // Request samples from buffer manager
-      const samples = bufferManager.requestSamples(outputChannel.length)
-
-      // Convert 8-bit unsigned to float32 directly into output buffer
-      convertBufferInPlace(samples, outputChannel)
-
-      // Copy to other channels if stereo
-      for (
-        let channel = 1;
-        channel < outputBuffer.numberOfChannels;
-        channel++
-      ) {
-        const otherChannel = outputBuffer.getChannelData(channel)
-        otherChannel.set(outputChannel)
-      }
-
-      // Track latency
-      const callbackTime = performance.now() - callbackStart
-      latencySum += callbackTime
-
-      // Count as underrun only if callback took too long (> 10ms is risky for real-time)
-      // This would indicate actual performance issues, not normal buffer operation
-      if (callbackTime > 10 && totalCallbacks > 5) {
-        underruns++
-        if (underruns <= 3) {
-          console.warn(
-            `Audio callback took too long: ${callbackTime.toFixed(2)}ms`
-          )
-        }
-      }
+      await audioContext.audioWorklet.addModule(workletUrl)
+      workletLoaded = true
+      console.log('AudioWorklet module loaded successfully')
     } catch (error) {
-      console.error('Audio processing error:', error)
-      // Output silence on error
-      outputChannel.fill(0)
+      console.error('Failed to load AudioWorklet module:', error)
+      throw error
     }
   }
 
   /**
    * Start audio playback
    */
-  const start = (): void => {
+  const start = async (): Promise<void> => {
     if (isPlaying) return
 
     try {
@@ -140,41 +123,52 @@ export const createAudioOutput = (
       }
 
       // Resume if suspended (required by some browsers)
-      // This will be handled by user interaction in the service
       if (audioContext.state === 'suspended') {
-        console.log(
-          'AudioContext is suspended, will resume on user interaction'
-        )
+        console.log('AudioContext is suspended, resuming...')
+        try {
+          await audioContext.resume()
+          console.log('AudioContext resumed successfully')
+        } catch (error) {
+          console.warn('Failed to resume AudioContext during start:', error)
+        }
       }
 
-      // Pre-fill the buffer to avoid initial underruns
-      // Generate at least 2 buffers worth of samples
-      const prefillSamples = BUFFER_SIZE * 2
-      bufferManager.requestSamples(prefillSamples)
+      // Load worklet module
+      await loadWorklet()
 
-      // Create script processor for audio generation
-      scriptProcessor = audioContext.createScriptProcessor(
-        BUFFER_SIZE,
-        0, // no input channels
-        audioContext.destination.channelCount // match output channels
-      )
+      // Create worklet node
+      workletNode = new AudioWorkletNode(audioContext, 'basic-audio-processor')
+
+      // Listen for messages from worklet
+      workletNode.port.onmessage = (event: MessageEvent): void => {
+        const message = event.data
+        switch (message.type) {
+          case 'soundEnded':
+            // Invoke the callback if one was registered
+            if (onSoundEndedCallback) {
+              onSoundEndedCallback()
+              onSoundEndedCallback = null // Clear after calling
+            }
+            break
+          case 'stats':
+            underruns = message.underruns
+            totalCallbacks = message.totalCallbacks
+            break
+        }
+      }
 
       // Create gain node for volume control
       gainNode = audioContext.createGain()
       gainNode.gain.value = 1.0 * MASTER_GAIN_SCALE // Default to scaled full volume
 
-      // Connect audio processing callback
-      scriptProcessor.onaudioprocess = processAudio
-
-      // Connect chain: ScriptProcessor -> GainNode -> Destination
-      scriptProcessor.connect(gainNode)
+      // Connect audio chain: Worklet → GainNode → Destination
+      workletNode.connect(gainNode)
       gainNode.connect(audioContext.destination)
 
       isPlaying = true
 
-      console.log('Audio started:', {
+      console.log('Audio started (AudioWorklet):', {
         sampleRate: audioContext.sampleRate,
-        bufferSize: BUFFER_SIZE,
         channels: audioContext.destination.channelCount,
         latency: audioContext.baseLatency || 'unknown'
       })
@@ -189,10 +183,10 @@ export const createAudioOutput = (
    * Stop audio playback
    */
   const stop = (): void => {
-    if (scriptProcessor) {
-      scriptProcessor.disconnect()
-      scriptProcessor.onaudioprocess = null
-      scriptProcessor = null
+    if (workletNode) {
+      workletNode.disconnect()
+      workletNode.port.onmessage = null
+      workletNode = null
     }
 
     if (gainNode) {
@@ -205,7 +199,6 @@ export const createAudioOutput = (
     // Reset stats for next session
     underruns = 0
     totalCallbacks = 0
-    latencySum = 0
   }
 
   /**
@@ -237,13 +230,6 @@ export const createAudioOutput = (
   }
 
   /**
-   * Get the gain node for volume control
-   */
-  const getGainNode = (): GainNode | null => {
-    return gainNode
-  }
-
-  /**
    * Set the master volume
    * @param volume - Volume level between 0.0 (muted) and 1.0 (full volume)
    */
@@ -262,11 +248,37 @@ export const createAudioOutput = (
       )
     }
 
+    // Set gain node volume (with master gain scaling)
     if (gainNode) {
-      // Clamp volume between 0 and 1 (still clamp in case of out-of-range values)
       const clampedVolume = Math.max(0, Math.min(1, volume))
       // Apply master gain scaling to reduce overall volume
       gainNode.gain.value = clampedVolume * MASTER_GAIN_SCALE
+    }
+  }
+
+  /**
+   * Send message to worklet to set generator
+   */
+  const setGenerator = (generatorType: string, onEnded?: () => void): void => {
+    // Store the callback to invoke when worklet reports sound ended
+    onSoundEndedCallback = onEnded || null
+
+    if (workletNode) {
+      workletNode.port.postMessage({
+        type: 'setGenerator',
+        generatorType
+      })
+    }
+  }
+
+  /**
+   * Send message to worklet to clear sound
+   */
+  const clearSound = (): void => {
+    if (workletNode) {
+      workletNode.port.postMessage({
+        type: 'clearSound'
+      })
     }
   }
 
@@ -281,7 +293,7 @@ export const createAudioOutput = (
     return {
       underruns,
       totalCallbacks,
-      averageLatency: totalCallbacks > 0 ? latencySum / totalCallbacks : 0
+      averageLatency: 0 // Latency tracking moved to worklet
     }
   }
 
@@ -291,8 +303,9 @@ export const createAudioOutput = (
     stop,
     isPlaying: getIsPlaying,
     getContext,
-    getGainNode,
     setVolume,
+    setGenerator,
+    clearSound,
     resumeContext,
     getStats
   }

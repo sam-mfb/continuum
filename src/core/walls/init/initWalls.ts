@@ -1,4 +1,10 @@
-import type { LineRec, JunctionRec, LineKind, WallsState } from '../types'
+import type {
+  LineRec,
+  JunctionRec,
+  LineKind,
+  WallsState,
+  LineAlt
+} from '../types'
 import { initWhites } from './initWhites'
 import { LINE_KIND_EXT, NEW_TYPE } from '../constants'
 
@@ -17,7 +23,7 @@ export function initWalls(walls: LineRec[]): WallsState {
     findFirstWhiteWalls(walls)
 
   // Step 3: Detect wall junctions - use walls array since we only need endpoint info
-  const junctions = detectWallJunctions(walls)
+  const { junctions, altEndpoints } = detectWallJunctions(walls)
 
   // Step 4: Initialize whites - pass the walls with white links
   const { whites, updatedWalls } = initWhites(
@@ -53,7 +59,8 @@ export function initWalls(walls: LineRec[]): WallsState {
     firstWhite: firstWhiteId,
     junctions,
     whites,
-    updatedWalls
+    updatedWalls,
+    altEndpoints
   }
 }
 
@@ -169,12 +176,19 @@ export function findFirstWhiteWalls(walls: LineRec[]): {
  * within 3 pixels of each other to avoid duplicates.
  * Sorts junctions by x-coordinate for efficient rendering.
  *
+ * Not in the original, but adds alternate, junction-coincident
+ * endpoints for lines for an alternate rendering scheme
+ *
  * @see Junctions.c:63-93 - Junction detection and sorting
  */
-export function detectWallJunctions(walls: LineRec[]): JunctionRec[] {
+export function detectWallJunctions(walls: LineRec[]): {
+  junctions: JunctionRec[]
+  altEndpoints: Record<string, LineAlt>
+} {
   const junctions: JunctionRec[] = []
 
-  // Check each wall endpoint
+  // ORIGINAL C LOGIC: Check each wall endpoint and build junctions
+  // Keep this exactly as-is - it's from Junctions.c:63-93
   for (const wall of walls) {
     for (let i = 0; i < 2; i++) {
       const x = i ? wall.endx : wall.startx
@@ -220,11 +234,72 @@ export function detectWallJunctions(walls: LineRec[]): JunctionRec[] {
     junctions[j + 1] = temp
   }
 
+  // NEW LOGIC: Create altEndpoints by mapping walls to junctions
+  // This closes gaps by snapping wall endpoints to their nearest junction
+  const altEndpoints: Record<string, LineAlt> = {}
+
+  for (const wall of walls) {
+    let altStartX: number | undefined
+    let altStartY: number | undefined
+    let altEndX: number | undefined
+    let altEndY: number | undefined
+
+    // Find nearest junction for start point
+    for (const junction of junctions) {
+      if (
+        junction.x <= wall.startx + 3 &&
+        junction.x >= wall.startx - 3 &&
+        junction.y <= wall.starty + 3 &&
+        junction.y >= wall.starty - 3
+      ) {
+        // Only set alt if it differs from original
+        if (junction.x !== wall.startx || junction.y !== wall.starty) {
+          altStartX = junction.x
+          altStartY = junction.y
+        }
+        break
+      }
+    }
+
+    // Find nearest junction for end point
+    for (const junction of junctions) {
+      if (
+        junction.x <= wall.endx + 3 &&
+        junction.x >= wall.endx - 3 &&
+        junction.y <= wall.endy + 3 &&
+        junction.y >= wall.endy - 3
+      ) {
+        // Only set alt if it differs from original
+        if (junction.x !== wall.endx || junction.y !== wall.endy) {
+          altEndX = junction.x
+          altEndY = junction.y
+        }
+        break
+      }
+    }
+
+    // Only create altEndpoint if at least one coordinate differs
+    if (
+      altStartX !== undefined ||
+      altStartY !== undefined ||
+      altEndX !== undefined ||
+      altEndY !== undefined
+    ) {
+      altEndpoints[wall.id] = {
+        id: wall.id,
+        startX: altStartX,
+        startY: altStartY,
+        endX: altEndX,
+        endY: altEndY
+      }
+    }
+  }
+
   // Add 18 sentinel values with x = 20000
   // @see Junctions.c:92-93 - padding to prevent out-of-bounds reads
   for (let i = 0; i < 18; i++) {
     junctions.push({ x: 20000, y: 0 })
   }
 
-  return junctions
+  return { junctions, altEndpoints }
 }

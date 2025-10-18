@@ -8,13 +8,18 @@
 import { createGameBitmap } from '@lib/bitmap'
 import type { SpriteService } from '@core/sprites'
 import type { GalaxyService } from '@core/galaxy'
-import type { FizzTransitionService } from '@core/transition'
+import type {
+  FizzTransitionService,
+  FizzTransitionServiceFrame
+} from '@core/transition'
 import type { GameStore } from '../store'
 
 import { updateGameState } from './stateUpdates'
 import { renderGame } from './rendering'
-import type { GameRenderLoop } from '../types'
+import type { GameRenderLoop, NewGameRenderLoop } from '../types'
 import { renderGameOriginal } from './renderingOriginal'
+import type { Frame } from '@/lib/frame/types'
+import { renderGameNew } from './renderingNew'
 
 export const createGameRenderer = (
   store: GameStore,
@@ -22,6 +27,13 @@ export const createGameRenderer = (
   galaxyService: GalaxyService,
   fizzTransitionService: FizzTransitionService
 ): GameRenderLoop => {
+  // Create callbacks for the bitmap-based fizz service
+  const transitionCallbacks = {
+    isInitialized: (): boolean => fizzTransitionService.isInitialized,
+    isComplete: (): boolean => fizzTransitionService.isComplete,
+    reset: (): void => fizzTransitionService.reset()
+  }
+
   return (frame, controls) => {
     // Create a fresh bitmap for this frame
     let bitmap = createGameBitmap()
@@ -31,9 +43,8 @@ export const createGameRenderer = (
       store,
       frame,
       controls,
-      bitmap,
       galaxyService,
-      fizzTransitionService
+      transitionCallbacks
     })
 
     // Get current state after updates
@@ -63,5 +74,49 @@ export const createGameRenderer = (
 
     // Return the final rendered bitmap
     return bitmap
+  }
+}
+
+export const createGameRendererNew = (
+  store: GameStore,
+  spriteService: SpriteService,
+  galaxyService: GalaxyService,
+  fizzTransitionServiceFrame: FizzTransitionServiceFrame
+): NewGameRenderLoop => {
+  // Create callbacks for the Frame-based fizz service
+  const transitionCallbacks = {
+    isInitialized: (): boolean => fizzTransitionServiceFrame.isInitialized,
+    isComplete: (): boolean => fizzTransitionServiceFrame.isComplete,
+    reset: (): void => fizzTransitionServiceFrame.reset()
+  }
+
+  return (frame, controls) => {
+    // This handles all game logic, physics, and state changes
+    updateGameState({
+      store,
+      frame,
+      controls,
+      galaxyService,
+      transitionCallbacks
+    })
+
+    // Create a fresh frame
+    const startFrame: Frame = {
+      width: 512,
+      height: 342,
+      drawables: []
+    }
+
+    // Get current state after updates
+    const state = store.getState()
+
+    const newFrame = renderGameNew({
+      frame: startFrame,
+      state,
+      spriteService,
+      fizzTransitionServiceFrame
+    })
+
+    return newFrame
   }
 }

@@ -4,6 +4,7 @@ import { Provider } from 'react-redux'
 import { store } from './store/store'
 import { createSpriteService } from '@core/sprites'
 import { ASSET_PATHS } from './constants'
+import { initializeSpriteRegistry } from '@/lib/frame/initializeSpriteRegistry'
 import App from './App'
 import './index.css'
 
@@ -16,11 +17,15 @@ async function initializeApp(): Promise<void> {
       statusBarResource: ASSET_PATHS.STATUS_BAR_RESOURCE
     })
 
+    // Initialize sprite registry
+    const spriteRegistry = await initializeSpriteRegistry()
+    console.log('Sprite registry initialized')
+
     // Now render the app with sprites loaded
     createRoot(document.getElementById('root')!).render(
       <StrictMode>
         <Provider store={store}>
-          <App spriteService={spriteService} />
+          <App spriteService={spriteService} spriteRegistry={spriteRegistry} />
         </Provider>
       </StrictMode>
     )

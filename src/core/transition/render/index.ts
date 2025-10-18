@@ -1,1 +1,0 @@
-export { starBackground } from './starBackground'

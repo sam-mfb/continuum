@@ -1,37 +1,62 @@
 /**
  * TypeScript interfaces for the sound system
- * Phase 1: Minimal types for Redux integration
  */
-
-import type { SoundType } from './constants'
 
 /**
- * Represents the current state of the sound system
- * Mirrors the original's use of currentsound, priority, and soundlock
+ * Sound types available in the engine
  */
-export type SoundState = {
-  currentSound: SoundType // Currently playing sound (Sound.c:51)
-  priority: number // Priority of current sound (Sound.c:51)
-  enabled: boolean // Whether sound is enabled
-  volume: number // Master volume (0-1)
-  activeSource: AudioBufferSourceNode | null // Currently playing audio source
-}
-
-import type { GameSoundType } from './soundEngine'
+export type GameSoundType =
+  | 'silence'
+  | 'fire'
+  | 'thruster'
+  | 'shield'
+  | 'explosionBunker'
+  | 'explosionShip'
+  | 'explosionAlien'
+  | 'bunker'
+  | 'soft'
+  | 'fuel'
+  | 'crack'
+  | 'fizz'
+  | 'echo'
 
 /**
- * The main sound engine interface
- * Exposes only the methods needed by external consumers
+ * Sound service interface
+ *
+ * This defines what the sound service implementation PROVIDES.
+ * Consumers may depend on a subset of this interface.
  */
-export type SoundEngine = {
-  /**
-   * Set the master volume level
-   * @param volume - Volume level between 0.0 (muted) and 1.0 (full volume)
-   * @throws Logs an error if volume is not a valid number between 0.0 and 1.0
-   */
-  setVolume: (volume: number) => void
-  start: () => void // Start audio playback
-  stop: () => void // Stop audio playback
-  play: (soundType: GameSoundType, onEnded?: () => void) => void // Play a sound
-  resumeContext: () => Promise<void> // Resume suspended audio context
+export type SoundService = {
+  // Ship sounds
+  playShipFire(): void
+  playShipThrust(): void
+  playShipShield(): void
+  playShipExplosion(): void
+  stopShipThrust(): void
+  stopShipShield(): void
+
+  // Bunker sounds
+  playBunkerShoot(): void
+  playBunkerExplosion(): void
+  playBunkerSoft(): void
+
+  // Pickup sounds
+  playFuelCollect(): void
+
+  // Level sounds
+  playLevelComplete(): void // Crack sound
+  playLevelTransition(): void // Fizz sound
+  playEcho(): void
+
+  // Alien sounds
+  playAlienExplosion(): void
+
+  // Control methods
+  clearSound(): void // Matches original game's clear_sound()
+  setVolume(volume: number): void
+  setMuted(muted: boolean): void
+
+  // Engine lifecycle
+  startEngine(): Promise<void> // Pre-start audio engine to eliminate first-sound delay
+  cleanup(): void
 }
