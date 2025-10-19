@@ -185,86 +185,39 @@ export { rint } from './rint' // Unchanged - still uses Math.random()
 export { createRandomService, type RandomService } from './RandomService'
 ```
 
-## Game Engine Versioning
-
-Create a version constant to track breaking changes to game logic.
-
-```typescript
-// src/game/version.ts - NEW FILE
-
-/**
- * Game engine version - only increment for breaking changes to:
- * - Physics/collision detection
- * - Game state structure
- * - Core game logic
- * - Random number generation behavior
- *
- * Does NOT need to increment for:
- * - UI changes
- * - Sound changes
- * - Visual/rendering changes
- * - Performance optimizations that don't affect logic
- *
- * HISTORY:
- * - Version 1: Initial implementation with seeded RNG
- */
-export const GAME_ENGINE_VERSION = 1
-```
-
-This version will be used by the recording system to validate that recordings are compatible with the current game version.
-
 ## Setting the Seed
 
 ### During Normal Gameplay
 
-When starting a new game, call `setSeed()` on the existing RandomService with a timestamp seed:
+`setSeed()` will be called in the `loadLevel` thunk in `src/game/levelThunks.ts`.
+
+This thunk is called when starting a new game (from the start screen when user clicks "START GAME") and when advancing to the next level. It already has access to `GameServices` via the thunk extra argument.
 
 ```typescript
-// In the game initialization logic (e.g., a thunk or game start action)
+// src/game/levelThunks.ts
 
-const startNewGame = (randomService: RandomService) => {
-  // Use timestamp as seed for non-deterministic gameplay
-  const seed = Date.now()
-  randomService.setSeed(seed)
+export const loadLevel =
+  (levelNum: number): ThunkAction<void, RootState, GameServices, Action> =>
+  (dispatch, _getState, { galaxyService, randomService }) => {
+    // ADD THIS: Set random seed at the start of each level
+    // For new games, use timestamp for non-deterministic gameplay
+    // (During replay, this will use the recorded seed instead)
+    randomService.setSeed(Date.now())
 
-  // Continue with game initialization...
-}
+    // Update the current level in status state to match what we're loading
+    dispatch(statusSlice.actions.setLevel(levelNum))
+
+    // ... rest of existing level loading logic
+  }
 ```
 
-Or in a Redux thunk:
+**Important**: We call `setSeed()` at the start of EACH level, not just the first level. This ensures:
 
-```typescript
-import { createAsyncThunk } from '@reduxjs/toolkit'
-import type { GameServices } from './store'
+1. Each level starts with a fresh, deterministic random sequence
+2. The seed can be level-specific (could use `Date.now() + levelNum` or similar)
+3. During replay, each level's seed can be set from the recording
 
-export const startNewGameThunk = createAsyncThunk<
-  void,
-  void,
-  { extra: GameServices }
->('game/startNewGame', async (_, { extra: { randomService } }) => {
-  // Use timestamp as seed for non-deterministic gameplay
-  const seed = Date.now()
-  randomService.setSeed(seed)
-
-  // Continue with game initialization...
-})
-```
-
-### During Replay (Future)
-
-When replaying a recording, call `setSeed()` with the recorded seed:
-
-```typescript
-const startReplay = (
-  randomService: RandomService,
-  recording: GameRecording
-) => {
-  // Use recorded seed for deterministic replay
-  randomService.setSeed(recording.seed)
-
-  // Continue with replay initialization...
-}
-```
+**Note for future recording implementation**: The recording system will need to store the seed used for each level, and when replaying, it will call `randomService.setSeed(recording.levels[levelNum].seed)` instead of `Date.now()`.
 
 ## Determinism Guarantees
 
@@ -349,40 +302,36 @@ Once recording is implemented:
 - [ ] Export `RandomService` type
 - [ ] Include `setSeed(seed)`, `getSeed()`, and `rnumber(n)` methods
 
-### Step 2: Create Version File (5 min)
-
-- [ ] Create `src/game/version.ts`
-- [ ] Add `GAME_ENGINE_VERSION = 1` with documentation
-
-### Step 3: Update Exports (5 min)
+### Step 2: Update Exports (5 min)
 
 - [ ] Add RandomService exports to `src/core/shared/index.ts`
 - [ ] Ensure `rint` is still exported (unchanged)
 
-### Step 4: Add RandomService to GameServices (15 min)
+### Step 3: Add RandomService to GameServices (15 min)
 
 - [ ] Add `randomService: RandomService` to `GameServices` type in `src/game/store.ts`
 - [ ] Import `createRandomService` in main.tsx (or wherever services are created)
 - [ ] Instantiate RandomService: `const randomService = createRandomService()`
 - [ ] Add to services object passed to `createGameStore()`
 
-### Step 5: Call setSeed() on Game Start (10 min)
+### Step 4: Call setSeed() in loadLevel thunk (10 min)
 
-- [ ] Find where new games are started (likely a thunk or action handler)
-- [ ] Add `randomService.setSeed(Date.now())` at the start of new game
-- [ ] Access randomService from thunk extra argument: `{ extra: { randomService } }`
+- [ ] Open `src/game/levelThunks.ts`
+- [ ] Add `randomService` to destructured extra argument: `{ galaxyService, randomService }`
+- [ ] Add `randomService.setSeed(Date.now())` at the start of the thunk (before `dispatch(statusSlice.actions.setLevel(levelNum))`)
+- [ ] This will set a new seed every time a level is loaded (including new games and level progression)
 
-### Step 6: Update stateUpdates.ts (10 min)
+### Step 5: Update stateUpdates.ts (10 min)
 
 - [ ] Modify bunker shooting logic to use `randomService.rnumber()` instead of `rint()`
 - [ ] Pass RandomService from thunk extra argument to the update functions
 
-### Step 7: Update bunkShoot.ts (10 min)
+### Step 6: Update bunkShoot.ts (10 min)
 
 - [ ] Modify shot angle logic to use `randomService.rnumber()` instead of `rint()`
 - [ ] Pass RandomService from caller (stateUpdates.ts) to the function
 
-### Step 8: Testing (20 min)
+### Step 7: Testing (20 min)
 
 - [ ] Run `npm run typecheck` - verify no type errors
 - [ ] Run `npm run lint` - verify no lint issues
