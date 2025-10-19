@@ -13,6 +13,7 @@ import type {
   FizzTransitionServiceFrame
 } from '@core/transition'
 import type { GameStore } from '../store'
+import type { RandomService } from '@/core/shared'
 
 import { updateGameState } from './stateUpdates'
 import { renderGame } from './rendering'
@@ -25,7 +26,8 @@ export const createGameRenderer = (
   store: GameStore,
   spriteService: SpriteService,
   galaxyService: GalaxyService,
-  fizzTransitionService: FizzTransitionService
+  fizzTransitionService: FizzTransitionService,
+  randomService: RandomService
 ): GameRenderLoop => {
   // Create callbacks for the bitmap-based fizz service
   const transitionCallbacks = {
@@ -44,7 +46,8 @@ export const createGameRenderer = (
       frame,
       controls,
       galaxyService,
-      transitionCallbacks
+      transitionCallbacks,
+      randomService
     })
 
     // Get current state after updates
@@ -81,7 +84,8 @@ export const createGameRendererNew = (
   store: GameStore,
   spriteService: SpriteService,
   galaxyService: GalaxyService,
-  fizzTransitionServiceFrame: FizzTransitionServiceFrame
+  fizzTransitionServiceFrame: FizzTransitionServiceFrame,
+  randomService: RandomService
 ): NewGameRenderLoop => {
   // Create callbacks for the Frame-based fizz service
   const transitionCallbacks = {
@@ -97,7 +101,8 @@ export const createGameRendererNew = (
       frame,
       controls,
       galaxyService,
-      transitionCallbacks
+      transitionCallbacks,
+      randomService
     })
 
     // Create a fresh frame

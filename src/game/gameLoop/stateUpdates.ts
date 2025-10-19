@@ -8,6 +8,7 @@
 import type { GalaxyService } from '@core/galaxy'
 import type { GameStore, RootState } from '../store'
 import type { FrameInfo } from '@lib/bitmap'
+import type { RandomService } from '@/core/shared'
 
 /**
  * Transition service callbacks
@@ -42,7 +43,7 @@ import {
 } from '@core/explosions'
 import { statusSlice } from '@core/status'
 import { screenSlice, SCRWTH, VIEWHT, TOPMARG, BOTMARG } from '@core/screen'
-import { containShip, rint } from '@core/shared'
+import { containShip } from '@core/shared'
 import {
   startLevelTransition,
   decrementPreFizz,
@@ -79,13 +80,21 @@ export type StateUpdateContext = {
   controls: ControlMatrix
   galaxyService: GalaxyService
   transitionCallbacks: TransitionCallbacks
+  randomService: RandomService
 }
 
 /**
  * Main state update function
  */
 export const updateGameState = (context: StateUpdateContext): void => {
-  const { store, frame, controls, galaxyService, transitionCallbacks } = context
+  const {
+    store,
+    frame,
+    controls,
+    galaxyService,
+    transitionCallbacks,
+    randomService
+  } = context
 
   let state = store.getState()
 
@@ -160,7 +169,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
   store.dispatch(updateFuelAnimations())
 
   // Handle bunker shooting
-  handleBunkerShooting(store, globalx, globaly)
+  handleBunkerShooting(store, globalx, globaly, randomService)
 
   // Move ship shots
   const currentState = store.getState()
@@ -521,12 +530,13 @@ const handleShipMovement = (
 const handleBunkerShooting = (
   store: GameStore,
   globalx: number,
-  globaly: number
+  globaly: number,
+  randomService: RandomService
 ): void => {
   const state = store.getState()
 
   // Check if bunkers should shoot this frame
-  const shootRoll = rint(100)
+  const shootRoll = randomService.rnumber(100)
   if (shootRoll < state.planet.shootslow) {
     const screenr = state.screen.screenx + SCRWTH
     const screenb = state.screen.screeny + VIEWHT
@@ -542,7 +552,8 @@ const handleBunkerShooting = (
         worldwidth: state.planet.worldwidth,
         worldwrap: state.planet.worldwrap,
         globalx: globalx,
-        globaly: globaly
+        globaly: globaly,
+        randomService: randomService
       })
     )
   }

@@ -54,7 +54,7 @@ import { checkForBounce } from '@core/ship'
 import { doBunks } from '@render/planet'
 import { drawCraters } from '@render/planet'
 import { drawFuels } from '@render/planet'
-import { rint } from '@core/shared'
+import { rint, createRandomService } from '@core/shared'
 import {
   startShipDeath,
   startExplosion,
@@ -72,6 +72,10 @@ import { ASSET_PATHS } from '@/dev/constants'
 
 // Configure store with all slices and containment middleware
 const store = buildGameStore({})
+
+// Create random service for demo
+const randomService = createRandomService()
+randomService.setSeed(Date.now())
 
 // Track initialization state
 let initializationComplete = false
@@ -366,7 +370,8 @@ export const createShipMoveBitmapRenderer =
           worldwidth: state.planet.worldwidth,
           worldwrap: state.planet.worldwrap,
           globalx: globalx,
-          globaly: globaly
+          globaly: globaly,
+          randomService: randomService
         })
       )
     }

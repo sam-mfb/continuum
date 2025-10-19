@@ -17,7 +17,7 @@ import { createSoundService } from '@/core/sound'
 import { createModernSoundService } from '@/core/sound-modern'
 import { createGameRenderer, createGameRendererNew } from './gameLoop'
 import { loadAppSettings } from './appMiddleware'
-import { setAlignmentMode } from '@/core/shared'
+import { setAlignmentMode, createRandomService } from '@/core/shared'
 import { createGameStore } from './store'
 import {
   setCurrentGalaxy,
@@ -86,6 +86,9 @@ try {
   collisionService.initialize({ width: SCRWTH, height: VIEWHT })
   console.log('Collision service created')
 
+  const randomService = createRandomService()
+  console.log('Random service created')
+
   // Create store with services and initial settings
   const store = createGameStore(
     {
@@ -93,7 +96,8 @@ try {
       spriteService,
       fizzTransitionService,
       soundService,
-      collisionService
+      collisionService,
+      randomService
     },
     {
       soundVolume: DEFAULT_SOUND_VOLUME,
@@ -123,13 +127,15 @@ try {
     store,
     spriteService,
     galaxyService,
-    fizzTransitionService
+    fizzTransitionService,
+    randomService
   )
   const rendererNew = createGameRendererNew(
     store,
     spriteService,
     galaxyService,
-    fizzTransitionServiceFrame
+    fizzTransitionServiceFrame,
+    randomService
   )
 
   // Set up alignment mode subscription

@@ -11,6 +11,7 @@ import type { GalaxyService } from '@core/galaxy'
 import type { SpriteService } from '@core/sprites'
 import type { FizzTransitionService } from '@core/transition'
 import type { GameSoundService } from './types'
+import type { RandomService } from '@/core/shared'
 
 // Import all reducers
 import { gameSlice } from './gameSlice'
@@ -50,6 +51,7 @@ export type GameServices = {
   fizzTransitionService: FizzTransitionService
   soundService: GameSoundService
   collisionService: CollisionService
+  randomService: RandomService
 }
 
 // Initial settings for the game

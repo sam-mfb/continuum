@@ -2,7 +2,7 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { ShotRec, ShotsState } from './types'
 import { SHOT, NUMSTRAFES, STRAFE_LIFE } from './constants'
 import type { Bunker } from '@core/planet'
-import type { LineRec } from '@core/shared'
+import type { LineRec, RandomService } from '@core/shared'
 import { bunkShoot as bunkShootFn } from './bunkShoot'
 import { setLife } from './setLife'
 import { bounceShot as bounceShotFunc } from './bounceShot'
@@ -430,6 +430,7 @@ export const shotsSlice = createSlice({
         worldwrap: boolean
         globalx: number
         globaly: number
+        randomService: RandomService
       }>
     ) => {
       state.bunkshots = bunkShootFn(action.payload)(state.bunkshots)

@@ -24,3 +24,6 @@ export {
   macPaintToImageData,
   rawBitmapToImageData
 } from './bitmapUtils'
+
+// Random number generation
+export { createRandomService, type RandomService } from './RandomService'
