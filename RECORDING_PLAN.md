@@ -14,6 +14,38 @@ This document describes the design for implementing game recording and determini
 4. **Global RNG management** - Seed managed via RandomService (see SEEDED_RNG_PLAN.md)
 5. **Clean separation** - Recording logic separate from game state
 
+## Game Engine Versioning
+
+The recording system requires strict versioning to ensure replays work correctly.
+
+### Version File
+
+Create a version constant to track breaking changes to game logic:
+
+```typescript
+// src/game/version.ts - NEW FILE
+
+/**
+ * Game engine version - only increment for breaking changes to:
+ * - Physics/collision detection
+ * - Game state structure
+ * - Core game logic
+ * - Random number generation behavior
+ *
+ * Does NOT need to increment for:
+ * - UI changes
+ * - Sound changes
+ * - Visual/rendering changes
+ * - Performance optimizations that don't affect logic
+ *
+ * HISTORY:
+ * - Version 1: Initial implementation with seeded RNG
+ */
+export const GAME_ENGINE_VERSION = 1
+```
+
+This version is stored in every recording and validated during replay to ensure compatibility.
+
 ## Core Components
 
 ### 1. Recording Service
@@ -30,11 +62,12 @@ type RecordingMode = 'idle' | 'recording' | 'replaying'
 
 type RecordingService = {
   // Control recording
-  startRecording: (seed: number, metadata: RecordingMetadata) => void
+  startRecording: (metadata: RecordingMetadata) => void
   stopRecording: () => GameRecording | null
   isRecording: () => boolean
 
-  // Capture inputs each frame
+  // Capture level seeds and inputs
+  recordLevelSeed: (level: number, seed: number) => void
   recordFrame: (frameCount: number, controls: ControlMatrix) => void
 
   // Replay mode
@@ -42,8 +75,9 @@ type RecordingService = {
   stopReplay: () => void
   isReplaying: () => boolean
 
-  // Get controls for current frame during replay
+  // Get controls and seeds for current frame/level during replay
   getReplayControls: (frameCount: number) => ControlMatrix | null
+  getReplayLevelSeed: (level: number) => number | null
 
   // Current mode
   getMode: () => RecordingMode
@@ -70,20 +104,27 @@ const createRecordingService = (): RecordingService => {
   let currentRecording: Partial<GameRecording> | null = null
   let lastControls: ControlMatrix | null = null
   let inputFrames: InputFrame[] = []
+  let levelSeeds: LevelSeed[] = []
   let replayData: GameRecording | null = null
   let replayIndex = 0
 
   return {
-    startRecording: (seed, metadata) => {
+    startRecording: metadata => {
       if (mode !== 'idle') {
         throw new Error(
           `Cannot start recording: currently in ${mode} mode. Call stop${mode === 'recording' ? 'Recording' : 'Replay'}() first.`
         )
       }
       mode = 'recording'
-      currentRecording = { seed, ...metadata, inputs: [] }
+      currentRecording = { ...metadata, levelSeeds: [], inputs: [] }
       inputFrames = []
+      levelSeeds = []
       lastControls = null
+    },
+
+    recordLevelSeed: (level, seed) => {
+      if (mode !== 'recording') return
+      levelSeeds.push({ level, seed })
     },
 
     recordFrame: (frameCount, controls) => {
@@ -100,11 +141,13 @@ const createRecordingService = (): RecordingService => {
       if (mode !== 'recording') return null
       const recording = {
         ...currentRecording,
+        levelSeeds,
         inputs: inputFrames
       } as GameRecording
       mode = 'idle'
       currentRecording = null
       inputFrames = []
+      levelSeeds = []
       lastControls = null
       return recording
     },
@@ -134,6 +177,12 @@ const createRecordingService = (): RecordingService => {
       }
 
       return replayData.inputs[replayIndex]?.controls ?? null
+    },
+
+    getReplayLevelSeed: level => {
+      if (mode !== 'replaying' || !replayData) return null
+      const levelSeed = replayData.levelSeeds.find(ls => ls.level === level)
+      return levelSeed?.seed ?? null
     },
 
     stopReplay: () => {
@@ -194,10 +243,15 @@ export type FullStateSnapshot = {
   }
 }
 
+export type LevelSeed = {
+  level: number
+  seed: number
+}
+
 export type GameRecording = {
   version: string // Recording format version
   engineVersion: number // Game engine version (physics/logic)
-  seed: number
+  levelSeeds: LevelSeed[] // Seeds for each level played (see note below)
   galaxyId: string // Hash of galaxy file
   startLevel: number
   timestamp: number
@@ -206,6 +260,15 @@ export type GameRecording = {
   snapshots: StateSnapshot[] // Hash-based snapshots (always included)
   fullSnapshots?: FullStateSnapshot[] // Optional full state snapshots for debugging
 }
+
+// Note about levelSeeds:
+// Each level gets its own random seed (set in loadLevel thunk via randomService.setSeed()).
+// During recording, we capture the seed used for each level.
+// During replay, we restore each level's seed when that level loads.
+// This ensures:
+// - Each level's randomness is deterministic
+// - Level transitions are handled correctly
+// - Replays work even if levels are played in different orders
 
 // Note: Recordings only work with modern collision mode.
 // Original collision mode ties state updates to rendering, making
@@ -466,6 +529,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
 // src/game/store.ts - MODIFIED
 
 import type { RecordingService } from './recording/RecordingService'
+import type { RandomService } from '@/core/shared/RandomService'
 
 export type GameServices = {
   galaxyService: GalaxyService
@@ -473,20 +537,14 @@ export type GameServices = {
   fizzTransitionService: FizzTransitionService
   soundService: SoundService
   collisionService: CollisionService
-  // Note: RecordingService is NOT injected via GameServices
-  // It's created and passed directly to GameRenderer component
+  randomService: RandomService // Added via SEEDED_RNG_PLAN
+  recordingService: RecordingService // NEW - for recording/replay
 }
 
 export const createGameStore = (
   services: GameServices,
   initialSettings: GameInitialSettings
 ) => {
-  // Note: RandomService is initialized as singleton in main.tsx
-  // (See SEEDED_RNG_PLAN.md for details)
-  // Game code accesses it via:
-  //   - rint(n) for random numbers (transparent)
-  //   - getRandomService() for setSeed/getSeed (game start/recording logic)
-
   const { store, soundListenerMiddleware } = createStoreAndListeners(
     rootReducer,
     services,
@@ -502,12 +560,58 @@ export const createGameStore = (
 }
 ```
 
+### Integration with loadLevel Thunk
+
+The `loadLevel` thunk in `src/game/levelThunks.ts` is the central place where level initialization happens. This is where we integrate recording of level seeds:
+
+```typescript
+// src/game/levelThunks.ts - MODIFIED
+
+export const loadLevel =
+  (levelNum: number): ThunkAction<void, RootState, GameServices, Action> =>
+  (dispatch, getState, { galaxyService, randomService, recordingService }) => {
+    // Generate or retrieve seed for this level
+    let seed: number
+
+    if (recordingService.isReplaying()) {
+      // During replay: use recorded seed for this level
+      const replaySeed = recordingService.getReplayLevelSeed(levelNum)
+      if (replaySeed === null) {
+        throw new Error(`No seed found for level ${levelNum} in replay`)
+      }
+      seed = replaySeed
+    } else {
+      // During normal play: generate new seed
+      seed = Date.now()
+    }
+
+    // Set the seed for this level
+    randomService.setSeed(seed)
+
+    // Record the seed if we're recording
+    if (recordingService.isRecording()) {
+      recordingService.recordLevelSeed(levelNum, seed)
+    }
+
+    // ... rest of existing loadLevel logic (unchanged)
+    dispatch(statusSlice.actions.setLevel(levelNum))
+    const planet = galaxyService.getPlanet(levelNum)
+    // etc.
+  }
+```
+
+This ensures:
+
+1. **During normal gameplay**: Each level gets a fresh random seed (Date.now())
+2. **During recording**: The seed is captured for each level
+3. **During replay**: The exact same seed is restored for each level
+
 ### Game Lifecycle Hooks
 
 ```typescript
 // Example usage in app initialization
 
-import { getRandomService } from '@/core/shared/RandomService'
+import { GAME_ENGINE_VERSION } from '@/game/version'
 
 // Create services
 const recordingService = createRecordingService()
@@ -515,16 +619,11 @@ const recordingStorage = createRecordingStorage()
 
 // Start a new game with recording
 const startNewGame = () => {
-  const seed = Date.now()
-
-  // Set RNG seed for determinism
-  const randomService = getRandomService()
-  randomService.setSeed(seed)
-
   // Transparently record all games (if in modern collision mode)
   // User decides whether to save at end of game
   if (state.app.collisionMode === 'modern') {
-    recordingService.startRecording(seed, {
+    recordingService.startRecording({
+      engineVersion: GAME_ENGINE_VERSION,
       galaxyId: state.app.currentGalaxyId,
       startLevel: 1,
       timestamp: Date.now(),
@@ -537,6 +636,11 @@ const startNewGame = () => {
   // Start game...
   dispatch(setMode('playing'))
   dispatch(loadLevel(1))
+
+  // Note: loadLevel thunk will:
+  // 1. Generate a random seed: Date.now()
+  // 2. Call randomService.setSeed(seed)
+  // 3. Call recordingService.recordLevelSeed(levelNum, seed) if recording
 }
 
 // On game over
@@ -554,8 +658,6 @@ const handleGameOver = () => {
     // Show UI: "Save this game?" "Watch replay?" etc.
     // User can choose to save: recordingStorage.save(recording)
   }
-
-  // Note: Next game will call setSeed() with a new seed
 }
 
 // Start replay
@@ -566,9 +668,15 @@ const startReplay = (recordingId: string) => {
     return
   }
 
-  // Set up deterministic playback
-  const randomService = getRandomService()
-  randomService.setSeed(recording.seed)
+  // Validate engine version
+  if (recording.engineVersion !== GAME_ENGINE_VERSION) {
+    throw new Error(
+      `Recording requires game engine v${recording.engineVersion}, ` +
+        `but you're running v${GAME_ENGINE_VERSION}`
+    )
+  }
+
+  // Start replay mode
   recordingService.startReplay(recording)
 
   // Initialize game with recorded settings
@@ -576,6 +684,11 @@ const startReplay = (recordingId: string) => {
   dispatch(setMode('playing'))
   dispatch(setCollisionMode('modern'))
   dispatch(loadLevel(recording.startLevel))
+
+  // Note: loadLevel thunk will:
+  // 1. Check if replaying: recordingService.isReplaying()
+  // 2. If replaying, get seed: recordingService.getReplayLevelSeed(levelNum)
+  // 3. Call randomService.setSeed(seed) with replay seed
 }
 ```
 
@@ -587,7 +700,20 @@ const startReplay = (recordingId: string) => {
 {
   "version": "1.0",
   "engineVersion": 1,
-  "seed": 1234567890,
+  "levelSeeds": [
+    {
+      "level": 1,
+      "seed": 1234567890
+    },
+    {
+      "level": 2,
+      "seed": 1234568950
+    },
+    {
+      "level": 3,
+      "seed": 1234570023
+    }
+  ],
   "galaxyId": "a3f5e8d9c2b1f4a6",
   "startLevel": 1,
   "timestamp": 1704067200000,
