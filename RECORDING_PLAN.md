@@ -1,18 +1,25 @@
-# Recording and Replay System
+# Recording System
 
 ## Overview
 
-This document describes the design for implementing game recording and deterministic replay functionality in Continuum. The system captures player inputs and uses seeded random number generation to create reproducible game sessions.
-
-**Prerequisite**: [SEEDED_RNG_PLAN.md](./SEEDED_RNG_PLAN.md) must be implemented first. The recording system depends on deterministic random number generation to ensure replays are accurate.
+This document describes the design for implementing game recording functionality in Continuum. The system captures player inputs and level seeds to create reproducible game sessions. Playback and validation are covered in separate documents (REPLAY_PLAN.md and VALIDATION_PLAN.md).
 
 ## Architecture Principles
 
-1. **Recording/replay as injectable service** - Not managed in Redux state
+1. **Recording as injectable service** - Not managed in Redux state
 2. **Transparent to game code** - Recording logic separate from game state
 3. **Integrated into game loop** - Called once per frame (20 FPS)
-4. **Global RNG management** - Seed managed via RandomService (see SEEDED_RNG_PLAN.md)
+4. **Global RNG management** - Seed managed via existing RandomService
 5. **Clean separation** - Recording logic separate from game state
+6. **Integrated snapshots** - State snapshot functionality built into RecordingService
+7. **DEBUG-aware snapshots** - Hash snapshots always captured, full state only in DEBUG mode
+
+## Prerequisites
+
+✅ **Seeded RNG**: Already implemented via RandomService
+- Service is injected into GameServices
+- Provides `setSeed()` and `random()` methods
+- Used throughout game logic for deterministic randomness
 
 ## Game Engine Versioning
 
@@ -50,34 +57,35 @@ This version is stored in every recording and validated during replay to ensure 
 
 ### 1. Recording Service
 
-Injectable service that handles recording and replay of player inputs.
+Injectable service that handles recording of player inputs and state snapshots.
 
 ```typescript
 // src/game/recording/RecordingService.ts
 
 import type { ControlMatrix } from '@/core/controls'
-import type { GameRecording, RecordingMetadata, InputFrame } from './types'
+import type { RootState } from '@/game/store'
+import type {
+  GameRecording,
+  RecordingMetadata,
+  InputFrame,
+  LevelSeed,
+  StateSnapshot,
+  FullStateSnapshot
+} from './types'
 
-type RecordingMode = 'idle' | 'recording' | 'replaying'
+const SNAPSHOT_INTERVAL = 100 // Capture every 100 frames (~5 seconds at 20 FPS)
+
+type RecordingMode = 'idle' | 'recording'
 
 type RecordingService = {
   // Control recording
-  startRecording: (metadata: RecordingMetadata) => void
+  startRecording: (metadata: RecordingMetadata, enableFullSnapshots?: boolean) => void
   stopRecording: () => GameRecording | null
   isRecording: () => boolean
 
-  // Capture level seeds and inputs
+  // Capture level seeds, inputs, and state snapshots
   recordLevelSeed: (level: number, seed: number) => void
-  recordFrame: (frameCount: number, controls: ControlMatrix) => void
-
-  // Replay mode
-  startReplay: (recording: GameRecording) => void
-  stopReplay: () => void
-  isReplaying: () => boolean
-
-  // Get controls and seeds for current frame/level during replay
-  getReplayControls: (frameCount: number) => ControlMatrix | null
-  getReplayLevelSeed: (level: number) => number | null
+  recordFrame: (frameCount: number, controls: ControlMatrix, state: RootState) => void
 
   // Current mode
   getMode: () => RecordingMode
@@ -99,26 +107,54 @@ const controlsEqual = (a: ControlMatrix, b: ControlMatrix): boolean => {
   )
 }
 
+const hashState = (state: RootState): string => {
+  // Hash relevant game state slices (exclude UI state)
+  const relevantState = {
+    ship: state.ship,
+    shots: state.shots,
+    planet: state.planet,
+    screen: state.screen,
+    status: state.status,
+    explosions: state.explosions,
+    walls: state.walls,
+    transition: state.transition
+  }
+
+  // Simple hash function
+  const stateString = JSON.stringify(relevantState)
+  let hash = 0
+  for (let i = 0; i < stateString.length; i++) {
+    const char = stateString.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash // Convert to 32bit integer
+  }
+  return hash.toString(16)
+}
+
 const createRecordingService = (): RecordingService => {
   let mode: RecordingMode = 'idle'
   let currentRecording: Partial<GameRecording> | null = null
   let lastControls: ControlMatrix | null = null
   let inputFrames: InputFrame[] = []
   let levelSeeds: LevelSeed[] = []
-  let replayData: GameRecording | null = null
-  let replayIndex = 0
+  let snapshots: StateSnapshot[] = []
+  let fullSnapshots: FullStateSnapshot[] = []
+  let fullSnapshotsEnabled = false
 
   return {
-    startRecording: metadata => {
+    startRecording: (metadata, enableFullSnapshots = false) => {
       if (mode !== 'idle') {
         throw new Error(
-          `Cannot start recording: currently in ${mode} mode. Call stop${mode === 'recording' ? 'Recording' : 'Replay'}() first.`
+          `Cannot start recording: currently in ${mode} mode. Call stopRecording() first.`
         )
       }
       mode = 'recording'
       currentRecording = { ...metadata, levelSeeds: [], inputs: [] }
       inputFrames = []
       levelSeeds = []
+      snapshots = []
+      fullSnapshots = []
+      fullSnapshotsEnabled = enableFullSnapshots
       lastControls = null
     },
 
@@ -127,13 +163,39 @@ const createRecordingService = (): RecordingService => {
       levelSeeds.push({ level, seed })
     },
 
-    recordFrame: (frameCount, controls) => {
+    recordFrame: (frameCount, controls, state) => {
       if (mode !== 'recording') return
 
       // Sparse storage: only record when controls change
       if (!lastControls || !controlsEqual(lastControls, controls)) {
         inputFrames.push({ frame: frameCount, controls: { ...controls } })
         lastControls = { ...controls }
+      }
+
+      // Capture state snapshot at intervals
+      if (frameCount % SNAPSHOT_INTERVAL === 0) {
+        // Always capture hash-based snapshot
+        snapshots.push({
+          frame: frameCount,
+          hash: hashState(state)
+        })
+
+        // Optionally capture full state snapshot (DEBUG mode)
+        if (fullSnapshotsEnabled) {
+          fullSnapshots.push({
+            frame: frameCount,
+            state: {
+              ship: state.ship,
+              shots: state.shots,
+              planet: state.planet,
+              screen: state.screen,
+              status: state.status,
+              explosions: state.explosions,
+              walls: state.walls,
+              transition: state.transition
+            }
+          })
+        }
       }
     },
 
@@ -142,56 +204,22 @@ const createRecordingService = (): RecordingService => {
       const recording = {
         ...currentRecording,
         levelSeeds,
-        inputs: inputFrames
+        inputs: inputFrames,
+        snapshots,
+        fullSnapshots: fullSnapshots.length > 0 ? fullSnapshots : undefined
       } as GameRecording
       mode = 'idle'
       currentRecording = null
       inputFrames = []
       levelSeeds = []
+      snapshots = []
+      fullSnapshots = []
+      fullSnapshotsEnabled = false
       lastControls = null
       return recording
     },
 
     isRecording: () => mode === 'recording',
-
-    startReplay: recording => {
-      if (mode !== 'idle') {
-        throw new Error(
-          `Cannot start replay: currently in ${mode} mode. Call stop${mode === 'recording' ? 'Recording' : 'Replay'}() first.`
-        )
-      }
-      mode = 'replaying'
-      replayData = recording
-      replayIndex = 0
-    },
-
-    getReplayControls: frameCount => {
-      if (mode !== 'replaying' || !replayData) return null
-
-      // Find the most recent input frame <= current frame
-      while (
-        replayIndex < replayData.inputs.length - 1 &&
-        replayData.inputs[replayIndex + 1].frame <= frameCount
-      ) {
-        replayIndex++
-      }
-
-      return replayData.inputs[replayIndex]?.controls ?? null
-    },
-
-    getReplayLevelSeed: level => {
-      if (mode !== 'replaying' || !replayData) return null
-      const levelSeed = replayData.levelSeeds.find(ls => ls.level === level)
-      return levelSeed?.seed ?? null
-    },
-
-    stopReplay: () => {
-      mode = 'idle'
-      replayData = null
-      replayIndex = 0
-    },
-
-    isReplaying: () => mode === 'replaying',
 
     getMode: () => mode
   }
@@ -251,13 +279,13 @@ export type LevelSeed = {
 export type GameRecording = {
   version: string // Recording format version
   engineVersion: number // Game engine version (physics/logic)
-  levelSeeds: LevelSeed[] // Seeds for each level played (see note below)
+  levelSeeds: LevelSeed[] // Seeds for each level played
   galaxyId: string // Hash of galaxy file
   startLevel: number
   timestamp: number
   initialState: RecordingInitialState
   inputs: InputFrame[]
-  snapshots: StateSnapshot[] // Hash-based snapshots (always included)
+  snapshots: StateSnapshot[] // Hash-based snapshots for validation
   fullSnapshots?: FullStateSnapshot[] // Optional full state snapshots for debugging
 }
 
@@ -278,7 +306,7 @@ export type GameRecording = {
 
 ### 3. Storage Service
 
-Handles persistence of recordings to localStorage.
+Handles persistence of recordings to localStorage and file export.
 
 ```typescript
 // src/game/recording/RecordingStorage.ts
@@ -302,7 +330,6 @@ type RecordingStorage = {
   list: () => RecordingIndex
   delete: (id: string) => void
   exportToFile: (id: string) => void
-  importFromFile: (file: File) => Promise<string>
 }
 
 const createRecordingStorage = (): RecordingStorage => {
@@ -381,25 +408,6 @@ const createRecordingStorage = (): RecordingStorage => {
       a.download = `continuum_recording_${id}.json`
       a.click()
       URL.revokeObjectURL(url)
-    },
-
-    importFromFile: async file => {
-      const text = await file.text()
-      const recording = JSON.parse(text) as GameRecording
-
-      const id = generateId()
-      localStorage.setItem(STORAGE_PREFIX + id, text)
-
-      const index = getIndex()
-      index.push({
-        id,
-        timestamp: recording.timestamp,
-        galaxyId: recording.galaxyId,
-        startLevel: recording.startLevel
-      })
-      saveIndex(index)
-
-      return id
     }
   }
 }
@@ -407,185 +415,169 @@ const createRecordingStorage = (): RecordingStorage => {
 export { createRecordingStorage, type RecordingStorage }
 ```
 
+Note: State snapshot functionality is integrated directly into RecordingService (see above). Snapshots are captured automatically during recording at regular intervals.
+
 ## Integration Points
 
-### Game Loop Integration
+### Files to Modify
 
-Control processing happens in GameRenderer.tsx before passing controls to the game renderer.
-This keeps the renderer pure and allows different components to use the same rendering engine.
+The following files need to be modified to integrate the recording system:
 
-```typescript
-// src/game/gameLoop/index.ts - NO CHANGES NEEDED
-// createGameRenderer stays pure - just takes controls and renders
+1. **`src/game/store.ts`** - Add `RecordingService` to `GameServices` type
+2. **`src/game/main.tsx`** - Create `recordingService` and pass to components
+3. **`src/game/App.tsx`** - Receive and pass `recordingService` prop, handle start/stop
+4. **`src/game/components/GameRenderer.tsx`** - Add prop, call `recordFrame()` in game loop
+5. **`src/game/levelThunks.ts`** - Call `recordLevelSeed()` when loading levels
 
-export const createGameRenderer = (
-  store: GameStore,
-  spriteService: SpriteService,
-  galaxyService: GalaxyService,
-  fizzTransitionService: FizzTransitionService
-): GameRenderLoop => {
-  return (frame, controls) => {
-    let bitmap = createGameBitmap()
+### 1. Add RecordingService to GameServices
 
-    updateGameState({
-      store,
-      frame,
-      controls,
-      bitmap,
-      galaxyService,
-      fizzTransitionService
-    })
+**File: `src/game/store.ts`**
 
-    const state = store.getState()
-
-    if (state.app.collisionMode === 'original') {
-      bitmap = renderGameOriginal({
-        bitmap,
-        state,
-        spriteService,
-        store,
-        fizzTransitionService
-      })
-    } else {
-      bitmap = renderGame({
-        bitmap,
-        state,
-        spriteService,
-        fizzTransitionService
-      })
-    }
-
-    return bitmap
-  }
-}
-```
+Add RecordingService to the GameServices type (around line 48-55):
 
 ```typescript
-// src/game/components/GameRenderer.tsx - MODIFIED
-// Add recordingService prop and control processing logic
-
-import { createRecordingService } from '@/game/recording/RecordingService'
-import type { RecordingService } from '@/game/recording/RecordingService'
-
-type GameRendererProps = {
-  renderer: (frame: FrameInfo, controls: ControlMatrix) => MonochromeBitmap
-  recordingService: RecordingService // NEW PROP
-  // ... other props
-}
-
-const GameRenderer: React.FC<GameRendererProps> = ({
-  renderer,
-  recordingService
-  // ... other props
-}) => {
-  // ... existing setup code
-
-  // Game loop
-  const gameLoop = (currentTime: number): void => {
-    const deltaTime = currentTime - lastFrameTimeRef.current
-
-    if (deltaTime >= frameIntervalMs) {
-      const frameInfo: FrameInfo = {
-        /* ... */
-      }
-      const keyInfo: KeyInfo = {
-        /* ... */
-      }
-
-      // Get raw controls from keyboard
-      const rawControls = getControls(keyInfo, bindings)
-
-      // Process controls for recording/replay
-      let effectiveControls = rawControls
-      if (recordingService.isRecording()) {
-        recordingService.recordFrame(frameInfo.frameCount, rawControls)
-        effectiveControls = rawControls // Pass through
-      } else if (recordingService.isReplaying()) {
-        effectiveControls =
-          recordingService.getReplayControls(frameInfo.frameCount) ??
-          rawControls
-      }
-
-      // Skip rendering when paused
-      if (!paused) {
-        // Render with processed controls
-        const renderedBitmap = renderer(frameInfo, effectiveControls)
-        // ... display bitmap
-      }
-
-      // ... rest of loop
-    }
-
-    animationRef.current = requestAnimationFrame(gameLoop)
-  }
-
-  // ... rest of component
-}
-```
-
-### Service Injection
-
-```typescript
-// src/game/store.ts - MODIFIED
-
 import type { RecordingService } from './recording/RecordingService'
-import type { RandomService } from '@/core/shared/RandomService'
 
 export type GameServices = {
   galaxyService: GalaxyService
   spriteService: SpriteService
   fizzTransitionService: FizzTransitionService
-  soundService: SoundService
+  soundService: GameSoundService
   collisionService: CollisionService
-  randomService: RandomService // Added via SEEDED_RNG_PLAN
-  recordingService: RecordingService // NEW - for recording/replay
-}
-
-export const createGameStore = (
-  services: GameServices,
-  initialSettings: GameInitialSettings
-) => {
-  const { store, soundListenerMiddleware } = createStoreAndListeners(
-    rootReducer,
-    services,
-    initialSettings
-  )
-
-  setupSoundListener(
-    soundListenerMiddleware.startListening.withTypes<RootState, AppDispatch>(),
-    services.soundService
-  )
-
-  return store
+  randomService: RandomService // Already exists
+  recordingService: RecordingService // NEW - for recording
 }
 ```
 
-### Integration with loadLevel Thunk
+No changes needed to `createGameStore` function - it already accepts services parameter.
 
-The `loadLevel` thunk in `src/game/levelThunks.ts` is the central place where level initialization happens. This is where we integrate recording of level seeds:
+### 2. Integrate into GameRenderer
+
+**File: `src/game/components/GameRenderer.tsx`**
+
+Add `recordingService` prop to component (around line 23-34):
 
 ```typescript
-// src/game/levelThunks.ts - MODIFIED
+import type { RecordingService } from '@/game/recording/RecordingService'
 
+type GameRendererProps = {
+  renderer: (frame: FrameInfo, controls: ControlMatrix) => MonochromeBitmap
+  rendererNew: (frame: FrameInfo, controls: ControlMatrix) => Frame
+  collisionService: CollisionService
+  spriteService: SpriteService
+  spriteRegistry: SpriteRegistry<ImageData>
+  renderMode: 'original' | 'modern'
+  width: number
+  height: number
+  scale: number
+  fps: number
+  recordingService: RecordingService // NEW PROP
+}
+```
+
+Access the store (already available via `useStore()` on line 67):
+
+```typescript
+  const store = useStore() // Already exists at line 67
+```
+
+In the game loop, add recording call after rendering (around line 176-301):
+
+```typescript
+  // Game loop (around line 115)
+  const gameLoop = (currentTime: number): void => {
+    const deltaTime = currentTime - lastFrameTimeRef.current
+
+    if (deltaTime >= frameIntervalMs) {
+      // ... existing frameInfo and keyInfo setup ...
+      // ... existing controls calculation ...
+
+      // Skip rendering when paused but keep the loop running
+      if (!paused) {
+        if (renderMode === 'original') {
+          // Original bitmap renderer
+          const renderedBitmap = renderer(frameInfo, controls)
+
+          // ... existing rendering code ...
+
+          // Record frame AFTER state updates (add after line 294)
+          if (recordingService.isRecording()) {
+            const state = store.getState() as RootState
+
+            // Stop recording if user switched to original collision mode
+            if (state.app.collisionMode !== 'modern') {
+              console.warn('Collision mode changed to original - stopping recording')
+              recordingService.stopRecording()
+            } else {
+              recordingService.recordFrame(frameCountRef.current, controls, state)
+            }
+          }
+        } else {
+          // Modern frame-based renderer
+          const renderedFrame = rendererNew(frameInfo, controls)
+
+          // ... existing rendering code ...
+
+          // Record frame AFTER state updates (add after line 300)
+          if (recordingService.isRecording()) {
+            const state = store.getState() as RootState
+
+            // Stop recording if user switched to original collision mode
+            if (state.app.collisionMode !== 'modern') {
+              console.warn('Collision mode changed to original - stopping recording')
+              recordingService.stopRecording()
+            } else {
+              recordingService.recordFrame(frameCountRef.current, controls, state)
+            }
+          }
+        }
+
+        lastFrameTimeRef.current = currentTime
+        frameCountRef.current++
+      }
+      // ... rest of loop
+    }
+  }
+```
+
+Add `recordingService` to dependency array (around line 324-342):
+
+```typescript
+  }, [
+    renderer,
+    rendererNew,
+    renderMode,
+    width,
+    height,
+    scale,
+    fps,
+    frameIntervalMs,
+    bindings,
+    paused,
+    showMapState,
+    dispatch,
+    collisionService,
+    spriteService,
+    spriteRegistry,
+    store,
+    touchControls,
+    recordingService // NEW
+  ])
+```
+
+### 3. Update loadLevel Thunk
+
+**File: `src/game/levelThunks.ts`**
+
+Modify the `loadLevel` thunk to record level seeds (around line 22-28):
+
+```typescript
 export const loadLevel =
   (levelNum: number): ThunkAction<void, RootState, GameServices, Action> =>
-  (dispatch, getState, { galaxyService, randomService, recordingService }) => {
-    // Generate or retrieve seed for this level
-    let seed: number
-
-    if (recordingService.isReplaying()) {
-      // During replay: use recorded seed for this level
-      const replaySeed = recordingService.getReplayLevelSeed(levelNum)
-      if (replaySeed === null) {
-        throw new Error(`No seed found for level ${levelNum} in replay`)
-      }
-      seed = replaySeed
-    } else {
-      // During normal play: generate new seed
-      seed = Date.now()
-    }
-
-    // Set the seed for this level
+  (dispatch, _getState, { galaxyService, randomService, recordingService }) => {
+    // Set random seed at the start of each level
+    // For new games, use timestamp for non-deterministic gameplay
+    const seed = Date.now()
     randomService.setSeed(seed)
 
     // Record the seed if we're recording
@@ -595,100 +587,171 @@ export const loadLevel =
 
     // ... rest of existing loadLevel logic (unchanged)
     dispatch(statusSlice.actions.setLevel(levelNum))
-    const planet = galaxyService.getPlanet(levelNum)
-    // etc.
+    // ... etc
   }
 ```
 
-This ensures:
+This ensures that during recording, we capture the seed used for each level.
 
-1. **During normal gameplay**: Each level gets a fresh random seed (Date.now())
-2. **During recording**: The seed is captured for each level
-3. **During replay**: The exact same seed is restored for each level
+### 4. Create RecordingService and Pass to Components
 
-### Game Lifecycle Hooks
+**File: `src/game/main.tsx`**
+
+Create the recording service and storage alongside other services (around line 89-90):
 
 ```typescript
-// Example usage in app initialization
+  const randomService = createRandomService()
+  console.log('Random service created')
 
-import { GAME_ENGINE_VERSION } from '@/game/version'
+  // NEW: Create recording service
+  const recordingService = createRecordingService()
+  console.log('Recording service created')
+```
 
-// Create services
-const recordingService = createRecordingService()
-const recordingStorage = createRecordingStorage()
+Add to store creation (around line 93-107):
 
-// Start a new game with recording
-const startNewGame = () => {
-  // Transparently record all games (if in modern collision mode)
-  // User decides whether to save at end of game
-  if (state.app.collisionMode === 'modern') {
-    recordingService.startRecording({
-      engineVersion: GAME_ENGINE_VERSION,
-      galaxyId: state.app.currentGalaxyId,
-      startLevel: 1,
-      timestamp: Date.now(),
-      initialState: {
-        lives: 3
-      }
-    })
-  }
+```typescript
+  const store = createGameStore(
+    {
+      galaxyService,
+      spriteService,
+      fizzTransitionService,
+      soundService,
+      collisionService,
+      randomService,
+      recordingService // NEW
+    },
+    {
+      soundVolume: DEFAULT_SOUND_VOLUME,
+      soundEnabled: !DEFAULT_SOUND_MUTED,
+      initialLives: TOTAL_INITIAL_LIVES
+    }
+  )
+```
 
-  // Start game...
-  dispatch(setMode('playing'))
-  dispatch(loadLevel(1))
+**File: `src/game/App.tsx`**
 
-  // Note: loadLevel thunk will:
-  // 1. Generate a random seed: Date.now()
-  // 2. Call randomService.setSeed(seed)
-  // 3. Call recordingService.recordLevelSeed(levelNum, seed) if recording
+Add `recordingService` prop to App component (around line 33-40):
+
+```typescript
+type AppProps = {
+  renderer: GameRenderLoop
+  rendererNew: NewGameRenderLoop
+  soundService: GameSoundService
+  spriteService: SpriteService
+  collisionService: CollisionService
+  spriteRegistry: SpriteRegistry<ImageData>
+  recordingService: RecordingService // NEW
 }
 
-// On game over
-const handleGameOver = () => {
-  let recording: GameRecording | null = null
+export const App: React.FC<AppProps> = ({
+  renderer,
+  rendererNew,
+  collisionService,
+  soundService,
+  spriteService,
+  spriteRegistry,
+  recordingService // NEW
+}) => {
+```
 
-  if (recordingService.isRecording()) {
-    recording = recordingService.stopRecording()
-  }
+Pass to GameRenderer when rendering (around line 206-220):
 
-  // Show game over screen with optional save/replay UI
-  // Only show recording options if we have a recording (i.e., was in modern mode)
-  dispatch(setMode('gameOver'))
-  if (recording) {
-    // Show UI: "Save this game?" "Watch replay?" etc.
-    // User can choose to save: recordingStorage.save(recording)
-  }
-}
+```typescript
+      case 'playing':
+        return (
+          <GameRenderer
+            renderer={renderer}
+            rendererNew={rendererNew}
+            collisionService={collisionService}
+            spriteService={spriteService}
+            spriteRegistry={spriteRegistry}
+            renderMode={renderMode}
+            width={BASE_GAME_WIDTH}
+            height={BASE_TOTAL_HEIGHT}
+            scale={scale}
+            fps={FPS}
+            recordingService={recordingService} // NEW
+          />
+        )
+```
 
-// Start replay
-const startReplay = (recordingId: string) => {
-  const recording = recordingStorage.load(recordingId)
-  if (!recording) {
-    console.error('Recording not found')
-    return
-  }
+Back in **`src/game/main.tsx`**, pass recordingService to App (around line 155-166):
 
-  // Validate engine version
-  if (recording.engineVersion !== GAME_ENGINE_VERSION) {
-    throw new Error(
-      `Recording requires game engine v${recording.engineVersion}, ` +
-        `but you're running v${GAME_ENGINE_VERSION}`
+```typescript
+  root.render(
+    <Provider store={store}>
+      <App
+        renderer={renderer}
+        rendererNew={rendererNew}
+        collisionService={collisionService}
+        soundService={soundService}
+        spriteService={spriteService}
+        spriteRegistry={spriteRegistry}
+        recordingService={recordingService} // NEW
+      />
+    </Provider>
+  )
+```
+
+### 5. Start/Stop Recording on Game Lifecycle
+
+**File: `src/game/App.tsx`** (or wherever game start/end is handled)
+
+When starting a new game (around line 198-202 where `loadLevel` and `startGame` are called):
+
+```typescript
+// In StartScreen's onStartGame handler
+onStartGame={(level: number) => {
+  // Check if we should record (only in modern collision mode)
+  const state = store.getState()
+  const collisionMode = state.app.collisionMode
+
+  if (collisionMode === 'modern') {
+    // Enable full snapshots in DEBUG mode
+    const enableFullSnapshots = state.ui?.showDebugInfo ?? false
+
+    recordingService.startRecording(
+      {
+        engineVersion: GAME_ENGINE_VERSION, // Import from @/game/version
+        galaxyId: currentGalaxyId,
+        startLevel: level,
+        timestamp: Date.now(),
+        initialState: {
+          lives: state.status.lives
+        }
+      },
+      enableFullSnapshots
     )
   }
 
-  // Start replay mode
-  recordingService.startReplay(recording)
+  // Load the selected level
+  dispatch(loadLevel(level))
 
-  // Initialize game with recorded settings
-  // Note: All recordings use modern collision mode
-  dispatch(setMode('playing'))
-  dispatch(setCollisionMode('modern'))
-  dispatch(loadLevel(recording.startLevel))
+  // Start the game
+  dispatch(startGame())
+}}
+```
 
-  // Note: loadLevel thunk will:
-  // 1. Check if replaying: recordingService.isReplaying()
-  // 2. If replaying, get seed: recordingService.getReplayLevelSeed(levelNum)
-  // 3. Call randomService.setSeed(seed) with replay seed
+On game over, stop recording and optionally save:
+
+```typescript
+// When switching to game over mode
+const handleGameOver = () => {
+  if (recordingService.isRecording()) {
+    const recording = recordingService.stopRecording()
+
+    if (recording) {
+      // Option 1: Auto-save all recordings
+      const recordingStorage = createRecordingStorage()
+      recordingStorage.save(recording)
+
+      // Option 2: Show UI to let user decide whether to save
+      // (implement later in Phase 4)
+    }
+  }
+
+  dispatch(setMode('gameOver'))
 }
 ```
 
@@ -779,45 +842,7 @@ At 20 FPS with sparse encoding:
 - 10-minute game: ~12 KB
 - 100 recordings: ~1.2 MB
 
-Very manageable for localStorage (5-10 MB typical limit).
-
-## Determinism Requirements
-
-For recordings to replay accurately, the following must be deterministic:
-
-### 1. Random Number Generation
-
-✅ **Provided by SEEDED_RNG_PLAN.md**
-
-See [SEEDED_RNG_PLAN.md](./SEEDED_RNG_PLAN.md) for implementation details.
-
-### 2. Frame Timing
-
-- **Current**: Uses `frame.frameCount` (incremented each frame)
-- **Status**: ✓ Already deterministic
-- Game runs at fixed 20 FPS
-
-### 3. Floating Point Math
-
-- **Status**: ✓ Should be stable across architectures
-- JavaScript uses IEEE 754 double precision (standardized)
-- Modern browsers ensure consistent FP behavior across platforms
-- Game uses mostly integer math, reducing FP risk
-- **Known limitation**: Cross-platform replay (ARM ↔ x86) should work but isn't guaranteed
-  - If divergence occurs in practice, treat as bug and investigate
-  - Can add state checksums for validation if needed
-
-### 4. State Updates
-
-- **Current**: Redux with predictable reducers
-- **Status**: ✓ Already deterministic
-- No external timers or async operations in game logic
-
-### 5. Input Handling
-
-- **Current**: Keyboard state captured per frame
-- **Solution**: Replay system overrides with recorded inputs
-- Pausing/map handled via recorded inputs
+Hash snapshots add ~4 KB for 10-minute game. Very manageable for localStorage (5-10 MB typical limit).
 
 ## Galaxy Versioning
 
@@ -842,192 +867,104 @@ const generateGalaxyId = (galaxyFileContent: string): string => {
 }
 ```
 
-### Replay Validation
-
-When loading a replay:
-
-```typescript
-import { GAME_ENGINE_VERSION } from '@/game/version'
-
-const startReplay = (recordingId: string) => {
-  const recording = recordingStorage.load(recordingId)
-  if (!recording) {
-    throw new Error('Recording not found')
-  }
-
-  // Strict engine version check
-  if (recording.engineVersion !== GAME_ENGINE_VERSION) {
-    throw new Error(
-      `Recording requires game engine v${recording.engineVersion}, but you're running v${GAME_ENGINE_VERSION}. ` +
-        `This recording is incompatible with your current game version.`
-    )
-  }
-
-  // Galaxy ID is automatically validated by galaxyService.load()
-  // If the galaxy file changed (different hash), galaxyId won't match
-  const galaxy = galaxyService.load(recording.galaxyId)
-  if (!galaxy) {
-    throw new Error(
-      `Galaxy "${recording.galaxyId}" not found. ` +
-        `This recording may be from a different or modified galaxy file.`
-    )
-  }
-
-  // Proceed with replay...
-}
-```
-
-### Creating Recordings
-
-Include engine version and galaxy hash in all recordings:
-
-```typescript
-import { GAME_ENGINE_VERSION } from '@/game/version'
-
-const startNewGame = () => {
-  const seed = Date.now()
-  const randomService = getRandomService()
-  randomService.setSeed(seed)
-
-  if (state.app.collisionMode === 'modern') {
-    const currentGalaxy = galaxyService.getCurrent()
-    recordingService.startRecording(seed, {
-      engineVersion: GAME_ENGINE_VERSION, // From constant
-      galaxyId: currentGalaxy.id, // Hash from galaxy file
-      startLevel: 1,
-      timestamp: Date.now(),
-      initialState: { lives: 3 }
-    })
-  }
-
-  dispatch(setMode('playing'))
-  dispatch(loadLevel(1))
-}
-```
-
 ## Implementation Plan
 
-**Prerequisite**: Complete [SEEDED_RNG_PLAN.md](./SEEDED_RNG_PLAN.md) first (~1.5 hours)
+### Phase 1: Core Recording (2-3 hours)
 
-### Phase 1: Recording Service (2-3 hours)
+1. Create `src/game/version.ts`
+2. Create `src/game/recording/types.ts`
+3. Create `src/game/recording/RecordingService.ts` (includes snapshot functionality)
+4. Add to `GameServices` injection
+5. Test: recording captures inputs and snapshots correctly
 
-1. Create `src/game/recording/types.ts`
-2. Create `src/game/recording/RecordingService.ts`
-3. Add to `GameServices` injection
-4. Integrate into `createGameRenderer()` in `gameLoop/index.ts`
-5. Test: recording captures inputs correctly
-
-### Phase 2: Storage (2 hours)
+### Phase 2: Storage & Export (2 hours)
 
 1. Create `src/game/recording/RecordingStorage.ts`
 2. Implement localStorage persistence
-3. Add export/import functionality
-4. Test: save/load/list operations
+3. Add file export functionality
+4. Test: save/load/list/export operations
 
-### Phase 3: Integration & Testing (3-4 hours)
+### Phase 3: Integration (2-3 hours)
 
-1. Hook recording start/stop into game lifecycle
-2. Seed RNG on game start
-3. Auto-save recordings on game over
-4. Verify replays are deterministic
+1. Integrate into GameRenderer.tsx
+   - Pass store to GameRenderer for state access
+   - Update recordFrame call to include state
+2. Hook recording start/stop into game lifecycle
+   - Use `showDebugInfo` flag to enable full snapshots
+3. Update loadLevel thunk to record seeds
+4. Test: end-to-end recording flow
 5. Test edge cases:
    - Level transitions
    - Death and respawn
-   - Pause during recording/replay
+   - Pause during recording
    - Game over conditions
+6. Verify snapshot behavior:
+   - Hash snapshots always captured
+   - Full snapshots only in DEBUG mode
 
-### Phase 4: UI (4-6 hours)
+### Phase 4: UI (3-4 hours)
 
-1. Add recording controls to start screen
-2. Recording indicator during gameplay
-3. Create replay browser component
-4. Playback controls (pause, speed, progress)
-5. Export/import UI
+1. Recording indicator during gameplay
+2. Game over screen with save/export options
+3. Recording browser/list component
+4. Delete recording functionality
 
-**Total Estimated Time: 11-15 hours** (plus 1.5 hours for RNG prerequisite)
+**Total Estimated Time: 9-12 hours**
 
-## Testing Strategy
+## Determinism Requirements
 
-### Determinism Validation
+For recordings to replay accurately, the following must be deterministic:
 
-Recordings include state snapshots for validation:
+### 1. Random Number Generation
 
-**Hash-based snapshots (always enabled):**
+✅ **Already implemented via RandomService**
+- Seeded RNG with `setSeed()` method
+- All game logic uses `randomService.random()`
 
-- Captured every 100 frames (~5 seconds at 20 FPS)
-- Hash of relevant game state slices:
-  - Included: ship, shots, planet, screen, status, explosions, walls, transition
-  - Excluded: game, app, controls, highscore (UI state, not game logic)
-- Compact: ~4 KB for 10-minute game
-- During replay: compare hashes at each snapshot frame
-- On mismatch: log error with frame number where divergence occurred
+### 2. Frame Timing
 
-**Full state snapshots (optional, for debugging):**
+- **Current**: Uses `frame.frameCount` (incremented each frame)
+- **Status**: ✓ Already deterministic
+- Game runs at fixed 20 FPS
 
-- Enable in settings or for bug reporting
-- Same frequency (every 100 frames)
-- Stores complete state objects instead of hash
-- Large: ~2.4 MB for 10-minute game
-- Allows debugging exact state divergence
-- User can enable when experiencing replay issues
+### 3. Floating Point Math
 
-**Validation process:**
+- **Status**: ✓ Should be stable across architectures
+- JavaScript uses IEEE 754 double precision (standardized)
+- Modern browsers ensure consistent FP behavior across platforms
+- Game uses mostly integer math, reducing FP risk
 
-1. Record game with snapshots
-2. Replay and compare snapshots at each checkpoint
-3. If hash mismatch detected:
-   - Log frame number of divergence
-   - If full snapshots enabled: show diff of state
-   - Report as determinism bug
+### 4. State Updates
 
-### Edge Cases
+- **Current**: Redux with predictable reducers
+- **Status**: ✓ Already deterministic
+- No external timers or async operations in game logic
 
-**Pause handling during recording:**
+### 5. Input Handling
 
-- When user pauses, stop recording (don't capture pause frames)
-- Resume recording when unpaused
-- This keeps pauses out of replays
-
-**Quit handling:**
-
-- Treat quit like game over
-- Stop recording and offer to save
-- Saved recording is complete up to quit point
-
-**JSON validation:**
-
-- Validate recording structure on load
-- Check for required fields, correct types
-- Handle corrupted data gracefully with clear error messages
-
-**Version mismatch:**
-
-- Already handled via engineVersion validation (see Galaxy Versioning section)
-
-Note: Level transitions, death/respawn, etc. are deterministic and require no special handling.
-
-### Performance
-
-- Measure recording overhead (should be negligible)
-- Test with 100+ saved recordings
-- Verify localStorage limits aren't exceeded
-
-## Future Enhancements
-
-### Optional Features
-
-1. **Fast-forward/Rewind**: Jump to arbitrary frame, rebuild state (could use snapshots as checkpoints)
-2. **Slow-motion replay**: Render at half speed
-3. **Ghost mode**: Overlay recorded run during live play
-4. **Replay editing**: Cut/splice recordings
-5. **Leaderboards**: Submit recordings as proof of score
-6. **Compression**: Further reduce storage with binary format
-7. **State snapshot seeking**: Use snapshots as checkpoints for faster seeking to arbitrary frames
+- **Current**: Keyboard state captured per frame
+- **Status**: ✓ Deterministic
+- Inputs are recorded exactly as received
 
 ## Notes
 
-- Recording is opt-in (doesn't affect normal gameplay)
+- Recording is automatic in modern collision mode
 - Only works with modern collision mode (original mode ties state to rendering)
-- Replays can be shared as JSON files
+- **Recording stops automatically if user switches to original collision mode during gameplay**
+- User chooses whether to save after game over
+- Recordings can be exported as JSON files
 - Perfect for debugging, speedrunning, or showcasing epic runs
 - Strict versioning ensures recordings only work on compatible game versions
+
+### State Snapshots
+
+- **Hash snapshots**: Always captured every 100 frames (~5 seconds)
+  - Compact: ~4 KB for 10-minute game
+  - Used for validation during replay
+  - Detect when state diverges from expected
+
+- **Full snapshots**: Only when DEBUG mode enabled (`showDebugInfo` flag)
+  - Large: ~2.4 MB for 10-minute game
+  - Complete state at each snapshot frame
+  - Used for debugging divergence issues
+  - Not needed for normal gameplay
