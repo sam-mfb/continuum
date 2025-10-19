@@ -9,7 +9,7 @@
  */
 
 import { createCanvas, loadImage } from 'canvas'
-import { readFileSync, writeFileSync, readdirSync } from 'fs'
+import { writeFileSync, readdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 

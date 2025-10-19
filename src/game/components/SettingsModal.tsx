@@ -485,12 +485,21 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 <span>COLLISION MODE:</span>
                 <button
                   onClick={() => dispatch(toggleCollisionMode())}
-                  style={toggleButtonStyle}
+                  disabled={renderMode === 'modern'}
+                  style={{
+                    ...toggleButtonStyle,
+                    opacity: renderMode === 'modern' ? 0.5 : 1,
+                    cursor: renderMode === 'modern' ? 'not-allowed' : 'pointer'
+                  }}
                   onMouseEnter={e => {
-                    e.currentTarget.style.background = '#333'
+                    if (renderMode !== 'modern') {
+                      e.currentTarget.style.background = '#333'
+                    }
                   }}
                   onMouseLeave={e => {
-                    e.currentTarget.style.background = '#000'
+                    if (renderMode !== 'modern') {
+                      e.currentTarget.style.background = '#000'
+                    }
                   }}
                 >
                   {collisionMode === 'modern' ? 'MODERN' : 'ORIGINAL'}
@@ -509,15 +518,27 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   )
                 </span>
               </div>
-              <div
-                style={{
-                  marginTop: `${3 * scale}px`,
-                  color: '#ffaa00',
-                  fontSize: `${5 * scale}px`
-                }}
-              >
-                Note: Reload page after changing to apply
-              </div>
+              {renderMode === 'modern' ? (
+                <div
+                  style={{
+                    marginTop: `${3 * scale}px`,
+                    color: '#ffaa00',
+                    fontSize: `${5 * scale}px`
+                  }}
+                >
+                  Note: Modern render mode requires modern collision mode
+                </div>
+              ) : (
+                <div
+                  style={{
+                    marginTop: `${3 * scale}px`,
+                    color: '#ffaa00',
+                    fontSize: `${5 * scale}px`
+                  }}
+                >
+                  Note: Reload page after changing to apply
+                </div>
+              )}
             </div>
 
             {/* Sound Mode Section */}
