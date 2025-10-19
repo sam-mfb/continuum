@@ -93,9 +93,17 @@ export const appSlice = createSlice({
     // Render settings
     setRenderMode: (state, action: PayloadAction<RenderMode>) => {
       state.renderMode = action.payload
+      // Modern render mode requires modern collision mode
+      if (action.payload === 'modern') {
+        state.collisionMode = 'modern'
+      }
     },
     toggleRenderMode: state => {
       state.renderMode = state.renderMode === 'original' ? 'modern' : 'original'
+      // Modern render mode requires modern collision mode
+      if (state.renderMode === 'modern') {
+        state.collisionMode = 'modern'
+      }
     },
     toggleSolidBackground: state => {
       state.solidBackground = !state.solidBackground
