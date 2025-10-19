@@ -2,28 +2,28 @@
 
 ## Overview
 
-This document describes the implementation of deterministic random number generation for Continuum. This is a foundational change that enables game recording and replay by making all randomness reproducible from a seed value.
+This document describes the implementation of deterministic random number generation for Continuum. This adds a seeded PRNG (Pseudo-Random Number Generator) for gameplay-critical randomness while keeping the existing `rint()` for non-deterministic visual/audio effects.
 
 **Prerequisite for**: [RECORDING_PLAN.md](./RECORDING_PLAN.md) - The recording system depends on deterministic RNG to ensure replays are accurate.
 
 ## Why Seeded RNG?
 
-The current implementation uses `Math.random()`, which is:
-
-- **Non-deterministic**: Different random sequence every time
-- **Cannot be replayed**: No way to reproduce the exact same game
-- **Not seedable**: Can't control or predict the sequence
-
-A seeded PRNG (Pseudo-Random Number Generator) provides:
+For gameplay-critical elements (bunker shooting, shot trajectories), we need deterministic randomness:
 
 - **Determinism**: Same seed → same random sequence every time
 - **Replayability**: Can recreate exact game sessions
 - **Control**: Can set seed for testing, recording, or debugging
 - **Fast**: Optimized algorithms like Mulberry32 are very performant
 
-## Current Usage
+For visual/audio effects, we keep `Math.random()` via existing `rint()`:
 
-The `rint(n)` function is currently used in ~6 files:
+- **Non-deterministic**: Creates variety across sessions
+- **No replay requirement**: Visual effects don't need to be reproduced exactly
+- **Simpler**: No need to manage seeds for non-gameplay code
+
+## Current Usage of rint()
+
+The existing `rint(n)` function is currently used in ~6 files:
 
 - `src/game/gameLoop/stateUpdates.ts` - Bunker shooting timing
 - `src/core/shots/bunkShoot.ts` - Shot angle randomization
@@ -32,23 +32,37 @@ The `rint(n)` function is currently used in ~6 files:
 - `src/dev/demos/bunkerDrawBitmap.ts` - Demo code
 - `src/dev/demos/shipMoveBitmap.ts` - Demo code
 
-**Critical for gameplay**:
+## Implementation Strategy
 
-- Bunker shooting (timing and trajectories)
-- Shot angle selection
-- Planet generation
+We will **split** random number usage into two categories:
 
-**Non-critical** (visual/audio only):
+### Gameplay-Critical (Use New Seeded RNG)
 
-- Transition effects
-- Sound generators (not shown in list but use random values)
+Files that will use the new seeded `rnumber()` function:
+
+- `src/game/gameLoop/stateUpdates.ts` - Bunker shooting timing
+- `src/core/shots/bunkShoot.ts` - Shot angle randomization
+
+These must be deterministic for accurate replay.
+
+### Visual/Audio Only (Keep Existing rint())
+
+Files that will continue using `rint()` with `Math.random()`:
+
+- `src/core/planet/planetSlice.ts` - Planet generation
+- `src/render/transition/starmapPixels.ts` - Transition effects
+- `src/dev/demos/bunkerDrawBitmap.ts` - Demo code
+- `src/dev/demos/shipMoveBitmap.ts` - Demo code
+- Sound generators (not shown but use random values)
 - Explosion debris animations
+
+These don't need to be deterministic and can remain non-reproducible.
 
 ## Implementation
 
-### 1. RandomService
+### 1. RandomService Factory
 
-A singleton service that provides seeded random number generation.
+A factory function that creates a seeded random number generator instance.
 
 ```typescript
 // src/core/shared/RandomService.ts
@@ -60,15 +74,13 @@ A singleton service that provides seeded random number generation.
  * See: https://github.com/bryc/code/blob/master/jshash/PRNGs.md
  */
 
-type RandomService = {
-  setSeed: (seed: number) => void
+export type RandomService = {
   getSeed: () => number
-  rint: (n: number) => number
+  rnumber: (n: number) => number
 }
 
-const createRandomService = (): RandomService => {
-  let seed = 0
-  let state = 0
+export const createRandomService = (seed: number): RandomService => {
+  let state = seed
 
   // Mulberry32 PRNG - simple, fast, deterministic
   // Period: 2^32
@@ -81,89 +93,68 @@ const createRandomService = (): RandomService => {
   }
 
   return {
-    setSeed: (s: number) => {
-      seed = s
-      state = s
-    },
     getSeed: () => seed,
-    rint: (n: number) => Math.floor(mulberry32() * n)
+    rnumber: (n: number) => Math.floor(mulberry32() * n)
   }
 }
-
-// Singleton instance
-let randomService: RandomService | undefined
-
-export const initializeRandomService = (): void => {
-  randomService = createRandomService()
-}
-
-export const getRandomService = (): RandomService => {
-  if (!randomService) {
-    throw new Error(
-      'RandomService not initialized. Call initializeRandomService() first.'
-    )
-  }
-  return randomService
-}
-
-export type { RandomService }
 ```
 
-### 2. Transparent rint() Integration
+### 2. Keep rint() Unchanged
 
-Modify the existing `rint()` function to use RandomService internally. This keeps all calling code unchanged.
+The existing `rint()` function remains completely unchanged and continues to use `Math.random()`:
 
 ```typescript
-// src/core/shared/rint.ts - MODIFIED
-
-import { getRandomService } from './RandomService'
+// src/core/shared/rint.ts - NO CHANGES
 
 /**
  * Random integer from 0 to n-1
- *
- * Now uses seeded PRNG for deterministic behavior
  *
  * @param n - Upper bound (exclusive)
  * @returns Random integer in range [0, n)
  */
 export function rint(n: number): number {
-  return getRandomService().rint(n)
+  return Math.floor(Math.random() * n)
 }
 ```
 
-**Key design decision**: The signature of `rint()` stays exactly the same. All existing game code continues to work without any changes.
+**Key design decision**: `rint()` is used only for visual/audio effects that don't need to be deterministic. Gameplay-critical code will use `RandomService.rnumber()` instead.
 
-### 3. Service Initialization
+### 3. Store RandomService in Game State
 
-Initialize the RandomService at application startup, before any game code runs.
+Add the RandomService instance to the game state so it's available throughout the game lifecycle.
 
 ```typescript
-// src/game/main.tsx - ADD THIS
+// In the appropriate game state slice (e.g., gameSlice.ts or similar)
 
-import { initializeRandomService } from '@/core/shared/RandomService'
+import {
+  createRandomService,
+  type RandomService
+} from '@/core/shared/RandomService'
 
-// Initialize RandomService FIRST, before any other services
-initializeRandomService()
+type GameState = {
+  // ... existing fields
+  randomService: RandomService
+}
 
-// ... rest of initialization (sprites, galaxy, sound, etc.)
+// When initializing a new game:
+const newGameState = {
+  // ... other initialization
+  randomService: createRandomService(Date.now()) // or any seed value
+}
 ```
 
-**Critical**: Must be called before creating any services that might use `rint()`.
+**Key design decision**: Each game gets its own RandomService instance created with a seed. The instance is stored in the game state and passed to functions that need deterministic randomness.
 
 ### 4. Export from Shared Module
 
-Make RandomService available for game lifecycle management.
+Make RandomService available throughout the codebase.
 
 ```typescript
 // src/core/shared/index.ts - ADD EXPORTS
 
 // Random number generation
-export { rint } from './rint'
-export {
-  initializeRandomService,
-  getRandomService,
-  type RandomService
-} from './RandomService'
+export { rint } from './rint' // Unchanged - still uses Math.random()
+export { createRandomService, type RandomService } from './RandomService'
 ```
 
 ## Game Engine Versioning
@@ -198,35 +189,34 @@ This version will be used by the recording system to validate that recordings ar
 
 ### During Normal Gameplay
 
-When starting a new game, set a random seed:
+When starting a new game, create a new RandomService with a timestamp seed:
 
 ```typescript
-import { getRandomService } from '@/core/shared/RandomService'
+import { createRandomService } from '@/core/shared/RandomService'
 
 const startNewGame = () => {
   // Use timestamp as seed for non-deterministic gameplay
   const seed = Date.now()
+  const randomService = createRandomService(seed)
 
-  const randomService = getRandomService()
-  randomService.setSeed(seed)
-
-  // Continue with game initialization...
+  // Store in game state
+  // ... continue with game initialization
 }
 ```
 
 ### During Replay (Future)
 
-When replaying a recording, use the recorded seed:
+When replaying a recording, create a RandomService with the recorded seed:
 
 ```typescript
-import { getRandomService } from '@/core/shared/RandomService'
+import { createRandomService } from '@/core/shared/RandomService'
 
 const startReplay = (recording: GameRecording) => {
   // Use recorded seed for deterministic replay
-  const randomService = getRandomService()
-  randomService.setSeed(recording.seed)
+  const randomService = createRandomService(recording.seed)
 
-  // Continue with replay initialization...
+  // Store in game state
+  // ... continue with replay initialization
 }
 ```
 
@@ -265,21 +255,23 @@ Test that same seed produces same sequence:
 
 ```typescript
 // Manual test or unit test
-import {
-  initializeRandomService,
-  getRandomService
-} from '@/core/shared/RandomService'
-
-initializeRandomService()
-const service = getRandomService()
+import { createRandomService } from '@/core/shared/RandomService'
 
 // First sequence
-service.setSeed(12345)
-const sequence1 = [service.rint(100), service.rint(100), service.rint(100)]
+const service1 = createRandomService(12345)
+const sequence1 = [
+  service1.rnumber(100),
+  service1.rnumber(100),
+  service1.rnumber(100)
+]
 
 // Second sequence with same seed
-service.setSeed(12345)
-const sequence2 = [service.rint(100), service.rint(100), service.rint(100)]
+const service2 = createRandomService(12345)
+const sequence2 = [
+  service2.rnumber(100),
+  service2.rnumber(100),
+  service2.rnumber(100)
+]
 
 // Should be identical
 console.assert(JSON.stringify(sequence1) === JSON.stringify(sequence2))
@@ -302,87 +294,105 @@ Once recording is implemented:
 
 ## Implementation Steps
 
-### Step 1: Create RandomService (30 min)
+### Step 1: Create RandomService (20 min)
 
 - [ ] Create `src/core/shared/RandomService.ts`
-- [ ] Implement `createRandomService()` with Mulberry32
-- [ ] Implement singleton pattern with `initializeRandomService()` and `getRandomService()`
-- [ ] Export types
+- [ ] Implement `createRandomService(seed)` factory with Mulberry32
+- [ ] Export `RandomService` type
+- [ ] Include `rnumber(n)` method (not `rint`)
 
 ### Step 2: Create Version File (5 min)
 
 - [ ] Create `src/game/version.ts`
 - [ ] Add `GAME_ENGINE_VERSION = 1` with documentation
 
-### Step 3: Modify rint() (5 min)
-
-- [ ] Update `src/core/shared/rint.ts` to use `getRandomService()`
-- [ ] Keep existing function signature
-- [ ] Update JSDoc comment
-
-### Step 4: Update Exports (5 min)
+### Step 3: Update Exports (5 min)
 
 - [ ] Add RandomService exports to `src/core/shared/index.ts`
-- [ ] Ensure `rint` is still exported
+- [ ] Ensure `rint` is still exported (unchanged)
 
-### Step 5: Initialize in main.tsx (5 min)
+### Step 4: Add RandomService to Game State (15 min)
 
-- [ ] Import `initializeRandomService`
-- [ ] Call it at the very start of initialization
-- [ ] Add comment explaining why it's first
+- [ ] Identify where game state is initialized for a new game
+- [ ] Add `randomService` field to game state type
+- [ ] Create RandomService instance with `Date.now()` seed on new game
+- [ ] Store instance in game state
 
-### Step 6: Testing (20 min)
+### Step 5: Update stateUpdates.ts (10 min)
+
+- [ ] Modify bunker shooting logic to use `randomService.rnumber()` instead of `rint()`
+- [ ] Pass RandomService from game state to the update functions
+
+### Step 6: Update bunkShoot.ts (10 min)
+
+- [ ] Modify shot angle logic to use `randomService.rnumber()` instead of `rint()`
+- [ ] Pass RandomService from game state to the function
+
+### Step 7: Testing (20 min)
 
 - [ ] Run `npm run typecheck` - verify no type errors
 - [ ] Run `npm run lint` - verify no lint issues
 - [ ] Run `npm run format` - format code
-- [ ] Manual test: Play game, verify normal behavior
+- [ ] Manual test: Play game, verify bunker behavior unchanged
 - [ ] Manual test: Verify same seed produces same sequence (console test)
 
-### Step 7: Commit (5 min)
+### Step 8: Commit (5 min)
 
-- [ ] Commit changes with message: "Implement seeded RNG for deterministic gameplay"
+- [ ] Commit changes with message: "Add seeded RNG for gameplay-critical randomness"
 
 **Total Estimated Time: ~1.5 hours**
 
 ## Migration Notes
 
-### No Breaking Changes
+### Breaking Changes for Gameplay Code
 
-This is a **non-breaking change**:
+This is a **breaking change** for gameplay-critical randomness:
 
-- ✅ All existing code continues to work
-- ✅ No changes needed to any `rint()` call sites
-- ✅ Game behavior is identical (just reproducible now)
-- ✅ No API changes to any modules
+- ⚠️ `stateUpdates.ts` and `bunkShoot.ts` must be updated to use `randomService.rnumber()`
+- ⚠️ These functions need to receive RandomService as a parameter
+- ✅ All other `rint()` call sites remain unchanged
+- ✅ Visual/audio randomness continues to use `Math.random()`
 
 ### Developer Experience
 
-**Before**:
+**Gameplay-critical code** (bunker shooting, shot angles):
 
 ```typescript
+// Before:
 import { rint } from '@/core/shared'
+const angle = rint(360)
 
-const value = rint(10) // Random 0-9
+// After:
+// RandomService passed from game state
+const angle = randomService.rnumber(360)
 ```
 
-**After**:
+**Visual/audio code** (transitions, explosions, sound):
 
 ```typescript
+// Before:
 import { rint } from '@/core/shared'
+const debris = rint(10)
 
-const value = rint(10) // Still random 0-9, but deterministic if seed is set
+// After: NO CHANGE
+import { rint } from '@/core/shared'
+const debris = rint(10)
 ```
 
-Same code, new capability.
+### When to Create RandomService
 
-### When to Set Seeds
+**Create new instances** only when:
 
-**Don't set seeds** in library code or game logic. Seeds should only be set at:
+- Starting a new game (use `Date.now()` as seed)
+- Starting a replay (use recorded seed)
+- Running tests (use fixed seed for determinism)
 
-- Game start (main game flow)
-- Replay start (recording system)
-- Tests (when determinism is needed)
+**Never create instances** in:
+
+- Library code or utility functions
+- Render functions
+- Sound generators
+- Visual effects
 
 ## Future Work
 
