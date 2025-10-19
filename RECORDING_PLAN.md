@@ -2,108 +2,21 @@
 
 ## Overview
 
-This document describes the design for implementing game recording and deterministic replay functionality in Continuum. The system allows capturing player inputs and using seeded random number generation to create reproducible game sessions.
+This document describes the design for implementing game recording and deterministic replay functionality in Continuum. The system captures player inputs and uses seeded random number generation to create reproducible game sessions.
+
+**Prerequisite**: [SEEDED_RNG_PLAN.md](./SEEDED_RNG_PLAN.md) must be implemented first. The recording system depends on deterministic random number generation to ensure replays are accurate.
 
 ## Architecture Principles
 
 1. **Recording/replay as injectable service** - Not managed in Redux state
-2. **Transparent to game code** - No signature changes to `rint()` or game logic
+2. **Transparent to game code** - Recording logic separate from game state
 3. **Integrated into game loop** - Called once per frame (20 FPS)
-4. **Global RNG management** - Seed managed via service, transparent to callers
+4. **Global RNG management** - Seed managed via RandomService (see SEEDED_RNG_PLAN.md)
 5. **Clean separation** - Recording logic separate from game state
 
 ## Core Components
 
-### 1. Seeded RNG Service
-
-Provides deterministic random number generation with optional seeding.
-
-```typescript
-// src/core/shared/RandomService.ts
-type RandomService = {
-  setSeed: (seed: number) => void
-  getSeed: () => number
-  rint: (n: number) => number
-}
-
-const createRandomService = (): RandomService => {
-  let seed = 0
-  let state = 0
-
-  // Mulberry32 PRNG - simple, fast, deterministic
-  const mulberry32 = () => {
-    let t = (state += 0x6d2b79f5)
-    t = Math.imul(t ^ (t >>> 15), t | 1)
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-
-  return {
-    setSeed: (s: number) => {
-      seed = s
-      state = s
-    },
-    getSeed: () => seed,
-    rint: (n: number) => Math.floor(mulberry32() * n)
-  }
-}
-
-let randomService: RandomService | undefined
-
-export const initializeRandomService = (): void => {
-  randomService = createRandomService()
-}
-
-export const getRandomService = (): RandomService => {
-  if (!randomService) {
-    throw new Error('RandomService not initialized. Call initializeRandomService() first.')
-  }
-  return randomService
-}
-
-export type { RandomService }
-```
-
-### 2. Transparent rint() Integration
-
-Modify existing `rint()` to use the singleton RandomService.
-
-```typescript
-// src/core/shared/rint.ts - MODIFIED
-import { getRandomService } from './RandomService'
-
-export function rint(n: number): number {
-  return getRandomService().rint(n)
-}
-```
-
-### Initialization
-
-The RandomService must be initialized at application startup before any game code runs:
-
-```typescript
-// src/main.tsx (or wherever the app initializes)
-import { initializeRandomService } from '@/core/shared/RandomService'
-
-// Initialize services before app renders
-initializeRandomService()
-
-// ... rest of app setup
-```
-
-When starting a new game, set the random seed:
-
-```typescript
-import { getRandomService } from '@/core/shared/RandomService'
-
-const startNewGame = () => {
-  const randomService = getRandomService()
-  randomService.setSeed(Date.now())  // Or use seed from recording
-  // ... start game
-}
-```
-
-### 3. Recording Service
+### 1. Recording Service
 
 Injectable service that handles recording and replay of player inputs.
 
@@ -238,7 +151,7 @@ const createRecordingService = (): RecordingService => {
 export { createRecordingService, type RecordingService, type RecordingMode }
 ```
 
-### 4. Recording Types
+### 2. Recording Types
 
 ```typescript
 // src/game/recording/types.ts
@@ -264,7 +177,7 @@ export type InputFrame = {
 
 export type StateSnapshot = {
   frame: number
-  hash: string  // Hash of relevant game state slices
+  hash: string // Hash of relevant game state slices
 }
 
 export type FullStateSnapshot = {
@@ -282,16 +195,16 @@ export type FullStateSnapshot = {
 }
 
 export type GameRecording = {
-  version: string          // Recording format version
-  engineVersion: number    // Game engine version (physics/logic)
+  version: string // Recording format version
+  engineVersion: number // Game engine version (physics/logic)
   seed: number
-  galaxyId: string        // Hash of galaxy file
+  galaxyId: string // Hash of galaxy file
   startLevel: number
   timestamp: number
   initialState: RecordingInitialState
   inputs: InputFrame[]
-  snapshots: StateSnapshot[]  // Hash-based snapshots (always included)
-  fullSnapshots?: FullStateSnapshot[]  // Optional full state snapshots for debugging
+  snapshots: StateSnapshot[] // Hash-based snapshots (always included)
+  fullSnapshots?: FullStateSnapshot[] // Optional full state snapshots for debugging
 }
 
 // Note: Recordings only work with modern collision mode.
@@ -300,7 +213,7 @@ export type GameRecording = {
 // when the user plays in original collision mode.
 ```
 
-### 5. Storage Service
+### 3. Storage Service
 
 Handles persistence of recordings to localStorage.
 
@@ -493,13 +406,13 @@ import type { RecordingService } from '@/game/recording/RecordingService'
 
 type GameRendererProps = {
   renderer: (frame: FrameInfo, controls: ControlMatrix) => MonochromeBitmap
-  recordingService: RecordingService  // NEW PROP
+  recordingService: RecordingService // NEW PROP
   // ... other props
 }
 
 const GameRenderer: React.FC<GameRendererProps> = ({
   renderer,
-  recordingService,
+  recordingService
   // ... other props
 }) => {
   // ... existing setup code
@@ -509,8 +422,12 @@ const GameRenderer: React.FC<GameRendererProps> = ({
     const deltaTime = currentTime - lastFrameTimeRef.current
 
     if (deltaTime >= frameIntervalMs) {
-      const frameInfo: FrameInfo = { /* ... */ }
-      const keyInfo: KeyInfo = { /* ... */ }
+      const frameInfo: FrameInfo = {
+        /* ... */
+      }
+      const keyInfo: KeyInfo = {
+        /* ... */
+      }
 
       // Get raw controls from keyboard
       const rawControls = getControls(keyInfo, bindings)
@@ -519,9 +436,11 @@ const GameRenderer: React.FC<GameRendererProps> = ({
       let effectiveControls = rawControls
       if (recordingService.isRecording()) {
         recordingService.recordFrame(frameInfo.frameCount, rawControls)
-        effectiveControls = rawControls  // Pass through
+        effectiveControls = rawControls // Pass through
       } else if (recordingService.isReplaying()) {
-        effectiveControls = recordingService.getReplayControls(frameInfo.frameCount) ?? rawControls
+        effectiveControls =
+          recordingService.getReplayControls(frameInfo.frameCount) ??
+          rawControls
       }
 
       // Skip rendering when paused
@@ -563,6 +482,7 @@ export const createGameStore = (
   initialSettings: GameInitialSettings
 ) => {
   // Note: RandomService is initialized as singleton in main.tsx
+  // (See SEEDED_RNG_PLAN.md for details)
   // Game code accesses it via:
   //   - rint(n) for random numbers (transparent)
   //   - getRandomService() for setSeed/getSeed (game start/recording logic)
@@ -741,16 +661,9 @@ For recordings to replay accurately, the following must be deterministic:
 
 ### 1. Random Number Generation
 
-- **Current**: Uses `Math.random()` via `rint()` helper
-- **Solution**: Replace with seeded PRNG (mulberry32)
-- **Files to update** (~23 files use `rint()`):
-  - `src/game/gameLoop/stateUpdates.ts` - Bunker shooting
-  - `src/core/shots/bunkShoot.ts` - Shot trajectories
-  - `src/core/explosions/explosionsSlice.ts` - Explosion debris
-    // NOTE: there's no harm in having these use the new rint() but they
-    // are in fact irrelevant to game play
-  - All sound generators using random values
-  - Transition effects (fizz, etc.)
+✅ **Provided by SEEDED_RNG_PLAN.md**
+
+See [SEEDED_RNG_PLAN.md](./SEEDED_RNG_PLAN.md) for implementation details.
 
 ### 2. Frame Timing
 
@@ -780,157 +693,12 @@ For recordings to replay accurately, the following must be deterministic:
 - **Solution**: Replay system overrides with recorded inputs
 - Pausing/map handled via recorded inputs
 
-## Implementation Plan
-
-### Phase 0: Preliminary Refactoring (1 hour)
-
-1. Move `killShipNextFrame` from `gameSlice` to `shipSlice`
-2. Rename to `killNextFrame` for clarity
-3. Update all references in game code
-
-### Phase 1: Seeded RNG (2-3 hours)
-
-1. Create `src/core/shared/RandomService.ts`
-2. Modify `src/core/shared/rint.ts` for global service
-3. Create `src/game/version.ts` with `GAME_ENGINE_VERSION`
-4. Wire up RandomService initialization in main.tsx
-5. Test: same seed → same random sequence
-
-### Phase 2: Recording Service (2-3 hours)
-
-1. Create `src/game/recording/types.ts`
-2. Create `src/game/recording/RecordingService.ts`
-3. Add to `GameServices` injection
-4. Integrate into `createGameRenderer()` in `gameLoop/index.ts`
-5. Test: recording captures inputs correctly
-
-### Phase 3: Storage (2 hours)
-
-1. Create `src/game/recording/RecordingStorage.ts`
-2. Implement localStorage persistence
-3. Add export/import functionality
-4. Test: save/load/list operations
-
-### Phase 4: Integration & Testing (3-4 hours)
-
-1. Hook recording start/stop into game lifecycle
-2. Seed RNG on game start
-3. Auto-save recordings on game over
-4. Verify replays are deterministic
-5. Test edge cases:
-   - Level transitions
-   - Death and respawn
-   - Pause during recording/replay
-   - Game over conditions
-
-### Phase 5: UI (4-6 hours)
-
-1. Add recording controls to start screen
-2. Recording indicator during gameplay
-3. Create replay browser component
-4. Playback controls (pause, speed, progress)
-5. Export/import UI
-
-**Total Estimated Time: 13-18 hours**
-
-## Testing Strategy
-
-### Determinism Validation
-
-Recordings include state snapshots for validation:
-
-**Hash-based snapshots (always enabled):**
-- Captured every 100 frames (~5 seconds at 20 FPS)
-- Hash of relevant game state slices:
-  - Included: ship, shots, planet, screen, status, explosions, walls, transition
-  - Excluded: game, app, controls, highscore (UI state, not game logic)
-- Compact: ~4 KB for 10-minute game
-- During replay: compare hashes at each snapshot frame
-- On mismatch: log error with frame number where divergence occurred
-
-**Full state snapshots (optional, for debugging):**
-- Enable in settings or for bug reporting
-- Same frequency (every 100 frames)
-- Stores complete state objects instead of hash
-- Large: ~2.4 MB for 10-minute game
-- Allows debugging exact state divergence
-- User can enable when experiencing replay issues
-
-**Validation process:**
-1. Record game with snapshots
-2. Replay and compare snapshots at each checkpoint
-3. If hash mismatch detected:
-   - Log frame number of divergence
-   - If full snapshots enabled: show diff of state
-   - Report as determinism bug
-
-### Edge Cases
-
-**Pause handling during recording:**
-- When user pauses, stop recording (don't capture pause frames)
-- Resume recording when unpaused
-- This keeps pauses out of replays
-
-**Quit handling:**
-- Treat quit like game over
-- Stop recording and offer to save
-- Saved recording is complete up to quit point
-
-**JSON validation:**
-- Validate recording structure on load
-- Check for required fields, correct types
-- Handle corrupted data gracefully with clear error messages
-
-**Version mismatch:**
-- Already handled via engineVersion validation (see Game Versioning section)
-
-Note: Level transitions, death/respawn, etc. are deterministic and require no special handling.
-
-### Performance
-
-- Measure recording overhead (should be negligible)
-- Test with 100+ saved recordings
-- Verify localStorage limits aren't exceeded
-
-## Future Enhancements
-
-### Phase 6+ (Optional)
-
-1. **Fast-forward/Rewind**: Jump to arbitrary frame, rebuild state (could use snapshots as checkpoints)
-2. **Slow-motion replay**: Render at half speed
-3. **Ghost mode**: Overlay recorded run during live play
-4. **Replay editing**: Cut/splice recordings
-5. **Leaderboards**: Submit recordings as proof of score
-6. **Compression**: Further reduce storage with binary format
-7. **State snapshot seeking**: Use snapshots as checkpoints for faster seeking to arbitrary frames
-
-## Game Versioning
-
-### Game Engine Version
-
-A separate version number tracks breaking changes to game logic, independent of the app version.
-
-```typescript
-// src/game/version.ts
-/**
- * Game engine version - only increment for breaking changes to:
- * - Physics/collision detection
- * - Game state structure
- * - Core game logic
- * - Random number generation behavior
- *
- * Does NOT need to increment for:
- * - UI changes
- * - Sound changes
- * - Visual/rendering changes
- * - Performance optimizations that don't affect logic
- */
-export const GAME_ENGINE_VERSION = 1
-```
+## Galaxy Versioning
 
 ### Galaxy ID from Content Hash
 
 Galaxy IDs are generated from the hash of the galaxy file content. This ensures:
+
 - Recordings are tied to specific galaxy data
 - If galaxy file changes, old recordings are automatically invalidated
 - No manual version tracking needed for level data
@@ -940,10 +708,11 @@ Galaxy IDs are generated from the hash of the galaxy file content. This ensures:
 import crypto from 'crypto'
 
 const generateGalaxyId = (galaxyFileContent: string): string => {
-  return crypto.createHash('sha256')
+  return crypto
+    .createHash('sha256')
     .update(galaxyFileContent)
     .digest('hex')
-    .substring(0, 16)  // Use first 16 chars
+    .substring(0, 16) // Use first 16 chars
 }
 ```
 
@@ -964,7 +733,7 @@ const startReplay = (recordingId: string) => {
   if (recording.engineVersion !== GAME_ENGINE_VERSION) {
     throw new Error(
       `Recording requires game engine v${recording.engineVersion}, but you're running v${GAME_ENGINE_VERSION}. ` +
-      `This recording is incompatible with your current game version.`
+        `This recording is incompatible with your current game version.`
     )
   }
 
@@ -974,7 +743,7 @@ const startReplay = (recordingId: string) => {
   if (!galaxy) {
     throw new Error(
       `Galaxy "${recording.galaxyId}" not found. ` +
-      `This recording may be from a different or modified galaxy file.`
+        `This recording may be from a different or modified galaxy file.`
     )
   }
 
@@ -997,8 +766,8 @@ const startNewGame = () => {
   if (state.app.collisionMode === 'modern') {
     const currentGalaxy = galaxyService.getCurrent()
     recordingService.startRecording(seed, {
-      engineVersion: GAME_ENGINE_VERSION,  // From constant
-      galaxyId: currentGalaxy.id,          // Hash from galaxy file
+      engineVersion: GAME_ENGINE_VERSION, // From constant
+      galaxyId: currentGalaxy.id, // Hash from galaxy file
       startLevel: 1,
       timestamp: Date.now(),
       initialState: { lives: 3 }
@@ -1010,11 +779,129 @@ const startNewGame = () => {
 }
 ```
 
+## Implementation Plan
+
+**Prerequisite**: Complete [SEEDED_RNG_PLAN.md](./SEEDED_RNG_PLAN.md) first (~1.5 hours)
+
+### Phase 1: Recording Service (2-3 hours)
+
+1. Create `src/game/recording/types.ts`
+2. Create `src/game/recording/RecordingService.ts`
+3. Add to `GameServices` injection
+4. Integrate into `createGameRenderer()` in `gameLoop/index.ts`
+5. Test: recording captures inputs correctly
+
+### Phase 2: Storage (2 hours)
+
+1. Create `src/game/recording/RecordingStorage.ts`
+2. Implement localStorage persistence
+3. Add export/import functionality
+4. Test: save/load/list operations
+
+### Phase 3: Integration & Testing (3-4 hours)
+
+1. Hook recording start/stop into game lifecycle
+2. Seed RNG on game start
+3. Auto-save recordings on game over
+4. Verify replays are deterministic
+5. Test edge cases:
+   - Level transitions
+   - Death and respawn
+   - Pause during recording/replay
+   - Game over conditions
+
+### Phase 4: UI (4-6 hours)
+
+1. Add recording controls to start screen
+2. Recording indicator during gameplay
+3. Create replay browser component
+4. Playback controls (pause, speed, progress)
+5. Export/import UI
+
+**Total Estimated Time: 11-15 hours** (plus 1.5 hours for RNG prerequisite)
+
+## Testing Strategy
+
+### Determinism Validation
+
+Recordings include state snapshots for validation:
+
+**Hash-based snapshots (always enabled):**
+
+- Captured every 100 frames (~5 seconds at 20 FPS)
+- Hash of relevant game state slices:
+  - Included: ship, shots, planet, screen, status, explosions, walls, transition
+  - Excluded: game, app, controls, highscore (UI state, not game logic)
+- Compact: ~4 KB for 10-minute game
+- During replay: compare hashes at each snapshot frame
+- On mismatch: log error with frame number where divergence occurred
+
+**Full state snapshots (optional, for debugging):**
+
+- Enable in settings or for bug reporting
+- Same frequency (every 100 frames)
+- Stores complete state objects instead of hash
+- Large: ~2.4 MB for 10-minute game
+- Allows debugging exact state divergence
+- User can enable when experiencing replay issues
+
+**Validation process:**
+
+1. Record game with snapshots
+2. Replay and compare snapshots at each checkpoint
+3. If hash mismatch detected:
+   - Log frame number of divergence
+   - If full snapshots enabled: show diff of state
+   - Report as determinism bug
+
+### Edge Cases
+
+**Pause handling during recording:**
+
+- When user pauses, stop recording (don't capture pause frames)
+- Resume recording when unpaused
+- This keeps pauses out of replays
+
+**Quit handling:**
+
+- Treat quit like game over
+- Stop recording and offer to save
+- Saved recording is complete up to quit point
+
+**JSON validation:**
+
+- Validate recording structure on load
+- Check for required fields, correct types
+- Handle corrupted data gracefully with clear error messages
+
+**Version mismatch:**
+
+- Already handled via engineVersion validation (see Galaxy Versioning section)
+
+Note: Level transitions, death/respawn, etc. are deterministic and require no special handling.
+
+### Performance
+
+- Measure recording overhead (should be negligible)
+- Test with 100+ saved recordings
+- Verify localStorage limits aren't exceeded
+
+## Future Enhancements
+
+### Optional Features
+
+1. **Fast-forward/Rewind**: Jump to arbitrary frame, rebuild state (could use snapshots as checkpoints)
+2. **Slow-motion replay**: Render at half speed
+3. **Ghost mode**: Overlay recorded run during live play
+4. **Replay editing**: Cut/splice recordings
+5. **Leaderboards**: Submit recordings as proof of score
+6. **Compression**: Further reduce storage with binary format
+7. **State snapshot seeking**: Use snapshots as checkpoints for faster seeking to arbitrary frames
+
 ## Notes
 
-- All game logic remains unchanged (zero refactoring needed)
-- `rint()` signature stays the same
 - Recording is opt-in (doesn't affect normal gameplay)
+- Only works with modern collision mode (original mode ties state to rendering)
 - Replays can be shared as JSON files
 - Perfect for debugging, speedrunning, or showcasing epic runs
 - Strict versioning ensures recordings only work on compatible game versions
