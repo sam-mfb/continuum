@@ -19,8 +19,18 @@ The validator serves multiple purposes:
 1. **Headless execution** - No rendering, no display, no DOM
 2. **Maximum speed** - Run as fast as possible, no frame rate limiting
 3. **Minimal dependencies** - Core game logic only, no UI
-4. **Isolated environment** - Node.js or Web Worker, not browser main thread
-5. **Detailed reporting** - Frame-by-frame validation results
+4. **State updates only** - Uses `updateGameState()` directly, skips rendering entirely
+5. **Isolated environment** - Node.js or Web Worker, not browser main thread
+6. **Detailed reporting** - Frame-by-frame validation results
+
+## Key Insight
+
+The validator leverages the fact that game state updates are completely independent from rendering in the codebase:
+
+- `updateGameState()` handles all physics, collisions, and game logic
+- It does NOT require a bitmap or any rendering artifacts
+- Rendering is purely visual - it draws the current state but doesn't affect it
+- This allows the validator to run at maximum speed with zero rendering overhead
 
 ## Core Components
 
@@ -33,9 +43,11 @@ A stripped-down version of the game engine that only updates state:
 
 import type { GameStore } from '@/game/store'
 import type { ControlMatrix } from '@/core/controls'
-import type { FrameInfo } from '@/game/gameLoop/types'
-import { updateGameState } from '@/game/gameLoop/updateGameState'
-import { createGameBitmap } from '@/core/bitmap/MonochromeBitmap'
+import type { FrameInfo } from '@lib/bitmap'
+import type { GalaxyService } from '@core/galaxy'
+import type { FizzTransitionService } from '@core/transition'
+import type { RandomService } from '@/core/shared'
+import { updateGameState } from '@/game/gameLoop/stateUpdates'
 
 type HeadlessGameEngine = {
   step: (frameCount: number, controls: ControlMatrix) => void
@@ -45,27 +57,34 @@ type HeadlessGameEngine = {
 const createHeadlessGameEngine = (
   store: GameStore,
   galaxyService: GalaxyService,
-  fizzTransitionService: FizzTransitionService
+  fizzTransitionService: FizzTransitionService,
+  randomService: RandomService
 ): HeadlessGameEngine => {
+  // Create transition callbacks for the fizz service
+  const transitionCallbacks = {
+    isInitialized: (): boolean => fizzTransitionService.isInitialized,
+    isComplete: (): boolean => fizzTransitionService.isComplete,
+    reset: (): void => fizzTransitionService.reset()
+  }
+
   return {
     step: (frameCount, controls) => {
       // Create minimal frame info
       const frameInfo: FrameInfo = {
         frameCount,
-        timestamp: frameCount * 50 // 20 FPS = 50ms per frame
+        deltaTime: 50, // 20 FPS = 50ms per frame
+        totalTime: frameCount * 50,
+        targetDelta: 50
       }
 
-      // Create bitmap (needed by some game logic, but we don't render it)
-      const bitmap = createGameBitmap()
-
-      // Update game state only
+      // Update game state only - no rendering needed
       updateGameState({
         store,
         frame: frameInfo,
         controls,
-        bitmap,
         galaxyService,
-        fizzTransitionService
+        transitionCallbacks,
+        randomService
       })
 
       // Note: We skip rendering entirely
@@ -338,13 +357,37 @@ const main = async () => {
   }
 
   const storage = createRecordingStorage()
-  const services = createGameServices()
-  const store = createGameStore(services, {})
+
+  // Create game services
+  const galaxyService = await createGalaxyService(/* galaxy path */)
+  const spriteService = await createSpriteService(/* sprite config */)
+  const fizzTransitionService = createFizzTransitionService()
+  const soundService = createMockSoundService() // Mock for headless
+  const collisionService = createCollisionService()
+  const randomService = createRandomService()
   const recordingService = createRecordingService()
+
+  const services = {
+    galaxyService,
+    spriteService,
+    fizzTransitionService,
+    soundService,
+    collisionService,
+    randomService,
+    recordingService
+  }
+
+  const store = createGameStore(services, {
+    soundVolume: 0,
+    soundEnabled: false,
+    initialLives: 3
+  })
+
   const engine = createHeadlessGameEngine(
     store,
-    services.galaxyService,
-    services.fizzTransitionService
+    galaxyService,
+    fizzTransitionService,
+    randomService
   )
 
   const validator = createRecordingValidator(engine, store, recordingService, {
