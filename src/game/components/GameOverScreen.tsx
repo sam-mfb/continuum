@@ -1,4 +1,6 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
+import { getStoreServices } from '../store'
+import { createRecordingStorage } from '../recording/RecordingStorage'
 
 type GameOverScreenProps = {
   scale: number
@@ -9,6 +11,23 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
   scale,
   onContinue
 }): React.ReactElement => {
+  const [hasRecording, setHasRecording] = useState(false)
+  const [recordingId, setRecordingId] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Check if there's a recording available to export
+    const recordingService = getStoreServices().recordingService
+    const recording = recordingService.stopRecording()
+
+    if (recording) {
+      // Save to storage and get ID
+      const storage = createRecordingStorage()
+      const id = storage.save(recording)
+      setRecordingId(id)
+      setHasRecording(true)
+      console.log('Recording saved with ID:', id)
+    }
+  }, [])
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent): void => {
       if (e.code === 'Space' || e.code === 'Enter') {
@@ -19,6 +38,13 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
     window.addEventListener('keydown', handleKeyPress)
     return (): void => window.removeEventListener('keydown', handleKeyPress)
   }, [onContinue])
+
+  const handleExport = (): void => {
+    if (recordingId) {
+      const storage = createRecordingStorage()
+      storage.exportToFile(recordingId)
+    }
+  }
 
   return (
     <div
@@ -62,6 +88,25 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
         >
           Press SPACE or ENTER to continue
         </div>
+
+        {hasRecording && (
+          <button
+            onClick={handleExport}
+            style={{
+              fontSize: `${8 * scale}px`,
+              padding: `${5 * scale}px ${12 * scale}px`,
+              backgroundColor: '#228822',
+              color: 'white',
+              border: '1px solid white',
+              cursor: 'pointer',
+              fontFamily: 'monospace',
+              letterSpacing: `${0.5 * scale}px`,
+              marginTop: `${5 * scale}px`
+            }}
+          >
+            EXPORT RECORDING
+          </button>
+        )}
 
         <button
           onClick={onContinue}
