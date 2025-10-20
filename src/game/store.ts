@@ -168,6 +168,21 @@ export type AppDispatch = GameStore['dispatch']
 export const useAppDispatch: () => AppDispatch = useDispatch
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
 
+// Store instance for accessing services
+// This will be set when the store is created
+let storeInstance: GameStore | null = null
+
+export const getStoreServices = (): GameServices => {
+  if (!storeInstance) {
+    throw new Error('Store not initialized')
+  }
+  // Access services via the thunk extra argument (stored during creation)
+  // We'll need to store services separately since they're not in state
+  return servicesInstance!
+}
+
+let servicesInstance: GameServices | null = null
+
 export const createGameStore = (
   services: GameServices,
   initialSettings: GameInitialSettings
@@ -183,6 +198,10 @@ export const createGameStore = (
     soundListenerMiddleware.startListening.withTypes<RootState, AppDispatch>(),
     services.soundService
   )
+
+  // Store the instance and services for access
+  storeInstance = store
+  servicesInstance = services
 
   return store
 }

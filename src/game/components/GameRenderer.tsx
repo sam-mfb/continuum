@@ -1,6 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react'
 import type { FrameInfo, KeyInfo, MonochromeBitmap } from '@lib/bitmap'
-import { useAppDispatch, useAppSelector, type RootState } from '../store'
+import {
+  useAppDispatch,
+  useAppSelector,
+  getStoreServices,
+  type RootState
+} from '../store'
 import { togglePause, showMap, hideMap, pause, unpause } from '../gameSlice'
 import {
   getControls,
@@ -64,6 +69,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
   const touchControlsEnabled = useAppSelector(
     state => state.app.touchControlsEnabled
   )
+  const collisionMode = useAppSelector(state => state.app.collisionMode)
   const store = useStore()
   const dispatch = useAppDispatch()
 
@@ -172,8 +178,26 @@ const GameRenderer: React.FC<GameRendererProps> = ({
         if (controls.pause && !showMapState) {
           dispatch(togglePause())
         }
+        // Check collision mode and stop recording if it changed
+        const recordingService = getStoreServices().recordingService
+        if (recordingService.isRecording() && collisionMode !== 'modern') {
+          console.warn(
+            'Collision mode changed to original - stopping recording'
+          )
+          recordingService.stopRecording()
+        }
+
         // Skip rendering when paused but keep the loop running
         if (!paused) {
+          // Record frame if recording is active
+          if (recordingService.isRecording()) {
+            recordingService.recordFrame(
+              frameCountRef.current,
+              controls,
+              store.getState() as RootState
+            )
+          }
+
           if (renderMode === 'original') {
             // Original bitmap renderer
             const renderedBitmap = renderer(frameInfo, controls)
@@ -338,7 +362,8 @@ const GameRenderer: React.FC<GameRendererProps> = ({
     spriteService,
     spriteRegistry,
     store,
-    touchControls
+    touchControls,
+    collisionMode
   ])
 
   return (

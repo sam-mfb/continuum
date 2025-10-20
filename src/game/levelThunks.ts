@@ -21,11 +21,17 @@ import { setMessage } from '@/core/status'
  */
 export const loadLevel =
   (levelNum: number): ThunkAction<void, RootState, GameServices, Action> =>
-  (dispatch, _getState, { galaxyService, randomService }) => {
+  (dispatch, _getState, { galaxyService, randomService, recordingService }) => {
     // Set random seed at the start of each level
     // For new games, use timestamp for non-deterministic gameplay
     // (During replay, this will use the recorded seed instead)
-    randomService.setSeed(Date.now())
+    const seed = Date.now()
+    randomService.setSeed(seed)
+
+    // Record level seed if recording is active
+    if (recordingService.isRecording()) {
+      recordingService.recordLevelSeed(levelNum, seed)
+    }
 
     // Update the current level in status state to match what we're loading
     dispatch(statusSlice.actions.setLevel(levelNum))
