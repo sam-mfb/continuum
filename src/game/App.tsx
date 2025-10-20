@@ -55,7 +55,6 @@ export const App: React.FC<AppProps> = ({
   const soundMuted = useAppSelector(state => !state.app.soundOn)
   const renderMode = useAppSelector(state => state.app.renderMode)
   const collisionMode = useAppSelector(state => state.app.collisionMode)
-  const currentLevel = useAppSelector(state => state.status.currentlevel)
   const currentLives = useAppSelector(state => state.ship.lives)
   const showInGameControls = useAppSelector(
     state => state.app.showInGameControls
@@ -72,32 +71,18 @@ export const App: React.FC<AppProps> = ({
   // Use responsive scale that adapts to viewport size or fixed scale from settings
   const { scale, dimensions } = useResponsiveScale(scaleMode)
 
-  // Handle recording lifecycle
+  // Handle recording lifecycle - stop recording when returning to start or game over
   useEffect(() => {
     const recordingService = getStoreServices().recordingService
 
-    if (gameMode === 'playing') {
-      // Start recording when game starts (only if modern collision mode)
-      if (collisionMode === 'modern' && !recordingService.isRecording()) {
-        recordingService.startRecording({
-          engineVersion: GAME_ENGINE_VERSION,
-          galaxyId: currentGalaxyId,
-          startLevel: currentLevel,
-          timestamp: Date.now(),
-          initialState: {
-            lives: currentLives
-          }
-        })
-        console.log('Started recording game')
-      }
-    } else if (gameMode === 'gameOver' || gameMode === 'start') {
+    if (gameMode === 'gameOver' || gameMode === 'start') {
       // Stop recording when game ends or returns to start screen
       if (recordingService.isRecording()) {
         recordingService.stopRecording()
         console.log('Stopped recording')
       }
     }
-  }, [gameMode, collisionMode, currentGalaxyId])
+  }, [gameMode])
 
   // Re-evaluate touch controls when override setting changes
   useEffect(() => {
@@ -225,7 +210,23 @@ export const App: React.FC<AppProps> = ({
                 })
               }
 
-              // Load the selected level
+              // Start recording BEFORE loading level (only if modern collision mode)
+              // This ensures the first level seed is captured
+              if (collisionMode === 'modern') {
+                const recordingService = getStoreServices().recordingService
+                recordingService.startRecording({
+                  engineVersion: GAME_ENGINE_VERSION,
+                  galaxyId: currentGalaxyId,
+                  startLevel: level,
+                  timestamp: Date.now(),
+                  initialState: {
+                    lives: currentLives
+                  }
+                })
+                console.log('Started recording game')
+              }
+
+              // Load the selected level (this will record the seed if recording is active)
               dispatch(loadLevel(level))
 
               // Start the game
