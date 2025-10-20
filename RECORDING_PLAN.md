@@ -17,6 +17,7 @@ This document describes the design for implementing game recording functionality
 ## Prerequisites
 
 ✅ **Seeded RNG**: Already implemented via RandomService
+
 - Service is injected into GameServices
 - Provides `setSeed()` and `random()` methods
 - Used throughout game logic for deterministic randomness
@@ -79,13 +80,20 @@ type RecordingMode = 'idle' | 'recording'
 
 type RecordingService = {
   // Control recording
-  startRecording: (metadata: RecordingMetadata, enableFullSnapshots?: boolean) => void
+  startRecording: (
+    metadata: RecordingMetadata,
+    enableFullSnapshots?: boolean
+  ) => void
   stopRecording: () => GameRecording | null
   isRecording: () => boolean
 
   // Capture level seeds, inputs, and state snapshots
   recordLevelSeed: (level: number, seed: number) => void
-  recordFrame: (frameCount: number, controls: ControlMatrix, state: RootState) => void
+  recordFrame: (
+    frameCount: number,
+    controls: ControlMatrix,
+    state: RootState
+  ) => void
 
   // Current mode
   getMode: () => RecordingMode
@@ -125,7 +133,7 @@ const hashState = (state: RootState): string => {
   let hash = 0
   for (let i = 0; i < stateString.length; i++) {
     const char = stateString.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
+    hash = (hash << 5) - hash + char
     hash = hash & hash // Convert to 32bit integer
   }
   return hash.toString(16)
@@ -478,66 +486,70 @@ type GameRendererProps = {
 Access the store (already available via `useStore()` on line 67):
 
 ```typescript
-  const store = useStore() // Already exists at line 67
+const store = useStore() // Already exists at line 67
 ```
 
 In the game loop, add recording call after rendering (around line 176-301):
 
 ```typescript
-  // Game loop (around line 115)
-  const gameLoop = (currentTime: number): void => {
-    const deltaTime = currentTime - lastFrameTimeRef.current
+// Game loop (around line 115)
+const gameLoop = (currentTime: number): void => {
+  const deltaTime = currentTime - lastFrameTimeRef.current
 
-    if (deltaTime >= frameIntervalMs) {
-      // ... existing frameInfo and keyInfo setup ...
-      // ... existing controls calculation ...
+  if (deltaTime >= frameIntervalMs) {
+    // ... existing frameInfo and keyInfo setup ...
+    // ... existing controls calculation ...
 
-      // Skip rendering when paused but keep the loop running
-      if (!paused) {
-        if (renderMode === 'original') {
-          // Original bitmap renderer
-          const renderedBitmap = renderer(frameInfo, controls)
+    // Skip rendering when paused but keep the loop running
+    if (!paused) {
+      if (renderMode === 'original') {
+        // Original bitmap renderer
+        const renderedBitmap = renderer(frameInfo, controls)
 
-          // ... existing rendering code ...
+        // ... existing rendering code ...
 
-          // Record frame AFTER state updates (add after line 294)
-          if (recordingService.isRecording()) {
-            const state = store.getState() as RootState
+        // Record frame AFTER state updates (add after line 294)
+        if (recordingService.isRecording()) {
+          const state = store.getState() as RootState
 
-            // Stop recording if user switched to original collision mode
-            if (state.app.collisionMode !== 'modern') {
-              console.warn('Collision mode changed to original - stopping recording')
-              recordingService.stopRecording()
-            } else {
-              recordingService.recordFrame(frameCountRef.current, controls, state)
-            }
-          }
-        } else {
-          // Modern frame-based renderer
-          const renderedFrame = rendererNew(frameInfo, controls)
-
-          // ... existing rendering code ...
-
-          // Record frame AFTER state updates (add after line 300)
-          if (recordingService.isRecording()) {
-            const state = store.getState() as RootState
-
-            // Stop recording if user switched to original collision mode
-            if (state.app.collisionMode !== 'modern') {
-              console.warn('Collision mode changed to original - stopping recording')
-              recordingService.stopRecording()
-            } else {
-              recordingService.recordFrame(frameCountRef.current, controls, state)
-            }
+          // Stop recording if user switched to original collision mode
+          if (state.app.collisionMode !== 'modern') {
+            console.warn(
+              'Collision mode changed to original - stopping recording'
+            )
+            recordingService.stopRecording()
+          } else {
+            recordingService.recordFrame(frameCountRef.current, controls, state)
           }
         }
+      } else {
+        // Modern frame-based renderer
+        const renderedFrame = rendererNew(frameInfo, controls)
 
-        lastFrameTimeRef.current = currentTime
-        frameCountRef.current++
+        // ... existing rendering code ...
+
+        // Record frame AFTER state updates (add after line 300)
+        if (recordingService.isRecording()) {
+          const state = store.getState() as RootState
+
+          // Stop recording if user switched to original collision mode
+          if (state.app.collisionMode !== 'modern') {
+            console.warn(
+              'Collision mode changed to original - stopping recording'
+            )
+            recordingService.stopRecording()
+          } else {
+            recordingService.recordFrame(frameCountRef.current, controls, state)
+          }
+        }
       }
-      // ... rest of loop
+
+      lastFrameTimeRef.current = currentTime
+      frameCountRef.current++
     }
+    // ... rest of loop
   }
+}
 ```
 
 Add `recordingService` to dependency array (around line 324-342):
@@ -600,33 +612,33 @@ This ensures that during recording, we capture the seed used for each level.
 Create the recording service and storage alongside other services (around line 89-90):
 
 ```typescript
-  const randomService = createRandomService()
-  console.log('Random service created')
+const randomService = createRandomService()
+console.log('Random service created')
 
-  // NEW: Create recording service
-  const recordingService = createRecordingService()
-  console.log('Recording service created')
+// NEW: Create recording service
+const recordingService = createRecordingService()
+console.log('Recording service created')
 ```
 
 Add to store creation (around line 93-107):
 
 ```typescript
-  const store = createGameStore(
-    {
-      galaxyService,
-      spriteService,
-      fizzTransitionService,
-      soundService,
-      collisionService,
-      randomService,
-      recordingService // NEW
-    },
-    {
-      soundVolume: DEFAULT_SOUND_VOLUME,
-      soundEnabled: !DEFAULT_SOUND_MUTED,
-      initialLives: TOTAL_INITIAL_LIVES
-    }
-  )
+const store = createGameStore(
+  {
+    galaxyService,
+    spriteService,
+    fizzTransitionService,
+    soundService,
+    collisionService,
+    randomService,
+    recordingService // NEW
+  },
+  {
+    soundVolume: DEFAULT_SOUND_VOLUME,
+    soundEnabled: !DEFAULT_SOUND_MUTED,
+    initialLives: TOTAL_INITIAL_LIVES
+  }
+)
 ```
 
 **File: `src/game/App.tsx`**
@@ -876,6 +888,7 @@ const generateGalaxyId = (galaxyFileContent: string): string => {
 3. Create `src/game/recording/RecordingService.ts` (includes snapshot functionality)
 4. Add to `GameServices` injection
 5. Test: recording captures inputs and snapshots correctly
+6. Commit
 
 ### Phase 2: Storage & Export (2 hours)
 
@@ -883,6 +896,7 @@ const generateGalaxyId = (galaxyFileContent: string): string => {
 2. Implement localStorage persistence
 3. Add file export functionality
 4. Test: save/load/list/export operations
+5. Commit
 
 ### Phase 3: Integration (2-3 hours)
 
@@ -901,13 +915,12 @@ const generateGalaxyId = (galaxyFileContent: string): string => {
 6. Verify snapshot behavior:
    - Hash snapshots always captured
    - Full snapshots only in DEBUG mode
+7. Commit
 
 ### Phase 4: UI (3-4 hours)
 
-1. Recording indicator during gameplay
-2. Game over screen with save/export options
-3. Recording browser/list component
-4. Delete recording functionality
+1. Game over screen with export options
+2. [for now exporting current is only option -- saving multiple to local storage will be done later]
 
 **Total Estimated Time: 9-12 hours**
 
@@ -918,6 +931,7 @@ For recordings to replay accurately, the following must be deterministic:
 ### 1. Random Number Generation
 
 ✅ **Already implemented via RandomService**
+
 - Seeded RNG with `setSeed()` method
 - All game logic uses `randomService.random()`
 
@@ -959,6 +973,7 @@ For recordings to replay accurately, the following must be deterministic:
 ### State Snapshots
 
 - **Hash snapshots**: Always captured every 100 frames (~5 seconds)
+
   - Compact: ~4 KB for 10-minute game
   - Used for validation during replay
   - Detect when state diverges from expected

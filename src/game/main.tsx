@@ -36,6 +36,7 @@ import { getDefaultGalaxy } from './galaxyConfig'
 import { createCollisionService } from '@/core/collision'
 import { SCRWTH, VIEWHT } from '@/core/screen'
 import { initializeSpriteRegistry } from '@/lib/frame/initializeSpriteRegistry'
+import { createRecordingService } from './recording/RecordingService'
 //import { enableDebugOption } from './debug'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
@@ -89,6 +90,9 @@ try {
   const randomService = createRandomService()
   console.log('Random service created')
 
+  const recordingService = createRecordingService()
+  console.log('Recording service created')
+
   // Create store with services and initial settings
   const store = createGameStore(
     {
@@ -97,7 +101,8 @@ try {
       fizzTransitionService,
       soundService,
       collisionService,
-      randomService
+      randomService,
+      recordingService
     },
     {
       soundVolume: DEFAULT_SOUND_VOLUME,

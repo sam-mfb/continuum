@@ -7,6 +7,7 @@ This document describes the design for implementing game replay functionality in
 ## Prerequisites
 
 ✅ **Recording System**: RECORDING_PLAN.md must be implemented first
+
 - RecordingService, RecordingStorage, and types are already available
 - Recordings include inputs, level seeds, and state snapshots
 
@@ -27,7 +28,12 @@ The RecordingService is extended to support replay mode:
 // src/game/recording/RecordingService.ts - EXTENDED
 
 import type { ControlMatrix } from '@/core/controls'
-import type { GameRecording, RecordingMetadata, InputFrame, LevelSeed } from './types'
+import type {
+  GameRecording,
+  RecordingMetadata,
+  InputFrame,
+  LevelSeed
+} from './types'
 
 type RecordingMode = 'idle' | 'recording' | 'replaying'
 
@@ -121,8 +127,15 @@ type ValidationResult = {
 }
 
 type ReplayValidator = {
-  validateRecording: (recording: GameRecording, currentGalaxyId: string) => ValidationResult
-  validateStateSnapshot: (frameCount: number, state: RootState, recording: GameRecording) => boolean
+  validateRecording: (
+    recording: GameRecording,
+    currentGalaxyId: string
+  ) => ValidationResult
+  validateStateSnapshot: (
+    frameCount: number,
+    state: RootState,
+    recording: GameRecording
+  ) => boolean
 }
 
 const createReplayValidator = (): ReplayValidator => {
@@ -143,7 +156,7 @@ const createReplayValidator = (): ReplayValidator => {
     let hash = 0
     for (let i = 0; i < stateString.length; i++) {
       const char = stateString.charCodeAt(i)
-      hash = ((hash << 5) - hash) + char
+      hash = (hash << 5) - hash + char
       hash = hash & hash
     }
     return hash.toString(16)
@@ -162,8 +175,8 @@ const createReplayValidator = (): ReplayValidator => {
       if (recording.engineVersion !== GAME_ENGINE_VERSION) {
         errors.push(
           `Recording requires game engine v${recording.engineVersion}, ` +
-          `but you're running v${GAME_ENGINE_VERSION}. ` +
-          `This recording is incompatible with your current game version.`
+            `but you're running v${GAME_ENGINE_VERSION}. ` +
+            `This recording is incompatible with your current game version.`
         )
       }
 
@@ -171,8 +184,8 @@ const createReplayValidator = (): ReplayValidator => {
       if (recording.galaxyId !== currentGalaxyId) {
         errors.push(
           `Recording is for galaxy "${recording.galaxyId}", ` +
-          `but current galaxy is "${currentGalaxyId}". ` +
-          `This recording may be from a different or modified galaxy file.`
+            `but current galaxy is "${currentGalaxyId}". ` +
+            `This recording may be from a different or modified galaxy file.`
         )
       }
 
@@ -205,8 +218,8 @@ const createReplayValidator = (): ReplayValidator => {
       if (currentHash !== snapshot.hash) {
         console.error(
           `Replay diverged at frame ${frameCount}!\n` +
-          `Expected hash: ${snapshot.hash}\n` +
-          `Actual hash: ${currentHash}`
+            `Expected hash: ${snapshot.hash}\n` +
+            `Actual hash: ${currentHash}`
         )
         return false
       }
@@ -371,7 +384,9 @@ const GameRenderer: React.FC<GameRendererProps> = ({
         effectiveControls = rawControls
       } else if (recordingService.isReplaying()) {
         // Replay mode: use recorded controls
-        const replayControls = recordingService.getReplayControls(frameInfo.frameCount)
+        const replayControls = recordingService.getReplayControls(
+          frameInfo.frameCount
+        )
         effectiveControls = replayControls ?? rawControls
 
         // Check if replay has ended
@@ -622,6 +637,7 @@ const createRecordingStorage = (): RecordingStorage => {
 ### Validation Errors
 
 Show clear error messages when:
+
 - Engine version mismatch
 - Galaxy ID mismatch
 - Missing or corrupted data
@@ -630,6 +646,7 @@ Show clear error messages when:
 ### Runtime Errors
 
 Handle gracefully:
+
 - State divergence during playback
 - Missing input frames
 - Missing level seeds
@@ -638,6 +655,7 @@ Handle gracefully:
 ### User Feedback
 
 Provide clear UI for:
+
 - Why a recording can't be played
 - Progress during replay
 - When state validation fails

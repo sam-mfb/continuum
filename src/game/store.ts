@@ -43,6 +43,7 @@ import {
 } from 'react-redux'
 import { setupSoundListener } from './soundListenerMiddleware'
 import type { CollisionService } from '@/core/collision'
+import type { RecordingService } from './recording/RecordingService'
 
 // Define the services that will be injected
 export type GameServices = {
@@ -52,6 +53,7 @@ export type GameServices = {
   soundService: GameSoundService
   collisionService: CollisionService
   randomService: RandomService
+  recordingService: RecordingService
 }
 
 // Initial settings for the game

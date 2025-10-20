@@ -165,7 +165,11 @@ const createRecordingValidator = (
 ): {
   validate: (recording: GameRecording) => Promise<ValidationReport>
 } => {
-  const { verbose = false, stopOnFirstError = false, generateSnapshots = false } = options
+  const {
+    verbose = false,
+    stopOnFirstError = false,
+    generateSnapshots = false
+  } = options
 
   const hashState = (state: RootState): string => {
     // Same hash function as SnapshotService and ReplayValidator
@@ -184,14 +188,14 @@ const createRecordingValidator = (
     let hash = 0
     for (let i = 0; i < stateString.length; i++) {
       const char = stateString.charCodeAt(i)
-      hash = ((hash << 5) - hash) + char
+      hash = (hash << 5) - hash + char
       hash = hash & hash
     }
     return hash.toString(16)
   }
 
   return {
-    validate: async (recording) => {
+    validate: async recording => {
       const startTime = performance.now()
       const errors: ValidationError[] = []
       const snapshotResults: ValidationReport['stateSnapshots'] = []
@@ -210,7 +214,8 @@ const createRecordingValidator = (
       // dispatch(loadLevel(recording.startLevel))
 
       // Get total frames from last input
-      const totalFrames = recording.inputs[recording.inputs.length - 1]?.frame ?? 0
+      const totalFrames =
+        recording.inputs[recording.inputs.length - 1]?.frame ?? 0
 
       if (verbose) {
         console.log(`Validating recording: ${totalFrames} frames`)
@@ -246,7 +251,9 @@ const createRecordingValidator = (
         }
 
         // Check snapshot if one exists for this frame
-        const expectedSnapshot = recording.snapshots?.find(s => s.frame === frameCount)
+        const expectedSnapshot = recording.snapshots?.find(
+          s => s.frame === frameCount
+        )
 
         if (expectedSnapshot || generateSnapshots) {
           const state = store.getState()
@@ -328,7 +335,11 @@ const createRecordingValidator = (
   }
 }
 
-export { createRecordingValidator, type RecordingValidatorOptions, type ValidationReport }
+export {
+  createRecordingValidator,
+  type RecordingValidatorOptions,
+  type ValidationReport
+}
 ```
 
 ### 3. CLI Tool
@@ -463,14 +474,20 @@ const main = async () => {
     console.log(`Performance:`)
     console.log(`  Duration: ${report.performance.durationMs.toFixed(2)}ms`)
     console.log(`  FPS: ${report.performance.framesPerSecond.toFixed(2)}`)
-    console.log(`  Speedup: ${report.performance.speedupFactor.toFixed(2)}x real-time`)
+    console.log(
+      `  Speedup: ${report.performance.speedupFactor.toFixed(2)}x real-time`
+    )
   }
 
   // Summary
   console.log('\n=== Summary ===')
   console.log(`Total recordings validated: ${results.length}`)
-  console.log(`Passed: ${results.filter(r => r.report.validation.success).length}`)
-  console.log(`Failed: ${results.filter(r => !r.report.validation.success).length}`)
+  console.log(
+    `Passed: ${results.filter(r => r.report.validation.success).length}`
+  )
+  console.log(
+    `Failed: ${results.filter(r => !r.report.validation.success).length}`
+  )
 
   // Exit with error code if any failed
   const anyFailed = results.some(r => !r.report.validation.success)
@@ -614,7 +631,11 @@ const analyzeDivergence = (
 
     if (Array.isArray(expected)) {
       if (expected.length !== actual.length) {
-        differences.push({ path: `${path}.length`, expected: expected.length, actual: actual.length })
+        differences.push({
+          path: `${path}.length`,
+          expected: expected.length,
+          actual: actual.length
+        })
       }
       for (let i = 0; i < Math.min(expected.length, actual.length); i++) {
         compare(expected[i], actual[i], `${path}[${i}]`)
@@ -714,6 +735,7 @@ The validator should run significantly faster than real-time:
 - **1-hour game**: Validate in 3.6-36 seconds
 
 Actual performance depends on:
+
 - Game state complexity
 - Number of snapshots
 - Hash algorithm efficiency
