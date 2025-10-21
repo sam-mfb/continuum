@@ -21,14 +21,89 @@ The validator leverages the fact that game state updates are completely independ
 
 ## Components
 
-### 1. Headless Game Engine
+### 1. Headless Store
+
+`src/game/validation/createHeadlessStore.ts` - NEW
+
+A minimal Redux store with only game logic (no UI, sound, or persistence):
+
+```typescript
+import { combineSlices, configureStore } from '@reduxjs/toolkit'
+import { gameSlice } from '@/game/gameSlice'
+import { shipSlice } from '@core/ship'
+import { shotsSlice } from '@core/shots'
+import { planetSlice } from '@core/planet'
+import { screenSlice } from '@core/screen'
+import { statusSlice } from '@core/status'
+import { explosionsSlice } from '@core/explosions'
+import { wallsSlice } from '@core/walls'
+import { transitionSlice } from '@core/transition'
+import type { GalaxyService } from '@core/galaxy'
+import type { FizzTransitionService } from '@core/transition'
+import type { RandomService } from '@/core/shared'
+import type { RecordingService } from '@/game/recording/RecordingService'
+
+// Minimal services needed for game logic only
+type HeadlessServices = {
+  galaxyService: GalaxyService
+  fizzTransitionService: FizzTransitionService
+  randomService: RandomService
+  recordingService: RecordingService
+}
+
+const headlessReducer = combineSlices(
+  gameSlice,
+  shipSlice,
+  shotsSlice,
+  planetSlice,
+  screenSlice,
+  statusSlice,
+  explosionsSlice,
+  wallsSlice,
+  transitionSlice
+)
+
+export type HeadlessRootState = ReturnType<typeof headlessReducer>
+
+const createHeadlessStore = (
+  services: HeadlessServices,
+  initialLives: number
+) => {
+  const preloadedState = {
+    ship: {
+      ...shipSlice.getInitialState(),
+      lives: initialLives
+    }
+  }
+
+  return configureStore({
+    reducer: headlessReducer,
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({
+        thunk: {
+          extraArgument: services
+        },
+        serializableCheck: {
+          ignoredActionPaths: ['meta.payloadCreator', 'meta.result']
+        }
+      }),
+    preloadedState
+  })
+}
+
+export type HeadlessStore = ReturnType<typeof createHeadlessStore>
+
+export { createHeadlessStore, type HeadlessServices }
+```
+
+### 2. Headless Game Engine
 
 `src/game/validation/HeadlessGameEngine.ts` - NEW
 
 A stripped-down version of the game engine that only updates state:
 
 ```typescript
-import type { GameStore } from '@/game/store'
+import type { HeadlessStore } from './createHeadlessStore'
 import type { ControlMatrix } from '@/core/controls'
 import type { FrameInfo } from '@lib/bitmap'
 import type { GalaxyService } from '@core/galaxy'
@@ -41,7 +116,7 @@ type HeadlessGameEngine = {
 }
 
 const createHeadlessGameEngine = (
-  store: GameStore,
+  store: HeadlessStore,
   galaxyService: GalaxyService,
   fizzTransitionService: FizzTransitionService,
   randomService: RandomService
@@ -79,7 +154,7 @@ const createHeadlessGameEngine = (
 export { createHeadlessGameEngine, type HeadlessGameEngine }
 ```
 
-### 2. Validator Core
+### 3. Validator Core
 
 `src/game/validation/RecordingValidator.ts` - NEW
 
@@ -88,9 +163,8 @@ Main validation logic:
 ```typescript
 import type { GameRecording } from '@/game/recording/types'
 import type { HeadlessGameEngine } from './HeadlessGameEngine'
-import type { GameStore } from '@/game/store'
+import type { HeadlessStore, HeadlessRootState } from './createHeadlessStore'
 import type { RecordingService } from '@/game/recording/RecordingService'
-import type { RootState } from '@/game/store'
 
 type ValidationReport = {
   success: boolean
@@ -107,12 +181,12 @@ type ValidationReport = {
 
 const createRecordingValidator = (
   engine: HeadlessGameEngine,
-  store: GameStore,
+  store: HeadlessStore,
   recordingService: RecordingService
 ): {
   validate: (recording: GameRecording) => ValidationReport
 } => {
-  const hashState = (state: RootState): string => {
+  const hashState = (state: HeadlessRootState): string => {
     const relevantState = {
       ship: state.ship,
       shots: state.shots,
@@ -205,22 +279,19 @@ const createRecordingValidator = (
 export { createRecordingValidator, type ValidationReport }
 ```
 
-### 3. CLI Tool
+### 4. CLI Tool
 
 `scripts/validate-recording.ts` - NEW
 
 Command-line interface:
 
 ```typescript
-import { createRecordingStorage } from '@/game/recording/RecordingStorage'
 import { createRecordingService } from '@/game/recording/RecordingService'
 import { createHeadlessGameEngine } from '@/game/validation/HeadlessGameEngine'
 import { createRecordingValidator } from '@/game/validation/RecordingValidator'
-import { createGameStore } from '@/game/store'
+import { createHeadlessStore } from '@/game/validation/createHeadlessStore'
 import { createGalaxyService } from '@/core/galaxy'
-import { createSpriteService } from '@/core/sprites'
 import { createFizzTransitionService } from '@/core/transition'
-import { createCollisionService } from '@/core/collision'
 import { createRandomService } from '@/core/shared'
 import fs from 'fs'
 
@@ -237,30 +308,21 @@ const main = async () => {
   const fileContent = fs.readFileSync(filePath, 'utf-8')
   const recording = JSON.parse(fileContent)
 
-  // Create game services (minimal for headless)
-  const galaxyService = await createGalaxyService(/* galaxy path from recording */)
-  const spriteService = await createSpriteService(/* config */)
+  // Create minimal services for headless validation
+  const galaxyService = await createGalaxyService(recording.galaxyId)
   const fizzTransitionService = createFizzTransitionService()
-  const soundService = { /* mock sound service */ }
-  const collisionService = createCollisionService()
   const randomService = createRandomService()
   const recordingService = createRecordingService()
 
   const services = {
     galaxyService,
-    spriteService,
     fizzTransitionService,
-    soundService,
-    collisionService,
     randomService,
     recordingService
   }
 
-  const store = createGameStore(services, {
-    soundVolume: 0,
-    soundEnabled: false,
-    initialLives: recording.initialState.lives
-  })
+  // Create headless store (no UI, sound, or persistence)
+  const store = createHeadlessStore(services, recording.initialState.lives)
 
   const engine = createHeadlessGameEngine(
     store,
@@ -272,7 +334,11 @@ const main = async () => {
   const validator = createRecordingValidator(engine, store, recordingService)
 
   console.log(`Validating: ${filePath}`)
-  console.log(`Total frames: ${recording.inputs[recording.inputs.length - 1]?.frame ?? 0}`)
+  console.log(`Galaxy: ${recording.galaxyId}`)
+  console.log(`Start level: ${recording.startLevel}`)
+  console.log(
+    `Total frames: ${recording.inputs[recording.inputs.length - 1]?.frame ?? 0}`
+  )
 
   const report = validator.validate(recording)
 
@@ -298,7 +364,7 @@ main().catch(err => {
 })
 ```
 
-### 4. Package Script
+### 5. Package Script
 
 Add to `package.json`:
 
@@ -318,14 +384,19 @@ npm run validate-recording path/to/recording.json
 
 ## Implementation Plan
 
-### Phase 1: Headless Engine
-1. Create `src/game/validation/HeadlessGameEngine.ts`
-2. Test with simple recording
+### Phase 1: Headless Store
 
-### Phase 2: Validator Core
-1. Create `src/game/validation/RecordingValidator.ts`
-2. Test snapshot comparison
+1. Create `src/game/validation/createHeadlessStore.ts`
+2. Test that it creates a minimal Redux store with only game logic
+
+### Phase 2: Headless Engine & Validator
+
+1. Create `src/game/validation/HeadlessGameEngine.ts`
+2. Create `src/game/validation/RecordingValidator.ts`
+3. Test snapshot comparison with simple recording
 
 ### Phase 3: CLI Tool
+
 1. Create `scripts/validate-recording.ts`
-2. Test end-to-end validation
+2. Add npm script to `package.json`
+3. Test end-to-end validation
