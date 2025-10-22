@@ -161,10 +161,16 @@ export { createHeadlessGameEngine, type HeadlessGameEngine }
 Main validation logic:
 
 ```typescript
-import type { GameRecording } from '@/game/recording/types'
+import type { GameRecording, FullStateSnapshot } from '@/game/recording/types'
 import type { HeadlessGameEngine } from './HeadlessGameEngine'
 import type { HeadlessStore, HeadlessRootState } from './createHeadlessStore'
 import type { RecordingService } from '@/game/recording/RecordingService'
+
+type StateDiff = {
+  path: string
+  expected: unknown
+  actual: unknown
+}[]
 
 type ValidationReport = {
   success: boolean
@@ -176,6 +182,7 @@ type ValidationReport = {
     type: 'SNAPSHOT_MISMATCH' | 'MISSING_INPUT'
     expectedHash?: string
     actualHash?: string
+    stateDiff?: StateDiff // Detailed diff when full snapshots available
   }[]
 }
 
@@ -206,6 +213,42 @@ const createRecordingValidator = (
       hash = hash & hash
     }
     return hash.toString(16)
+  }
+
+  const compareStates = (
+    expected: FullStateSnapshot['state'],
+    actual: HeadlessRootState
+  ): StateDiff => {
+    const diffs: StateDiff = []
+    const slices = [
+      'ship',
+      'shots',
+      'planet',
+      'screen',
+      'status',
+      'explosions',
+      'walls',
+      'transition'
+    ] as const
+
+    for (const slice of slices) {
+      const expectedSlice = expected[slice]
+      const actualSlice = actual[slice]
+
+      // Deep comparison using JSON (simple but effective for validation)
+      const expectedJson = JSON.stringify(expectedSlice)
+      const actualJson = JSON.stringify(actualSlice)
+
+      if (expectedJson !== actualJson) {
+        diffs.push({
+          path: slice,
+          expected: expectedSlice,
+          actual: actualSlice
+        })
+      }
+    }
+
+    return diffs
   }
 
   return {
@@ -239,15 +282,33 @@ const createRecordingValidator = (
         engine.step(frameCount, controls)
         framesValidated++
 
-        // Check snapshot if one exists for this frame
-        const expectedSnapshot = recording.snapshots?.find(
+        // Check snapshots (prefer full snapshots for better debugging)
+        const fullSnapshot = recording.fullSnapshots?.find(
+          s => s.frame === frameCount
+        )
+        const hashSnapshot = recording.snapshots?.find(
           s => s.frame === frameCount
         )
 
-        if (expectedSnapshot) {
+        if (fullSnapshot) {
+          // Use full state comparison for detailed error reporting
+          const state = store.getState()
+          const diffs = compareStates(fullSnapshot.state, state)
+          snapshotsChecked++
+
+          if (diffs.length > 0 && divergenceFrame === null) {
+            divergenceFrame = frameCount
+            errors.push({
+              frame: frameCount,
+              type: 'SNAPSHOT_MISMATCH',
+              stateDiff: diffs
+            })
+          }
+        } else if (hashSnapshot) {
+          // Fall back to hash comparison (less detailed but still useful)
           const state = store.getState()
           const actualHash = hashState(state)
-          const match = actualHash === expectedSnapshot.hash
+          const match = actualHash === hashSnapshot.hash
           snapshotsChecked++
 
           if (!match && divergenceFrame === null) {
@@ -255,7 +316,7 @@ const createRecordingValidator = (
             errors.push({
               frame: frameCount,
               type: 'SNAPSHOT_MISMATCH',
-              expectedHash: expectedSnapshot.hash,
+              expectedHash: hashSnapshot.hash,
               actualHash
             })
           }
@@ -347,11 +408,25 @@ const main = async () => {
   console.log(`Snapshots checked: ${report.snapshotsChecked}`)
 
   if (report.divergenceFrame !== null) {
-    console.log(`Divergence at frame: ${report.divergenceFrame}`)
+    console.log(`\nDivergence at frame: ${report.divergenceFrame}`)
     const error = report.errors[0]
-    if (error?.expectedHash && error?.actualHash) {
-      console.log(`  Expected: ${error.expectedHash}`)
-      console.log(`  Actual:   ${error.actualHash}`)
+
+    if (error?.stateDiff) {
+      // Full state diff available - show detailed comparison
+      console.log(`\nState differences (${error.stateDiff.length} slices):`)
+      for (const diff of error.stateDiff) {
+        console.log(`\n  ${diff.path}:`)
+        console.log(
+          `    Expected: ${JSON.stringify(diff.expected).substring(0, 200)}...`
+        )
+        console.log(
+          `    Actual:   ${JSON.stringify(diff.actual).substring(0, 200)}...`
+        )
+      }
+    } else if (error?.expectedHash && error?.actualHash) {
+      // Only hash available - show hash comparison
+      console.log(`  Expected hash: ${error.expectedHash}`)
+      console.log(`  Actual hash:   ${error.actualHash}`)
     }
   }
 
