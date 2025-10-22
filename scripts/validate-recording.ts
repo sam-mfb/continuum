@@ -2,11 +2,12 @@ import { createRecordingService } from '@/game/recording/RecordingService'
 import { createHeadlessGameEngine } from '@/game/validation/HeadlessGameEngine'
 import { createRecordingValidator } from '@/game/validation/RecordingValidator'
 import { createHeadlessStore } from '@/game/validation/createHeadlessStore'
-import { createGalaxyService } from '@/core/galaxy'
+import { createGalaxyServiceNode } from '@/core/galaxy/createGalaxyServiceNode'
 import { createFizzTransitionService } from '@/core/transition'
 import { createRandomService } from '@/core/shared'
 import { GALAXIES } from '@/game/galaxyConfig'
 import fs from 'fs'
+import path from 'path'
 
 const main = async () => {
   const args = process.argv.slice(2)
@@ -29,8 +30,13 @@ const main = async () => {
     process.exit(1)
   }
 
+  // Map web path to file system path
+  // Web paths like "/release_galaxy.bin" -> "src/game/public/release_galaxy.bin"
+  // Web paths like "/galaxies/continuum_galaxy.bin" -> "src/game/public/galaxies/continuum_galaxy.bin"
+  const galaxyFilePath = path.join('src/game/public', galaxyConfig.path)
+
   // Create minimal services for headless validation
-  const galaxyService = await createGalaxyService(galaxyConfig.path)
+  const galaxyService = createGalaxyServiceNode(galaxyFilePath)
   const fizzTransitionService = createFizzTransitionService()
   const randomService = createRandomService()
   const recordingService = createRecordingService()
