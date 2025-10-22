@@ -64,9 +64,9 @@ const createHeadlessStore = (
         thunk: {
           extraArgument: services
         },
-        serializableCheck: {
-          ignoredActionPaths: ['meta.payloadCreator', 'meta.result']
-        }
+        // Disable serialization checks for headless validation
+        // (randomService functions are passed in actions but that's okay for validation)
+        serializableCheck: false
       }),
     preloadedState
   })

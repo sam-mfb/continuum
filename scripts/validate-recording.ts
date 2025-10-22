@@ -62,7 +62,12 @@ const main = async () => {
     randomService
   )
 
-  const validator = createRecordingValidator(engine, store, recordingService)
+  const validator = createRecordingValidator(
+    engine,
+    store,
+    recordingService,
+    randomService
+  )
 
   console.log(`Validating: ${filePath}`)
   console.log(`Galaxy: ${recording.galaxyId}`)
