@@ -62,12 +62,7 @@ const main = async () => {
     randomService
   )
 
-  const validator = createRecordingValidator(
-    engine,
-    store,
-    recordingService,
-    randomService
-  )
+  const validator = createRecordingValidator(engine, store, recordingService)
 
   console.log(`Validating: ${filePath}`)
   console.log(`Galaxy: ${recording.galaxyId}`)
@@ -91,12 +86,81 @@ const main = async () => {
       console.log(`\nState differences (${error.stateDiff.length} slices):`)
       for (const diff of error.stateDiff) {
         console.log(`\n  ${diff.path}:`)
-        console.log(
-          `    Expected: ${JSON.stringify(diff.expected).substring(0, 200)}...`
-        )
-        console.log(
-          `    Actual:   ${JSON.stringify(diff.actual).substring(0, 200)}...`
-        )
+
+        // For planet slice, do a more detailed comparison
+        if (
+          diff.path === 'planet' &&
+          typeof diff.expected === 'object' &&
+          typeof diff.actual === 'object'
+        ) {
+          const expected = diff.expected as Record<string, unknown>
+          const actual = diff.actual as Record<string, unknown>
+
+          console.log('    Checking array lengths:')
+          for (const key of Object.keys(expected)) {
+            if (Array.isArray(expected[key])) {
+              const expArray = expected[key] as unknown[]
+              const actArray = actual[key] as unknown[] | undefined
+              const match = expArray.length === (actArray?.length ?? -1)
+              console.log(
+                `      ${key}: ${expArray.length} vs ${actArray?.length ?? 'undefined'} ${match ? '✓' : '✗'}`
+              )
+            }
+          }
+
+          console.log('    Checking first elements:')
+          const arrays = [
+            'lines',
+            'bunkers',
+            'fuels',
+            'craters',
+            'gravityPoints'
+          ]
+          for (const arrName of arrays) {
+            const expectedArr = expected[arrName] as unknown[] | undefined
+            const actualArr = actual[arrName] as unknown[] | undefined
+            if (expectedArr && actualArr && expectedArr.length > 0) {
+              const exp0 = JSON.stringify(expectedArr[0])
+              const act0 = JSON.stringify(actualArr[0])
+              const match = exp0 === act0
+              console.log(`      ${arrName}[0] match: ${match ? '✓' : '✗'}`)
+              if (!match) {
+                console.log(`        Expected: ${exp0.substring(0, 150)}`)
+                console.log(`        Actual:   ${act0.substring(0, 150)}`)
+              }
+            }
+          }
+
+          // Check all elements for a mismatch
+          console.log('    Searching for differences...')
+          for (const arrName of arrays) {
+            const expectedArr = expected[arrName] as unknown[] | undefined
+            const actualArr = actual[arrName] as unknown[] | undefined
+            if (expectedArr && actualArr) {
+              for (
+                let i = 0;
+                i < Math.min(expectedArr.length, actualArr.length);
+                i++
+              ) {
+                const exp = JSON.stringify(expectedArr[i])
+                const act = JSON.stringify(actualArr[i])
+                if (exp !== act) {
+                  console.log(`      Found difference in ${arrName}[${i}]`)
+                  console.log(`        Expected: ${exp.substring(0, 200)}`)
+                  console.log(`        Actual:   ${act.substring(0, 200)}`)
+                  break
+                }
+              }
+            }
+          }
+        } else {
+          console.log(
+            `    Expected: ${JSON.stringify(diff.expected).substring(0, 200)}...`
+          )
+          console.log(
+            `    Actual:   ${JSON.stringify(diff.actual).substring(0, 200)}...`
+          )
+        }
       }
     } else if (error?.expectedHash && error?.actualHash) {
       // Only hash available - show hash comparison

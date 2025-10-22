@@ -11,25 +11,36 @@ import { wallsSlice } from '@core/walls'
 import { statusSlice } from '@core/status'
 import { clearAllShots } from '@core/shots'
 import { resetSparksAlive, clearShards } from '@core/explosions'
-import { initializeBunkers, initializeFuels } from '@core/planet'
 import { SCRWTH, TOPMARG, BOTMARG } from '@core/screen'
 import { clearLevelComplete } from './gameSlice'
 import { setMessage } from '@/core/status'
+import { FUELFRAMES } from '@core/figs'
+
+const FUELFCYCLES = 3 // From GW.h - cycles each frame stays
+const BUNKFRAMES = 8 // From GW.h - bunker animation frames
+const BUNKFCYCLES = 4 // From GW.h - bunker rotation counter cycles
+const BUNKROTKINDS = 2 // From GW.h - bunker kinds that rotate
 
 /**
  * Load a specific level (planet) from the galaxy data
+ *
+ * @param levelNum - The level number to load
+ * @param overrideSeed - Optional seed to use instead of Date.now() (for replay/validation)
  */
 export const loadLevel =
-  (levelNum: number): ThunkAction<void, RootState, GameServices, Action> =>
+  (
+    levelNum: number,
+    overrideSeed?: number
+  ): ThunkAction<void, RootState, GameServices, Action> =>
   (dispatch, _getState, { galaxyService, randomService, recordingService }) => {
     // Set random seed at the start of each level
     // For new games, use timestamp for non-deterministic gameplay
-    // (During replay, this will use the recorded seed instead)
-    const seed = Date.now()
+    // For replay/validation, use the provided overrideSeed
+    const seed = overrideSeed !== undefined ? overrideSeed : Date.now()
     randomService.setSeed(seed)
 
-    // Record level seed if recording is active
-    if (recordingService.isRecording()) {
+    // Record level seed if recording is active (only record if we generated the seed)
+    if (recordingService.isRecording() && overrideSeed === undefined) {
       recordingService.recordLevelSeed(levelNum, seed)
     }
 
@@ -58,9 +69,59 @@ export const loadLevel =
     // Initialize walls
     dispatch(wallsSlice.actions.initWalls({ walls: planet.lines }))
 
-    // Initialize bunkers and fuels
-    dispatch(initializeBunkers())
-    dispatch(initializeFuels())
+    // Initialize bunkers with deterministic random values from RandomService
+    let state = _getState()
+    const bunkers = state.planet.bunkers
+    const bunkerValues: Array<{
+      index: number
+      rot: number
+      rotcount: number
+    }> = []
+
+    for (let i = 0; i < bunkers.length; i++) {
+      const bunk = bunkers[i]
+      if (!bunk || bunk.rot < 0) break
+
+      // For animated bunkers, generate random rotation values
+      if (bunk.kind >= BUNKROTKINDS) {
+        bunkerValues.push({
+          index: i,
+          rot: randomService.rnumber(BUNKFRAMES),
+          rotcount: randomService.rnumber(BUNKFCYCLES)
+        })
+      } else {
+        // Non-animated bunkers still need an entry but won't use rot/rotcount
+        bunkerValues.push({
+          index: i,
+          rot: bunk.rot,
+          rotcount: 0
+        })
+      }
+    }
+
+    dispatch(planetSlice.actions.initializeBunkersWithValues(bunkerValues))
+
+    // Initialize fuels with deterministic random values from RandomService
+    state = _getState()
+    const fuels = state.planet.fuels
+    const fuelValues: Array<{
+      index: number
+      currentfig: number
+      figcount: number
+    }> = []
+
+    for (let i = 0; i < fuels.length; i++) {
+      const fp = fuels[i]
+      if (!fp || fp.x >= 10000) break
+
+      fuelValues.push({
+        index: i,
+        currentfig: randomService.rnumber(FUELFRAMES),
+        figcount: randomService.rnumber(FUELFCYCLES)
+      })
+    }
+
+    dispatch(planetSlice.actions.initializeFuelsWithValues(fuelValues))
 
     // Set planet bonus for this level (don't reset score!)
     dispatch(statusSlice.actions.setPlanetBonus(planet.planetbonus))

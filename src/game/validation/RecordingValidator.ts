@@ -2,7 +2,6 @@ import type { GameRecording, FullStateSnapshot } from '@/game/recording/types'
 import type { HeadlessGameEngine } from './HeadlessGameEngine'
 import type { HeadlessStore, HeadlessRootState } from './createHeadlessStore'
 import type { RecordingService } from '@/game/recording/RecordingService'
-import type { RandomService } from '@/core/shared'
 import { loadLevel } from '@/game/levelThunks'
 
 type StateDiff = {
@@ -28,8 +27,7 @@ type ValidationReport = {
 const createRecordingValidator = (
   engine: HeadlessGameEngine,
   store: HeadlessStore,
-  recordingService: RecordingService,
-  randomService: RandomService
+  recordingService: RecordingService
 ): {
   validate: (recording: GameRecording) => ValidationReport
 } => {
@@ -112,10 +110,12 @@ const createRecordingValidator = (
         throw new Error('First level seed is undefined')
       }
 
-      randomService.setSeed(firstLevelSeed.seed)
+      // Pass the recorded seed to loadLevel so it uses that instead of Date.now()
       // Cast to any because thunk types don't match exactly (HeadlessStore vs GameStore)
       // but the thunk will work since HeadlessStore has all the required slices
-      store.dispatch(loadLevel(firstLevelSeed.level) as any)
+      store.dispatch(
+        loadLevel(firstLevelSeed.level, firstLevelSeed.seed) as any
+      )
 
       console.log(
         `Initialized level ${firstLevelSeed.level} with seed ${firstLevelSeed.seed}`
@@ -147,8 +147,10 @@ const createRecordingValidator = (
             throw new Error(`Level seed ${nextLevelIndex} is undefined`)
           }
 
-          randomService.setSeed(nextLevelSeed.seed)
-          store.dispatch(loadLevel(nextLevelSeed.level) as any)
+          // Pass the recorded seed to loadLevel
+          store.dispatch(
+            loadLevel(nextLevelSeed.level, nextLevelSeed.seed) as any
+          )
           currentLevelIndex = nextLevelIndex
 
           console.log(
