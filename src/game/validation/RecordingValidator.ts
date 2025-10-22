@@ -167,11 +167,8 @@ const createRecordingValidator = (
           continue
         }
 
-        // Step the game engine FIRST (snapshots are taken after game steps)
-        engine.step(frameCount, controls)
-        framesValidated++
-
-        // Check snapshots AFTER stepping (snapshots capture post-step state)
+        // Check snapshots BEFORE stepping for frame 0 (initial state after level load)
+        // For all other frames, check AFTER stepping (post-update state)
         const fullSnapshot = recording.fullSnapshots?.find(
           s => s.frame === frameCount
         )
@@ -179,35 +176,75 @@ const createRecordingValidator = (
           s => s.frame === frameCount
         )
 
-        if (fullSnapshot) {
-          // Use full state comparison for detailed error reporting
-          const state = store.getState()
-          const diffs = compareStates(fullSnapshot.state, state)
-          snapshotsChecked++
+        // For frame 0, validate the initial state before any updates
+        if (frameCount === 0 && (fullSnapshot || hashSnapshot)) {
+          if (fullSnapshot) {
+            const state = store.getState()
+            const diffs = compareStates(fullSnapshot.state, state)
+            snapshotsChecked++
 
-          if (diffs.length > 0 && divergenceFrame === null) {
-            divergenceFrame = frameCount
-            errors.push({
-              frame: frameCount,
-              type: 'SNAPSHOT_MISMATCH',
-              stateDiff: diffs
-            })
+            if (diffs.length > 0 && divergenceFrame === null) {
+              divergenceFrame = frameCount
+              errors.push({
+                frame: frameCount,
+                type: 'SNAPSHOT_MISMATCH',
+                stateDiff: diffs
+              })
+            }
+          } else if (hashSnapshot) {
+            const state = store.getState()
+            const actualHash = hashState(state)
+            const match = actualHash === hashSnapshot.hash
+            snapshotsChecked++
+
+            if (!match && divergenceFrame === null) {
+              divergenceFrame = frameCount
+              errors.push({
+                frame: frameCount,
+                type: 'SNAPSHOT_MISMATCH',
+                expectedHash: hashSnapshot.hash,
+                actualHash
+              })
+            }
           }
-        } else if (hashSnapshot) {
-          // Fall back to hash comparison (less detailed but still useful)
-          const state = store.getState()
-          const actualHash = hashState(state)
-          const match = actualHash === hashSnapshot.hash
-          snapshotsChecked++
+        }
 
-          if (!match && divergenceFrame === null) {
-            divergenceFrame = frameCount
-            errors.push({
-              frame: frameCount,
-              type: 'SNAPSHOT_MISMATCH',
-              expectedHash: hashSnapshot.hash,
-              actualHash
-            })
+        // Step the game engine (snapshots are taken after game steps)
+        engine.step(frameCount, controls)
+        framesValidated++
+
+        // Check snapshots AFTER stepping (for frames > 0)
+        if (frameCount > 0 && (fullSnapshot || hashSnapshot)) {
+          if (fullSnapshot) {
+            // Use full state comparison for detailed error reporting
+            const state = store.getState()
+            const diffs = compareStates(fullSnapshot.state, state)
+            snapshotsChecked++
+
+            if (diffs.length > 0 && divergenceFrame === null) {
+              divergenceFrame = frameCount
+              errors.push({
+                frame: frameCount,
+                type: 'SNAPSHOT_MISMATCH',
+                stateDiff: diffs
+              })
+            }
+          } else if (hashSnapshot) {
+            // Fall back to hash comparison (less detailed but still useful)
+            const state = store.getState()
+            const actualHash = hashState(state)
+            const match = actualHash === hashSnapshot.hash
+            snapshotsChecked++
+
+            if (!match && divergenceFrame === null) {
+              divergenceFrame = frameCount
+              errors.push({
+                frame: frameCount,
+                type: 'SNAPSHOT_MISMATCH',
+                expectedHash: hashSnapshot.hash,
+                actualHash
+              })
+            }
           }
         }
       }
