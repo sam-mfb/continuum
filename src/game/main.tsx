@@ -37,12 +37,12 @@ import { createCollisionService } from '@/core/collision'
 import { SCRWTH, VIEWHT } from '@/core/screen'
 import { initializeSpriteRegistry } from '@/lib/frame/initializeSpriteRegistry'
 import { createRecordingService } from './recording/RecordingService'
-//import { enableDebugOption } from './debug'
+import { enableDebugOption } from './debug'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 const root = createRoot(app)
 
-//enableDebugOption({ SHOW_COLLISION_MAP: true })
+enableDebugOption({ ENABLE_FULL_SNAPSHOTS: true })
 
 try {
   // Initialize services

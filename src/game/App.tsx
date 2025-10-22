@@ -30,6 +30,7 @@ import type { CollisionService } from '@/core/collision'
 import { useResponsiveScale } from './hooks/useResponsiveScale'
 import { BASE_GAME_WIDTH, BASE_TOTAL_HEIGHT } from './constants/dimensions'
 import type { SpriteRegistry } from '@/lib/frame/types'
+import { getDebug } from './debug'
 
 type AppProps = {
   renderer: GameRenderLoop
@@ -214,16 +215,25 @@ export const App: React.FC<AppProps> = ({
               // This ensures the first level seed is captured
               if (collisionMode === 'modern') {
                 const recordingService = getStoreServices().recordingService
-                recordingService.startRecording({
-                  engineVersion: GAME_ENGINE_VERSION,
-                  galaxyId: currentGalaxyId,
-                  startLevel: level,
-                  timestamp: Date.now(),
-                  initialState: {
-                    lives: currentLives
-                  }
-                })
-                console.log('Started recording game')
+                const debug = getDebug()
+                const enableFullSnapshots =
+                  debug?.ENABLE_FULL_SNAPSHOTS ?? false
+
+                recordingService.startRecording(
+                  {
+                    engineVersion: GAME_ENGINE_VERSION,
+                    galaxyId: currentGalaxyId,
+                    startLevel: level,
+                    timestamp: Date.now(),
+                    initialState: {
+                      lives: currentLives
+                    }
+                  },
+                  enableFullSnapshots
+                )
+                console.log(
+                  `Started recording game (full snapshots: ${enableFullSnapshots})`
+                )
               }
 
               // Load the selected level (this will record the seed if recording is active)
