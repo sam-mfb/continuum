@@ -11,7 +11,7 @@ import type {
 
 const SNAPSHOT_INTERVAL = 100 // Capture every 100 frames (~5 seconds at 20 FPS)
 
-type RecordingMode = 'idle' | 'recording'
+type RecordingMode = 'idle' | 'recording' | 'replaying'
 
 type RecordingService = {
   // Control recording
@@ -29,6 +29,11 @@ type RecordingService = {
     controls: ControlMatrix,
     state: RootState
   ) => void
+
+  // Control replay
+  startReplay: (recording: GameRecording) => void
+  stopReplay: () => void
+  getReplayControls: (frameCount: number) => ControlMatrix | null
 
   // Current mode
   getMode: () => RecordingMode
@@ -84,11 +89,14 @@ const createRecordingService = (): RecordingService => {
   let fullSnapshots: FullStateSnapshot[] = []
   let fullSnapshotsEnabled = false
 
+  // Replay state
+  let replayInputs: InputFrame[] = []
+
   return {
     startRecording: (metadata, enableFullSnapshots = false) => {
       if (mode !== 'idle') {
         throw new Error(
-          `Cannot start recording: currently in ${mode} mode. Call stopRecording() first.`
+          `Cannot start recording: currently in ${mode} mode. Call stop first.`
         )
       }
       mode = 'recording'
@@ -163,6 +171,40 @@ const createRecordingService = (): RecordingService => {
     },
 
     isRecording: () => mode === 'recording',
+
+    startReplay: recording => {
+      if (mode !== 'idle') {
+        throw new Error(
+          `Cannot start replay: currently in ${mode} mode. Call stop first.`
+        )
+      }
+      mode = 'replaying'
+      replayInputs = recording.inputs
+    },
+
+    stopReplay: () => {
+      if (mode !== 'replaying') return
+      mode = 'idle'
+      replayInputs = []
+    },
+
+    getReplayControls: frameCount => {
+      if (mode !== 'replaying') return null
+
+      // Find the most recent input frame at or before this frameCount
+      // Since inputs are sparse (only stored when controls change),
+      // we need to find the last input that's <= frameCount
+      let controls: ControlMatrix | null = null
+
+      for (let i = 0; i < replayInputs.length; i++) {
+        const input = replayInputs[i]
+        if (!input) continue
+        if (input.frame > frameCount) break
+        controls = input.controls
+      }
+
+      return controls
+    },
 
     getMode: () => mode
   }
