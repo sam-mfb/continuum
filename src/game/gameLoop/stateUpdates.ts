@@ -25,7 +25,7 @@ import { shipSlice, shipControl, CRITFUEL, handleBounceState } from '@core/ship'
 import {
   shotsSlice,
   doStrafes,
-  bunkShoot,
+  bunkShootThunk,
   moveBullets,
   clearBunkShots
 } from '@core/shots'
@@ -571,7 +571,7 @@ const handleBunkerShooting = (
     const screenb = state.screen.screeny + VIEWHT
 
     store.dispatch(
-      bunkShoot({
+      bunkShootThunk({
         screenx: state.screen.screenx,
         screenr: screenr,
         screeny: state.screen.screeny,
@@ -581,8 +581,7 @@ const handleBunkerShooting = (
         worldwidth: state.planet.worldwidth,
         worldwrap: state.planet.worldwrap,
         globalx: globalx,
-        globaly: globaly,
-        randomService: randomService
+        globaly: globaly
       })
     )
   }

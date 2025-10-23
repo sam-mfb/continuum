@@ -17,7 +17,7 @@ import {
   updateBunkerRotations,
   initializeBunkers
 } from '@core/planet'
-import { shotsSlice, bunkShoot, moveBullets, doStrafes } from '@core/shots'
+import { shotsSlice, bunkShootThunk, moveBullets, doStrafes } from '@core/shots'
 import { BunkerKind } from '@core/figs'
 import type { Bunker, PlanetState } from '@core/planet'
 import { drawDotSafe } from '@render/shots'
@@ -342,7 +342,7 @@ export const createBunkerDrawBitmapRenderer =
       const screenr = viewportState.x + bitmap.width
 
       store.dispatch(
-        bunkShoot({
+        bunkShootThunk({
           screenx: viewportState.x,
           screenr: screenr,
           screeny: viewportState.y,
@@ -352,8 +352,7 @@ export const createBunkerDrawBitmapRenderer =
           worldwidth: planetState.worldwidth,
           worldwrap: planetState.worldwrap,
           globalx: globalx,
-          globaly: globaly,
-          randomService: randomService
+          globaly: globaly
         })
       )
     }

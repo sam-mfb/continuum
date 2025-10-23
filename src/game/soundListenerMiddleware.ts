@@ -6,7 +6,7 @@
  */
 
 import type { GameSoundService } from './types'
-import { shotsSlice, isNewShot } from '@/core/shots'
+import { shotsSlice, isNewShot, bunkShootThunk } from '@/core/shots'
 import { SCRWTH, VIEWHT, SOFTBORDER } from '@/core/screen'
 import type { AppDispatch, RootState } from './store'
 import type { TypedStartListening } from '@reduxjs/toolkit'
@@ -71,7 +71,7 @@ export function setupSoundListener(
 
   // Listen for bunker shot creation
   soundStartListening({
-    actionCreator: shotsSlice.actions.bunkShoot,
+    matcher: bunkShootThunk.match,
     effect: (_, listenerApi) => {
       // Get the state before and after the action
       const prevState = listenerApi.getOriginalState()

@@ -26,7 +26,7 @@ import {
   shotsSlice,
   clearAllShots,
   doStrafes,
-  bunkShoot,
+  bunkShootThunk,
   moveBullets,
   clearBunkShots
 } from '@core/shots'
@@ -377,7 +377,7 @@ export const createShipMoveBitmapRenderer =
       const screenb = state.screen.screeny + VIEWHT
 
       store.dispatch(
-        bunkShoot({
+        bunkShootThunk({
           screenx: state.screen.screenx,
           screenr: screenr,
           screeny: state.screen.screeny,
@@ -387,8 +387,7 @@ export const createShipMoveBitmapRenderer =
           worldwidth: state.planet.worldwidth,
           worldwrap: state.planet.worldwrap,
           globalx: globalx,
-          globaly: globaly,
-          randomService: randomService
+          globaly: globaly
         })
       )
     }
