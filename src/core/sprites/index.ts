@@ -5,7 +5,7 @@
 // Sprite service and types
 export * from './service'
 
-// Node.js version for CLI tools
-export { createSpriteServiceNode } from './createSpriteServiceNode'
+// Note: createSpriteServiceNode is NOT exported here to avoid browser imports
+// Import it directly: import { createSpriteServiceNode } from '@core/sprites/createSpriteServiceNode'
 
 // Note: Test files are not exported
