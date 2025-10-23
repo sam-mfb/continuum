@@ -31,16 +31,30 @@ import {
 } from '@core/shots'
 import {
   updateBunkerRotations,
-  updateFuelAnimations,
+  updateFuelAnimationsWithRandom,
   killBunker
 } from '@core/planet'
+import { FUELFRAMES } from '@core/figs'
 import {
-  startExplosion,
+  startExplosionWithRandom,
   updateExplosions,
   resetSparksAlive,
   clearShards,
   decrementShipDeathFlash
 } from '@core/explosions'
+import {
+  EXPLSHARDS,
+  EXPLSPARKS,
+  SH_DISTRIB,
+  SH_LIFE,
+  SH_ADDLIFE,
+  SH_SPEED,
+  SH_ADDSPEED,
+  SH_SPIN2,
+  SPARKLIFE,
+  SPADDLIFE,
+  SP_SPEED16
+} from '@core/explosions/constants'
 import { statusSlice } from '@core/status'
 import { screenSlice, SCRWTH, VIEWHT, TOPMARG, BOTMARG } from '@core/screen'
 import { containShip } from '@core/shared'
@@ -158,15 +172,29 @@ export const updateGameState = (context: StateUpdateContext): void => {
   }
 
   // Handle ship movement and controls
-  const { globalx, globaly } = handleShipMovement(store, controls)
+  const { globalx, globaly } = handleShipMovement(
+    store,
+    controls,
+    randomService
+  )
 
   store.dispatch(resetKillShipNextFrame())
 
   // Update bunker rotations for animated bunkers
   store.dispatch(updateBunkerRotations({ globalx, globaly }))
 
-  // Update fuel cell animations
-  store.dispatch(updateFuelAnimations())
+  // Update fuel cell animations with deterministic random values
+  const fuelState = store.getState()
+  const numFuels = fuelState.planet.fuels.length
+  const flash = numFuels > 0 ? randomService.rnumber(numFuels) : 0
+  const flashFrame = FUELFRAMES - 2 + randomService.rnumber(2) // 6 or 7
+
+  store.dispatch(
+    updateFuelAnimationsWithRandom({
+      flash,
+      flashFrame
+    })
+  )
 
   // Handle bunker shooting
   handleBunkerShooting(store, globalx, globaly, randomService)
@@ -188,7 +216,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
   )
 
   // Process bunker kills
-  processBunkerKills(store)
+  processBunkerKills(store, randomService)
 
   // Handle self-hit shield feedback
   const shotsState = store.getState().shots
@@ -420,14 +448,15 @@ const handleGameOver = (
  */
 const handleShipMovement = (
   store: GameStore,
-  controls: ControlMatrix
+  controls: ControlMatrix,
+  randomService: RandomService
 ): { globalx: number; globaly: number } => {
   const state = store.getState()
 
   if (state.ship.deadCount === 0) {
     // Check for self-destruct command or death on previous frame
     if (controls.selfDestruct || state.game.killShipNextFrame) {
-      triggerShipDeath(store)
+      triggerShipDeath(store, randomService)
       return {
         globalx: state.ship.globalx,
         globaly: state.ship.globaly
@@ -562,7 +591,10 @@ const handleBunkerShooting = (
 /**
  * Process bunker kills from shot collisions
  */
-const processBunkerKills = (store: GameStore): void => {
+const processBunkerKills = (
+  store: GameStore,
+  randomService: RandomService
+): void => {
   const state = store.getState()
   const shotsState = store.getState().shots
 
@@ -584,12 +616,58 @@ const processBunkerKills = (store: GameStore): void => {
             })
           )
 
+          // Generate random values for explosion
+          const shardRandom = []
+          for (let i = 0; i < EXPLSHARDS; i++) {
+            const xOffset =
+              randomService.rnumber(SH_DISTRIB) - Math.floor(SH_DISTRIB / 2)
+            const yOffset =
+              randomService.rnumber(SH_DISTRIB) - Math.floor(SH_DISTRIB / 2)
+            const lifetime = SH_LIFE + randomService.rnumber(SH_ADDLIFE)
+            let angle: number
+            if (bunker.kind >= 2) {
+              // Rotating bunkers: random direction
+              angle = randomService.rnumber(32)
+            } else {
+              // Static bunkers: directional spread
+              angle = (randomService.rnumber(15) - 7 + (bunker.rot << 1)) & 31
+            }
+            const speed = SH_SPEED + randomService.rnumber(SH_ADDSPEED)
+            const rot16 = randomService.rnumber(256)
+            const rotspeed =
+              randomService.rnumber(SH_SPIN2) - Math.floor(SH_SPIN2 / 2)
+
+            shardRandom.push({
+              xOffset,
+              yOffset,
+              lifetime,
+              angle,
+              speed,
+              rot16,
+              rotspeed
+            })
+          }
+
+          const sparkRandom = []
+          const loangle = bunker.kind >= 2 ? 0 : ((bunker.rot - 4) & 15) << 5
+          const hiangle = bunker.kind >= 2 ? 511 : loangle + 256
+
+          for (let i = 0; i < EXPLSPARKS; i++) {
+            const lifetime = SPARKLIFE + randomService.rnumber(SPADDLIFE)
+            const angle = randomService.rnumber(hiangle - loangle + 1) + loangle
+            const speed = 8 + randomService.rnumber(SP_SPEED16)
+
+            sparkRandom.push({ lifetime, angle, speed })
+          }
+
           store.dispatch(
-            startExplosion({
+            startExplosionWithRandom({
               x: bunker.x,
               y: bunker.y,
               dir: bunker.rot,
-              kind: bunker.kind
+              kind: bunker.kind,
+              shardRandom,
+              sparkRandom
             })
           )
         }

@@ -64,7 +64,8 @@ export const createGameRenderer = (
         state,
         spriteService,
         store,
-        fizzTransitionService
+        fizzTransitionService,
+        randomService
       })
     } else {
       bitmap = renderGame({

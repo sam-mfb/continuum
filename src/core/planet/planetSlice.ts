@@ -217,8 +217,56 @@ export const planetSlice = createSlice({
     },
 
     /**
+     * Update fuel cell animations with deterministic random values
+     * For use with RandomService to enable deterministic gameplay
+     */
+    updateFuelAnimationsWithRandom: (
+      state,
+      action: PayloadAction<{
+        flash: number
+        flashFrame: number
+      }>
+    ) => {
+      const { flash, flashFrame } = action.payload
+
+      // Check if fuels array exists and has elements
+      if (!state.fuels || state.fuels.length === 0) return
+
+      // Update animations for all fuel cells (Terrain.c:274-286)
+      for (let f = 0; f < state.fuels.length; f++) {
+        const fp = state.fuels[f]
+
+        // Skip undefined or null elements
+        if (!fp) continue
+
+        // Check for end marker
+        if (fp.x >= 10000) break
+
+        // Only animate if fuel is alive
+        if (fp.alive) {
+          if (f === flash) {
+            // Flash effect - use provided random frame (Terrain.c:277-280)
+            fp.currentfig = flashFrame
+            fp.figcount = 1
+          } else if (fp.figcount <= 0) {
+            // Advance to next animation frame (Terrain.c:281-286)
+            fp.currentfig++
+            if (fp.currentfig >= FUELFRAMES - 2) {
+              fp.currentfig = 0
+            }
+            fp.figcount = 1
+          } else {
+            // Decrement frame counter
+            fp.figcount--
+          }
+        }
+      }
+    },
+
+    /**
      * Update fuel cell animations
      * Based on the for loop in do_fuels() at Terrain.c:274-286
+     * NOTE: Uses rint() (Math.random) - deprecated for deterministic gameplay
      */
     updateFuelAnimations: state => {
       // Check if fuels array exists and has elements
@@ -392,6 +440,7 @@ export const {
   initializeBunkers,
   initializeBunkersWithValues,
   updateFuelAnimations,
+  updateFuelAnimationsWithRandom,
   initializeFuels,
   initializeFuelsWithValues,
   killBunker,
