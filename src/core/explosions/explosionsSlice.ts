@@ -8,20 +8,8 @@ import {
   SH_SLOW,
   shotvecs,
   EXPLSHARDS,
-  SH_DISTRIB,
-  SH_LIFE,
-  SH_ADDLIFE,
-  SH_SPEED,
-  SH_ADDSPEED,
-  SH_SPIN2,
   EXPLSPARKS,
-  SPARKLIFE,
-  SPADDLIFE,
-  SP_SPEED16,
   SHIPSPARKS,
-  SH_SPARKLIFE,
-  SH_SPADDLIFE,
-  SH_SP_SPEED16,
   DEATH_FLASH_FRAMES
 } from './constants'
 
@@ -59,19 +47,33 @@ export const explosionsSlice = createSlice({
   initialState,
   reducers: {
     /**
-     * Start a bunker explosion
+     * Start a bunker explosion (deterministic version)
      * Based on start_explosion() in Terrain.c:315
      */
-    startExplosion: (
+    startExplosionWithRandom: (
       state,
       action: PayloadAction<{
         x: number
         y: number
         dir: number
         kind: number
+        shardRandom: Array<{
+          xOffset: number
+          yOffset: number
+          lifetime: number
+          angle: number
+          speed: number
+          rot16: number
+          rotspeed: number
+        }>
+        sparkRandom: Array<{
+          lifetime: number
+          angle: number
+          speed: number
+        }>
       }>
     ) => {
-      const { x, y, dir, kind } = action.payload
+      const { x, y, dir, kind, shardRandom, sparkRandom } = action.payload
 
       // Create 5 shards (Terrain.c:320-333)
       // Find oldest shards to replace
@@ -100,28 +102,20 @@ export const explosionsSlice = createSlice({
       for (let i = 0; i < oldestIndices.length; i++) {
         const shardIndex = oldestIndices[i]!
         const shard = state.shards[shardIndex]!
+        const random = shardRandom[i]!
 
         // Set position with random distribution (Terrain.c:326-327)
-        shard.x = x + Math.floor(Math.random() * SH_DISTRIB) - SH_DISTRIB / 2
-        shard.y = y + Math.floor(Math.random() * SH_DISTRIB) - SH_DISTRIB / 2
+        shard.x = x + random.xOffset
+        shard.y = y + random.yOffset
 
         // Set lifetime (Terrain.c:325)
-        shard.lifecount = SH_LIFE + Math.floor(Math.random() * SH_ADDLIFE)
+        shard.lifecount = random.lifetime
 
-        // Calculate angle based on bunker type (Terrain.c:335-338)
-        let angle: number
-        if (kind >= 2) {
-          // BUNKROTKINDS = 2
-          // Rotating bunkers: random direction
-          angle = Math.floor(Math.random() * 32)
-        } else {
-          // Static bunkers: directional spread based on bunker rotation
-          // dir is the bunker rotation (0-15) as passed from kill_bunker
-          angle = (Math.floor(Math.random() * 15) - 7 + (dir << 1)) & 31
-        }
+        // Use provided angle (Terrain.c:335-338)
+        const angle = random.angle
 
         // Calculate velocity (Terrain.c:339-341)
-        const speed = SH_SPEED + Math.floor(Math.random() * SH_ADDSPEED)
+        const speed = random.speed
 
         // Get velocity components from shotvecs table and multiply by speed
         // Note: velocity is stored as fixed-point with 8 bits of fraction
@@ -129,8 +123,8 @@ export const explosionsSlice = createSlice({
         shard.v = shotvecs[(angle + 24) & 31]! * speed
 
         // Set rotation and spin (Terrain.c:345-346)
-        shard.rot16 = Math.floor(Math.random() * 256)
-        shard.rotspeed = Math.floor(Math.random() * SH_SPIN2) - SH_SPIN2 / 2
+        shard.rot16 = random.rot16
+        shard.rotspeed = random.rotspeed
 
         // Set kind (Terrain.c:347-350)
         // Special logic for DIFF bunkers (kind 1) with even rotations
@@ -152,22 +146,9 @@ export const explosionsSlice = createSlice({
       state.totalsparks = EXPLSPARKS
       state.sparksalive = EXPLSPARKS
 
-      // Calculate angle range for sparks (Terrain.c:355-364)
-      let loangle: number, hiangle: number
-      if (kind >= 2) {
-        // BUNKROTKINDS = 2
-        // Rotating bunkers: full 360 degree spread
-        loangle = 0
-        hiangle = 511
-      } else {
-        // Static bunkers: 180 degree spread based on direction
-        // dir is the bunker rotation (0-15) as passed from kill_bunker
-        loangle = ((dir - 4) & 15) << 5 // << 5 = * 32 to convert to 0-511 range
-        hiangle = loangle + 256 // 180 degrees (256 = 512/2)
-      }
-
       for (let i = 0; i < EXPLSPARKS && i < NUMSPARKS; i++) {
         const spark = state.sparks[i]!
+        const random = sparkRandom[i]!
 
         // Set position (Terrain.c:367-368)
         spark.x8 = x << 3
@@ -176,12 +157,10 @@ export const explosionsSlice = createSlice({
         spark.y = y
 
         // Set lifetime (Terrain.c:369)
-        spark.lifecount = SPARKLIFE + Math.floor(Math.random() * SPADDLIFE)
+        spark.lifecount = random.lifetime
 
-        // rand_shot(loangle, hiangle, shot) (Terrain.c:370)
-        // Matches: angle = rint(hiangle-loangle+1) + loangle;
-        const angle =
-          (Math.floor(Math.random() * (hiangle - loangle + 1)) + loangle) & 511
+        // Use provided angle (Terrain.c:370)
+        const angle = random.angle & 511
         const intangle = angle >> 4
         const fracangle = angle & 15
 
@@ -196,25 +175,29 @@ export const explosionsSlice = createSlice({
         const baseV = v1 + ((fracangle * (v2 - v1)) >> 4)
 
         // Apply speed (Terrain.c:371-373)
-        // speed = 8 + rint(SP_SPEED16)
-        const speed = 8 + Math.floor(Math.random() * SP_SPEED16)
+        const speed = random.speed
         spark.h = (speed * baseH) >> 4
         spark.v = (speed * baseV) >> 4
       }
     },
 
     /**
-     * Start ship death explosion
+     * Start ship death explosion (deterministic version)
      * Based on start_death() in Terrain.c:411
      */
-    startShipDeath: (
+    startShipDeathWithRandom: (
       state,
       action: PayloadAction<{
         x: number
         y: number
+        sparkRandom: Array<{
+          lifetime: number
+          angle: number
+          speed: number
+        }>
       }>
     ) => {
-      const { x, y } = action.payload
+      const { x, y, sparkRandom } = action.payload
 
       // Set white flash flag (Terrain.c:413 - set_screen(front_screen, 0L))
       // This creates the "obnoxious" white screen flash effect
@@ -232,17 +215,18 @@ export const explosionsSlice = createSlice({
       // Initialize all 100 sparks
       for (let i = 0; i < SHIPSPARKS && i < NUMSPARKS; i++) {
         const spark = state.sparks[i]!
+        const random = sparkRandom[i]!
+
         spark.x8 = x8
         spark.y8 = y8
         spark.x = x
         spark.y = y
 
         // Set lifetime (35-55 frames)
-        spark.lifecount =
-          SH_SPARKLIFE + Math.floor(Math.random() * SH_SPADDLIFE)
+        spark.lifecount = random.lifetime
 
-        // Random 360-degree spread (rand_shot(0, 511, shot))
-        const angle = Math.floor(Math.random() * 512)
+        // Use provided angle (rand_shot(0, 511, shot))
+        const angle = random.angle
         const intangle = angle >> 4 // Integer angle (0-31)
         const fracangle = angle & 15 // Fractional part for interpolation
 
@@ -257,29 +241,30 @@ export const explosionsSlice = createSlice({
         const baseV = v1 + ((fracangle * (v2 - v1)) >> 4)
 
         // Apply speed (minsp=16, addsp=SH_SP_SPEED16 from start_death)
-        const speed = 16 + Math.floor(Math.random() * SH_SP_SPEED16)
+        const speed = random.speed
         spark.h = (speed * baseH) >> 4
         spark.v = (speed * baseV) >> 4
       }
     },
 
     /**
-     * Start generic spark explosion
+     * Start generic spark explosion (deterministic version)
      * Based on start_blowup() in Terrain.c:424
      */
-    startBlowup: (
+    startBlowupWithRandom: (
       state,
       action: PayloadAction<{
         x: number
         y: number
         numspks: number
-        minsp: number
-        addsp: number
-        minlife: number
-        addlife: number
+        sparkRandom: Array<{
+          lifetime: number
+          angle: number
+          speed: number
+        }>
       }>
     ) => {
-      const { x, y, numspks, minsp, addsp, minlife, addlife } = action.payload
+      const { x, y, numspks, sparkRandom } = action.payload
 
       // Convert to x8/y8 coordinates (Terrain.c:431-432)
       const x8 = x << 3
@@ -292,12 +277,14 @@ export const explosionsSlice = createSlice({
       // Initialize sparks (Terrain.c:434-442)
       for (let i = 0; i < numspks && i < NUMSPARKS; i++) {
         const spark = state.sparks[i]!
+        const random = sparkRandom[i]!
+
         spark.x8 = x8
         spark.y8 = y8
-        spark.lifecount = minlife + Math.floor(Math.random() * addlife)
+        spark.lifecount = random.lifetime
 
-        // rand_shot(0, 511, shot) - random direction across full circle
-        const angle = Math.floor(Math.random() * 512)
+        // Use provided angle (rand_shot(0, 511, shot))
+        const angle = random.angle
         const intangle = angle >> 4 // Integer angle (0-31)
         const fracangle = angle & 15 // Fractional part for interpolation
 
@@ -312,7 +299,7 @@ export const explosionsSlice = createSlice({
         const baseV = v1 + ((fracangle * (v2 - v1)) >> 4)
 
         // Calculate speed (Terrain.c:439)
-        const speed = minsp + Math.floor(Math.random() * addsp)
+        const speed = random.speed
 
         // Apply speed to velocity components (Terrain.c:440-441)
         spark.h = (speed * baseH) >> 4
@@ -470,9 +457,9 @@ export const explosionsSlice = createSlice({
 })
 
 export const {
-  startExplosion,
-  startShipDeath,
-  startBlowup,
+  startExplosionWithRandom,
+  startShipDeathWithRandom,
+  startBlowupWithRandom,
   updateExplosions,
   clearExplosions,
   decrementShipDeathFlash,

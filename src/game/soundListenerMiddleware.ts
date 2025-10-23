@@ -162,7 +162,7 @@ export function setupSoundListener(
 
   // Listen for ship death
   soundStartListening({
-    actionCreator: explosionsSlice.actions.startShipDeath,
+    actionCreator: explosionsSlice.actions.startShipDeathWithRandom,
     effect: () => {
       soundService.playShipExplosion()
     }
@@ -170,7 +170,7 @@ export function setupSoundListener(
 
   // Listen for bunker explosion
   soundStartListening({
-    actionCreator: explosionsSlice.actions.startExplosion,
+    actionCreator: explosionsSlice.actions.startExplosionWithRandom,
     effect: () => {
       soundService.playBunkerExplosion()
     }
