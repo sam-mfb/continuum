@@ -51,7 +51,7 @@ const createHeadlessStore = (
   services: HeadlessServices,
   initialLives: number,
   galaxyId: string
-) => {
+): ReturnType<typeof configureStore<HeadlessRootState>> => {
   const preloadedState = {
     app: {
       ...appSlice.getInitialState(),

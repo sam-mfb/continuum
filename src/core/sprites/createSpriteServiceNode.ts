@@ -14,6 +14,7 @@ import type {
 } from './service'
 import { precomputeFormats } from './service'
 import { readFileSync } from 'fs'
+import type { MonochromeBitmap } from '@lib/bitmap'
 
 /**
  * Creates a minimal sprite service for Node.js headless environments
@@ -123,15 +124,15 @@ export function createSpriteServiceNode(spritePath: string): SpriteService {
     getStrafeSprite(): SpriteData {
       throw new Error('Headless sprite service does not support strafe sprites')
     },
-    getDigitSprite() {
+    getDigitSprite(): SpriteData {
       throw new Error('Headless sprite service does not support digit sprites')
     },
-    getStatusBarTemplate() {
+    getStatusBarTemplate(): MonochromeBitmap {
       throw new Error(
         'Headless sprite service does not support status bar template'
       )
     },
-    getTitlePage() {
+    getTitlePage(): MonochromeBitmap | null {
       throw new Error('Headless sprite service does not support title page')
     }
   }

@@ -12,7 +12,7 @@ import { GALAXIES } from '@/game/galaxyConfig'
 import fs from 'fs'
 import path from 'path'
 
-const main = async () => {
+const main = async (): Promise<void> => {
   const args = process.argv.slice(2)
 
   if (args.length === 0) {

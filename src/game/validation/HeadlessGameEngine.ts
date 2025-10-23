@@ -38,7 +38,7 @@ const createHeadlessGameEngine = (
   }
 
   return {
-    step: (frameCount, controls) => {
+    step: (frameCount, controls): void => {
       // Track fizz state BEFORE update to properly simulate rendering sequence
       // In the real game: updateGameState runs, THEN rendering increments framesGenerated
       // But isComplete is checked DURING updateGameState, so it sees the OLD framesGenerated value

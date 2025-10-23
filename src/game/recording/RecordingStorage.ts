@@ -34,7 +34,7 @@ const createRecordingStorage = (): RecordingStorage => {
   }
 
   return {
-    save: recording => {
+    save: (recording): string => {
       const id = generateId()
       const recordingWithVersion = {
         ...recording,
@@ -60,7 +60,7 @@ const createRecordingStorage = (): RecordingStorage => {
       return id
     },
 
-    load: id => {
+    load: (id): GameRecording | null => {
       const json = localStorage.getItem(STORAGE_PREFIX + id)
       if (!json) return null
 
@@ -72,11 +72,11 @@ const createRecordingStorage = (): RecordingStorage => {
       }
     },
 
-    list: () => {
+    list: (): RecordingIndex => {
       return getIndex()
     },
 
-    delete: id => {
+    delete: (id): void => {
       localStorage.removeItem(STORAGE_PREFIX + id)
 
       const index = getIndex()
@@ -84,7 +84,7 @@ const createRecordingStorage = (): RecordingStorage => {
       saveIndex(filtered)
     },
 
-    exportToFile: id => {
+    exportToFile: (id): void => {
       const recording = localStorage.getItem(STORAGE_PREFIX + id)
       if (!recording) return
 

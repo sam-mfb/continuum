@@ -95,7 +95,7 @@ const createRecordingService = (): RecordingService => {
   let replayRecording: GameRecording | null = null
 
   return {
-    startRecording: (metadata, enableFullSnapshots = false) => {
+    startRecording: (metadata, enableFullSnapshots = false): void => {
       if (mode !== 'idle') {
         throw new Error(
           `Cannot start recording: currently in ${mode} mode. Call stop first.`
@@ -111,12 +111,12 @@ const createRecordingService = (): RecordingService => {
       lastControls = null
     },
 
-    recordLevelSeed: (level, seed) => {
+    recordLevelSeed: (level, seed): void => {
       if (mode !== 'recording') return
       levelSeeds.push({ level, seed })
     },
 
-    recordFrame: (frameCount, controls, state) => {
+    recordFrame: (frameCount, controls, state): void => {
       if (mode !== 'recording') return
 
       // Sparse storage: only record when controls change
@@ -152,7 +152,7 @@ const createRecordingService = (): RecordingService => {
       }
     },
 
-    stopRecording: () => {
+    stopRecording: (): GameRecording | null => {
       if (mode !== 'recording') return null
       const recording = {
         ...currentRecording,
@@ -172,9 +172,9 @@ const createRecordingService = (): RecordingService => {
       return recording
     },
 
-    isRecording: () => mode === 'recording',
+    isRecording: (): boolean => mode === 'recording',
 
-    startReplay: recording => {
+    startReplay: (recording): void => {
       if (mode !== 'idle') {
         throw new Error(
           `Cannot start replay: currently in ${mode} mode. Call stop first.`
@@ -185,14 +185,14 @@ const createRecordingService = (): RecordingService => {
       replayRecording = recording
     },
 
-    stopReplay: () => {
+    stopReplay: (): void => {
       if (mode !== 'replaying') return
       mode = 'idle'
       replayInputs = []
       replayRecording = null
     },
 
-    getReplayControls: frameCount => {
+    getReplayControls: (frameCount): ControlMatrix | null => {
       if (mode !== 'replaying') return null
 
       // Find the most recent input frame at or before this frameCount
@@ -210,7 +210,7 @@ const createRecordingService = (): RecordingService => {
       return controls
     },
 
-    getLevelSeed: level => {
+    getLevelSeed: (level): number | null => {
       if (!replayRecording) return null
       const levelSeed = replayRecording.levelSeeds.find(
         ls => ls.level === level
@@ -218,7 +218,7 @@ const createRecordingService = (): RecordingService => {
       return levelSeed ? levelSeed.seed : null
     },
 
-    getMode: () => mode
+    getMode: (): RecordingMode => mode
   }
 }
 

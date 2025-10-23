@@ -90,7 +90,7 @@ const createRecordingValidator = (
   }
 
   return {
-    validate: recording => {
+    validate: (recording): ValidationReport => {
       const errors: ValidationReport['errors'] = []
       let framesValidated = 0
       let snapshotsChecked = 0
@@ -111,8 +111,9 @@ const createRecordingValidator = (
       }
 
       // Pass the recorded seed to loadLevel so it uses that instead of Date.now()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      store.dispatch(
+      // Type assertion needed due to thunk typing complexity in validation context
+      void store.dispatch(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         loadLevel(firstLevelSeed.level, firstLevelSeed.seed) as any
       )
 
