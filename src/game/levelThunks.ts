@@ -34,13 +34,25 @@ export const loadLevel =
   ): ThunkAction<void, RootState, GameServices, Action> =>
   (dispatch, _getState, { galaxyService, randomService, recordingService }) => {
     // Set random seed at the start of each level
-    // For new games, use timestamp for non-deterministic gameplay
-    // For replay/validation, use the provided overrideSeed
-    const seed = overrideSeed !== undefined ? overrideSeed : Date.now()
+    // Priority:
+    // 1. overrideSeed (explicit parameter)
+    // 2. replaySeed (from recording during replay)
+    // 3. Date.now() (for new games)
+    const replaySeed = recordingService.getLevelSeed(levelNum)
+    const seed =
+      overrideSeed !== undefined
+        ? overrideSeed
+        : replaySeed !== null
+          ? replaySeed
+          : Date.now()
     randomService.setSeed(seed)
 
     // Record level seed if recording is active (only record if we generated the seed)
-    if (recordingService.isRecording() && overrideSeed === undefined) {
+    if (
+      recordingService.isRecording() &&
+      overrideSeed === undefined &&
+      replaySeed === null
+    ) {
       recordingService.recordLevelSeed(levelNum, seed)
     }
 

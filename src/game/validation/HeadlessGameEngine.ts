@@ -16,11 +16,14 @@ const createHeadlessGameEngine = (
   fizzTransitionService: FizzTransitionService,
   randomService: RandomService
 ): HeadlessGameEngine => {
-  // Create transition callbacks for the fizz service
+  // Create transition callbacks for headless mode
+  // In headless mode, we skip the fizz animation and treat it as instantly complete
   const transitionCallbacks = {
-    isInitialized: (): boolean => fizzTransitionService.isInitialized,
-    isComplete: (): boolean => fizzTransitionService.isComplete,
-    reset: (): void => fizzTransitionService.reset()
+    isInitialized: (): boolean => true, // Always initialized in headless mode
+    isComplete: (): boolean => true, // Always complete in headless mode (skip animation)
+    reset: (): void => {
+      // No-op in headless mode
+    }
   }
 
   return {

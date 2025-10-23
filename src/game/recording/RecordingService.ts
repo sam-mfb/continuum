@@ -34,6 +34,7 @@ type RecordingService = {
   startReplay: (recording: GameRecording) => void
   stopReplay: () => void
   getReplayControls: (frameCount: number) => ControlMatrix | null
+  getLevelSeed: (level: number) => number | null
 
   // Current mode
   getMode: () => RecordingMode
@@ -91,6 +92,7 @@ const createRecordingService = (): RecordingService => {
 
   // Replay state
   let replayInputs: InputFrame[] = []
+  let replayRecording: GameRecording | null = null
 
   return {
     startRecording: (metadata, enableFullSnapshots = false) => {
@@ -180,12 +182,14 @@ const createRecordingService = (): RecordingService => {
       }
       mode = 'replaying'
       replayInputs = recording.inputs
+      replayRecording = recording
     },
 
     stopReplay: () => {
       if (mode !== 'replaying') return
       mode = 'idle'
       replayInputs = []
+      replayRecording = null
     },
 
     getReplayControls: frameCount => {
@@ -204,6 +208,14 @@ const createRecordingService = (): RecordingService => {
       }
 
       return controls
+    },
+
+    getLevelSeed: level => {
+      if (!replayRecording) return null
+      const levelSeed = replayRecording.levelSeeds.find(
+        ls => ls.level === level
+      )
+      return levelSeed ? levelSeed.seed : null
     },
 
     getMode: () => mode

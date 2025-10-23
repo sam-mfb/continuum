@@ -130,34 +130,6 @@ const createRecordingValidator = (
 
       // Run through all frames
       for (let frameCount = 0; frameCount <= totalFrames; frameCount++) {
-        // Check if we need to load the next level
-        // This happens when the current level in game state changes
-        const currentGameLevel = store.getState().status.currentlevel
-        const nextLevelIndex = currentLevelIndex + 1
-
-        const currentLevelSeed = recording.levelSeeds[currentLevelIndex]
-        if (
-          nextLevelIndex < recording.levelSeeds.length &&
-          currentLevelSeed &&
-          currentGameLevel !== currentLevelSeed.level
-        ) {
-          // Level transition detected - initialize next level
-          const nextLevelSeed = recording.levelSeeds[nextLevelIndex]
-          if (!nextLevelSeed) {
-            throw new Error(`Level seed ${nextLevelIndex} is undefined`)
-          }
-
-          // Pass the recorded seed to loadLevel
-          store.dispatch(
-            loadLevel(nextLevelSeed.level, nextLevelSeed.seed) as any
-          )
-          currentLevelIndex = nextLevelIndex
-
-          console.log(
-            `Level transition: Initialized level ${nextLevelSeed.level} with seed ${nextLevelSeed.seed}`
-          )
-        }
-
         // Get controls for this frame
         const controls = recordingService.getReplayControls(frameCount)
 
@@ -214,6 +186,34 @@ const createRecordingValidator = (
         // Step the game engine
         engine.step(frameCount, controls)
         framesValidated++
+
+        // DON'T manually load the next level - the game engine does this automatically
+        // during updateTransitionState when starmap completes (stateUpdates.ts:757)
+        // The loadLevel thunk is called by transitionToNextLevel
+        //
+        // However, we DO need to track which level we're on for the recording's levelSeeds
+        // Check if level changed after stepping (transition completed and loaded next level)
+        const currentGameLevel = store.getState().status.currentlevel
+        const currentTransitionStatus = store.getState().transition.status
+
+        const currentLevelSeed = recording.levelSeeds[currentLevelIndex]
+        const nextLevelIndex = currentLevelIndex + 1
+
+        // Only update currentLevelIndex if we've completed a transition (status is inactive)
+        // and the level number has changed
+        if (
+          nextLevelIndex < recording.levelSeeds.length &&
+          currentLevelSeed &&
+          currentGameLevel !== currentLevelSeed.level &&
+          currentTransitionStatus === 'inactive'
+        ) {
+          // Level transition completed - just update our tracking index
+          currentLevelIndex = nextLevelIndex
+
+          console.log(
+            `Level transition completed: Now on level ${currentGameLevel}`
+          )
+        }
       }
 
       // Clean up

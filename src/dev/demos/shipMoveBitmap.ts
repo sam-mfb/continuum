@@ -56,13 +56,30 @@ import { drawCraters } from '@render/planet'
 import { drawFuels } from '@render/planet'
 import { rint, createRandomService } from '@core/shared'
 import {
-  startShipDeath,
-  startExplosion,
+  startShipDeathWithRandom,
+  startExplosionWithRandom,
   updateExplosions,
   decrementShipDeathFlash,
   resetSparksAlive,
   clearShards
 } from '@core/explosions'
+import {
+  EXPLSHARDS,
+  EXPLSPARKS,
+  SH_DISTRIB,
+  SH_LIFE,
+  SH_ADDLIFE,
+  SH_SPEED,
+  SH_ADDSPEED,
+  SH_SPIN2,
+  SPARKLIFE,
+  SPADDLIFE,
+  SP_SPEED16,
+  SHIPSPARKS,
+  SH_SPARKLIFE,
+  SH_SPADDLIFE,
+  SH_SP_SPEED16
+} from '@core/explosions/constants'
 import { drawExplosions } from '@render/explosions'
 import type { ShardSprite, ShardSpriteSet } from '@core/figs'
 import { SKILLBRADIUS } from '@core/ship'
@@ -403,12 +420,60 @@ export const createShipMoveBitmapRenderer =
           // Note: killBunker returns early for difficult bunkers that survive
           const updatedBunker = store.getState().planet.bunkers[bunkerIndex]
           if (updatedBunker && !updatedBunker.alive) {
+            // Generate random values for explosion (demo uses Math.random)
+            const shardRandom = []
+            for (let i = 0; i < EXPLSHARDS; i++) {
+              const xOffset =
+                Math.floor(Math.random() * SH_DISTRIB) -
+                Math.floor(SH_DISTRIB / 2)
+              const yOffset =
+                Math.floor(Math.random() * SH_DISTRIB) -
+                Math.floor(SH_DISTRIB / 2)
+              const lifetime = SH_LIFE + Math.floor(Math.random() * SH_ADDLIFE)
+              let angle: number
+              if (bunker.kind >= 2) {
+                angle = Math.floor(Math.random() * 32)
+              } else {
+                angle =
+                  (Math.floor(Math.random() * 15) - 7 + (bunker.rot << 1)) & 31
+              }
+              const speed = SH_SPEED + Math.floor(Math.random() * SH_ADDSPEED)
+              const rot16 = Math.floor(Math.random() * 256)
+              const rotspeed =
+                Math.floor(Math.random() * SH_SPIN2) - Math.floor(SH_SPIN2 / 2)
+
+              shardRandom.push({
+                xOffset,
+                yOffset,
+                lifetime,
+                angle,
+                speed,
+                rot16,
+                rotspeed
+              })
+            }
+
+            const sparkRandom = []
+            const loangle = bunker.kind >= 2 ? 0 : ((bunker.rot - 4) & 15) << 5
+            const hiangle = bunker.kind >= 2 ? 511 : loangle + 256
+
+            for (let i = 0; i < EXPLSPARKS; i++) {
+              const lifetime = SPARKLIFE + Math.floor(Math.random() * SPADDLIFE)
+              const angle =
+                Math.floor(Math.random() * (hiangle - loangle + 1)) + loangle
+              const speed = 8 + Math.floor(Math.random() * SP_SPEED16)
+
+              sparkRandom.push({ lifetime, angle, speed })
+            }
+
             store.dispatch(
-              startExplosion({
+              startExplosionWithRandom({
                 x: bunker.x,
                 y: bunker.y,
                 dir: bunker.rot,
-                kind: bunker.kind
+                kind: bunker.kind,
+                shardRandom,
+                sparkRandom
               })
             )
           }
@@ -866,12 +931,60 @@ export const createShipMoveBitmapRenderer =
             // store.dispatch(addScore(SCOREBUNK))
 
             // Trigger bunker explosion
+            // Generate random values for explosion (demo uses Math.random)
+            const shardRandom = []
+            for (let i = 0; i < EXPLSHARDS; i++) {
+              const xOffset =
+                Math.floor(Math.random() * SH_DISTRIB) -
+                Math.floor(SH_DISTRIB / 2)
+              const yOffset =
+                Math.floor(Math.random() * SH_DISTRIB) -
+                Math.floor(SH_DISTRIB / 2)
+              const lifetime = SH_LIFE + Math.floor(Math.random() * SH_ADDLIFE)
+              let angle: number
+              if (bunker.kind >= 2) {
+                angle = Math.floor(Math.random() * 32)
+              } else {
+                angle =
+                  (Math.floor(Math.random() * 15) - 7 + (bunker.rot << 1)) & 31
+              }
+              const speed = SH_SPEED + Math.floor(Math.random() * SH_ADDSPEED)
+              const rot16 = Math.floor(Math.random() * 256)
+              const rotspeed =
+                Math.floor(Math.random() * SH_SPIN2) - Math.floor(SH_SPIN2 / 2)
+
+              shardRandom.push({
+                xOffset,
+                yOffset,
+                lifetime,
+                angle,
+                speed,
+                rot16,
+                rotspeed
+              })
+            }
+
+            const sparkRandom = []
+            const loangle = bunker.kind >= 2 ? 0 : ((bunker.rot - 4) & 15) << 5
+            const hiangle = bunker.kind >= 2 ? 511 : loangle + 256
+
+            for (let i = 0; i < EXPLSPARKS; i++) {
+              const lifetime = SPARKLIFE + Math.floor(Math.random() * SPADDLIFE)
+              const angle =
+                Math.floor(Math.random() * (hiangle - loangle + 1)) + loangle
+              const speed = 8 + Math.floor(Math.random() * SP_SPEED16)
+
+              sparkRandom.push({ lifetime, angle, speed })
+            }
+
             store.dispatch(
-              startExplosion({
+              startExplosionWithRandom({
                 x: bunker.x,
                 y: bunker.y,
                 dir: bunker.rot,
-                kind: bunker.kind
+                kind: bunker.kind,
+                shardRandom,
+                sparkRandom
               })
             )
             break // Only kill ONE bunker per death (Play.c:345)
@@ -879,7 +992,25 @@ export const createShipMoveBitmapRenderer =
         }
 
         // (c) Start ship explosion
-        store.dispatch(startShipDeath({ x: deathGlobalX, y: deathGlobalY }))
+        // Generate random values for ship explosion (demo uses Math.random)
+        // Ship explosions only use sparks, no shards
+        const shipSparkRandom = []
+        for (let i = 0; i < SHIPSPARKS; i++) {
+          const lifetime =
+            SH_SPARKLIFE + Math.floor(Math.random() * SH_SPADDLIFE)
+          const angle = Math.floor(Math.random() * 512)
+          const speed = 8 + Math.floor(Math.random() * SH_SP_SPEED16)
+
+          shipSparkRandom.push({ lifetime, angle, speed })
+        }
+
+        store.dispatch(
+          startShipDeathWithRandom({
+            x: deathGlobalX,
+            y: deathGlobalY,
+            sparkRandom: shipSparkRandom
+          })
+        )
 
         // (d) TODO: Play death sound when sound system is implemented
         // playSound(DEATH_SOUND)
