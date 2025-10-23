@@ -11,10 +11,14 @@ import { wallsSlice } from '@core/walls'
 import { transitionSlice } from '@core/transition'
 import { highscoreSlice } from '@/core/highscore'
 import { controlsSlice } from '@/core/controls'
+import { syncThunkMiddleware } from '@/game/syncThunkMiddleware'
 import type { GalaxyService } from '@core/galaxy'
 import type { FizzTransitionService } from '@core/transition'
 import type { RandomService } from '@/core/shared'
 import type { RecordingService } from '@/game/recording/RecordingService'
+import type { CollisionService } from '@core/collision'
+import type { SpriteService } from '@core/sprites'
+import type { GameServices } from '@/game/store'
 
 // Minimal services needed for game logic only
 type HeadlessServices = {
@@ -22,6 +26,8 @@ type HeadlessServices = {
   fizzTransitionService: FizzTransitionService
   randomService: RandomService
   recordingService: RecordingService
+  collisionService: CollisionService
+  spriteService: SpriteService
 }
 
 const headlessReducer = combineSlices(
@@ -67,7 +73,7 @@ const createHeadlessStore = (
         // Disable serialization checks for headless validation
         // (randomService functions are passed in actions but that's okay for validation)
         serializableCheck: false
-      }),
+      }).prepend(syncThunkMiddleware(services as unknown as GameServices)), // Cast needed - headless doesn't have sound services
     preloadedState
   })
 }

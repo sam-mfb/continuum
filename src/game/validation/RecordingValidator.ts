@@ -111,8 +111,7 @@ const createRecordingValidator = (
       }
 
       // Pass the recorded seed to loadLevel so it uses that instead of Date.now()
-      // Cast to any because thunk types don't match exactly (HeadlessStore vs GameStore)
-      // but the thunk will work since HeadlessStore has all the required slices
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       store.dispatch(
         loadLevel(firstLevelSeed.level, firstLevelSeed.seed) as any
       )

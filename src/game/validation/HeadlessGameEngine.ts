@@ -19,7 +19,6 @@ const createHeadlessGameEngine = (
 ): HeadlessGameEngine => {
   // Track fizz state to simulate correct duration in headless mode
   let fizzFramesElapsed = 0
-  let wasInFizz = false
 
   // Create transition callbacks for headless mode
   // We don't render the fizz animation, but we simulate its duration
@@ -35,7 +34,6 @@ const createHeadlessGameEngine = (
     reset: (): void => {
       // Reset fizz frame counter
       fizzFramesElapsed = 0
-      wasInFizz = false
     }
   }
 

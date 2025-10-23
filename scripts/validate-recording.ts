@@ -5,6 +5,9 @@ import { createHeadlessStore } from '@/game/validation/createHeadlessStore'
 import { createGalaxyServiceNode } from '@/core/galaxy/createGalaxyServiceNode'
 import { createFizzTransitionService } from '@/core/transition'
 import { createRandomService } from '@/core/shared'
+import { createCollisionService } from '@core/collision'
+import { createSpriteServiceNode } from '@core/sprites'
+import { SCRWTH, VIEWHT } from '@core/screen'
 import { GALAXIES } from '@/game/galaxyConfig'
 import fs from 'fs'
 import path from 'path'
@@ -35,17 +38,25 @@ const main = async () => {
   // Web paths like "/galaxies/continuum_galaxy.bin" -> "src/game/public/galaxies/continuum_galaxy.bin"
   const galaxyFilePath = path.join('src/game/public', galaxyConfig.path)
 
+  // Sprite resource path (rsrc_260.bin contains all the sprite data)
+  const spriteFilePath = path.join('src/game/public', 'rsrc_260.bin')
+
   // Create minimal services for headless validation
   const galaxyService = createGalaxyServiceNode(galaxyFilePath)
   const fizzTransitionService = createFizzTransitionService()
   const randomService = createRandomService()
   const recordingService = createRecordingService()
+  const collisionService = createCollisionService()
+  collisionService.initialize({ width: SCRWTH, height: VIEWHT })
+  const spriteService = createSpriteServiceNode(spriteFilePath)
 
   const services = {
     galaxyService,
     fizzTransitionService,
     randomService,
-    recordingService
+    recordingService,
+    collisionService,
+    spriteService
   }
 
   // Create headless store (no UI, sound, or persistence)
