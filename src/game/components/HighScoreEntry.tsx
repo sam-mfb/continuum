@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { getStoreServices } from '../store'
+import { createRecordingStorage } from '../recording/RecordingStorage'
 
 type HighScoreEntryProps = {
   scale: number
@@ -16,7 +18,24 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
   onSubmit
 }) => {
   const [name, setName] = useState('')
+  const [hasRecording, setHasRecording] = useState(false)
+  const [recordingId, setRecordingId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    // Check if there's a recording available to export
+    const recordingService = getStoreServices().recordingService
+    const recording = recordingService.stopRecording()
+
+    if (recording) {
+      // Save to storage and get ID
+      const storage = createRecordingStorage()
+      const id = storage.save(recording)
+      setRecordingId(id)
+      setHasRecording(true)
+      console.log('Recording saved with ID:', id)
+    }
+  }, [])
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -33,6 +52,13 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
     // Only allow alphanumeric and basic characters
     if (e.key === 'Enter') {
       handleSubmit(e)
+    }
+  }
+
+  const handleExport = (): void => {
+    if (recordingId) {
+      const storage = createRecordingStorage()
+      storage.exportToFile(recordingId)
     }
   }
 
@@ -85,6 +111,24 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
           <div>Planet: {planet}</div>
           <div>Fuel: {fuel}</div>
         </div>
+
+        {hasRecording && (
+          <button
+            onClick={handleExport}
+            style={{
+              fontSize: `${8 * scale}px`,
+              padding: `${5 * scale}px ${12 * scale}px`,
+              backgroundColor: '#228822',
+              color: 'white',
+              border: '1px solid white',
+              cursor: 'pointer',
+              fontFamily: 'monospace',
+              letterSpacing: `${0.5 * scale}px`
+            }}
+          >
+            EXPORT RECORDING
+          </button>
+        )}
 
         <form
           onSubmit={handleSubmit}
