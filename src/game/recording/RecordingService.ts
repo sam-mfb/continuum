@@ -9,7 +9,7 @@ import type {
   FullStateSnapshot
 } from './types'
 
-const SNAPSHOT_INTERVAL = 100 // Capture every 100 frames (~5 seconds at 20 FPS)
+const SNAPSHOT_INTERVAL = 10 // Capture every 10 frames for detailed debugging
 
 type RecordingMode = 'idle' | 'recording' | 'replaying'
 
