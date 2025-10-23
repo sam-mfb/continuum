@@ -178,8 +178,8 @@ const createRecordingValidator = (
           s => s.frame === frameCount
         )
 
-        // For frame 0, validate the initial state before any updates
-        if (frameCount === 0 && (fullSnapshot || hashSnapshot)) {
+        // Validate snapshot before processing this frame (recording captures pre-update state)
+        if (fullSnapshot || hashSnapshot) {
           if (fullSnapshot) {
             const state = store.getState()
             const diffs = compareStates(fullSnapshot.state, state)
@@ -211,44 +211,9 @@ const createRecordingValidator = (
           }
         }
 
-        // Step the game engine (snapshots are taken after game steps)
+        // Step the game engine
         engine.step(frameCount, controls)
         framesValidated++
-
-        // Check snapshots AFTER stepping (for frames > 0)
-        if (frameCount > 0 && (fullSnapshot || hashSnapshot)) {
-          if (fullSnapshot) {
-            // Use full state comparison for detailed error reporting
-            const state = store.getState()
-            const diffs = compareStates(fullSnapshot.state, state)
-            snapshotsChecked++
-
-            if (diffs.length > 0 && divergenceFrame === null) {
-              divergenceFrame = frameCount
-              errors.push({
-                frame: frameCount,
-                type: 'SNAPSHOT_MISMATCH',
-                stateDiff: diffs
-              })
-            }
-          } else if (hashSnapshot) {
-            // Fall back to hash comparison (less detailed but still useful)
-            const state = store.getState()
-            const actualHash = hashState(state)
-            const match = actualHash === hashSnapshot.hash
-            snapshotsChecked++
-
-            if (!match && divergenceFrame === null) {
-              divergenceFrame = frameCount
-              errors.push({
-                frame: frameCount,
-                type: 'SNAPSHOT_MISMATCH',
-                expectedHash: hashSnapshot.hash,
-                actualHash
-              })
-            }
-          }
-        }
       }
 
       // Clean up
