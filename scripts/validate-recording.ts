@@ -63,7 +63,8 @@ const main = async (): Promise<void> => {
   const store = createHeadlessStore(
     services,
     recording.initialState.lives,
-    recording.galaxyId
+    recording.galaxyId,
+    recording.startLevel
   )
 
   const engine = createHeadlessGameEngine(

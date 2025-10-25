@@ -15,5 +15,6 @@ export {
   updateExplosions,
   decrementShipDeathFlash,
   resetSparksAlive,
-  clearShards
+  clearShards,
+  clearExplosions
 } from './explosionsSlice'

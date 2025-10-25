@@ -18,6 +18,7 @@ import { isTouchDevice } from './mobile/deviceDetection'
 import { setHighScore } from '@/core/highscore'
 import { shipSlice } from '@/core/ship'
 import { invalidateHighScore } from './gameSlice'
+import { clearExplosions } from '@/core/explosions'
 import { type SpriteService } from '@/core/sprites'
 import { useAppDispatch, useAppSelector, getStoreServices } from './store'
 import { GAME_ENGINE_VERSION } from './version'
@@ -202,6 +203,9 @@ export const App: React.FC<AppProps> = ({
               // Reset sound service state for new game
               soundService.setVolume(volume)
               soundService.setMuted(soundMuted)
+
+              // Clear explosions state from any previous game
+              dispatch(clearExplosions())
 
               // Start audio engine proactively to avoid first-sound delay
               if (!soundMuted) {

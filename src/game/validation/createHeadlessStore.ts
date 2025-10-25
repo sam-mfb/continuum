@@ -50,7 +50,8 @@ export type HeadlessRootState = ReturnType<typeof headlessReducer>
 const createHeadlessStore = (
   services: HeadlessServices,
   initialLives: number,
-  galaxyId: string
+  galaxyId: string,
+  startLevel: number
 ): ReturnType<typeof configureStore<HeadlessRootState>> => {
   const preloadedState = {
     app: {
@@ -60,6 +61,10 @@ const createHeadlessStore = (
     ship: {
       ...shipSlice.getInitialState(),
       lives: initialLives
+    },
+    status: {
+      ...statusSlice.getInitialState(),
+      currentlevel: startLevel
     }
   }
 
