@@ -3,6 +3,7 @@ import { useAppDispatch, useAppSelector, getStoreServices } from '../store'
 import { loadRecording, startReplay } from '../replaySlice'
 import { setMode } from '../appSlice'
 import { shipSlice } from '@/core/ship'
+import { statusSlice } from '@/core/status'
 import { markCheatUsed } from '@core/game'
 import { clearExplosions } from '@/core/explosions'
 import { loadLevel } from '@core/game'
@@ -129,17 +130,21 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
 
       // 2. Reset ship state
       dispatch(shipSlice.actions.resetShip())
+      dispatch(shipSlice.actions.resetFuel())
 
-      // 3. Set initial lives from recording
+      // 3. Reset score and status for replay
+      dispatch(statusSlice.actions.initStatus(recording.startLevel))
+
+      // 4. Set initial lives from recording
       dispatch(shipSlice.actions.setLives(recording.initialState.lives ?? 3))
 
-      // 4. Clear explosions
+      // 5. Clear explosions
       dispatch(clearExplosions())
 
-      // 5. Initialize RecordingService in replay mode
+      // 6. Initialize RecordingService in replay mode
       recordingService.startReplay(recording)
 
-      // 6. Load first level with recorded seed
+      // 7. Load first level with recorded seed
       const firstLevelSeed = recording.levelSeeds[0]
       if (!firstLevelSeed) {
         console.error('No level seeds in recording')
@@ -148,10 +153,10 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
 
       dispatch(loadLevel(firstLevelSeed.level, firstLevelSeed.seed))
 
-      // 7. Store in Redux
+      // 8. Store in Redux
       dispatch(loadRecording(recording))
 
-      // 8. Set replay state and enter replay mode
+      // 9. Set replay state and enter replay mode
       dispatch(startReplay())
       dispatch(setMode('replay'))
     } catch (error) {
