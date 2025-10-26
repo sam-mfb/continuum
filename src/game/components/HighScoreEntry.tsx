@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useSelector } from 'react-redux'
 import { getStoreServices, type RootState } from '../store'
-import { createRecordingStorage } from '../recording/RecordingStorage'
+import { createRecordingStorage } from '@core/recording'
 
 type HighScoreEntryProps = {
   scale: number

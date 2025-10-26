@@ -7,7 +7,7 @@ import { invalidateHighScore } from '../gameSlice'
 import { clearExplosions } from '@/core/explosions'
 import { loadLevel } from '../levelThunks'
 import { GAME_ENGINE_VERSION } from '../version'
-import type { GameRecording } from '../recording/types'
+import type { GameRecording } from '@core/recording'
 
 type ReplaySelectionScreenProps = {
   scale: number

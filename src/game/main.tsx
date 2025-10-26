@@ -36,7 +36,7 @@ import { getDefaultGalaxy } from './galaxyConfig'
 import { createCollisionService } from '@/core/collision'
 import { SCRWTH, VIEWHT } from '@/core/screen'
 import { initializeSpriteRegistry } from '@/lib/frame/initializeSpriteRegistry'
-import { createRecordingService } from './recording/RecordingService'
+import { createRecordingService } from '@core/recording'
 //import { enableDebugOption } from './debug'
 
 const app = document.querySelector<HTMLDivElement>('#app')!

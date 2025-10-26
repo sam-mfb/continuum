@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
-import type { GameRecording } from './recording/types'
+import type { GameRecording } from '@core/recording'
 
 export type ReplayState = {
   replayPaused: boolean

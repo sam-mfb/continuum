@@ -1,7 +1,9 @@
-import { createRecordingService } from '@/game/recording/RecordingService'
-import { createHeadlessGameEngine } from '@/game/validation/HeadlessGameEngine'
-import { createRecordingValidator } from '@/game/validation/RecordingValidator'
-import { createHeadlessStore } from '@/game/validation/createHeadlessStore'
+import { createRecordingService } from '@core/recording'
+import {
+  createHeadlessGameEngine,
+  createRecordingValidator,
+  createHeadlessStore
+} from '@core/validation'
 import { createGalaxyServiceNode } from '@/core/galaxy/createGalaxyServiceNode'
 import { createFizzTransitionService } from '@/core/transition'
 import { createRandomService } from '@/core/shared'
