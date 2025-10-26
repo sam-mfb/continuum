@@ -1,18 +1,19 @@
 /**
- * @fileoverview Middleware to handle synchronous thunks created with createSyncThunk
+ * @fileoverview Generic middleware to handle synchronous thunks created with createSyncThunk
  */
 
 import type { Middleware, Action } from '@reduxjs/toolkit'
-import type { RootState, GameServices } from './store'
 
 /**
  * Type guard to check if an action has a sync thunk payload creator
  */
-function isSyncThunkAction(action: Action): action is Action & {
+function isSyncThunkAction<TState, TExtra>(
+  action: Action
+): action is Action & {
   meta: {
     payloadCreator: (
       arg: unknown,
-      thunkAPI: { extra: GameServices; getState: () => RootState }
+      thunkAPI: { extra: TExtra; getState: () => TState }
     ) => unknown
     result?: unknown
   }
@@ -30,20 +31,27 @@ function isSyncThunkAction(action: Action): action is Action & {
 }
 
 /**
- * Middleware to execute sync thunks
+ * Creates middleware to execute sync thunks
+ * Generic over state and extra argument types
+ *
+ * @example
+ * ```typescript
+ * const syncThunkMiddleware = createSyncThunkMiddleware<RootState, GameServices>()
+ * ```
  */
-export const syncThunkMiddleware =
-  (extra: GameServices): Middleware<{}, RootState> =>
+export const createSyncThunkMiddleware =
+  <TState, TExtra>() =>
+  (extra: TExtra): Middleware<{}, TState> =>
   ({ getState }) =>
   next =>
   (action: unknown) => {
-    if (isSyncThunkAction(action as Action)) {
+    if (isSyncThunkAction<TState, TExtra>(action as Action)) {
       // Execute the sync thunk's payload creator and store result
       const typedAction = action as Action & {
         meta: {
           payloadCreator: (
             arg: unknown,
-            thunkAPI: { extra: GameServices; getState: () => RootState }
+            thunkAPI: { extra: TExtra; getState: () => TState }
           ) => unknown
           result?: unknown
         }

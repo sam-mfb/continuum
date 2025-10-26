@@ -12,7 +12,7 @@ import { wallsSlice } from '@core/walls'
 import { transitionSlice } from '@core/transition'
 import { highscoreSlice } from '@/core/highscore'
 import { controlsSlice } from '@/core/controls'
-import { syncThunkMiddleware } from '@/game/syncThunkMiddleware'
+import { createSyncThunkMiddleware } from '@lib/redux'
 import type { GalaxyService } from '@core/galaxy'
 import type { FizzTransitionService } from '@core/transition'
 import type { RandomService } from '@/core/shared'
@@ -69,6 +69,12 @@ const createHeadlessStore = (
       currentlevel: startLevel
     }
   }
+
+  // Create the sync thunk middleware instance
+  const syncThunkMiddleware = createSyncThunkMiddleware<
+    HeadlessRootState,
+    GameServices
+  >()
 
   return configureStore({
     reducer: headlessReducer,

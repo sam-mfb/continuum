@@ -18,7 +18,7 @@ import { gameSlice } from './gameSlice'
 import { appSlice } from './appSlice'
 import { replaySlice } from './replaySlice'
 import { appMiddleware, loadAppSettings } from './appMiddleware'
-import { syncThunkMiddleware } from './syncThunkMiddleware'
+import { createSyncThunkMiddleware } from '@lib/redux'
 import { shipSlice } from '@core/ship'
 import { shotsSlice } from '@core/shots'
 import { planetSlice } from '@core/planet'
@@ -92,6 +92,11 @@ const createStoreAndListeners = (
 ) => {
   // Create the listener middleware instance
   const soundListenerMiddleware = createListenerMiddleware()
+  // Create the sync thunk middleware instance
+  const syncThunkMiddleware = createSyncThunkMiddleware<
+    RootState,
+    GameServices
+  >()
   // Load persisted high scores
   const persistedHighScores = loadHighScores()
   // Load persisted control bindings
