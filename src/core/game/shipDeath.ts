@@ -31,7 +31,7 @@ import {
   SH_SP_SPEED16
 } from '@core/explosions/constants'
 import { statusSlice } from '@core/status'
-import type { RootState } from '@/game/store'
+import type { GameRootState } from './types'
 import type { RandomService } from '@/core/shared'
 
 /**
@@ -40,7 +40,7 @@ import type { RandomService } from '@/core/shared'
  * Based on Play.c:338-346 and related death handling code
  */
 export const triggerShipDeath = (
-  store: Store<RootState>,
+  store: Store<GameRootState>,
   randomService: RandomService
 ): void => {
   // (a) Update ship state

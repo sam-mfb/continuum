@@ -3,7 +3,7 @@
  */
 
 import type { ThunkAction, Action } from '@reduxjs/toolkit'
-import type { RootState, GameServices } from '@/game/store'
+import type { GameRootState, GameLogicServices } from './types'
 import { planetSlice } from '@core/planet'
 import { shipSlice } from '@core/ship'
 import { screenSlice } from '@core/screen'
@@ -31,7 +31,7 @@ export const loadLevel =
   (
     levelNum: number,
     overrideSeed?: number
-  ): ThunkAction<void, RootState, GameServices, Action> =>
+  ): ThunkAction<void, GameRootState, GameLogicServices, Action> =>
   (dispatch, _getState, { galaxyService, randomService, recordingService }) => {
     // Set random seed at the start of each level
     // Priority:

@@ -6,9 +6,10 @@
  */
 
 import type { GalaxyService } from '@core/galaxy'
-import type { GameStore, RootState } from '@/game/store'
 import type { FrameInfo } from '@lib/bitmap'
 import type { RandomService } from '@/core/shared'
+import type { GameLogicServices, GameRootState } from './types'
+import { configureStore, type Reducer } from '@reduxjs/toolkit'
 
 /**
  * Transition service callbacks
@@ -51,6 +52,12 @@ export type StateUpdateCallbacks = {
    * @returns The initial lives count
    */
   getInitialLives: () => number
+
+  /**
+   * Get the current collision mode
+   * @returns The collision mode ('original' or 'modern')
+   */
+  getCollisionMode: () => 'original' | 'modern'
 }
 
 import { shipSlice, shipControl, CRITFUEL, handleBounceState } from '@core/ship'
@@ -118,6 +125,33 @@ import type { ControlMatrix } from '@/core/controls'
 import { createCollisionMap } from './createCollisionMapThunk'
 import { checkCollisions } from './checkCollisionsThunk'
 import { Collision } from '@/core/collision'
+import { createSyncThunkMiddleware } from '@/lib/redux'
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const storeForTyping = (
+  reducer: Reducer<GameRootState>,
+  services: GameLogicServices
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+) => {
+  const syncThunkMiddleware = createSyncThunkMiddleware<
+    GameRootState,
+    GameLogicServices
+  >()
+  return configureStore({
+    reducer: reducer,
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({
+        thunk: {
+          extraArgument: services
+        }
+      }).prepend(syncThunkMiddleware(services))
+  })
+}
+
+/**
+ * Generic game store type based on GameRootState
+ */
+export type GameStore = ReturnType<typeof storeForTyping>
 
 export type StateUpdateContext = {
   store: GameStore
@@ -284,7 +318,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
     })
   )
 
-  if (finalState.app.collisionMode === 'modern') {
+  if (stateUpdateCallbacks.getCollisionMode() === 'modern') {
     if (
       state.ship.deadCount === 0 &&
       (state.transition.status === 'inactive' ||
@@ -324,7 +358,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
  *       if (bp->alive && bp->kind != GENERATORBUNK)
  *           missioncomplete = FALSE;
  */
-function checkLevelComplete(state: RootState): boolean {
+function checkLevelComplete(state: GameRootState): boolean {
   // Don't check if already complete
   if (state.game.levelComplete) {
     return false
