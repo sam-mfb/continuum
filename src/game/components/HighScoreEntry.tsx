@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useAppSelector } from '../store'
 import { createRecordingStorage } from '@core/recording'
-import { exportRecording } from '../exportRecording'
+import { exportRecordingBinary } from '../exportRecording'
 
 type HighScoreEntryProps = {
   scale: number
@@ -46,7 +46,10 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
       const storage = createRecordingStorage()
       const recording = storage.load(recordingId)
       if (recording) {
-        exportRecording(recording, `continuum_recording_${recordingId}.json`)
+        exportRecordingBinary(
+          recording,
+          `continuum_recording_${recordingId}.bin`
+        )
       }
     }
   }

@@ -7,9 +7,9 @@ import { markCheatUsed } from '@core/game'
 import { clearExplosions } from '@/core/explosions'
 import { loadLevel } from '@core/game'
 import { GAME_ENGINE_VERSION } from '../version'
-import type { GameRecording } from '@core/recording'
 import type { ValidationReport } from '@core/validation'
 import { validateRecording } from '../validateRecording'
+import { importRecording } from '../exportRecording'
 
 type ReplaySelectionScreenProps = {
   scale: number
@@ -28,7 +28,9 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
     useState<ValidationReport | null>(null)
   const [isValidating, setIsValidating] = useState(false)
 
-  const handleFileLoad = (event: ChangeEvent<HTMLInputElement>): void => {
+  const handleFileLoad = async (
+    event: ChangeEvent<HTMLInputElement>
+  ): Promise<void> => {
     const file = event.target.files?.[0]
     if (!file) return
 
@@ -37,100 +39,94 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
     setValidationReport(null)
     setIsValidating(false)
 
-    const reader = new FileReader()
-    reader.onload = (e): void => {
-      try {
-        const json = e.target?.result as string
-        const recording = JSON.parse(json) as GameRecording
+    try {
+      // Use importRecording to handle both binary and JSON formats
+      const recording = await importRecording(file)
 
-        // Validate required fields
-        if (
-          !recording.version ||
-          !recording.engineVersion ||
-          !recording.levelSeeds ||
-          !recording.inputs
-        ) {
-          throw new Error('Invalid recording format - missing required fields')
-        }
+      // Validate required fields
+      if (
+        !recording.version ||
+        !recording.engineVersion ||
+        !recording.levelSeeds ||
+        !recording.inputs
+      ) {
+        throw new Error('Invalid recording format - missing required fields')
+      }
 
-        // Check for galaxy mismatch - BLOCK playback
-        if (recording.galaxyId !== currentGalaxyId) {
-          setFileError(
-            `Galaxy mismatch: Recording is for galaxy "${recording.galaxyId}" but current galaxy is "${currentGalaxyId}". Please load the correct galaxy before replaying.`
-          )
-          return
-        }
-
-        // Store in Redux
-        dispatch(loadRecording(recording))
-
-        // Show warnings if needed
-        const newWarnings: string[] = []
-        if (recording.engineVersion !== GAME_ENGINE_VERSION) {
-          newWarnings.push(
-            `Engine version mismatch (recording: ${recording.engineVersion}, current: ${GAME_ENGINE_VERSION}) - replay may diverge from original`
-          )
-        }
-        setWarnings(newWarnings)
-
-        // Validate recording automatically
-        setIsValidating(true)
-        setTimeout(() => {
-          try {
-            const services = getStoreServices()
-            const report = validateRecording(recording, services)
-
-            setValidationReport(report)
-
-            // Log validation results to console
-            if (report.success) {
-              console.log('✅ Recording validation PASSED')
-              console.log(
-                `  Frames validated: ${report.framesValidated}, Snapshots checked: ${report.snapshotsChecked}`
-              )
-              if (recording.finalState) {
-                console.log(`  Final score: ${recording.finalState.score}`)
-              }
-            } else {
-              console.error('❌ Recording validation FAILED')
-              console.error(`  Errors found: ${report.errors.length}`)
-              if (report.divergenceFrame !== null) {
-                console.error(
-                  `  First divergence at frame: ${report.divergenceFrame}`
-                )
-              }
-              if (!report.finalStateMatch && report.finalStateErrors) {
-                console.error('  Final state errors:', report.finalStateErrors)
-              }
-              // Log all errors
-              report.errors.forEach(error => {
-                console.error(`  Frame ${error.frame}:`, error)
-              })
-            }
-          } catch (error) {
-            console.error('Failed to validate recording:', error)
-            setValidationReport({
-              success: false,
-              framesValidated: 0,
-              snapshotsChecked: 0,
-              divergenceFrame: null,
-              finalStateMatch: false,
-              errors: []
-            })
-          } finally {
-            setIsValidating(false)
-          }
-        }, 100) // Small delay to allow UI to update
-      } catch (error) {
-        console.error('Failed to load recording:', error)
+      // Check for galaxy mismatch - BLOCK playback
+      if (recording.galaxyId !== currentGalaxyId) {
         setFileError(
-          error instanceof Error
-            ? error.message
-            : 'Failed to load recording file'
+          `Galaxy mismatch: Recording is for galaxy "${recording.galaxyId}" but current galaxy is "${currentGalaxyId}". Please load the correct galaxy before replaying.`
+        )
+        return
+      }
+
+      // Store in Redux
+      dispatch(loadRecording(recording))
+
+      // Show warnings if needed
+      const newWarnings: string[] = []
+      if (recording.engineVersion !== GAME_ENGINE_VERSION) {
+        newWarnings.push(
+          `Engine version mismatch (recording: ${recording.engineVersion}, current: ${GAME_ENGINE_VERSION}) - replay may diverge from original`
         )
       }
+      setWarnings(newWarnings)
+
+      // Validate recording automatically
+      setIsValidating(true)
+      setTimeout(() => {
+        try {
+          const services = getStoreServices()
+          const report = validateRecording(recording, services)
+
+          setValidationReport(report)
+
+          // Log validation results to console
+          if (report.success) {
+            console.log('✅ Recording validation PASSED')
+            console.log(
+              `  Frames validated: ${report.framesValidated}, Snapshots checked: ${report.snapshotsChecked}`
+            )
+            if (recording.finalState) {
+              console.log(`  Final score: ${recording.finalState.score}`)
+            }
+          } else {
+            console.error('❌ Recording validation FAILED')
+            console.error(`  Errors found: ${report.errors.length}`)
+            if (report.divergenceFrame !== null) {
+              console.error(
+                `  First divergence at frame: ${report.divergenceFrame}`
+              )
+            }
+            if (!report.finalStateMatch && report.finalStateErrors) {
+              console.error('  Final state errors:', report.finalStateErrors)
+            }
+            // Log all errors
+            report.errors.forEach(error => {
+              console.error(`  Frame ${error.frame}:`, error)
+            })
+          }
+        } catch (error) {
+          console.error('Failed to validate recording:', error)
+          setValidationReport({
+            success: false,
+            framesValidated: 0,
+            snapshotsChecked: 0,
+            divergenceFrame: null,
+            finalStateMatch: false,
+            errors: []
+          })
+        } finally {
+          setIsValidating(false)
+        }
+      }, 100) // Small delay to allow UI to update
+    } catch (error) {
+      console.error('Failed to load recording:', error)
+      setFileError(
+        error instanceof Error ? error.message : 'Failed to load recording file'
+      )
     }
-    reader.readAsText(file)
   }
 
   const handleStartReplay = (): void => {
