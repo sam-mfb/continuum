@@ -539,6 +539,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   Note: Reload page after changing to apply
                 </div>
               )}
+              {collisionMode === 'original' && (
+                <div
+                  style={{
+                    marginTop: `${3 * scale}px`,
+                    color: '#ffaa00',
+                    fontSize: `${5 * scale}px`
+                  }}
+                >
+                  Note: Game recording/replay is only available in modern
+                  collision mode
+                </div>
+              )}
             </div>
 
             {/* Sound Mode Section */}
