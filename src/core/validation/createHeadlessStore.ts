@@ -1,7 +1,5 @@
 import { combineSlices, configureStore } from '@reduxjs/toolkit'
 import { gameSlice } from '@core/game'
-import { appSlice } from '@/game/appSlice'
-import { replaySlice } from '@/game/replaySlice'
 import { shipSlice } from '@core/ship'
 import { shotsSlice } from '@core/shots'
 import { planetSlice } from '@core/planet'
@@ -32,9 +30,7 @@ type HeadlessServices = {
 }
 
 const headlessReducer = combineSlices(
-  appSlice,
   gameSlice,
-  replaySlice,
   controlsSlice,
   shipSlice,
   shotsSlice,
@@ -52,14 +48,9 @@ export type HeadlessRootState = ReturnType<typeof headlessReducer>
 const createHeadlessStore = (
   services: HeadlessServices,
   initialLives: number,
-  galaxyId: string,
   startLevel: number
 ): ReturnType<typeof configureStore<HeadlessRootState>> => {
   const preloadedState = {
-    app: {
-      ...appSlice.getInitialState(),
-      currentGalaxyId: galaxyId
-    },
     ship: {
       ...shipSlice.getInitialState(),
       lives: initialLives
