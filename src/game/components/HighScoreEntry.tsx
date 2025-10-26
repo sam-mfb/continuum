@@ -1,7 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useAppSelector } from '../store'
-import { createRecordingStorage } from '@core/recording'
-import { exportRecordingBinary } from '../exportRecording'
 
 type HighScoreEntryProps = {
   scale: number
@@ -20,8 +17,6 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
 }) => {
   const [name, setName] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
-  // Get recording ID from app state (set by game loop on game over)
-  const recordingId = useAppSelector(state => state.app.lastRecordingId)
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -38,19 +33,6 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
     // Only allow alphanumeric and basic characters
     if (e.key === 'Enter') {
       handleSubmit(e)
-    }
-  }
-
-  const handleExport = async (): Promise<void> => {
-    if (recordingId) {
-      const storage = createRecordingStorage()
-      const recording = await storage.load(recordingId)
-      if (recording) {
-        await exportRecordingBinary(
-          recording,
-          `continuum_recording_${recordingId}.bin`
-        )
-      }
     }
   }
 
@@ -103,24 +85,6 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
           <div>Planet: {planet}</div>
           <div>Fuel: {fuel}</div>
         </div>
-
-        {recordingId && (
-          <button
-            onClick={handleExport}
-            style={{
-              fontSize: `${8 * scale}px`,
-              padding: `${5 * scale}px ${12 * scale}px`,
-              backgroundColor: '#228822',
-              color: 'white',
-              border: '1px solid white',
-              cursor: 'pointer',
-              fontFamily: 'monospace',
-              letterSpacing: `${0.5 * scale}px`
-            }}
-          >
-            EXPORT RECORDING
-          </button>
-        )}
 
         <form
           onSubmit={handleSubmit}

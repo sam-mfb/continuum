@@ -5,6 +5,7 @@ import { compress, decompress } from './gzip.browser'
 const STORAGE_PREFIX = 'continuum_recording_'
 const STORAGE_INDEX_KEY = 'continuum_recording_index'
 const CURRENT_VERSION = '1.0'
+const MAX_RECORDINGS = 25
 
 /**
  * Convert ArrayBuffer to base64 string for localStorage
@@ -66,6 +67,22 @@ const createRecordingStorage = (): RecordingStorage => {
         version: CURRENT_VERSION
       }
 
+      // Check if we're at the limit and need to delete oldest
+      const index = getIndex()
+      if (index.length >= MAX_RECORDINGS) {
+        // Sort by timestamp to find oldest
+        const sorted = [...index].sort((a, b) => a.timestamp - b.timestamp)
+        const oldestId = sorted[0]?.id
+
+        if (oldestId) {
+          // Delete oldest recording
+          localStorage.removeItem(STORAGE_PREFIX + oldestId)
+          // Remove from index
+          const filteredIndex = index.filter(item => item.id !== oldestId)
+          saveIndex(filteredIndex)
+        }
+      }
+
       // Encode to binary with gzip and convert to base64 for storage
       const binaryData = await encodeRecordingGzip(
         recordingWithVersion,
@@ -75,15 +92,15 @@ const createRecordingStorage = (): RecordingStorage => {
 
       localStorage.setItem(STORAGE_PREFIX + id, base64Data)
 
-      // Update index
-      const index = getIndex()
-      index.push({
+      // Update index (get fresh index after potential delete)
+      const updatedIndex = getIndex()
+      updatedIndex.push({
         id,
         timestamp: recording.timestamp,
         galaxyId: recording.galaxyId,
         startLevel: recording.startLevel
       })
-      saveIndex(index)
+      saveIndex(updatedIndex)
 
       return id
     },
@@ -121,4 +138,4 @@ const createRecordingStorage = (): RecordingStorage => {
   }
 }
 
-export { createRecordingStorage, type RecordingStorage }
+export { createRecordingStorage, type RecordingStorage, MAX_RECORDINGS }

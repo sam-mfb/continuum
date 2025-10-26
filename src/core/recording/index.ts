@@ -13,5 +13,6 @@ export {
 } from './RecordingService'
 export {
   createRecordingStorage,
-  type RecordingStorage
+  type RecordingStorage,
+  MAX_RECORDINGS
 } from './RecordingStorage'

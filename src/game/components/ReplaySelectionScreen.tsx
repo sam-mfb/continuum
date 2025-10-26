@@ -1,46 +1,74 @@
-import React, { type ChangeEvent, useState } from 'react'
-import { useAppDispatch, useAppSelector, getStoreServices } from '../store'
+import React, { type ChangeEvent, useState, useEffect } from 'react'
+import { useAppDispatch, getStoreServices } from '../store'
 import { loadRecording, startReplay } from '../replaySlice'
 import { setMode } from '../appSlice'
 import { shipSlice } from '@/core/ship'
 import { markCheatUsed } from '@core/game'
 import { clearExplosions } from '@/core/explosions'
 import { loadLevel } from '@core/game'
-import { GAME_ENGINE_VERSION } from '../version'
+import { createRecordingStorage, MAX_RECORDINGS } from '@core/recording'
 import type { ValidationReport } from '@core/validation'
 import { validateRecording } from '../validateRecording'
-import { importRecording } from '../exportRecording'
+import { importRecording, exportRecordingBinary } from '../exportRecording'
 
 type ReplaySelectionScreenProps = {
   scale: number
+}
+
+type RecordingEntry = {
+  id: string
+  timestamp: number
+  galaxyId: string
+  startLevel: number
+}
+
+type ValidationState = {
+  [id: string]: ValidationReport | 'validating' | null
 }
 
 const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
   scale
 }) => {
   const dispatch = useAppDispatch()
-  const currentGalaxyId = useAppSelector(state => state.app.currentGalaxyId)
-  const loadedRecording = useAppSelector(state => state.replay.loadedRecording)
 
-  const [fileError, setFileError] = useState<string | null>(null)
-  const [warnings, setWarnings] = useState<string[]>([])
-  const [validationReport, setValidationReport] =
-    useState<ValidationReport | null>(null)
-  const [isValidating, setIsValidating] = useState(false)
+  const [recordings, setRecordings] = useState<RecordingEntry[]>([])
+  const [validationStates, setValidationStates] = useState<ValidationState>({})
+  const [importError, setImportError] = useState<string | null>(null)
 
-  const handleFileLoad = async (
+  // Load recordings list on mount
+  useEffect(() => {
+    const storage = createRecordingStorage()
+    const recordingsList = storage.list()
+    // Sort by timestamp descending (newest first)
+    const sorted = [...recordingsList].sort((a, b) => b.timestamp - a.timestamp)
+    setRecordings(sorted)
+  }, [])
+
+  const refreshRecordingsList = (): void => {
+    const storage = createRecordingStorage()
+    const recordingsList = storage.list()
+    const sorted = [...recordingsList].sort((a, b) => b.timestamp - a.timestamp)
+    setRecordings(sorted)
+  }
+
+  const handleImport = async (
     event: ChangeEvent<HTMLInputElement>
   ): Promise<void> => {
     const file = event.target.files?.[0]
     if (!file) return
 
-    setFileError(null)
-    setWarnings([])
-    setValidationReport(null)
-    setIsValidating(false)
+    setImportError(null)
+
+    // Check if at limit
+    if (recordings.length >= MAX_RECORDINGS) {
+      setImportError(
+        `Cannot import: ${MAX_RECORDINGS} recordings limit reached. Delete a recording first.`
+      )
+      return
+    }
 
     try {
-      // Use importRecording to handle both binary and JSON formats
+      // Import the recording file
       const recording = await importRecording(file)
 
       // Validate required fields
@@ -53,84 +81,30 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
         throw new Error('Invalid recording format - missing required fields')
       }
 
-      // Check for galaxy mismatch - BLOCK playback
-      if (recording.galaxyId !== currentGalaxyId) {
-        setFileError(
-          `Galaxy mismatch: Recording is for galaxy "${recording.galaxyId}" but current galaxy is "${currentGalaxyId}". Please load the correct galaxy before replaying.`
-        )
-        return
-      }
+      // Save to storage
+      const storage = createRecordingStorage()
+      await storage.save(recording)
 
-      // Store in Redux
-      dispatch(loadRecording(recording))
+      // Refresh list
+      refreshRecordingsList()
 
-      // Show warnings if needed
-      const newWarnings: string[] = []
-      if (recording.engineVersion !== GAME_ENGINE_VERSION) {
-        newWarnings.push(
-          `Engine version mismatch (recording: ${recording.engineVersion}, current: ${GAME_ENGINE_VERSION}) - replay may diverge from original`
-        )
-      }
-      setWarnings(newWarnings)
-
-      // Validate recording automatically
-      setIsValidating(true)
-      setTimeout(() => {
-        try {
-          const services = getStoreServices()
-          const report = validateRecording(recording, services)
-
-          setValidationReport(report)
-
-          // Log validation results to console
-          if (report.success) {
-            console.log('✅ Recording validation PASSED')
-            console.log(
-              `  Frames validated: ${report.framesValidated}, Snapshots checked: ${report.snapshotsChecked}`
-            )
-            if (recording.finalState) {
-              console.log(`  Final score: ${recording.finalState.score}`)
-            }
-          } else {
-            console.error('❌ Recording validation FAILED')
-            console.error(`  Errors found: ${report.errors.length}`)
-            if (report.divergenceFrame !== null) {
-              console.error(
-                `  First divergence at frame: ${report.divergenceFrame}`
-              )
-            }
-            if (!report.finalStateMatch && report.finalStateErrors) {
-              console.error('  Final state errors:', report.finalStateErrors)
-            }
-            // Log all errors
-            report.errors.forEach(error => {
-              console.error(`  Frame ${error.frame}:`, error)
-            })
-          }
-        } catch (error) {
-          console.error('Failed to validate recording:', error)
-          setValidationReport({
-            success: false,
-            framesValidated: 0,
-            snapshotsChecked: 0,
-            divergenceFrame: null,
-            finalStateMatch: false,
-            errors: []
-          })
-        } finally {
-          setIsValidating(false)
-        }
-      }, 100) // Small delay to allow UI to update
+      // Clear file input
+      event.target.value = ''
     } catch (error) {
-      console.error('Failed to load recording:', error)
-      setFileError(
-        error instanceof Error ? error.message : 'Failed to load recording file'
+      console.error('Failed to import recording:', error)
+      setImportError(
+        error instanceof Error ? error.message : 'Failed to import recording'
       )
     }
   }
 
-  const handleStartReplay = (): void => {
-    if (!loadedRecording) return
+  const handlePlay = async (id: string): Promise<void> => {
+    const storage = createRecordingStorage()
+    const recording = await storage.load(id)
+    if (!recording) {
+      console.error('Failed to load recording')
+      return
+    }
 
     const recordingService = getStoreServices().recordingService
 
@@ -141,18 +115,16 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
     dispatch(shipSlice.actions.resetShip())
 
     // 3. Set initial lives from recording
-    dispatch(
-      shipSlice.actions.setLives(loadedRecording.initialState.lives ?? 3)
-    )
+    dispatch(shipSlice.actions.setLives(recording.initialState.lives ?? 3))
 
     // 4. Clear explosions
     dispatch(clearExplosions())
 
     // 5. Initialize RecordingService in replay mode
-    recordingService.startReplay(loadedRecording)
+    recordingService.startReplay(recording)
 
     // 6. Load first level with recorded seed
-    const firstLevelSeed = loadedRecording.levelSeeds[0]
+    const firstLevelSeed = recording.levelSeeds[0]
     if (!firstLevelSeed) {
       console.error('No level seeds in recording')
       return
@@ -160,9 +132,78 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
 
     dispatch(loadLevel(firstLevelSeed.level, firstLevelSeed.seed))
 
-    // 7. Set replay state and enter replay mode
+    // 7. Store in Redux
+    dispatch(loadRecording(recording))
+
+    // 8. Set replay state and enter replay mode
     dispatch(startReplay())
     dispatch(setMode('replay'))
+  }
+
+  const handleValidate = async (id: string): Promise<void> => {
+    const storage = createRecordingStorage()
+    const recording = await storage.load(id)
+    if (!recording) {
+      console.error('Failed to load recording')
+      return
+    }
+
+    setValidationStates(prev => ({ ...prev, [id]: 'validating' }))
+
+    // Run validation in next tick to allow UI to update
+    setTimeout(() => {
+      try {
+        const services = getStoreServices()
+        const report = validateRecording(recording, services)
+        setValidationStates(prev => ({ ...prev, [id]: report }))
+
+        // Log to console
+        if (report.success) {
+          console.log(`✅ Recording ${id} validation PASSED`)
+        } else {
+          console.error(`❌ Recording ${id} validation FAILED`)
+          console.error(`  Errors: ${report.errors.length}`)
+          report.errors.forEach(error => {
+            console.error(`  Frame ${error.frame}:`, error)
+          })
+        }
+      } catch (error) {
+        console.error('Validation error:', error)
+        setValidationStates(prev => ({
+          ...prev,
+          [id]: {
+            success: false,
+            framesValidated: 0,
+            snapshotsChecked: 0,
+            divergenceFrame: null,
+            finalStateMatch: false,
+            errors: []
+          }
+        }))
+      }
+    }, 10)
+  }
+
+  const handleExport = async (id: string): Promise<void> => {
+    const storage = createRecordingStorage()
+    const recording = await storage.load(id)
+    if (recording) {
+      await exportRecordingBinary(recording, `continuum_recording_${id}.bin`)
+    }
+  }
+
+  const handleDelete = (id: string): void => {
+    if (confirm('Delete this recording?')) {
+      const storage = createRecordingStorage()
+      storage.delete(id)
+      refreshRecordingsList()
+      // Clear validation state for deleted recording
+      setValidationStates(prev => {
+        const newState = { ...prev }
+        delete newState[id]
+        return newState
+      })
+    }
   }
 
   const handleBack = (): void => {
@@ -176,181 +217,245 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
         height: `${342 * scale}px`,
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
         backgroundColor: 'black',
         color: 'white',
         fontFamily: 'monospace',
-        gap: `${15 * scale}px`
+        padding: `${10 * scale}px`,
+        overflow: 'hidden'
       }}
     >
       <h2
         style={{
-          fontSize: `${16 * scale}px`,
+          fontSize: `${14 * scale}px`,
           margin: 0,
-          letterSpacing: `${1 * scale}px`
+          marginBottom: `${10 * scale}px`,
+          letterSpacing: `${1 * scale}px`,
+          textAlign: 'center'
         }}
       >
         GAME REPLAYS
       </h2>
 
+      {/* Import section */}
       <div
         style={{
+          marginBottom: `${12 * scale}px`,
           display: 'flex',
           flexDirection: 'column',
-          gap: `${12 * scale}px`,
-          alignItems: 'center'
+          gap: `${6 * scale}px`,
+          borderBottom: '1px solid #666',
+          paddingBottom: `${10 * scale}px`
         }}
       >
-        <input
-          type="file"
-          accept=".json,.bin"
-          onChange={handleFileLoad}
-          style={{
-            fontSize: `${7 * scale}px`,
-            padding: `${4 * scale}px ${8 * scale}px`,
-            cursor: 'pointer',
-            backgroundColor: 'white',
-            color: 'black',
-            border: '1px solid white',
-            fontFamily: 'monospace'
-          }}
-        />
-
-        {fileError && (
-          <div
-            style={{
-              color: '#ff4444',
-              fontSize: `${7 * scale}px`,
-              maxWidth: `${400 * scale}px`,
-              textAlign: 'center',
-              lineHeight: 1.4
-            }}
-          >
-            {fileError}
-          </div>
-        )}
-
-        {warnings.length > 0 && (
-          <div
-            style={{
-              color: '#ffaa00',
-              fontSize: `${7 * scale}px`,
-              maxWidth: `${400 * scale}px`,
-              textAlign: 'center',
-              lineHeight: 1.4
-            }}
-          >
-            {warnings.map((warning, i) => (
-              <div key={i}>{warning}</div>
-            ))}
-          </div>
-        )}
-
-        {loadedRecording && !fileError && (
-          <div
-            style={{
-              fontSize: `${7 * scale}px`,
-              textAlign: 'left',
-              border: '1px solid white',
-              padding: `${10 * scale}px`,
-              backgroundColor: 'black',
-              color: 'white',
-              lineHeight: 1.6
-            }}
-          >
-            <div>
-              Start Level: {loadedRecording.levelSeeds[0]?.level ?? 'N/A'}
-            </div>
-            <div>
-              Date:{' '}
-              {loadedRecording.timestamp
-                ? new Date(loadedRecording.timestamp).toLocaleString()
-                : 'N/A'}
-            </div>
-            <div>Engine Version: {loadedRecording.engineVersion}</div>
-            <div>Galaxy ID: {loadedRecording.galaxyId}</div>
-            <div>
-              Duration:{' '}
-              {loadedRecording.inputs.length > 0
-                ? `${Math.floor((loadedRecording.inputs[loadedRecording.inputs.length - 1]?.frame ?? 0) / 20)}s`
-                : 'N/A'}
-            </div>
-            <div
-              style={{
-                marginTop: `${5 * scale}px`,
-                paddingTop: `${5 * scale}px`,
-                borderTop: '1px solid #666'
-              }}
-            >
-              Validation Status:{' '}
-              {isValidating ? (
-                <span style={{ color: '#ffaa00' }}>Validating...</span>
-              ) : validationReport ? (
-                <span
-                  style={{
-                    color: validationReport.success ? '#00ff00' : '#ff4444'
-                  }}
-                >
-                  {validationReport.success ? '✓ PASSED' : '✗ FAILED'}
-                </span>
-              ) : (
-                <span style={{ color: '#888' }}>Not validated</span>
-              )}
-            </div>
-            {validationReport &&
-              validationReport.success &&
-              loadedRecording.finalState && (
-                <div>Validated Score: {loadedRecording.finalState.score}</div>
-              )}
-            {validationReport && !validationReport.success && (
-              <div style={{ color: '#ff4444' }}>
-                Errors: {validationReport.errors.length} (see console)
-              </div>
-            )}
-          </div>
-        )}
-
         <div
           style={{
             display: 'flex',
-            gap: `${10 * scale}px`
+            alignItems: 'center',
+            gap: `${8 * scale}px`,
+            fontSize: `${7 * scale}px`
           }}
         >
-          <button
-            onClick={handleStartReplay}
-            disabled={!loadedRecording || !!fileError}
+          <input
+            type="file"
+            accept=".json,.bin"
+            onChange={handleImport}
+            disabled={recordings.length >= MAX_RECORDINGS}
             style={{
-              fontSize: `${8 * scale}px`,
-              padding: `${4 * scale}px ${10 * scale}px`,
-              cursor: loadedRecording && !fileError ? 'pointer' : 'not-allowed',
-              opacity: loadedRecording && !fileError ? 1 : 0.5,
-              backgroundColor: 'white',
-              color: 'black',
-              border: '1px solid white',
-              fontFamily: 'monospace',
-              letterSpacing: `${1 * scale}px`
+              fontSize: `${6 * scale}px`,
+              padding: `${3 * scale}px ${6 * scale}px`,
+              cursor:
+                recordings.length >= MAX_RECORDINGS ? 'not-allowed' : 'pointer',
+              opacity: recordings.length >= MAX_RECORDINGS ? 0.5 : 1,
+              fontFamily: 'monospace'
             }}
-          >
-            WATCH REPLAY
-          </button>
-
-          <button
-            onClick={handleBack}
-            style={{
-              fontSize: `${8 * scale}px`,
-              padding: `${4 * scale}px ${10 * scale}px`,
-              cursor: 'pointer',
-              backgroundColor: 'white',
-              color: 'black',
-              border: '1px solid white',
-              fontFamily: 'monospace',
-              letterSpacing: `${1 * scale}px`
-            }}
-          >
-            BACK
-          </button>
+          />
+          <span>
+            {recordings.length} / {MAX_RECORDINGS}
+          </span>
         </div>
+
+        {recordings.length >= MAX_RECORDINGS && (
+          <div style={{ color: '#ffaa00', fontSize: `${6 * scale}px` }}>
+            Storage full - delete a recording to import more
+          </div>
+        )}
+
+        {importError && (
+          <div style={{ color: '#ff4444', fontSize: `${6 * scale}px` }}>
+            {importError}
+          </div>
+        )}
+      </div>
+
+      {/* Recordings list */}
+      <div
+        style={{
+          flex: 1,
+          overflow: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: `${8 * scale}px`
+        }}
+      >
+        {recordings.length === 0 ? (
+          <div
+            style={{
+              textAlign: 'center',
+              color: '#888',
+              fontSize: `${7 * scale}px`,
+              marginTop: `${20 * scale}px`
+            }}
+          >
+            No recordings saved. Play a game to create a recording.
+          </div>
+        ) : (
+          recordings.map(recording => {
+            const validationState = validationStates[recording.id]
+            return (
+              <div
+                key={recording.id}
+                style={{
+                  border: '1px solid white',
+                  padding: `${6 * scale}px`,
+                  fontSize: `${6 * scale}px`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: `${4 * scale}px`
+                }}
+              >
+                <div
+                  style={{ display: 'flex', justifyContent: 'space-between' }}
+                >
+                  <span>{new Date(recording.timestamp).toLocaleString()}</span>
+                  <span>Level {recording.startLevel}</span>
+                </div>
+                <div style={{ color: '#aaa' }}>
+                  Galaxy: {recording.galaxyId}
+                </div>
+
+                {/* Validation status */}
+                {validationState && (
+                  <div
+                    style={{
+                      marginTop: `${2 * scale}px`,
+                      paddingTop: `${4 * scale}px`,
+                      borderTop: '1px solid #666'
+                    }}
+                  >
+                    {validationState === 'validating' ? (
+                      <span style={{ color: '#ffaa00' }}>Validating...</span>
+                    ) : (
+                      <span
+                        style={{
+                          color: validationState.success ? '#00ff00' : '#ff4444'
+                        }}
+                      >
+                        {validationState.success
+                          ? '✓ PASSED'
+                          : `✗ FAILED (${validationState.errors.length} errors)`}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: `${4 * scale}px`,
+                    marginTop: `${4 * scale}px`
+                  }}
+                >
+                  <button
+                    onClick={() => handlePlay(recording.id)}
+                    style={{
+                      fontSize: `${6 * scale}px`,
+                      padding: `${3 * scale}px ${6 * scale}px`,
+                      backgroundColor: 'white',
+                      color: 'black',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontFamily: 'monospace'
+                    }}
+                  >
+                    PLAY
+                  </button>
+                  <button
+                    onClick={() => handleValidate(recording.id)}
+                    disabled={validationState === 'validating'}
+                    style={{
+                      fontSize: `${6 * scale}px`,
+                      padding: `${3 * scale}px ${6 * scale}px`,
+                      backgroundColor: '#4444ff',
+                      color: 'white',
+                      border: 'none',
+                      cursor:
+                        validationState === 'validating'
+                          ? 'not-allowed'
+                          : 'pointer',
+                      opacity: validationState === 'validating' ? 0.5 : 1,
+                      fontFamily: 'monospace'
+                    }}
+                  >
+                    VALIDATE
+                  </button>
+                  <button
+                    onClick={() => handleExport(recording.id)}
+                    style={{
+                      fontSize: `${6 * scale}px`,
+                      padding: `${3 * scale}px ${6 * scale}px`,
+                      backgroundColor: '#228822',
+                      color: 'white',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontFamily: 'monospace'
+                    }}
+                  >
+                    EXPORT
+                  </button>
+                  <button
+                    onClick={() => handleDelete(recording.id)}
+                    style={{
+                      fontSize: `${6 * scale}px`,
+                      padding: `${3 * scale}px ${6 * scale}px`,
+                      backgroundColor: '#cc0000',
+                      color: 'white',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontFamily: 'monospace'
+                    }}
+                  >
+                    DELETE
+                  </button>
+                </div>
+              </div>
+            )
+          })
+        )}
+      </div>
+
+      {/* Back button */}
+      <div
+        style={{
+          marginTop: `${12 * scale}px`,
+          textAlign: 'center'
+        }}
+      >
+        <button
+          onClick={handleBack}
+          style={{
+            fontSize: `${8 * scale}px`,
+            padding: `${4 * scale}px ${12 * scale}px`,
+            backgroundColor: 'white',
+            color: 'black',
+            border: '1px solid white',
+            cursor: 'pointer',
+            fontFamily: 'monospace',
+            letterSpacing: `${1 * scale}px`
+          }}
+        >
+          BACK
+        </button>
       </div>
     </div>
   )
