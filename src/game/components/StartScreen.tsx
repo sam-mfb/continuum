@@ -413,7 +413,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ scale, onStartGame }) => {
             letterSpacing: `${1 * scale}px`
           }}
         >
-          WATCH REPLAY
+          GAME REPLAYS
         </button>
       </div>
 
