@@ -8,6 +8,8 @@
  * Usage: npm run export-sprites
  */
 
+/// <reference types="canvas" />
+
 import { createCanvas } from 'canvas'
 import { readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
