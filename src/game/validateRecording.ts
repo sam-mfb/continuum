@@ -23,10 +23,9 @@ export const validateRecording = (
   recording: GameRecording,
   services: GameServices
 ): ValidationReport => {
-  // Extract headless-compatible services
+  // Extract headless-compatible services (no fizzTransitionService needed)
   const headlessServices = {
     galaxyService: services.galaxyService,
-    fizzTransitionService: services.fizzTransitionService,
     randomService: services.randomService,
     recordingService: services.recordingService,
     collisionService: services.collisionService,
@@ -40,11 +39,10 @@ export const validateRecording = (
     recording.startLevel
   )
 
-  // Create headless engine
+  // Create headless engine (uses internal frame counter instead of real fizz service)
   const headlessEngine = createHeadlessGameEngine(
     headlessStore,
     services.galaxyService,
-    services.fizzTransitionService,
     services.randomService,
     recording.galaxyId,
     recording.initialState.lives ?? 3

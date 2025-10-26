@@ -5,7 +5,6 @@ import {
   createHeadlessStore
 } from '@core/validation'
 import { createGalaxyServiceNode } from '@/core/galaxy/createGalaxyServiceNode'
-import { createFizzTransitionService } from '@/core/transition'
 import { createRandomService } from '@/core/shared'
 import { createCollisionService } from '@core/collision'
 import { createSpriteServiceNode } from '@core/sprites/createSpriteServiceNode'
@@ -47,9 +46,8 @@ const main = async (): Promise<void> => {
   // Sprite resource path (rsrc_260.bin contains all the sprite data)
   const spriteFilePath = path.join('src/game/public', 'rsrc_260.bin')
 
-  // Create minimal services for headless validation
+  // Create minimal services for headless validation (no fizz service needed)
   const galaxyService = createGalaxyServiceNode(galaxyFilePath)
-  const fizzTransitionService = createFizzTransitionService()
   const randomService = createRandomService()
   const recordingService = createRecordingService()
   const collisionService = createCollisionService()
@@ -58,7 +56,6 @@ const main = async (): Promise<void> => {
 
   const services = {
     galaxyService,
-    fizzTransitionService,
     randomService,
     recordingService,
     collisionService,
@@ -72,10 +69,10 @@ const main = async (): Promise<void> => {
     recording.startLevel
   )
 
+  // Create headless engine (uses frame counter instead of real fizz service)
   const engine = createHeadlessGameEngine(
     store,
     galaxyService,
-    fizzTransitionService,
     randomService,
     recording.galaxyId,
     recording.initialState.lives

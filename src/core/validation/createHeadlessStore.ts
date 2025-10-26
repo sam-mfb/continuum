@@ -11,16 +11,15 @@ import { transitionSlice } from '@core/transition'
 import { createSyncThunkMiddleware } from '@lib/redux'
 import type { GameRootState } from '@core/game'
 import type { GalaxyService } from '@core/galaxy'
-import type { FizzTransitionService } from '@core/transition'
 import type { RandomService } from '@/core/shared'
 import type { RecordingService } from '@core/recording'
 import type { CollisionService } from '@core/collision'
 import type { SpriteService } from '@core/sprites'
 
 // Minimal services needed for game logic only
+// Note: No fizzTransitionService needed - headless engine uses frame counter instead
 type HeadlessServices = {
   galaxyService: GalaxyService
-  fizzTransitionService: FizzTransitionService
   randomService: RandomService
   recordingService: RecordingService
   collisionService: CollisionService

@@ -3,7 +3,6 @@ import type { GameRootState } from '@core/game'
 import type { ControlMatrix } from '@/core/controls'
 import type { FrameInfo } from '@lib/bitmap'
 import type { GalaxyService } from '@core/galaxy'
-import type { FizzTransitionService } from '@core/transition'
 import type { RandomService } from '@/core/shared'
 import { updateGameState } from '@core/game'
 import { FIZZ_DURATION } from '@core/transition'
@@ -16,7 +15,6 @@ type HeadlessGameEngine = {
 const createHeadlessGameEngine = (
   store: HeadlessStore,
   galaxyService: GalaxyService,
-  _fizzTransitionService: FizzTransitionService,
   randomService: RandomService,
   galaxyId: string,
   initialLives: number
