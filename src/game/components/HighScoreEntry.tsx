@@ -41,12 +41,12 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
     }
   }
 
-  const handleExport = (): void => {
+  const handleExport = async (): Promise<void> => {
     if (recordingId) {
       const storage = createRecordingStorage()
-      const recording = storage.load(recordingId)
+      const recording = await storage.load(recordingId)
       if (recording) {
-        exportRecordingBinary(
+        await exportRecordingBinary(
           recording,
           `continuum_recording_${recordingId}.bin`
         )

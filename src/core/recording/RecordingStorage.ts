@@ -1,5 +1,5 @@
 import type { GameRecording } from './types'
-import { encodeRecording, decodeRecording } from './binaryCodec'
+import { encodeRecordingGzip, decodeRecordingAuto } from './binaryCodec'
 
 const STORAGE_PREFIX = 'continuum_recording_'
 const STORAGE_INDEX_KEY = 'continuum_recording_index'
@@ -37,8 +37,8 @@ type RecordingIndex = {
 }[]
 
 type RecordingStorage = {
-  save: (recording: GameRecording) => string
-  load: (id: string) => GameRecording | null
+  save: (recording: GameRecording) => Promise<string>
+  load: (id: string) => Promise<GameRecording | null>
   list: () => RecordingIndex
   delete: (id: string) => void
 }
@@ -58,15 +58,15 @@ const createRecordingStorage = (): RecordingStorage => {
   }
 
   return {
-    save: (recording): string => {
+    save: async (recording): Promise<string> => {
       const id = generateId()
       const recordingWithVersion = {
         ...recording,
         version: CURRENT_VERSION
       }
 
-      // Encode to binary and convert to base64 for storage
-      const binaryData = encodeRecording(recordingWithVersion)
+      // Encode to binary with gzip and convert to base64 for storage
+      const binaryData = await encodeRecordingGzip(recordingWithVersion)
       const base64Data = arrayBufferToBase64(binaryData)
 
       localStorage.setItem(STORAGE_PREFIX + id, base64Data)
@@ -84,14 +84,14 @@ const createRecordingStorage = (): RecordingStorage => {
       return id
     },
 
-    load: (id): GameRecording | null => {
+    load: async (id): Promise<GameRecording | null> => {
       const data = localStorage.getItem(STORAGE_PREFIX + id)
       if (!data) return null
 
       try {
-        // Try to decode as binary first
+        // Auto-detect format (gzipped binary, binary, or JSON)
         const binaryData = base64ToArrayBuffer(data)
-        return decodeRecording(binaryData)
+        return await decodeRecordingAuto(binaryData)
       } catch (e) {
         // Fallback: try to parse as legacy JSON format
         try {

@@ -1,10 +1,11 @@
 /**
  * Binary codec for game recordings
  *
- * Provides efficient binary encoding/decoding of recordings with ~85% size reduction
- * compared to JSON format.
+ * Provides efficient binary encoding/decoding of recordings with ~96% size reduction
+ * compared to JSON format (binary + gzip).
  *
  * Format structure:
+ * - Optional gzip compression (detected by 1f 8b magic bytes)
  * - Header: Magic number, version, section offsets/counts
  * - Inputs: Varint frame numbers + bitpacked controls
  * - Snapshots: Varint frame numbers + hash strings
@@ -26,6 +27,86 @@ const FORMAT_VERSION = 1
 // Flags for header
 const FLAG_HAS_FINAL_STATE = 1 << 0
 const FLAG_HAS_FULL_SNAPSHOTS = 1 << 1
+
+/**
+ * Check if buffer is gzipped (starts with 1f 8b)
+ */
+const isGzipped = (buffer: ArrayBuffer): boolean => {
+  const bytes = new Uint8Array(buffer)
+  return bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b
+}
+
+/**
+ * Compress data with gzip
+ * Works in both browser (CompressionStream) and Node.js (zlib)
+ */
+const gzipCompress = async (data: ArrayBuffer): Promise<ArrayBuffer> => {
+  // Browser environment
+  if (typeof CompressionStream !== 'undefined') {
+    const stream = new Blob([data])
+      .stream()
+      .pipeThrough(new CompressionStream('gzip'))
+    const compressed = await new Response(stream).arrayBuffer()
+    return compressed
+  }
+
+  // Node.js environment
+  if (typeof require !== 'undefined') {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const zlib = require('zlib') as any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { promisify } = require('util') as any
+      const gzip = promisify(zlib.gzip)
+      const buffer = Buffer.from(data)
+      const compressed = await gzip(buffer)
+      return compressed.buffer.slice(
+        compressed.byteOffset,
+        compressed.byteOffset + compressed.byteLength
+      )
+    } catch {
+      throw new Error('Gzip compression not available')
+    }
+  }
+
+  throw new Error('Gzip compression not available in this environment')
+}
+
+/**
+ * Decompress gzipped data
+ * Works in both browser (DecompressionStream) and Node.js (zlib)
+ */
+const gzipDecompress = async (data: ArrayBuffer): Promise<ArrayBuffer> => {
+  // Browser environment
+  if (typeof DecompressionStream !== 'undefined') {
+    const stream = new Blob([data])
+      .stream()
+      .pipeThrough(new DecompressionStream('gzip'))
+    const decompressed = await new Response(stream).arrayBuffer()
+    return decompressed
+  }
+
+  // Node.js environment
+  if (typeof require !== 'undefined') {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const zlib = require('zlib') as any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { promisify } = require('util') as any
+      const gunzip = promisify(zlib.gunzip)
+      const buffer = Buffer.from(data)
+      const decompressed = await gunzip(buffer)
+      return decompressed.buffer.slice(
+        decompressed.byteOffset,
+        decompressed.byteOffset + decompressed.byteLength
+      )
+    } catch {
+      throw new Error('Gzip decompression not available')
+    }
+  }
+
+  throw new Error('Gzip decompression not available in this environment')
+}
 
 /**
  * Encode a variable-length integer (varint)
@@ -416,4 +497,40 @@ export const decodeRecording = (buffer: ArrayBuffer): GameRecording => {
   }
 
   return recording
+}
+
+/**
+ * Encode a game recording to binary format with gzip compression
+ */
+export const encodeRecordingGzip = async (
+  recording: GameRecording
+): Promise<ArrayBuffer> => {
+  const binary = encodeRecording(recording)
+  const compressed = await gzipCompress(binary)
+  return compressed
+}
+
+/**
+ * Decode a game recording with automatic format detection
+ * Supports: gzipped binary, uncompressed binary, and JSON
+ */
+export const decodeRecordingAuto = async (
+  buffer: ArrayBuffer
+): Promise<GameRecording> => {
+  // Check if gzipped
+  if (isGzipped(buffer)) {
+    const decompressed = await gzipDecompress(buffer)
+    return decodeRecording(decompressed)
+  }
+
+  // Check if binary (CNREC magic)
+  const bytes = new Uint8Array(buffer)
+  const magic = new TextDecoder().decode(bytes.slice(0, 5))
+  if (magic === 'CNREC') {
+    return decodeRecording(buffer)
+  }
+
+  // Assume JSON
+  const text = new TextDecoder().decode(buffer)
+  return JSON.parse(text) as GameRecording
 }

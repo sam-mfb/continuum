@@ -3,7 +3,12 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { encodeRecording, decodeRecording } from './binaryCodec'
+import {
+  encodeRecording,
+  decodeRecording,
+  encodeRecordingGzip,
+  decodeRecordingAuto
+} from './binaryCodec'
 import type { GameRecording } from './types'
 
 describe('binaryCodec', () => {
@@ -282,6 +287,79 @@ describe('binaryCodec', () => {
       console.log(
         `Large recording: JSON=${jsonSize} bytes, Binary=${binarySize} bytes (${Math.round((1 - binarySize / jsonSize) * 100)}% reduction)`
       )
+    })
+  })
+
+  describe('gzip compression', () => {
+    it('encodes and decodes with gzip without data loss', async () => {
+      const original = createSampleRecording()
+
+      const encoded = await encodeRecordingGzip(original)
+      const decoded = await decodeRecordingAuto(encoded)
+
+      // Verify all data is preserved
+      expect(decoded).toEqual(original)
+    })
+
+    it('gzip provides additional size reduction', async () => {
+      const recording = createSampleRecording()
+
+      // Add many inputs for better compression
+      for (let i = 300; i < 1000; i += 10) {
+        recording.inputs.push({
+          frame: i,
+          controls: {
+            thrust: i % 2 === 0,
+            left: i % 3 === 0,
+            right: false,
+            fire: i % 5 === 0,
+            shield: false,
+            selfDestruct: false,
+            pause: false,
+            quit: false,
+            nextLevel: false,
+            extraLife: false,
+            map: false
+          }
+        })
+        recording.snapshots.push({ frame: i, hash: `hash${i}` })
+      }
+
+      const jsonSize = JSON.stringify(recording).length
+      const binarySize = encodeRecording(recording).byteLength
+      const gzipSize = (await encodeRecordingGzip(recording)).byteLength
+
+      // Gzip should provide additional compression
+      expect(gzipSize).toBeLessThan(binarySize)
+
+      // Total reduction should be ~96%
+      expect(gzipSize).toBeLessThan(jsonSize * 0.1)
+
+      console.log(
+        `Gzip compression: JSON=${jsonSize} bytes, Binary=${binarySize} bytes, Gzipped=${gzipSize} bytes (${Math.round((1 - gzipSize / jsonSize) * 100)}% total reduction)`
+      )
+    })
+
+    it('auto-detects gzipped binary format', async () => {
+      const original = createSampleRecording()
+      const gzipped = await encodeRecordingGzip(original)
+      const decoded = await decodeRecordingAuto(gzipped)
+      expect(decoded).toEqual(original)
+    })
+
+    it('auto-detects uncompressed binary format', async () => {
+      const original = createSampleRecording()
+      const binary = encodeRecording(original)
+      const decoded = await decodeRecordingAuto(binary)
+      expect(decoded).toEqual(original)
+    })
+
+    it('auto-detects JSON format', async () => {
+      const original = createSampleRecording()
+      const json = JSON.stringify(original)
+      const buffer = new TextEncoder().encode(json).buffer
+      const decoded = await decodeRecordingAuto(buffer)
+      expect(decoded).toEqual(original)
     })
   })
 })

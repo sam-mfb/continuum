@@ -1,6 +1,5 @@
 import { createRecordingService } from '@core/recording'
-import { decodeRecording } from '@core/recording/binaryCodec'
-import type { GameRecording } from '@core/recording'
+import { decodeRecordingAuto } from '@core/recording/binaryCodec'
 import {
   createHeadlessGameEngine,
   createRecordingValidator,
@@ -30,27 +29,17 @@ const main = async (): Promise<void> => {
     process.exit(1)
   }
 
-  // Load and decode recording (auto-detect format)
+  // Load and decode recording (auto-detect format: gzipped binary, binary, or JSON)
   const fileBuffer = fs.readFileSync(filePath)
-  let recording: GameRecording
 
-  // Check if it's binary format by looking for magic number
-  const magic = fileBuffer.toString('utf-8', 0, 5)
-  if (magic === 'CNREC') {
-    // Binary format
-    console.log('Detected binary format')
-    // Create a properly-sized ArrayBuffer (Node.js Buffer.buffer may be a pooled view)
-    const arrayBuffer = fileBuffer.buffer.slice(
-      fileBuffer.byteOffset,
-      fileBuffer.byteOffset + fileBuffer.byteLength
-    )
-    recording = decodeRecording(arrayBuffer)
-  } else {
-    // JSON format
-    console.log('Detected JSON format')
-    const fileContent = fileBuffer.toString('utf-8')
-    recording = JSON.parse(fileContent) as GameRecording
-  }
+  // Create a properly-sized ArrayBuffer (Node.js Buffer.buffer may be a pooled view)
+  const arrayBuffer = fileBuffer.buffer.slice(
+    fileBuffer.byteOffset,
+    fileBuffer.byteOffset + fileBuffer.byteLength
+  )
+
+  // Auto-detect format
+  const recording = await decodeRecordingAuto(arrayBuffer)
 
   // Map galaxy ID to path
   const galaxyConfig = GALAXIES.find(g => g.id === recording.galaxyId)

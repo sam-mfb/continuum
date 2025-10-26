@@ -42,7 +42,7 @@ export const createGameRenderer = (
 
   // Create state update callbacks
   const stateUpdateCallbacks = {
-    onGameOver: (finalState: GameRootState): void => {
+    onGameOver: async (finalState: GameRootState): Promise<void> => {
       const { score, currentlevel: level } = finalState.status
       const { fuel } = finalState.ship
       const { cheatUsed } = finalState.game
@@ -53,7 +53,7 @@ export const createGameRenderer = (
         const recording = recordingService.stopRecording(finalState)
         if (recording) {
           const storage = createRecordingStorage()
-          const recordingId = storage.save(recording)
+          const recordingId = await storage.save(recording)
           store.dispatch(setLastRecordingId(recordingId))
           console.log('Recording saved with ID:', recordingId)
         }
@@ -165,7 +165,7 @@ export const createGameRendererNew = (
 
   // Create state update callbacks
   const stateUpdateCallbacks = {
-    onGameOver: (finalState: GameRootState): void => {
+    onGameOver: async (finalState: GameRootState): Promise<void> => {
       const { score, currentlevel: level } = finalState.status
       const { fuel } = finalState.ship
       const { cheatUsed } = finalState.game
@@ -176,7 +176,7 @@ export const createGameRendererNew = (
         const recording = recordingService.stopRecording(finalState)
         if (recording) {
           const storage = createRecordingStorage()
-          const recordingId = storage.save(recording)
+          const recordingId = await storage.save(recording)
           store.dispatch(setLastRecordingId(recordingId))
           console.log('Recording saved with ID:', recordingId)
         }
