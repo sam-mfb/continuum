@@ -12,12 +12,12 @@ declare class ImageData {
   readonly height: number
 }
 
-interface HTMLCanvasElement {
+type HTMLCanvasElement = {
   width: number
   height: number
 }
 
-interface CanvasRenderingContext2D {
+type CanvasRenderingContext2D = {
   readonly canvas: HTMLCanvasElement
   createImageData(width: number, height: number): ImageData
   getImageData(sx: number, sy: number, sw: number, sh: number): ImageData
