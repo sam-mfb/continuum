@@ -67,13 +67,13 @@ export type AppState = {
 
 const initialState: AppState = {
   collisionMode: 'modern',
-  renderMode: 'original', // Default to stable original renderer
-  solidBackground: false, // Default to checkered pattern
+  renderMode: 'modern', // Default to stable original renderer
+  solidBackground: true, // Default to checkered pattern
   alignmentMode: 'screen-fixed', // Default to screen-fixed (not original)
   showInGameControls: true,
   scaleMode: 'auto', // Default to responsive auto-scaling
   soundMode: 'modern',
-  volume: 0,
+  volume: 50,
   soundOn: true,
   touchControlsEnabled: false, // Will be set based on device detection
   touchControlsOverride: null, // null = auto-detect based on device
