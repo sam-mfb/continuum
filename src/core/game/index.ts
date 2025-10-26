@@ -41,3 +41,6 @@ export { loadLevel } from './levelThunks'
 
 // Ship death
 export { triggerShipDeath } from './shipDeath'
+
+// Core types
+export type { GameRootState, GameLogicServices } from './types'

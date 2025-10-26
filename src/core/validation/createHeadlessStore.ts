@@ -8,16 +8,14 @@ import { statusSlice } from '@core/status'
 import { explosionsSlice } from '@core/explosions'
 import { wallsSlice } from '@core/walls'
 import { transitionSlice } from '@core/transition'
-import { highscoreSlice } from '@/core/highscore'
-import { controlsSlice } from '@/core/controls'
 import { createSyncThunkMiddleware } from '@lib/redux'
+import type { GameRootState } from '@core/game'
 import type { GalaxyService } from '@core/galaxy'
 import type { FizzTransitionService } from '@core/transition'
 import type { RandomService } from '@/core/shared'
 import type { RecordingService } from '@core/recording'
 import type { CollisionService } from '@core/collision'
 import type { SpriteService } from '@core/sprites'
-import type { GameServices } from '@/game/store'
 
 // Minimal services needed for game logic only
 type HeadlessServices = {
@@ -31,7 +29,6 @@ type HeadlessServices = {
 
 const headlessReducer = combineSlices(
   gameSlice,
-  controlsSlice,
   shipSlice,
   shotsSlice,
   planetSlice,
@@ -39,11 +36,11 @@ const headlessReducer = combineSlices(
   statusSlice,
   explosionsSlice,
   wallsSlice,
-  highscoreSlice,
   transitionSlice
 )
 
-export type HeadlessRootState = ReturnType<typeof headlessReducer>
+// HeadlessRootState matches GameRootState exactly
+export type HeadlessRootState = GameRootState
 
 const createHeadlessStore = (
   services: HeadlessServices,
@@ -64,7 +61,7 @@ const createHeadlessStore = (
   // Create the sync thunk middleware instance
   const syncThunkMiddleware = createSyncThunkMiddleware<
     HeadlessRootState,
-    GameServices
+    HeadlessServices
   >()
 
   return configureStore({
@@ -77,7 +74,7 @@ const createHeadlessStore = (
         // Disable serialization checks for headless validation
         // (randomService functions are passed in actions but that's okay for validation)
         serializableCheck: false
-      }).prepend(syncThunkMiddleware(services as unknown as GameServices)), // Cast needed - headless doesn't have sound services
+      }).prepend(syncThunkMiddleware(services)),
     preloadedState
   })
 }

@@ -1,5 +1,5 @@
 import type { ControlMatrix } from '@/core/controls'
-import type { RootState } from '@/game/store'
+import type { GameRootState } from '@core/game'
 import type {
   GameRecording,
   RecordingMetadata,
@@ -19,7 +19,7 @@ type RecordingService = {
     metadata: RecordingMetadata,
     enableFullSnapshots?: boolean
   ) => void
-  stopRecording: (state: RootState) => GameRecording | null
+  stopRecording: (state: GameRootState) => GameRecording | null
   isRecording: () => boolean
 
   // Capture level seeds, inputs, and state snapshots
@@ -27,7 +27,7 @@ type RecordingService = {
   recordFrame: (
     frameCount: number,
     controls: ControlMatrix,
-    state: RootState
+    state: GameRootState
   ) => void
 
   // Control replay
@@ -56,21 +56,10 @@ const controlsEqual = (a: ControlMatrix, b: ControlMatrix): boolean => {
   )
 }
 
-const hashState = (state: RootState): string => {
-  // Hash relevant game state slices (exclude UI state)
-  const relevantState = {
-    ship: state.ship,
-    shots: state.shots,
-    planet: state.planet,
-    screen: state.screen,
-    status: state.status,
-    explosions: state.explosions,
-    walls: state.walls,
-    transition: state.transition
-  }
-
+const hashState = (state: GameRootState): string => {
+  // Hash all game state (GameRootState already excludes UI state)
   // Simple hash function
-  const stateString = JSON.stringify(relevantState)
+  const stateString = JSON.stringify(state)
   let hash = 0
   for (let i = 0; i < stateString.length; i++) {
     const char = stateString.charCodeAt(i)
@@ -137,16 +126,7 @@ const createRecordingService = (): RecordingService => {
         if (fullSnapshotsEnabled) {
           fullSnapshots.push({
             frame: frameCount,
-            state: {
-              ship: state.ship,
-              shots: state.shots,
-              planet: state.planet,
-              screen: state.screen,
-              status: state.status,
-              explosions: state.explosions,
-              walls: state.walls,
-              transition: state.transition
-            }
+            state
           })
         }
       }

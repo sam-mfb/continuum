@@ -1,12 +1,5 @@
 import type { ControlMatrix } from '@/core/controls'
-import type { ShipState } from '@/core/ship'
-import type { ShotsState } from '@/core/shots'
-import type { PlanetState } from '@/core/planet'
-import type { ScreenState } from '@/core/screen'
-import type { StatusState } from '@/core/status/statusSlice'
-import type { ExplosionsState } from '@/core/explosions'
-import type { WallsState } from '@/core/walls'
-import type { TransitionState } from '@/core/transition'
+import type { GameRootState } from '@core/game'
 
 export type RecordingMetadata = {
   engineVersion: number
@@ -32,16 +25,7 @@ export type StateSnapshot = {
 
 export type FullStateSnapshot = {
   frame: number
-  state: {
-    ship: ShipState
-    shots: ShotsState
-    planet: PlanetState
-    screen: ScreenState
-    status: StatusState
-    explosions: ExplosionsState
-    walls: WallsState
-    transition: TransitionState
-  }
+  state: GameRootState
 }
 
 export type LevelSeed = {
