@@ -106,7 +106,7 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
             // Stop replay on missing controls
             recordingService.stopReplay()
             dispatch(stopReplay())
-            dispatch(setMode('start'))
+            dispatch(setMode('replaySelection'))
             return
           }
 
@@ -115,7 +115,7 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
             console.log('Replay complete')
             recordingService.stopReplay()
             dispatch(stopReplay())
-            dispatch(setMode('start'))
+            dispatch(setMode('replaySelection'))
             return
           }
 

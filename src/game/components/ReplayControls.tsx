@@ -29,7 +29,7 @@ const ReplayControls: React.FC<ReplayControlsProps> = ({ scale }) => {
     const recordingService = getStoreServices().recordingService
     recordingService.stopReplay()
     dispatch(stopReplay())
-    dispatch(setMode('start'))
+    dispatch(setMode('replaySelection'))
   }
 
   return (
