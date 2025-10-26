@@ -204,7 +204,7 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
       >
         <input
           type="file"
-          accept=".json"
+          accept=".json,.bin"
           onChange={handleFileLoad}
           style={{
             fontSize: `${7 * scale}px`,
