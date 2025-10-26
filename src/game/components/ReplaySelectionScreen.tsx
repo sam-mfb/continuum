@@ -265,10 +265,22 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
           display: 'flex',
           flexDirection: 'column',
           gap: `${6 * scale}px`,
-          borderBottom: '1px solid #666',
-          paddingBottom: `${10 * scale}px`
+          border: '1px solid #888',
+          backgroundColor: '#111',
+          padding: `${8 * scale}px`,
+          borderRadius: `${2 * scale}px`
         }}
       >
+        <div
+          style={{
+            fontSize: `${7 * scale}px`,
+            color: '#aaa',
+            fontWeight: 'bold',
+            letterSpacing: `${0.5 * scale}px`
+          }}
+        >
+          IMPORT RECORDING:
+        </div>
         <div
           style={{
             display: 'flex',
@@ -288,10 +300,11 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
               cursor:
                 recordings.length >= MAX_RECORDINGS ? 'not-allowed' : 'pointer',
               opacity: recordings.length >= MAX_RECORDINGS ? 0.5 : 1,
-              fontFamily: 'monospace'
+              fontFamily: 'monospace',
+              flex: 1
             }}
           />
-          <span>
+          <span style={{ color: '#888' }}>
             {recordings.length} / {MAX_RECORDINGS}
           </span>
         </div>
