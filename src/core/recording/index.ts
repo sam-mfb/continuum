@@ -14,5 +14,6 @@ export {
 export {
   createRecordingStorage,
   type RecordingStorage,
+  type RecordingIndexEntry,
   MAX_RECORDINGS
 } from './RecordingStorage'

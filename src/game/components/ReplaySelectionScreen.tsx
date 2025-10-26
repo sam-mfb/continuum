@@ -1,25 +1,24 @@
 import React, { type ChangeEvent, useState, useEffect } from 'react'
-import { useAppDispatch, getStoreServices } from '../store'
+import { useAppDispatch, useAppSelector, getStoreServices } from '../store'
 import { loadRecording, startReplay } from '../replaySlice'
 import { setMode } from '../appSlice'
 import { shipSlice } from '@/core/ship'
 import { markCheatUsed } from '@core/game'
 import { clearExplosions } from '@/core/explosions'
 import { loadLevel } from '@core/game'
-import { createRecordingStorage, MAX_RECORDINGS } from '@core/recording'
+import {
+  createRecordingStorage,
+  MAX_RECORDINGS,
+  type RecordingIndexEntry
+} from '@core/recording'
 import type { ValidationReport } from '@core/validation'
 import { validateRecording } from '../validateRecording'
 import { importRecording, exportRecordingBinary } from '../exportRecording'
+import { getGalaxyById } from '../galaxyConfig'
+import { loadGalaxy } from '../galaxyThunks'
 
 type ReplaySelectionScreenProps = {
   scale: number
-}
-
-type RecordingEntry = {
-  id: string
-  timestamp: number
-  galaxyId: string
-  startLevel: number
 }
 
 type ValidationState = {
@@ -30,10 +29,18 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
   scale
 }) => {
   const dispatch = useAppDispatch()
+  const currentGalaxyId = useAppSelector(state => state.app.currentGalaxyId)
 
-  const [recordings, setRecordings] = useState<RecordingEntry[]>([])
+  const [recordings, setRecordings] = useState<RecordingIndexEntry[]>([])
   const [validationStates, setValidationStates] = useState<ValidationState>({})
   const [importError, setImportError] = useState<string | null>(null)
+
+  // Helper function to format duration in mm:ss
+  const formatDuration = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60)
+    const secs = Math.floor(seconds % 60)
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
 
   // Load recordings list on mount
   useEffect(() => {
@@ -106,38 +113,53 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
       return
     }
 
-    const recordingService = getStoreServices().recordingService
+    try {
+      // Check if we need to load a different galaxy
+      if (recording.galaxyId !== currentGalaxyId) {
+        console.log(
+          `Loading galaxy ${recording.galaxyId} for replay (current: ${currentGalaxyId})`
+        )
+        await dispatch(loadGalaxy(recording.galaxyId)).unwrap()
+      }
 
-    // 1. Mark cheat used (replays don't count for high scores)
-    dispatch(markCheatUsed())
+      const recordingService = getStoreServices().recordingService
 
-    // 2. Reset ship state
-    dispatch(shipSlice.actions.resetShip())
+      // 1. Mark cheat used (replays don't count for high scores)
+      dispatch(markCheatUsed())
 
-    // 3. Set initial lives from recording
-    dispatch(shipSlice.actions.setLives(recording.initialState.lives ?? 3))
+      // 2. Reset ship state
+      dispatch(shipSlice.actions.resetShip())
 
-    // 4. Clear explosions
-    dispatch(clearExplosions())
+      // 3. Set initial lives from recording
+      dispatch(shipSlice.actions.setLives(recording.initialState.lives ?? 3))
 
-    // 5. Initialize RecordingService in replay mode
-    recordingService.startReplay(recording)
+      // 4. Clear explosions
+      dispatch(clearExplosions())
 
-    // 6. Load first level with recorded seed
-    const firstLevelSeed = recording.levelSeeds[0]
-    if (!firstLevelSeed) {
-      console.error('No level seeds in recording')
-      return
+      // 5. Initialize RecordingService in replay mode
+      recordingService.startReplay(recording)
+
+      // 6. Load first level with recorded seed
+      const firstLevelSeed = recording.levelSeeds[0]
+      if (!firstLevelSeed) {
+        console.error('No level seeds in recording')
+        return
+      }
+
+      dispatch(loadLevel(firstLevelSeed.level, firstLevelSeed.seed))
+
+      // 7. Store in Redux
+      dispatch(loadRecording(recording))
+
+      // 8. Set replay state and enter replay mode
+      dispatch(startReplay())
+      dispatch(setMode('replay'))
+    } catch (error) {
+      console.error('Failed to start replay:', error)
+      alert(
+        `Failed to load galaxy for replay: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
     }
-
-    dispatch(loadLevel(firstLevelSeed.level, firstLevelSeed.seed))
-
-    // 7. Store in Redux
-    dispatch(loadRecording(recording))
-
-    // 8. Set replay state and enter replay mode
-    dispatch(startReplay())
-    dispatch(setMode('replay'))
   }
 
   const handleValidate = async (id: string): Promise<void> => {
@@ -327,11 +349,25 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
                   style={{ display: 'flex', justifyContent: 'space-between' }}
                 >
                   <span>{new Date(recording.timestamp).toLocaleString()}</span>
-                  <span>Level {recording.startLevel}</span>
+                  {recording.durationSeconds !== undefined && (
+                    <span>{formatDuration(recording.durationSeconds)}</span>
+                  )}
                 </div>
                 <div style={{ color: '#aaa' }}>
-                  Galaxy: {recording.galaxyId}
+                  {recording.finalLevel !== undefined
+                    ? `Ended: Level ${recording.finalLevel}`
+                    : `Started: Level ${recording.startLevel}`}
                 </div>
+                <div style={{ color: '#aaa' }}>
+                  Galaxy:{' '}
+                  {getGalaxyById(recording.galaxyId)?.name ??
+                    recording.galaxyId}
+                </div>
+                {recording.finalScore !== undefined && (
+                  <div style={{ color: '#aaa' }}>
+                    Score: {recording.finalScore.toLocaleString()}
+                  </div>
+                )}
 
                 {/* Validation status */}
                 {validationState && (

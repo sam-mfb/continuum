@@ -31,12 +31,17 @@ const base64ToArrayBuffer = (base64: string): ArrayBuffer => {
   return bytes.buffer
 }
 
-type RecordingIndex = {
+export type RecordingIndexEntry = {
   id: string
   timestamp: number
   galaxyId: string
   startLevel: number
-}[]
+  finalScore?: number
+  finalLevel?: number
+  durationSeconds?: number
+}
+
+type RecordingIndex = RecordingIndexEntry[]
 
 type RecordingStorage = {
   save: (recording: GameRecording) => Promise<string>
@@ -94,11 +99,19 @@ const createRecordingStorage = (): RecordingStorage => {
 
       // Update index (get fresh index after potential delete)
       const updatedIndex = getIndex()
+
+      // Calculate duration from last input frame (20 fps)
+      const lastFrame = recording.inputs[recording.inputs.length - 1]?.frame
+      const durationSeconds = lastFrame ? lastFrame / 20 : undefined
+
       updatedIndex.push({
         id,
         timestamp: recording.timestamp,
         galaxyId: recording.galaxyId,
-        startLevel: recording.startLevel
+        startLevel: recording.startLevel,
+        finalScore: recording.finalState?.score,
+        finalLevel: recording.finalState?.level,
+        durationSeconds
       })
       saveIndex(updatedIndex)
 
