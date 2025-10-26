@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-import type { FrameInfo } from '@lib/bitmap'
+import type { FrameInfo, MonochromeBitmap } from '@lib/bitmap'
 import { useAppDispatch, useAppSelector, getStoreServices } from '../store'
 import { type ControlMatrix } from '@core/controls'
 import { stopReplay, setReplayFrame } from '../replaySlice'
@@ -11,10 +11,12 @@ import { drawFrameToCanvas } from '@/lib/frame/drawFrameToCanvas'
 import ReplayControls from './ReplayControls'
 
 type ReplayRendererProps = {
+  renderer: (frame: FrameInfo, controls: ControlMatrix) => MonochromeBitmap
   rendererNew: (frame: FrameInfo, controls: ControlMatrix) => Frame
   collisionService: CollisionService
   spriteService: SpriteService
   spriteRegistry: SpriteRegistry<ImageData>
+  renderMode: 'original' | 'modern'
   width: number
   height: number
   scale: number
@@ -24,11 +26,14 @@ type ReplayRendererProps = {
 /**
  * Replay renderer component - handles canvas rendering and replay game loop
  * Similar to GameRenderer but reads controls from recording instead of user input
- * Always uses modern rendering and collision detection
  */
 const ReplayRenderer: React.FC<ReplayRendererProps> = ({
+  renderer,
   rendererNew,
+  collisionService,
+  spriteService,
   spriteRegistry,
+  renderMode,
   width,
   height,
   scale,
@@ -105,11 +110,61 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
             return
           }
 
-          // Modern frame-based renderer (always use modern rendering for replay)
-          const renderedFrame = rendererNew(frameInfo, controls)
+          if (renderMode === 'original') {
+            // Original bitmap renderer
+            const renderedBitmap = renderer(frameInfo, controls)
 
-          // Draw frame to canvas
-          drawFrameToCanvas(renderedFrame, ctx, scale, spriteRegistry, false)
+            // Create offscreen canvas for pixel-perfect scaling
+            const offscreen = document.createElement('canvas')
+            offscreen.width = renderedBitmap.width
+            offscreen.height = renderedBitmap.height
+            const offCtx = offscreen.getContext('2d')!
+
+            // Convert bitmap to ImageData
+            const imageData = new ImageData(
+              renderedBitmap.width,
+              renderedBitmap.height
+            )
+            const pixels = imageData.data
+
+            // Convert monochrome bitmap to RGBA
+            for (let y = 0; y < renderedBitmap.height; y++) {
+              for (let x = 0; x < renderedBitmap.width; x++) {
+                const byteIndex =
+                  y * renderedBitmap.rowBytes + Math.floor(x / 8)
+                const bitMask = 0x80 >> x % 8
+                const isSet = (renderedBitmap.data[byteIndex]! & bitMask) !== 0
+
+                const pixelIndex = (y * renderedBitmap.width + x) * 4
+                const value = isSet ? 0 : 255 // Black on white
+
+                // Set base pixel color
+                pixels[pixelIndex] = value // R
+                pixels[pixelIndex + 1] = value // G
+                pixels[pixelIndex + 2] = value // B
+                pixels[pixelIndex + 3] = 255 // A
+              }
+            }
+
+            // Draw to offscreen canvas
+            offCtx.putImageData(imageData, 0, 0)
+
+            // Draw scaled to main canvas
+            ctx.imageSmoothingEnabled = false
+            ctx.drawImage(
+              offscreen,
+              0,
+              0,
+              renderedBitmap.width * scale,
+              renderedBitmap.height * scale
+            )
+          } else {
+            // Modern frame-based renderer
+            const renderedFrame = rendererNew(frameInfo, controls)
+
+            // Draw frame to canvas
+            drawFrameToCanvas(renderedFrame, ctx, scale, spriteRegistry, false)
+          }
 
           lastFrameTimeRef.current = currentTime
           frameCountRef.current++
@@ -128,7 +183,11 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
       }
     }
   }, [
+    renderer,
     rendererNew,
+    renderMode,
+    collisionService,
+    spriteService,
     width,
     height,
     scale,

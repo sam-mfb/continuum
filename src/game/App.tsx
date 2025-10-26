@@ -324,10 +324,12 @@ export const App: React.FC<AppProps> = ({
       case 'replay':
         return (
           <ReplayRenderer
+            renderer={renderer}
             rendererNew={rendererNew}
             collisionService={collisionService}
             spriteService={spriteService}
             spriteRegistry={spriteRegistry}
+            renderMode={renderMode}
             width={512}
             height={342}
             scale={scale}
