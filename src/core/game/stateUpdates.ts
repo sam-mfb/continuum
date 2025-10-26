@@ -376,6 +376,16 @@ function checkLevelComplete(state: GameRootState): boolean {
 const handleDeathAndRespawn = (store: GameStore): void => {
   const prelimState = store.getState()
   if (prelimState.ship.deadCount > 0) {
+    // Don't decrement deadCount during level transitions - keep ship dead until next level
+    if (
+      prelimState.transition.status === 'level-complete' ||
+      prelimState.transition.status === 'fizz' ||
+      prelimState.transition.status === 'starmap'
+    ) {
+      // Ship stays dead during transition - deadCount will be reset when next level loads
+      return
+    }
+
     // Ship is dead - decrement counter and check for respawn
     store.dispatch(shipSlice.actions.decrementDeadCount())
     const newDeadCount = store.getState().ship.deadCount
@@ -384,6 +394,7 @@ const handleDeathAndRespawn = (store: GameStore): void => {
       if (store.getState().ship.lives === 0) {
         return
       }
+
       // Get planet state for respawn coordinates
       const planetState = store.getState().planet
 
