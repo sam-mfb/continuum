@@ -42,7 +42,7 @@ import { createRecordingService } from './recording/RecordingService'
 const app = document.querySelector<HTMLDivElement>('#app')!
 const root = createRoot(app)
 
-//enableDebugOption({ ENABLE_FULL_SNAPSHOTS: true })
+//enableDebugOption({ SHOW_COLLISION_MAP: true })
 
 try {
   // Initialize services
