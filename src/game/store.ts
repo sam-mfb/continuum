@@ -14,7 +14,7 @@ import type { GameSoundService } from './types'
 import type { RandomService } from '@/core/shared'
 
 // Import all reducers
-import { gameSlice } from './gameSlice'
+import { gameSlice } from '@core/game'
 import { appSlice } from './appSlice'
 import { replaySlice } from './replaySlice'
 import { appMiddleware, loadAppSettings } from './appMiddleware'

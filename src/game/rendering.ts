@@ -7,7 +7,7 @@
 
 import type { MonochromeBitmap } from '@lib/bitmap'
 import type { SpriteService } from '@core/sprites'
-import type { RootState } from '../store'
+import type { RootState } from './store'
 import type { BunkerKind, ShardSprite, ShardSpriteSet } from '@core/figs'
 import type { FizzTransitionService } from '@core/transition'
 

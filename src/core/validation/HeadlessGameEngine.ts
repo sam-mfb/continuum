@@ -4,7 +4,7 @@ import type { FrameInfo } from '@lib/bitmap'
 import type { GalaxyService } from '@core/galaxy'
 import type { FizzTransitionService } from '@core/transition'
 import type { RandomService } from '@/core/shared'
-import { updateGameState } from '@/game/gameLoop/stateUpdates'
+import { updateGameState } from '@core/game'
 import { FIZZ_DURATION } from '@core/transition'
 
 type HeadlessGameEngine = {
@@ -45,7 +45,8 @@ const createHeadlessGameEngine = (
       // No-op - headless doesn't care about UI transitions or high scores
     },
     getGalaxyId: (): string => galaxyId,
-    getInitialLives: (): number => initialLives
+    getInitialLives: (): number => initialLives,
+    getCollisionMode: (): 'original' | 'modern' => 'modern' // Headless validation uses modern collision
   }
 
   return {

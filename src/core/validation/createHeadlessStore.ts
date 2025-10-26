@@ -1,5 +1,5 @@
 import { combineSlices, configureStore } from '@reduxjs/toolkit'
-import { gameSlice } from '@/game/gameSlice'
+import { gameSlice } from '@core/game'
 import { appSlice } from '@/game/appSlice'
 import { replaySlice } from '@/game/replaySlice'
 import { shipSlice } from '@core/ship'

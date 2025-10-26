@@ -12,17 +12,17 @@ import type {
   FizzTransitionService,
   FizzTransitionServiceFrame
 } from '@core/transition'
-import type { GameStore } from '../store'
+import type { GameStore } from './store'
 import type { RandomService } from '@/core/shared'
 
-import { updateGameState } from './stateUpdates'
+import { updateGameState } from '@core/game'
 import { renderGame } from './rendering'
-import type { GameRenderLoop, NewGameRenderLoop } from '../types'
+import type { GameRenderLoop, NewGameRenderLoop } from './types'
 import { renderGameOriginal } from './renderingOriginal'
 import type { Frame } from '@/lib/frame/types'
 import { renderGameNew } from './renderingNew'
-import { setMode, setMostRecentScore } from '../appSlice'
-import { TOTAL_INITIAL_LIVES } from '../constants'
+import { setMode, setMostRecentScore } from './appSlice'
+import { TOTAL_INITIAL_LIVES } from './constants'
 
 export const createGameRenderer = (
   store: GameStore,
@@ -82,7 +82,9 @@ export const createGameRenderer = (
       }
     },
     getGalaxyId: (): string => store.getState().app.currentGalaxyId,
-    getInitialLives: (): number => TOTAL_INITIAL_LIVES
+    getInitialLives: (): number => TOTAL_INITIAL_LIVES,
+    getCollisionMode: (): 'original' | 'modern' =>
+      store.getState().app.collisionMode
   }
 
   return (frame, controls) => {
@@ -189,7 +191,9 @@ export const createGameRendererNew = (
       }
     },
     getGalaxyId: (): string => store.getState().app.currentGalaxyId,
-    getInitialLives: (): number => TOTAL_INITIAL_LIVES
+    getInitialLives: (): number => TOTAL_INITIAL_LIVES,
+    getCollisionMode: (): 'original' | 'modern' =>
+      store.getState().app.collisionMode
   }
 
   return (frame, controls) => {

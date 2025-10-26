@@ -2,7 +2,7 @@ import type { GameRecording, FullStateSnapshot } from '@core/recording'
 import type { HeadlessGameEngine } from './HeadlessGameEngine'
 import type { HeadlessStore, HeadlessRootState } from './createHeadlessStore'
 import type { RecordingService } from '@core/recording'
-import { loadLevel } from '@/game/levelThunks'
+import { loadLevel } from '@core/game'
 
 type StateDiff = {
   path: string

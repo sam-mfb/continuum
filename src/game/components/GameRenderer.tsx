@@ -6,7 +6,7 @@ import {
   getStoreServices,
   type RootState
 } from '../store'
-import { togglePause, showMap, hideMap, pause, unpause } from '../gameSlice'
+import { togglePause, showMap, hideMap, pause, unpause } from '@core/game'
 import {
   getControls,
   mergeControls,

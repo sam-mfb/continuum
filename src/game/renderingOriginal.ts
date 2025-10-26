@@ -7,7 +7,7 @@
 
 import type { MonochromeBitmap } from '@lib/bitmap'
 import type { SpriteService } from '@core/sprites'
-import type { RootState, GameStore } from '../store'
+import type { RootState, GameStore } from './store'
 import type { BunkerKind, ShardSprite, ShardSpriteSet } from '@core/figs'
 import type { FizzTransitionService } from '@core/transition'
 
@@ -30,7 +30,7 @@ import { whiteTerrain, blackTerrain } from '@render/walls'
 import { LINE_KIND } from '@core/walls'
 import { getAlignment, getBackgroundPattern } from '@core/shared'
 import type { RandomService } from '@/core/shared'
-import { triggerShipDeath } from '../shipDeath'
+import { triggerShipDeath } from '@core/game'
 import { FIZZ_DURATION } from '@core/transition'
 import { starBackground } from '@render/transition'
 

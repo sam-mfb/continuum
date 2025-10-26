@@ -14,7 +14,7 @@ import { explosionsSlice } from '@/core/explosions'
 import { transitionSlice } from '@/core/transition'
 import { shipSlice } from '@/core/ship'
 import { appSlice } from './appSlice'
-import { gameSlice } from './gameSlice'
+import { gameSlice } from '@core/game'
 import { replaySlice } from './replaySlice'
 
 type SoundStartListening = TypedStartListening<RootState, AppDispatch>

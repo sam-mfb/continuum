@@ -10,7 +10,7 @@ import FullscreenButton from './components/FullscreenButton'
 import InGameControlsPanel from './components/InGameControlsPanel'
 import ReplaySelectionScreen from './components/ReplaySelectionScreen'
 import ReplayRenderer from './components/ReplayRenderer'
-import { loadLevel } from './levelThunks'
+import { loadLevel } from '@core/game'
 import {
   startGame,
   setMode,
@@ -20,7 +20,7 @@ import {
 import { isTouchDevice } from './mobile/deviceDetection'
 import { setHighScore } from '@/core/highscore'
 import { shipSlice } from '@/core/ship'
-import { markCheatUsed } from './gameSlice'
+import { markCheatUsed } from '@core/game'
 import { clearExplosions } from '@/core/explosions'
 import { type SpriteService } from '@/core/sprites'
 import {

@@ -35,3 +35,9 @@ export { updateGameState } from './stateUpdates'
 // Collision handling
 export { checkCollisions } from './checkCollisionsThunk'
 export { createCollisionMap } from './createCollisionMapThunk'
+
+// Level loading
+export { loadLevel } from './levelThunks'
+
+// Ship death
+export { triggerShipDeath } from './shipDeath'
