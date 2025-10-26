@@ -16,7 +16,6 @@ type RecordingStorage = {
   load: (id: string) => GameRecording | null
   list: () => RecordingIndex
   delete: (id: string) => void
-  exportToFile: (id: string) => void
 }
 
 const createRecordingStorage = (): RecordingStorage => {
@@ -82,19 +81,6 @@ const createRecordingStorage = (): RecordingStorage => {
       const index = getIndex()
       const filtered = index.filter(item => item.id !== id)
       saveIndex(filtered)
-    },
-
-    exportToFile: (id): void => {
-      const recording = localStorage.getItem(STORAGE_PREFIX + id)
-      if (!recording) return
-
-      const blob = new Blob([recording], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `continuum_recording_${id}.json`
-      a.click()
-      URL.revokeObjectURL(url)
     }
   }
 }

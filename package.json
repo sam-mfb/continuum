@@ -17,6 +17,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
+    "typecheck:scripts": "tsc --noEmit -p scripts/tsconfig.json",
     "export-sprites": "tsx scripts/export-sprites.ts",
     "convert-sprites": "tsx scripts/convert-white-to-transparent.ts",
     "convert-digits": "tsx scripts/convert-digit-sprites.ts",

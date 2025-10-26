@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { useAppSelector } from '../store'
-import { createRecordingStorage } from '@core/recording'
+import { createRecordingStorage, exportRecording } from '@core/recording'
 
 type GameOverScreenProps = {
   scale: number
@@ -27,7 +27,10 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
   const handleExport = (): void => {
     if (recordingId) {
       const storage = createRecordingStorage()
-      storage.exportToFile(recordingId)
+      const recording = storage.load(recordingId)
+      if (recording) {
+        exportRecording(recording, `continuum_recording_${recordingId}.json`)
+      }
     }
   }
 

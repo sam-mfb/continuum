@@ -15,3 +15,6 @@ export {
   createRecordingStorage,
   type RecordingStorage
 } from './RecordingStorage'
+
+// Utilities
+export { exportRecording } from './exportRecording'

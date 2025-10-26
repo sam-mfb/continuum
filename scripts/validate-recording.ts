@@ -24,6 +24,10 @@ const main = async (): Promise<void> => {
 
   // Load recording from file
   const filePath = args[0]
+  if (!filePath) {
+    console.error('Error: No file path provided')
+    process.exit(1)
+  }
   const fileContent = fs.readFileSync(filePath, 'utf-8')
   const recording = JSON.parse(fileContent)
 
@@ -65,7 +69,6 @@ const main = async (): Promise<void> => {
   const store = createHeadlessStore(
     services,
     recording.initialState.lives,
-    recording.galaxyId,
     recording.startLevel
   )
 
