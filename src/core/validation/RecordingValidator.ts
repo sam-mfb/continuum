@@ -229,7 +229,8 @@ const createRecordingValidator = (
       const finalStateErrors: FinalStateError[] = []
 
       if (recording.finalState) {
-        const finalState = store.getState()
+        // Get final state from engine (captured before reset) or fall back to current store state
+        const finalState = engine.getFinalState() ?? store.getState()
 
         // Check score
         if (finalState.status.score !== recording.finalState.score) {
