@@ -1,4 +1,5 @@
-import type { HeadlessStore, HeadlessRootState } from './createHeadlessStore'
+import type { HeadlessStore } from './createHeadlessStore'
+import type { GameRootState } from '@core/game'
 import type { ControlMatrix } from '@/core/controls'
 import type { FrameInfo } from '@lib/bitmap'
 import type { GalaxyService } from '@core/galaxy'
@@ -9,7 +10,7 @@ import { FIZZ_DURATION } from '@core/transition'
 
 type HeadlessGameEngine = {
   step: (frameCount: number, controls: ControlMatrix) => void
-  getFinalState: () => HeadlessRootState | null
+  getFinalState: () => GameRootState | null
 }
 
 const createHeadlessGameEngine = (
@@ -23,7 +24,7 @@ const createHeadlessGameEngine = (
   // Track fizz state to simulate correct duration in headless mode
   let fizzFramesElapsed = 0
   // Capture final state before game over resets it
-  let capturedFinalState: HeadlessRootState | null = null
+  let capturedFinalState: GameRootState | null = null
 
   // Create transition callbacks for headless mode
   // We don't render the fizz animation, but we simulate its duration
@@ -44,7 +45,7 @@ const createHeadlessGameEngine = (
 
   // Create state update callbacks for headless mode
   const stateUpdateCallbacks = {
-    onGameOver: (finalState: HeadlessRootState): void => {
+    onGameOver: (finalState: GameRootState): void => {
       // Capture final state before handleGameOver resets the store
       capturedFinalState = finalState
     },
@@ -99,7 +100,7 @@ const createHeadlessGameEngine = (
         fizzFramesElapsed = 0
       }
     },
-    getFinalState: (): HeadlessRootState | null => {
+    getFinalState: (): GameRootState | null => {
       return capturedFinalState
     }
   }

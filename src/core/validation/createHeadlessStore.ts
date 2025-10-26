@@ -39,14 +39,11 @@ const headlessReducer = combineSlices(
   transitionSlice
 )
 
-// HeadlessRootState matches GameRootState exactly
-export type HeadlessRootState = GameRootState
-
 const createHeadlessStore = (
   services: HeadlessServices,
   initialLives: number,
   startLevel: number
-): ReturnType<typeof configureStore<HeadlessRootState>> => {
+): ReturnType<typeof configureStore<GameRootState>> => {
   const preloadedState = {
     ship: {
       ...shipSlice.getInitialState(),
@@ -60,7 +57,7 @@ const createHeadlessStore = (
 
   // Create the sync thunk middleware instance
   const syncThunkMiddleware = createSyncThunkMiddleware<
-    HeadlessRootState,
+    GameRootState,
     HeadlessServices
   >()
 
@@ -81,4 +78,4 @@ const createHeadlessStore = (
 
 export type HeadlessStore = ReturnType<typeof createHeadlessStore>
 
-export { createHeadlessStore, type HeadlessServices }
+export { createHeadlessStore, type HeadlessServices, type GameRootState }

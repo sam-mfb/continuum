@@ -9,14 +9,13 @@ export {
 } from './HeadlessGameEngine'
 
 // Store
-export {
-  createHeadlessStore,
-  type HeadlessStore,
-  type HeadlessRootState
-} from './createHeadlessStore'
+export { createHeadlessStore, type HeadlessStore } from './createHeadlessStore'
 
 // Validator
 export {
   createRecordingValidator,
   type ValidationReport
 } from './RecordingValidator'
+
+// Hash function
+export { hashState } from './hashState'

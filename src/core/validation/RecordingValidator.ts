@@ -1,8 +1,10 @@
 import type { GameRecording, FullStateSnapshot } from '@core/recording'
 import type { HeadlessGameEngine } from './HeadlessGameEngine'
-import type { HeadlessStore, HeadlessRootState } from './createHeadlessStore'
+import type { HeadlessStore } from './createHeadlessStore'
 import type { RecordingService } from '@core/recording'
+import type { GameRootState } from '@core/game'
 import { loadLevel } from '@core/game'
+import { hashState } from './hashState'
 
 type StateDiff = {
   path: string
@@ -39,34 +41,13 @@ const createRecordingValidator = (
 ): {
   validate: (recording: GameRecording) => ValidationReport
 } => {
-  const hashState = (state: HeadlessRootState): string => {
-    const relevantState = {
-      ship: state.ship,
-      shots: state.shots,
-      planet: state.planet,
-      screen: state.screen,
-      status: state.status,
-      explosions: state.explosions,
-      walls: state.walls,
-      transition: state.transition
-    }
-
-    const stateString = JSON.stringify(relevantState)
-    let hash = 0
-    for (let i = 0; i < stateString.length; i++) {
-      const char = stateString.charCodeAt(i)
-      hash = (hash << 5) - hash + char
-      hash = hash & hash
-    }
-    return hash.toString(16)
-  }
-
   const compareStates = (
     expected: FullStateSnapshot['state'],
-    actual: HeadlessRootState
+    actual: GameRootState
   ): StateDiff => {
     const diffs: StateDiff = []
     const slices = [
+      'game',
       'ship',
       'shots',
       'planet',

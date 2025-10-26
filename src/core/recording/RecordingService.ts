@@ -8,6 +8,7 @@ import type {
   StateSnapshot,
   FullStateSnapshot
 } from './types'
+import { hashState } from '@core/validation'
 
 const SNAPSHOT_INTERVAL = 100 // Capture every 100 frames
 
@@ -54,19 +55,6 @@ const controlsEqual = (a: ControlMatrix, b: ControlMatrix): boolean => {
     a.extraLife === b.extraLife &&
     a.map === b.map
   )
-}
-
-const hashState = (state: GameRootState): string => {
-  // Hash all game state (GameRootState already excludes UI state)
-  // Simple hash function
-  const stateString = JSON.stringify(state)
-  let hash = 0
-  for (let i = 0; i < stateString.length; i++) {
-    const char = stateString.charCodeAt(i)
-    hash = (hash << 5) - hash + char
-    hash = hash & hash // Convert to 32bit integer
-  }
-  return hash.toString(16)
 }
 
 const createRecordingService = (): RecordingService => {
