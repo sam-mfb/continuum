@@ -49,6 +49,12 @@ export type LevelSeed = {
   seed: number
 }
 
+export type FinalGameState = {
+  score: number
+  fuel: number
+  level: number
+}
+
 export type GameRecording = {
   version: string // Recording format version
   engineVersion: number // Game engine version (physics/logic)
@@ -60,4 +66,5 @@ export type GameRecording = {
   inputs: InputFrame[]
   snapshots: StateSnapshot[] // Hash-based snapshots for validation
   fullSnapshots?: FullStateSnapshot[] // Optional full state snapshots for debugging
+  finalState?: FinalGameState // Final game state captured at recording end
 }

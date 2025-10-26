@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { getStoreServices } from '../store'
+import { useSelector } from 'react-redux'
+import { getStoreServices, type RootState } from '../store'
 import { createRecordingStorage } from '../recording/RecordingStorage'
 
 type GameOverScreenProps = {
@@ -13,11 +14,12 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
 }): React.ReactElement => {
   const [hasRecording, setHasRecording] = useState(false)
   const [recordingId, setRecordingId] = useState<string | null>(null)
+  const state = useSelector((state: RootState) => state)
 
   useEffect(() => {
     // Check if there's a recording available to export
     const recordingService = getStoreServices().recordingService
-    const recording = recordingService.stopRecording()
+    const recording = recordingService.stopRecording(state)
 
     if (recording) {
       // Save to storage and get ID
@@ -27,7 +29,7 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
       setHasRecording(true)
       console.log('Recording saved with ID:', id)
     }
-  }, [])
+  }, [state])
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent): void => {
       if (e.code === 'Space' || e.code === 'Enter') {

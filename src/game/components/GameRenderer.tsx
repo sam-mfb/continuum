@@ -182,7 +182,8 @@ const GameRenderer: React.FC<GameRendererProps> = ({
           console.warn(
             'Collision mode changed to original - stopping recording'
           )
-          recordingService.stopRecording()
+          const currentState = store.getState() as RootState
+          recordingService.stopRecording(currentState)
         }
 
         // Skip rendering when paused but keep the loop running

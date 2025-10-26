@@ -10,11 +10,19 @@ type StateDiff = {
   actual: unknown
 }[]
 
+type FinalStateError = {
+  field: string
+  expected: number
+  actual: number
+}
+
 type ValidationReport = {
   success: boolean
   framesValidated: number
   snapshotsChecked: number
   divergenceFrame: number | null
+  finalStateMatch: boolean
+  finalStateErrors?: FinalStateError[]
   errors: {
     frame: number
     type: 'SNAPSHOT_MISMATCH' | 'MISSING_INPUT'
@@ -216,14 +224,65 @@ const createRecordingValidator = (
         }
       }
 
+      // Validate final state if present in recording
+      let finalStateMatch = true
+      const finalStateErrors: FinalStateError[] = []
+
+      if (recording.finalState) {
+        const finalState = store.getState()
+
+        // Check score
+        if (finalState.status.score !== recording.finalState.score) {
+          finalStateMatch = false
+          finalStateErrors.push({
+            field: 'score',
+            expected: recording.finalState.score,
+            actual: finalState.status.score
+          })
+        }
+
+        // Check fuel
+        if (finalState.ship.fuel !== recording.finalState.fuel) {
+          finalStateMatch = false
+          finalStateErrors.push({
+            field: 'fuel',
+            expected: recording.finalState.fuel,
+            actual: finalState.ship.fuel
+          })
+        }
+
+        // Check level
+        if (finalState.status.currentlevel !== recording.finalState.level) {
+          finalStateMatch = false
+          finalStateErrors.push({
+            field: 'level',
+            expected: recording.finalState.level,
+            actual: finalState.status.currentlevel
+          })
+        }
+
+        if (!finalStateMatch) {
+          console.error('Final state validation failed:', finalStateErrors)
+        } else {
+          console.log('Final state validation passed ✓')
+        }
+      } else {
+        console.warn(
+          'Recording does not contain finalState - skipping final state validation (old recording format)'
+        )
+      }
+
       // Clean up
       recordingService.stopReplay()
 
       return {
-        success: errors.length === 0,
+        success: errors.length === 0 && finalStateMatch,
         framesValidated,
         snapshotsChecked,
         divergenceFrame,
+        finalStateMatch,
+        finalStateErrors:
+          finalStateErrors.length > 0 ? finalStateErrors : undefined,
         errors
       }
     }

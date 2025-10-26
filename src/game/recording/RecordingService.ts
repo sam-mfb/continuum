@@ -19,7 +19,7 @@ type RecordingService = {
     metadata: RecordingMetadata,
     enableFullSnapshots?: boolean
   ) => void
-  stopRecording: () => GameRecording | null
+  stopRecording: (state: RootState) => GameRecording | null
   isRecording: () => boolean
 
   // Capture level seeds, inputs, and state snapshots
@@ -152,14 +152,19 @@ const createRecordingService = (): RecordingService => {
       }
     },
 
-    stopRecording: (): GameRecording | null => {
+    stopRecording: (state): GameRecording | null => {
       if (mode !== 'recording') return null
       const recording = {
         ...currentRecording,
         levelSeeds,
         inputs: inputFrames,
         snapshots,
-        fullSnapshots: fullSnapshots.length > 0 ? fullSnapshots : undefined
+        fullSnapshots: fullSnapshots.length > 0 ? fullSnapshots : undefined,
+        finalState: {
+          score: state.status.score,
+          fuel: state.ship.fuel,
+          level: state.status.currentlevel
+        }
       } as GameRecording
       mode = 'idle'
       currentRecording = null
