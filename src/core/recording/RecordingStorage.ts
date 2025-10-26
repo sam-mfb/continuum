@@ -1,5 +1,6 @@
 import type { GameRecording } from './types'
 import { encodeRecordingGzip, decodeRecordingAuto } from './binaryCodec'
+import { compress, decompress } from './gzip.browser'
 
 const STORAGE_PREFIX = 'continuum_recording_'
 const STORAGE_INDEX_KEY = 'continuum_recording_index'
@@ -66,7 +67,10 @@ const createRecordingStorage = (): RecordingStorage => {
       }
 
       // Encode to binary with gzip and convert to base64 for storage
-      const binaryData = await encodeRecordingGzip(recordingWithVersion)
+      const binaryData = await encodeRecordingGzip(
+        recordingWithVersion,
+        compress
+      )
       const base64Data = arrayBufferToBase64(binaryData)
 
       localStorage.setItem(STORAGE_PREFIX + id, base64Data)
@@ -91,7 +95,7 @@ const createRecordingStorage = (): RecordingStorage => {
       try {
         // Auto-detect format (gzipped binary, binary, or JSON)
         const binaryData = base64ToArrayBuffer(data)
-        return await decodeRecordingAuto(binaryData)
+        return await decodeRecordingAuto(binaryData, decompress)
       } catch (e) {
         // Fallback: try to parse as legacy JSON format
         try {

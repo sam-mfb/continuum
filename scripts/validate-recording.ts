@@ -5,6 +5,7 @@ import {
   createRecordingValidator,
   createHeadlessStore
 } from '@core/validation'
+import { decompress } from './gzip.node'
 import { createGalaxyServiceNode } from '@/core/galaxy/createGalaxyServiceNode'
 import { createRandomService } from '@/core/shared'
 import { createCollisionService } from '@core/collision'
@@ -39,7 +40,7 @@ const main = async (): Promise<void> => {
   )
 
   // Auto-detect format
-  const recording = await decodeRecordingAuto(arrayBuffer)
+  const recording = await decodeRecordingAuto(arrayBuffer, decompress)
 
   // Map galaxy ID to path
   const galaxyConfig = GALAXIES.find(g => g.id === recording.galaxyId)

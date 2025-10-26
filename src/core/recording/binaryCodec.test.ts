@@ -9,6 +9,8 @@ import {
   encodeRecordingGzip,
   decodeRecordingAuto
 } from './binaryCodec'
+// Tests run in Node.js environment, so use Node.js gzip implementation
+import { compress, decompress } from '../../../scripts/gzip.node'
 import type { GameRecording } from './types'
 
 describe('binaryCodec', () => {
@@ -294,8 +296,8 @@ describe('binaryCodec', () => {
     it('encodes and decodes with gzip without data loss', async () => {
       const original = createSampleRecording()
 
-      const encoded = await encodeRecordingGzip(original)
-      const decoded = await decodeRecordingAuto(encoded)
+      const encoded = await encodeRecordingGzip(original, compress)
+      const decoded = await decodeRecordingAuto(encoded, decompress)
 
       // Verify all data is preserved
       expect(decoded).toEqual(original)
@@ -327,7 +329,8 @@ describe('binaryCodec', () => {
 
       const jsonSize = JSON.stringify(recording).length
       const binarySize = encodeRecording(recording).byteLength
-      const gzipSize = (await encodeRecordingGzip(recording)).byteLength
+      const gzipSize = (await encodeRecordingGzip(recording, compress))
+        .byteLength
 
       // Gzip should provide additional compression
       expect(gzipSize).toBeLessThan(binarySize)
@@ -342,15 +345,15 @@ describe('binaryCodec', () => {
 
     it('auto-detects gzipped binary format', async () => {
       const original = createSampleRecording()
-      const gzipped = await encodeRecordingGzip(original)
-      const decoded = await decodeRecordingAuto(gzipped)
+      const gzipped = await encodeRecordingGzip(original, compress)
+      const decoded = await decodeRecordingAuto(gzipped, decompress)
       expect(decoded).toEqual(original)
     })
 
     it('auto-detects uncompressed binary format', async () => {
       const original = createSampleRecording()
       const binary = encodeRecording(original)
-      const decoded = await decodeRecordingAuto(binary)
+      const decoded = await decodeRecordingAuto(binary, decompress)
       expect(decoded).toEqual(original)
     })
 
@@ -358,7 +361,7 @@ describe('binaryCodec', () => {
       const original = createSampleRecording()
       const json = JSON.stringify(original)
       const buffer = new TextEncoder().encode(json).buffer
-      const decoded = await decodeRecordingAuto(buffer)
+      const decoded = await decodeRecordingAuto(buffer, decompress)
       expect(decoded).toEqual(original)
     })
   })

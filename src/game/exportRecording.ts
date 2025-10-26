@@ -3,6 +3,7 @@ import {
   encodeRecordingGzip,
   decodeRecordingAuto
 } from '@core/recording/binaryCodec'
+import { compress, decompress } from '@core/recording/gzip.browser'
 
 /**
  * Export a recording to a downloadable JSON file
@@ -31,7 +32,7 @@ export const exportRecordingBinary = async (
   recording: GameRecording,
   filename: string
 ): Promise<void> => {
-  const binaryData = await encodeRecordingGzip(recording)
+  const binaryData = await encodeRecordingGzip(recording, compress)
   const blob = new Blob([binaryData], { type: 'application/octet-stream' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -47,5 +48,5 @@ export const exportRecordingBinary = async (
  */
 export const importRecording = async (file: File): Promise<GameRecording> => {
   const arrayBuffer = await file.arrayBuffer()
-  return await decodeRecordingAuto(arrayBuffer)
+  return await decodeRecordingAuto(arrayBuffer, decompress)
 }
