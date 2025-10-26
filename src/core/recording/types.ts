@@ -1,6 +1,8 @@
 import type { ControlMatrix } from '@/core/controls'
 import type { GameRootState } from '@core/game'
 
+export type { ControlMatrix }
+
 export type RecordingMetadata = {
   engineVersion: number
   galaxyId: string

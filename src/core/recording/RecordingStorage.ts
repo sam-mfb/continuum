@@ -1,8 +1,33 @@
 import type { GameRecording } from './types'
+import { encodeRecording, decodeRecording } from './binaryCodec'
 
 const STORAGE_PREFIX = 'continuum_recording_'
 const STORAGE_INDEX_KEY = 'continuum_recording_index'
 const CURRENT_VERSION = '1.0'
+
+/**
+ * Convert ArrayBuffer to base64 string for localStorage
+ */
+const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]!)
+  }
+  return btoa(binary)
+}
+
+/**
+ * Convert base64 string back to ArrayBuffer
+ */
+const base64ToArrayBuffer = (base64: string): ArrayBuffer => {
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+  return bytes.buffer
+}
 
 type RecordingIndex = {
   id: string
@@ -40,11 +65,11 @@ const createRecordingStorage = (): RecordingStorage => {
         version: CURRENT_VERSION
       }
 
-      // Save recording data
-      localStorage.setItem(
-        STORAGE_PREFIX + id,
-        JSON.stringify(recordingWithVersion)
-      )
+      // Encode to binary and convert to base64 for storage
+      const binaryData = encodeRecording(recordingWithVersion)
+      const base64Data = arrayBufferToBase64(binaryData)
+
+      localStorage.setItem(STORAGE_PREFIX + id, base64Data)
 
       // Update index
       const index = getIndex()
@@ -60,14 +85,21 @@ const createRecordingStorage = (): RecordingStorage => {
     },
 
     load: (id): GameRecording | null => {
-      const json = localStorage.getItem(STORAGE_PREFIX + id)
-      if (!json) return null
+      const data = localStorage.getItem(STORAGE_PREFIX + id)
+      if (!data) return null
 
       try {
-        return JSON.parse(json) as GameRecording
+        // Try to decode as binary first
+        const binaryData = base64ToArrayBuffer(data)
+        return decodeRecording(binaryData)
       } catch (e) {
-        console.error('Failed to parse recording:', e)
-        return null
+        // Fallback: try to parse as legacy JSON format
+        try {
+          return JSON.parse(data) as GameRecording
+        } catch {
+          console.error('Failed to parse recording:', e)
+          return null
+        }
       }
     },
 
