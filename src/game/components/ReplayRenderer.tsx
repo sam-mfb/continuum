@@ -89,11 +89,11 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
           targetDelta: frameIntervalMs
         }
 
-        // Update frame counter in Redux
-        dispatch(setReplayFrame(frameCountRef.current))
-
         // Skip updates when paused but keep the loop running
         if (!replayPaused) {
+          // Update frame counter in Redux
+          dispatch(setReplayFrame(frameCountRef.current))
+
           // Get controls from recording for this frame
           const controls = recordingService.getReplayControls(
             frameCountRef.current
