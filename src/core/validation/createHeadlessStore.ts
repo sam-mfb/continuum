@@ -51,6 +51,10 @@ const createHeadlessStore = (
     status: {
       ...statusSlice.getInitialState(),
       currentlevel: startLevel
+    },
+    game: {
+      ...gameSlice.getInitialState(),
+      cheatUsed: startLevel > 1 // Mark cheat used if starting beyond level 1
     }
   }
 
