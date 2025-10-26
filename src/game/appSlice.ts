@@ -54,6 +54,7 @@ export type AppState = {
   // Game flow
   mode: GameMode
   mostRecentScore: MostRecentScore | null
+  lastRecordingId: string | null
 
   // UI state
   showSettings: boolean
@@ -78,6 +79,7 @@ const initialState: AppState = {
   touchControlsOverride: null, // null = auto-detect based on device
   mode: 'start',
   mostRecentScore: null,
+  lastRecordingId: null,
   showSettings: false,
   isFullscreen: false,
   currentGalaxyId: 'release', // Will be overridden by galaxy config
@@ -166,6 +168,10 @@ export const appSlice = createSlice({
       state.mostRecentScore = action.payload
     },
 
+    setLastRecordingId: (state, action: PayloadAction<string | null>) => {
+      state.lastRecordingId = action.payload
+    },
+
     // UI state actions
     openSettings: state => {
       state.showSettings = true
@@ -228,6 +234,7 @@ export const {
   setMode,
   startGame,
   setMostRecentScore,
+  setLastRecordingId,
   openSettings,
   closeSettings,
   toggleSettings,

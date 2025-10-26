@@ -4,6 +4,7 @@ import {
   useAppDispatch,
   useAppSelector,
   getStoreServices,
+  extractGameState,
   type RootState
 } from '../store'
 import { togglePause, showMap, hideMap, pause, unpause } from '@core/game'
@@ -68,7 +69,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
     state => state.app.touchControlsEnabled
   )
   const collisionMode = useAppSelector(state => state.app.collisionMode)
-  const store = useStore()
+  const store = useStore<RootState>()
   const dispatch = useAppDispatch()
 
   // Track touch controls state
@@ -193,7 +194,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
             recordingService.recordFrame(
               frameCountRef.current,
               controls,
-              store.getState() as RootState
+              extractGameState(store.getState())
             )
           }
 

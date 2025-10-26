@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useSelector } from 'react-redux'
-import { getStoreServices, type RootState } from '../store'
+import { useAppSelector } from '../store'
 import { createRecordingStorage } from '@core/recording'
 
 type HighScoreEntryProps = {
@@ -19,25 +18,9 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
   onSubmit
 }) => {
   const [name, setName] = useState('')
-  const [hasRecording, setHasRecording] = useState(false)
-  const [recordingId, setRecordingId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const state = useSelector((state: RootState) => state)
-
-  useEffect(() => {
-    // Check if there's a recording available to export
-    const recordingService = getStoreServices().recordingService
-    const recording = recordingService.stopRecording(state)
-
-    if (recording) {
-      // Save to storage and get ID
-      const storage = createRecordingStorage()
-      const id = storage.save(recording)
-      setRecordingId(id)
-      setHasRecording(true)
-      console.log('Recording saved with ID:', id)
-    }
-  }, [state])
+  // Get recording ID from app state (set by game loop on game over)
+  const recordingId = useAppSelector(state => state.app.lastRecordingId)
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -114,7 +97,7 @@ const HighScoreEntry: React.FC<HighScoreEntryProps> = ({
           <div>Fuel: {fuel}</div>
         </div>
 
-        {hasRecording && (
+        {recordingId && (
           <button
             onClick={handleExport}
             style={{

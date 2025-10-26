@@ -14,7 +14,7 @@ import type { GameSoundService } from './types'
 import type { RandomService } from '@/core/shared'
 
 // Import all reducers
-import { gameSlice } from '@core/game'
+import { gameSlice, type GameRootState } from '@core/game'
 import { appSlice } from './appSlice'
 import { replaySlice } from './replaySlice'
 import { appMiddleware, loadAppSettings } from './appMiddleware'
@@ -82,6 +82,22 @@ const rootReducer = combineSlices(
 
 export type RootReducer = typeof rootReducer
 export type RootState = ReturnType<RootReducer>
+
+/**
+ * Extract only GameRootState slices from RootState for recording
+ * This ensures recordings only contain game logic slices, not UI state
+ */
+export const extractGameState = (state: RootState): GameRootState => ({
+  game: state.game,
+  planet: state.planet,
+  ship: state.ship,
+  screen: state.screen,
+  status: state.status,
+  shots: state.shots,
+  explosions: state.explosions,
+  walls: state.walls,
+  transition: state.transition
+})
 
 // Factory function to create store and listeners
 const createStoreAndListeners = (

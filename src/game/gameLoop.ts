@@ -21,9 +21,10 @@ import type { GameRenderLoop, NewGameRenderLoop } from './types'
 import { renderGameOriginal } from './renderingOriginal'
 import type { Frame } from '@/lib/frame/types'
 import { renderGameNew } from './renderingNew'
-import { setMode, setMostRecentScore } from './appSlice'
+import { setMode, setMostRecentScore, setLastRecordingId } from './appSlice'
 import { TOTAL_INITIAL_LIVES } from './constants'
 import { getStoreServices } from './store'
+import { createRecordingStorage } from '@core/recording'
 
 export const createGameRenderer = (
   store: GameStore,
@@ -46,13 +47,19 @@ export const createGameRenderer = (
       const { fuel } = finalState.ship
       const { cheatUsed } = finalState.game
 
-      // Stop recording if active
+      // Stop recording if active and save to storage
       const recordingService = getStoreServices().recordingService
       if (recordingService.isRecording()) {
         const recording = recordingService.stopRecording(finalState)
         if (recording) {
-          console.log('Recording stopped on game over', recording)
+          const storage = createRecordingStorage()
+          const recordingId = storage.save(recording)
+          store.dispatch(setLastRecordingId(recordingId))
+          console.log('Recording saved with ID:', recordingId)
         }
+      } else {
+        // Clear last recording ID if no recording was active
+        store.dispatch(setLastRecordingId(null))
       }
 
       // Determine high score eligibility
@@ -163,13 +170,19 @@ export const createGameRendererNew = (
       const { fuel } = finalState.ship
       const { cheatUsed } = finalState.game
 
-      // Stop recording if active
+      // Stop recording if active and save to storage
       const recordingService = getStoreServices().recordingService
       if (recordingService.isRecording()) {
         const recording = recordingService.stopRecording(finalState)
         if (recording) {
-          console.log('Recording stopped on game over', recording)
+          const storage = createRecordingStorage()
+          const recordingId = storage.save(recording)
+          store.dispatch(setLastRecordingId(recordingId))
+          console.log('Recording saved with ID:', recordingId)
         }
+      } else {
+        // Clear last recording ID if no recording was active
+        store.dispatch(setLastRecordingId(null))
       }
 
       // Determine high score eligibility

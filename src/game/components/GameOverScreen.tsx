@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
-import { getStoreServices, type RootState } from '../store'
+import React, { useEffect } from 'react'
+import { useAppSelector } from '../store'
 import { createRecordingStorage } from '@core/recording'
 
 type GameOverScreenProps = {
@@ -12,24 +11,8 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
   scale,
   onContinue
 }): React.ReactElement => {
-  const [hasRecording, setHasRecording] = useState(false)
-  const [recordingId, setRecordingId] = useState<string | null>(null)
-  const state = useSelector((state: RootState) => state)
-
-  useEffect(() => {
-    // Check if there's a recording available to export
-    const recordingService = getStoreServices().recordingService
-    const recording = recordingService.stopRecording(state)
-
-    if (recording) {
-      // Save to storage and get ID
-      const storage = createRecordingStorage()
-      const id = storage.save(recording)
-      setRecordingId(id)
-      setHasRecording(true)
-      console.log('Recording saved with ID:', id)
-    }
-  }, [state])
+  // Get recording ID from app state (set by game loop on game over)
+  const recordingId = useAppSelector(state => state.app.lastRecordingId)
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent): void => {
       if (e.code === 'Space' || e.code === 'Enter') {
@@ -91,7 +74,7 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
           Press SPACE or ENTER to continue
         </div>
 
-        {hasRecording && (
+        {recordingId && (
           <button
             onClick={handleExport}
             style={{
