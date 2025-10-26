@@ -1,6 +1,11 @@
 import React, { useEffect, useRef } from 'react'
 import type { FrameInfo, MonochromeBitmap } from '@lib/bitmap'
-import { useAppDispatch, useAppSelector, getStoreServices } from '../store'
+import {
+  useAppDispatch,
+  useAppSelector,
+  getStoreServices,
+  type RootState
+} from '../store'
 import { type ControlMatrix } from '@core/controls'
 import { stopReplay, setReplayFrame } from '../replaySlice'
 import { setMode } from '../appSlice'
@@ -9,6 +14,9 @@ import type { CollisionService } from '@/core/collision'
 import type { Frame, SpriteRegistry } from '@/lib/frame/types'
 import { drawFrameToCanvas } from '@/lib/frame/drawFrameToCanvas'
 import ReplayControls from './ReplayControls'
+import { getDebug } from '../debug'
+import { useStore } from 'react-redux'
+import { applyCollisionMapOverlay } from '../utils/collisionMapOverlay'
 
 type ReplayRendererProps = {
   renderer: (frame: FrameInfo, controls: ControlMatrix) => MonochromeBitmap
@@ -51,6 +59,7 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
     state => state.replay.totalReplayFrames
   )
   const dispatch = useAppDispatch()
+  const store = useStore()
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -113,6 +122,7 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
           if (renderMode === 'original') {
             // Original bitmap renderer
             const renderedBitmap = renderer(frameInfo, controls)
+            const collisionMap = collisionService.getMap()
 
             // Create offscreen canvas for pixel-perfect scaling
             const offscreen = document.createElement('canvas')
@@ -144,6 +154,18 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
                 pixels[pixelIndex + 2] = value // B
                 pixels[pixelIndex + 3] = 255 // A
               }
+            }
+
+            if (getDebug()?.SHOW_COLLISION_MAP) {
+              const ship = (store.getState() as RootState).ship
+              applyCollisionMapOverlay(
+                pixels,
+                collisionMap,
+                ship,
+                spriteService,
+                renderedBitmap.width,
+                renderedBitmap.height
+              )
             }
 
             // Draw to offscreen canvas
@@ -196,7 +218,8 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
     replayPaused,
     totalReplayFrames,
     dispatch,
-    spriteRegistry
+    spriteRegistry,
+    store
   ])
 
   return (
