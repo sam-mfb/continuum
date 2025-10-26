@@ -2,6 +2,7 @@ import React from 'react'
 import { useAppDispatch, useAppSelector, getStoreServices } from '../store'
 import { pauseReplay, resumeReplay, stopReplay } from '../replaySlice'
 import { setMode } from '../appSlice'
+import { shipSlice } from '@/core/ship'
 
 type ReplayControlsProps = {
   scale: number
@@ -29,6 +30,7 @@ const ReplayControls: React.FC<ReplayControlsProps> = ({ scale }) => {
     const recordingService = getStoreServices().recordingService
     recordingService.stopReplay()
     dispatch(stopReplay())
+    dispatch(shipSlice.actions.resetShip())
     dispatch(setMode('replaySelection'))
   }
 

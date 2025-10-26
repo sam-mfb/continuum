@@ -17,6 +17,7 @@ import ReplayControls from './ReplayControls'
 import { getDebug } from '../debug'
 import { useStore } from 'react-redux'
 import { applyCollisionMapOverlay } from '../utils/collisionMapOverlay'
+import { shipSlice } from '@/core/ship'
 
 type ReplayRendererProps = {
   renderer: (frame: FrameInfo, controls: ControlMatrix) => MonochromeBitmap
@@ -106,6 +107,7 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
             // Stop replay on missing controls
             recordingService.stopReplay()
             dispatch(stopReplay())
+            dispatch(shipSlice.actions.resetShip())
             dispatch(setMode('replaySelection'))
             return
           }
@@ -115,6 +117,7 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
             console.log('Replay complete')
             recordingService.stopReplay()
             dispatch(stopReplay())
+            dispatch(shipSlice.actions.resetShip())
             dispatch(setMode('replaySelection'))
             return
           }
