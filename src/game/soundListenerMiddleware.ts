@@ -15,6 +15,7 @@ import { transitionSlice } from '@/core/transition'
 import { shipSlice } from '@/core/ship'
 import { appSlice } from './appSlice'
 import { gameSlice } from './gameSlice'
+import { replaySlice } from './replaySlice'
 
 type SoundStartListening = TypedStartListening<RootState, AppDispatch>
 /**
@@ -136,7 +137,9 @@ export function setupSoundListener(
 
   soundStartListening({
     predicate: (_, currentState) =>
-      currentState.game.paused || !currentState.ship.shielding,
+      currentState.game.paused ||
+      currentState.replay.replayPaused ||
+      !currentState.ship.shielding,
     effect: () => {
       soundService.stopShipShield()
     }
@@ -154,7 +157,9 @@ export function setupSoundListener(
   })
   soundStartListening({
     predicate: (_, currentState) =>
-      currentState.game.paused || !currentState.ship.thrusting,
+      currentState.game.paused ||
+      currentState.replay.replayPaused ||
+      !currentState.ship.thrusting,
     effect: () => {
       soundService.stopShipThrust()
     }
@@ -211,6 +216,50 @@ export function setupSoundListener(
     actionCreator: gameSlice.actions.triggerGameOver,
     effect: () => {
       soundService.cleanup()
+    }
+  })
+
+  // Stop continuous sounds when replay pauses
+  soundStartListening({
+    actionCreator: replaySlice.actions.pauseReplay,
+    effect: () => {
+      soundService.stopShipThrust()
+      soundService.stopShipShield()
+    }
+  })
+
+  // Cleanup all sounds when replay stops
+  soundStartListening({
+    actionCreator: replaySlice.actions.stopReplay,
+    effect: () => {
+      soundService.cleanup()
+    }
+  })
+
+  // Sync sound settings and cleanup when mode changes
+  soundStartListening({
+    actionCreator: appSlice.actions.setMode,
+    effect: (action, listenerApi) => {
+      const prevState = listenerApi.getOriginalState()
+      const currentState = listenerApi.getState()
+      const currentMode = action.payload
+
+      // Cleanup when entering replay selection screen (ensures clean state between replays)
+      if (currentMode === 'replaySelection') {
+        soundService.cleanup()
+      }
+
+      // When entering replay mode, cleanup first then sync sound service with current app settings
+      if (currentMode === 'replay' && prevState.app.mode !== 'replay') {
+        soundService.cleanup()
+        soundService.setVolume(currentState.app.volume)
+        soundService.setMuted(!currentState.app.soundOn)
+      }
+
+      // If we were in replay mode and are now leaving it, cleanup sounds
+      if (prevState.app.mode === 'replay' && currentMode !== 'replay') {
+        soundService.cleanup()
+      }
     }
   })
 }
