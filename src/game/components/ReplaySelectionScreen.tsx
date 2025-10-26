@@ -3,7 +3,7 @@ import { useAppDispatch, useAppSelector, getStoreServices } from '../store'
 import { loadRecording, startReplay } from '../replaySlice'
 import { setMode } from '../appSlice'
 import { shipSlice } from '@/core/ship'
-import { invalidateHighScore } from '../gameSlice'
+import { markCheatUsed } from '../gameSlice'
 import { clearExplosions } from '@/core/explosions'
 import { loadLevel } from '../levelThunks'
 import { GAME_ENGINE_VERSION } from '../version'
@@ -82,8 +82,8 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
 
     const recordingService = getStoreServices().recordingService
 
-    // 1. Invalidate high score eligibility
-    dispatch(invalidateHighScore())
+    // 1. Mark cheat used (replays don't count for high scores)
+    dispatch(markCheatUsed())
 
     // 2. Reset ship state
     dispatch(shipSlice.actions.resetShip())

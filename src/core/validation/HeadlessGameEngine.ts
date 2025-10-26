@@ -15,7 +15,8 @@ const createHeadlessGameEngine = (
   store: HeadlessStore,
   galaxyService: GalaxyService,
   _fizzTransitionService: FizzTransitionService,
-  randomService: RandomService
+  randomService: RandomService,
+  galaxyId: string
 ): HeadlessGameEngine => {
   // Track fizz state to simulate correct duration in headless mode
   let fizzFramesElapsed = 0
@@ -35,6 +36,14 @@ const createHeadlessGameEngine = (
       // Reset fizz frame counter
       fizzFramesElapsed = 0
     }
+  }
+
+  // Create state update callbacks for headless mode
+  const stateUpdateCallbacks = {
+    onGameOver: (): void => {
+      // No-op - headless doesn't care about UI transitions or high scores
+    },
+    getGalaxyId: (): string => galaxyId
   }
 
   return {
@@ -67,7 +76,8 @@ const createHeadlessGameEngine = (
         controls,
         galaxyService,
         transitionCallbacks,
-        randomService
+        randomService,
+        stateUpdateCallbacks
       })
 
       // Check if we just entered or exited fizz to reset counter

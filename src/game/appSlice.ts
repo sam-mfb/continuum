@@ -26,6 +26,7 @@ export type MostRecentScore = {
   score: number
   planet: number
   fuel: number
+  highScoreEligible: boolean
 }
 
 export type AppState = {

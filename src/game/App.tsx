@@ -20,7 +20,7 @@ import {
 import { isTouchDevice } from './mobile/deviceDetection'
 import { setHighScore } from '@/core/highscore'
 import { shipSlice } from '@/core/ship'
-import { invalidateHighScore } from './gameSlice'
+import { markCheatUsed } from './gameSlice'
 import { clearExplosions } from '@/core/explosions'
 import { type SpriteService } from '@/core/sprites'
 import {
@@ -70,9 +70,7 @@ export const App: React.FC<AppProps> = ({
     state => state.app.showInGameControls
   )
   const mostRecentScore = useAppSelector(state => state.app.mostRecentScore)
-  const highScoreEligible = useAppSelector(
-    state => state.game.highScoreEligible
-  )
+  const cheatUsed = useAppSelector(state => state.game.cheatUsed)
   const scaleMode = useAppSelector(state => state.app.scaleMode)
   const touchControlsOverride = useAppSelector(
     state => state.app.touchControlsOverride
@@ -205,9 +203,9 @@ export const App: React.FC<AppProps> = ({
               // Reset ship and sound to clean state
               dispatch(shipSlice.actions.resetShip())
 
-              // Invalidate high score if starting at level > 1
+              // Mark cheat used if starting at level > 1
               if (level > 1) {
-                dispatch(invalidateHighScore())
+                dispatch(markCheatUsed())
               }
 
               // Reset sound service state for new game
@@ -370,7 +368,7 @@ export const App: React.FC<AppProps> = ({
         >
           {renderGameContent()}
         </div>
-        {!highScoreEligible && (
+        {cheatUsed && (
           <div
             style={{
               position: 'fixed',

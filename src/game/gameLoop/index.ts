@@ -21,6 +21,7 @@ import type { GameRenderLoop, NewGameRenderLoop } from '../types'
 import { renderGameOriginal } from './renderingOriginal'
 import type { Frame } from '@/lib/frame/types'
 import { renderGameNew } from './renderingNew'
+import { setMode, setMostRecentScore } from '../appSlice'
 
 export const createGameRenderer = (
   store: GameStore,
@@ -36,6 +37,52 @@ export const createGameRenderer = (
     reset: (): void => fizzTransitionService.reset()
   }
 
+  // Create state update callbacks
+  const stateUpdateCallbacks = {
+    onGameOver: (
+      score: number,
+      level: number,
+      fuel: number,
+      cheatUsed: boolean
+    ): void => {
+      // Determine high score eligibility
+      const highScoreEligible = !cheatUsed
+
+      // Always record the most recent score
+      store.dispatch(
+        setMostRecentScore({
+          score,
+          planet: level,
+          fuel,
+          highScoreEligible
+        })
+      )
+
+      // Determine which mode to go to based on high score eligibility
+      if (highScoreEligible) {
+        const state = store.getState()
+        const currentGalaxyId = state.app.currentGalaxyId
+        const allHighScores = state.highscore
+        const highScores = allHighScores[currentGalaxyId]
+        const lowestScore = highScores
+          ? Math.min(...Object.values(highScores).map(hs => hs?.score || 0))
+          : 0
+
+        if (score > lowestScore) {
+          // Score qualifies for high score entry
+          store.dispatch(setMode('highScoreEntry'))
+        } else {
+          // Go directly to game over
+          store.dispatch(setMode('gameOver'))
+        }
+      } else {
+        // Cheat was used - go directly to game over
+        store.dispatch(setMode('gameOver'))
+      }
+    },
+    getGalaxyId: (): string => store.getState().app.currentGalaxyId
+  }
+
   return (frame, controls) => {
     // Create a fresh bitmap for this frame
     let bitmap = createGameBitmap()
@@ -47,7 +94,8 @@ export const createGameRenderer = (
       controls,
       galaxyService,
       transitionCallbacks,
-      randomService
+      randomService,
+      stateUpdateCallbacks
     })
 
     // Get current state after updates
@@ -95,6 +143,52 @@ export const createGameRendererNew = (
     reset: (): void => fizzTransitionServiceFrame.reset()
   }
 
+  // Create state update callbacks
+  const stateUpdateCallbacks = {
+    onGameOver: (
+      score: number,
+      level: number,
+      fuel: number,
+      cheatUsed: boolean
+    ): void => {
+      // Determine high score eligibility
+      const highScoreEligible = !cheatUsed
+
+      // Always record the most recent score
+      store.dispatch(
+        setMostRecentScore({
+          score,
+          planet: level,
+          fuel,
+          highScoreEligible
+        })
+      )
+
+      // Determine which mode to go to based on high score eligibility
+      if (highScoreEligible) {
+        const state = store.getState()
+        const currentGalaxyId = state.app.currentGalaxyId
+        const allHighScores = state.highscore
+        const highScores = allHighScores[currentGalaxyId]
+        const lowestScore = highScores
+          ? Math.min(...Object.values(highScores).map(hs => hs?.score || 0))
+          : 0
+
+        if (score > lowestScore) {
+          // Score qualifies for high score entry
+          store.dispatch(setMode('highScoreEntry'))
+        } else {
+          // Go directly to game over
+          store.dispatch(setMode('gameOver'))
+        }
+      } else {
+        // Cheat was used - go directly to game over
+        store.dispatch(setMode('gameOver'))
+      }
+    },
+    getGalaxyId: (): string => store.getState().app.currentGalaxyId
+  }
+
   return (frame, controls) => {
     // This handles all game logic, physics, and state changes
     updateGameState({
@@ -103,7 +197,8 @@ export const createGameRendererNew = (
       controls,
       galaxyService,
       transitionCallbacks,
-      randomService
+      randomService,
+      stateUpdateCallbacks
     })
 
     // Create a fresh frame

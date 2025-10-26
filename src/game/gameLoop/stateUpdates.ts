@@ -21,6 +21,32 @@ export type TransitionCallbacks = {
   reset: () => void
 }
 
+/**
+ * State update callbacks
+ * Allows updateGameState to communicate game events without depending on app-level concerns
+ */
+export type StateUpdateCallbacks = {
+  /**
+   * Called when game over occurs
+   * @param score - Final score
+   * @param level - Level reached
+   * @param fuel - Fuel remaining
+   * @param cheatUsed - Whether cheats were used during the game
+   */
+  onGameOver: (
+    score: number,
+    level: number,
+    fuel: number,
+    cheatUsed: boolean
+  ) => void
+
+  /**
+   * Get the current galaxy ID (needed for level transitions)
+   * @returns The galaxy ID string
+   */
+  getGalaxyId: () => string
+}
+
 import { shipSlice, shipControl, CRITFUEL, handleBounceState } from '@core/ship'
 import {
   shotsSlice,
@@ -73,12 +99,12 @@ import {
   markLevelComplete,
   triggerGameOver,
   resetGame,
-  invalidateHighScore,
+  markCheatUsed,
   killShipNextFrame,
   resetKillShipNextFrame,
   gameSlice
 } from '../gameSlice'
-import { setMode, setMostRecentScore } from '../appSlice'
+// App-level concerns (mode, scores) handled via stateUpdateCallbacks
 import { TOTAL_INITIAL_LIVES } from '../constants'
 import { triggerShipDeath } from '../shipDeath'
 
@@ -95,6 +121,7 @@ export type StateUpdateContext = {
   galaxyService: GalaxyService
   transitionCallbacks: TransitionCallbacks
   randomService: RandomService
+  stateUpdateCallbacks: StateUpdateCallbacks
 }
 
 /**
@@ -107,23 +134,24 @@ export const updateGameState = (context: StateUpdateContext): void => {
     controls,
     galaxyService,
     transitionCallbacks,
-    randomService
+    randomService,
+    stateUpdateCallbacks
   } = context
 
   let state = store.getState()
 
   if (controls.quit) {
-    handleGameOver(store, transitionCallbacks)
+    handleGameOver(store, transitionCallbacks, stateUpdateCallbacks)
     return
   }
 
   if (controls.extraLife) {
-    store.dispatch(invalidateHighScore())
+    store.dispatch(markCheatUsed())
     store.dispatch(shipSlice.actions.extraLife())
   }
 
   if (controls.nextLevel) {
-    store.dispatch(invalidateHighScore())
+    store.dispatch(markCheatUsed())
     store.dispatch(markLevelComplete())
 
     // Start transition directly using the reducer action
@@ -159,7 +187,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
     state.ship.lives <= 0 &&
     state.ship.deadCount === 0
   ) {
-    handleGameOver(store, transitionCallbacks)
+    handleGameOver(store, transitionCallbacks, stateUpdateCallbacks)
     return
   }
 
@@ -398,38 +426,20 @@ const handleLevelCompletion = (
  */
 const handleGameOver = (
   store: GameStore,
-  transitionCallbacks: TransitionCallbacks
+  transitionCallbacks: TransitionCallbacks,
+  stateUpdateCallbacks: StateUpdateCallbacks
 ): void => {
   const state = store.getState()
 
   store.dispatch(triggerGameOver())
 
-  // Always record the most recent score
-  store.dispatch(
-    setMostRecentScore({
-      score: state.status.score,
-      planet: state.status.currentlevel,
-      fuel: state.ship.fuel
-    })
+  // Notify callback with game over data - callback handles high score logic and UI transitions
+  stateUpdateCallbacks.onGameOver(
+    state.status.score,
+    state.status.currentlevel,
+    state.ship.fuel,
+    state.game.cheatUsed
   )
-
-  // Determine which mode to go to based on high score eligibility
-  const highScoreEligible = state.game.highScoreEligible
-  const currentGalaxyId = state.app.currentGalaxyId
-  const allHighScores = state.highscore
-  const highScores = allHighScores[currentGalaxyId]
-  const lowestScore = highScores
-    ? Math.min(...Object.values(highScores).map(hs => hs?.score || 0))
-    : 0
-  const recentScore = state.status.score
-
-  if (highScoreEligible && recentScore > lowestScore) {
-    // Score qualifies for high score entry
-    store.dispatch(setMode('highScoreEntry'))
-  } else {
-    // Go directly to game over
-    store.dispatch(setMode('gameOver'))
-  }
 
   // Reset everything for a new game
   store.dispatch(resetGame())
