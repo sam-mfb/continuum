@@ -117,11 +117,6 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
     dispatch(setMode('start'))
   }
 
-  const fontSize = Math.floor(14 * scale)
-  const buttonFontSize = Math.floor(16 * scale)
-  const padding = Math.floor(20 * scale)
-  const buttonPadding = Math.floor(10 * scale)
-
   return (
     <div
       style={{
@@ -131,25 +126,27 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
+        backgroundColor: 'black',
         color: 'white',
         fontFamily: 'monospace',
-        gap: `${padding}px`
+        gap: `${15 * scale}px`
       }}
     >
       <h2
         style={{
-          fontSize: `${Math.floor(24 * scale)}px`,
-          margin: 0
+          fontSize: `${16 * scale}px`,
+          margin: 0,
+          letterSpacing: `${1 * scale}px`
         }}
       >
-        Watch Replay
+        GAME REPLAYS
       </h2>
 
       <div
         style={{
           display: 'flex',
           flexDirection: 'column',
-          gap: `${padding}px`,
+          gap: `${12 * scale}px`,
           alignItems: 'center'
         }}
       >
@@ -158,9 +155,13 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
           accept=".json"
           onChange={handleFileLoad}
           style={{
-            fontSize: `${fontSize}px`,
-            padding: `${buttonPadding}px`,
-            cursor: 'pointer'
+            fontSize: `${7 * scale}px`,
+            padding: `${4 * scale}px ${8 * scale}px`,
+            cursor: 'pointer',
+            backgroundColor: 'white',
+            color: 'black',
+            border: '1px solid white',
+            fontFamily: 'monospace'
           }}
         />
 
@@ -168,9 +169,10 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
           <div
             style={{
               color: '#ff4444',
-              fontSize: `${fontSize}px`,
+              fontSize: `${7 * scale}px`,
               maxWidth: `${400 * scale}px`,
-              textAlign: 'center'
+              textAlign: 'center',
+              lineHeight: 1.4
             }}
           >
             {fileError}
@@ -181,9 +183,10 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
           <div
             style={{
               color: '#ffaa00',
-              fontSize: `${fontSize}px`,
+              fontSize: `${7 * scale}px`,
               maxWidth: `${400 * scale}px`,
-              textAlign: 'center'
+              textAlign: 'center',
+              lineHeight: 1.4
             }}
           >
             {warnings.map((warning, i) => (
@@ -195,11 +198,13 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
         {loadedRecording && !fileError && (
           <div
             style={{
-              fontSize: `${fontSize}px`,
+              fontSize: `${7 * scale}px`,
               textAlign: 'left',
-              border: '1px solid #666',
-              padding: `${padding}px`,
-              backgroundColor: '#111'
+              border: '1px solid white',
+              padding: `${10 * scale}px`,
+              backgroundColor: 'black',
+              color: 'white',
+              lineHeight: 1.6
             }}
           >
             <div>
@@ -225,39 +230,41 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
         <div
           style={{
             display: 'flex',
-            gap: `${padding}px`
+            gap: `${10 * scale}px`
           }}
         >
           <button
             onClick={handleStartReplay}
             disabled={!loadedRecording || !!fileError}
             style={{
-              fontSize: `${buttonFontSize}px`,
-              padding: `${buttonPadding}px ${buttonPadding * 2}px`,
+              fontSize: `${8 * scale}px`,
+              padding: `${4 * scale}px ${10 * scale}px`,
               cursor: loadedRecording && !fileError ? 'pointer' : 'not-allowed',
               opacity: loadedRecording && !fileError ? 1 : 0.5,
-              backgroundColor: '#333',
-              color: 'white',
-              border: '1px solid #666',
-              borderRadius: `${4 * scale}px`
+              backgroundColor: 'white',
+              color: 'black',
+              border: '1px solid white',
+              fontFamily: 'monospace',
+              letterSpacing: `${1 * scale}px`
             }}
           >
-            Start Replay
+            WATCH REPLAY
           </button>
 
           <button
             onClick={handleBack}
             style={{
-              fontSize: `${buttonFontSize}px`,
-              padding: `${buttonPadding}px ${buttonPadding * 2}px`,
+              fontSize: `${8 * scale}px`,
+              padding: `${4 * scale}px ${10 * scale}px`,
               cursor: 'pointer',
-              backgroundColor: '#333',
-              color: 'white',
-              border: '1px solid #666',
-              borderRadius: `${4 * scale}px`
+              backgroundColor: 'white',
+              color: 'black',
+              border: '1px solid white',
+              fontFamily: 'monospace',
+              letterSpacing: `${1 * scale}px`
             }}
           >
-            Back
+            BACK
           </button>
         </div>
       </div>

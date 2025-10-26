@@ -32,24 +32,20 @@ const ReplayControls: React.FC<ReplayControlsProps> = ({ scale }) => {
     dispatch(setMode('start'))
   }
 
-  const fontSize = Math.floor(14 * scale)
-  const buttonPadding = Math.floor(8 * scale)
-  const gap = Math.floor(10 * scale)
-
   return (
     <div
       style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: `${gap}px`,
-        padding: `${buttonPadding}px`,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        borderRadius: `${4 * scale}px`,
+        gap: `${10 * scale}px`,
+        padding: `${8 * scale}px`,
+        backgroundColor: 'black',
+        border: '1px solid white',
         fontFamily: 'monospace',
-        fontSize: `${fontSize}px`,
+        fontSize: `${7 * scale}px`,
         color: 'white',
-        marginTop: `${gap}px`
+        marginTop: `${10 * scale}px`
       }}
     >
       <span>
@@ -58,30 +54,32 @@ const ReplayControls: React.FC<ReplayControlsProps> = ({ scale }) => {
       <button
         onClick={handlePauseResume}
         style={{
-          fontSize: `${fontSize}px`,
-          padding: `${buttonPadding}px ${buttonPadding * 2}px`,
+          fontSize: `${8 * scale}px`,
+          padding: `${4 * scale}px ${10 * scale}px`,
           cursor: 'pointer',
-          backgroundColor: '#444',
-          color: 'white',
-          border: '1px solid #666',
-          borderRadius: `${4 * scale}px`
+          backgroundColor: 'white',
+          color: 'black',
+          border: '1px solid white',
+          fontFamily: 'monospace',
+          letterSpacing: `${1 * scale}px`
         }}
       >
-        {replayPaused ? 'Resume' : 'Pause'}
+        {replayPaused ? 'RESUME' : 'PAUSE'}
       </button>
       <button
         onClick={handleQuit}
         style={{
-          fontSize: `${fontSize}px`,
-          padding: `${buttonPadding}px ${buttonPadding * 2}px`,
+          fontSize: `${8 * scale}px`,
+          padding: `${4 * scale}px ${10 * scale}px`,
           cursor: 'pointer',
-          backgroundColor: '#444',
-          color: 'white',
-          border: '1px solid #666',
-          borderRadius: `${4 * scale}px`
+          backgroundColor: 'white',
+          color: 'black',
+          border: '1px solid white',
+          fontFamily: 'monospace',
+          letterSpacing: `${1 * scale}px`
         }}
       >
-        Quit
+        QUIT
       </button>
     </div>
   )
