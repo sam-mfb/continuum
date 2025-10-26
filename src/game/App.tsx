@@ -19,6 +19,7 @@ import {
 import { isTouchDevice } from './mobile/deviceDetection'
 import { setHighScore } from '@/core/highscore'
 import { shipSlice } from '@/core/ship'
+import { statusSlice } from '@/core/status'
 import { markCheatUsed } from '@core/game'
 import { clearExplosions } from '@/core/explosions'
 import { type SpriteService } from '@/core/sprites'
@@ -181,6 +182,10 @@ export const App: React.FC<AppProps> = ({
             onStartGame={(level: number) => {
               // Reset ship and sound to clean state
               dispatch(shipSlice.actions.resetShip())
+              dispatch(shipSlice.actions.resetFuel())
+
+              // Reset score and status for new game
+              dispatch(statusSlice.actions.initStatus(level))
 
               // Mark cheat used if starting at level > 1
               if (level > 1) {
