@@ -1,31 +1,41 @@
 # Browser Replay Feature Plan
 
 ## Overview
+
 Add ability to replay recorded games in the browser. Users can load a recording file from their local machine and watch it play back. Keep it simple - just pause and quit controls during playback.
 
 ## Architecture
 
 ### Reuse Existing Components
-- **Rendering**: Use existing `renderer`/`rendererNew` functions (same as live gameplay)
+
+- **Rendering**: Use `rendererNew` only - replay only works with modern rendering and collision detection
 - **RecordingService**: Already has replay support (`startReplay`, `getReplayControls`, `getLevelSeed`)
 - **Redux store**: Use existing store and game logic
 - **Level loading**: Same `loadLevel` thunk with deterministic seeds from recording
 
 ### New Components Needed
+
 1. **ReplaySelectionScreen** - File picker and metadata display
 2. **ReplayRenderer** - Modified game loop that reads controls from recording
 3. **ReplayControls** - Simple overlay with pause/quit buttons and frame counter
 
 ## Implementation Plan
 
-### 1. State Management (appSlice.ts)
+### 1. State Management
 
-Add to `GameMode` type:
+**appSlice.ts** - Add to `GameMode` type only:
+
 ```typescript
-export type GameMode = 'start' | 'playing' | 'highScoreEntry' | 'gameOver' | 'replay'
+export type GameMode =
+  | 'start'
+  | 'playing'
+  | 'highScoreEntry'
+  | 'gameOver'
+  | 'replay'
 ```
 
-Add new state fields:
+**Create new replaySlice.ts** - All replay-specific state goes in its own slice:
+
 ```typescript
 replayPaused: boolean
 currentReplayFrame: number
@@ -33,7 +43,8 @@ totalReplayFrames: number
 loadedRecording: GameRecording | null
 ```
 
-Add new actions:
+Actions for replay slice:
+
 - `loadRecording(recording: GameRecording)` - Store loaded recording
 - `startReplay()` - Enter replay mode
 - `pauseReplay()` - Pause replay
@@ -46,6 +57,7 @@ Add new actions:
 **File**: `src/game/components/ReplaySelectionScreen.tsx`
 
 Features:
+
 - File input (`<input type="file" accept=".json">`)
 - Parse JSON with FileReader API
 - Display recording metadata:
@@ -69,28 +81,35 @@ Features:
 Similar to `GameRenderer.tsx` but with key differences:
 
 **Game Loop**:
+
+- Always use modern rendering and collision modes regardless of global settings
 - Get controls from `recordingService.getReplayControls(frameCount)` instead of keyboard
 - Respect `replayPaused` state - skip updates when paused
 - Track frame counter and dispatch `setReplayFrame()` each frame
 - Auto-stop when `frameCount >= totalReplayFrames`
 - On completion: dispatch `stopReplay()` and return to start screen
 
-**No User Input**:
-- No keyboard event listeners for game controls
-- Only listen for pause (spacebar/P) and quit (Q/Escape)
+**User Input**:
+
+- No keyboard event listeners at all
+- Pause and quit are UI buttons only (in ReplayControls component)
 - No touch controls overlay
 
 **No Recording**:
+
 - Don't call `recordingService.recordFrame()`
 - Recording service is in replay mode, not recording mode
 
 **Level Transitions**:
-- Same as validator: game engine auto-transitions via `transitionToNextLevel`
+
+- Use the real Fizz transition service and show the fizz animation (unlike validator which simulates it)
+- Game engine auto-transitions via `transitionToNextLevel`
 - Level seeds come from recording's `levelSeeds` array
 - No manual level loading after first level
 
 **Rendering**:
-- Use same render pipeline as live game (respects `renderMode` setting)
+
+- Always use modern rendering (ignore `renderMode` global setting)
 - Display ReplayControls overlay
 
 ### 4. Replay Controls Overlay
@@ -100,19 +119,22 @@ Similar to `GameRenderer.tsx` but with key differences:
 Simple overlay displayed during replay:
 
 **Display**:
+
 - Frame counter: `Frame 1234 / 5678`
 - Pause button (or "Resume" when paused)
 - Quit button
 
 **Layout**:
-- Position at top of game canvas
+
+- Position below the game canvas so the view is unimpeded
 - Semi-transparent background
 - Scaled appropriately with game scale
 
 **Interactions**:
-- Pause: Dispatch `pauseReplay()` or `resumeReplay()`
-- Quit: Dispatch `stopReplay()` - stops replay, returns to start screen
-- Keyboard shortcuts: Space/P for pause, Q/Escape for quit
+
+- Pause button: Dispatch `pauseReplay()` or `resumeReplay()`
+- Quit button: Dispatch `stopReplay()` - stops replay, returns to start screen
+- No keyboard shortcuts
 
 ### 5. Initialize Replay Flow
 
@@ -158,6 +180,7 @@ case 'replay':
 **File**: `src/game/components/StartScreen.tsx`
 
 Add "Watch Replay" button:
+
 - Positioned near "Start Game" button
 - Dispatches `setMode('replaySelection')` (or directly shows file picker)
 - Alternative: Add to main menu alongside other options
@@ -170,14 +193,18 @@ const handleFileLoad = (event: ChangeEvent<HTMLInputElement>): void => {
   if (!file) return
 
   const reader = new FileReader()
-  reader.onload = (e) => {
+  reader.onload = e => {
     try {
       const json = e.target?.result as string
       const recording = JSON.parse(json) as GameRecording
 
       // Validate required fields
-      if (!recording.version || !recording.engineVersion ||
-          !recording.levelSeeds || !recording.inputs) {
+      if (
+        !recording.version ||
+        !recording.engineVersion ||
+        !recording.levelSeeds ||
+        !recording.inputs
+      ) {
         throw new Error('Invalid recording format')
       }
 
@@ -220,61 +247,54 @@ When replay completes (reaches last frame) or user quits:
 
 ## Files to Create
 
-1. `src/game/components/ReplaySelectionScreen.tsx` - File picker and metadata display
-2. `src/game/components/ReplayRenderer.tsx` - Replay game loop
-3. `src/game/components/ReplayControls.tsx` - Pause/quit overlay
+1. `src/game/replaySlice.ts` - Replay-specific state management
+2. `src/game/components/ReplaySelectionScreen.tsx` - File picker and metadata display
+3. `src/game/components/ReplayRenderer.tsx` - Replay game loop
+4. `src/game/components/ReplayControls.tsx` - Pause/quit overlay
 
 ## Files to Modify
 
-1. `src/game/appSlice.ts` - Add replay mode and state
+1. `src/game/appSlice.ts` - Add 'replay' to GameMode type only
 2. `src/game/App.tsx` - Add replay mode rendering
 3. `src/game/components/StartScreen.tsx` - Add "Watch Replay" button
+4. `src/game/store.ts` - Add replaySlice to store configuration
 
 ## Technical Notes
 
 ### Sound During Replay
+
 - Sound should play normally during replay
 - Respects current volume and mute settings
 - User can mute/unmute during replay (existing volume button)
 
 ### Pause Behavior
+
 - When paused: Game loop continues but skips updates
 - Rendering frozen at last frame
 - Can resume at exact same frame
 - No rewinding or frame stepping (keep it simple)
 
 ### Galaxy Mismatch Handling
-- If recording galaxy ID doesn't match current: Show warning but allow playback
-- May cause issues if level data different
-- Best effort - let it play and see what happens
+
+- Block playback if recording galaxy ID doesn't match current galaxy
+- Show error message explaining the mismatch
+- User must load the correct galaxy before replaying
 
 ### Engine Version Mismatch
+
 - If recording engine version differs: Show warning but allow playback
 - Replay may diverge from original due to physics/logic changes
 - Still watchable, just may not match original playthrough exactly
 
 ### Level Transitions
+
 - Follow same pattern as `RecordingValidator.ts`
 - First level loaded explicitly with recorded seed
 - Subsequent levels auto-transition via game engine
 - Seeds from recording ensure deterministic level generation
 
 ### Recording Service Modes
+
 - RecordingService supports three modes: `idle`, `recording`, `replaying`
 - Replay uses existing `replaying` mode
 - Can't record during replay (mode check prevents it)
-
-## Future Enhancements (Not in Initial Plan)
-
-These are explicitly out of scope for the simple implementation:
-
-- Speed controls (2x, 4x, 8x playback)
-- Scrubbing/seeking to arbitrary frame
-- Rewind functionality
-- Frame-by-frame stepping
-- Live validation with divergence warnings
-- Recording library/gallery
-- Replay editing or trimming
-- Export replay as video
-
-Keep it simple: Load, play, pause, quit.
