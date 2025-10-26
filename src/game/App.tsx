@@ -7,6 +7,8 @@ import SettingsModal from './components/SettingsModal'
 import VolumeButton from './components/VolumeButton'
 import FullscreenButton from './components/FullscreenButton'
 import InGameControlsPanel from './components/InGameControlsPanel'
+import ReplaySelectionScreen from './components/ReplaySelectionScreen'
+import ReplayRenderer from './components/ReplayRenderer'
 import { loadLevel } from './levelThunks'
 import {
   startGame,
@@ -313,6 +315,23 @@ export const App: React.FC<AppProps> = ({
           <GameOverScreen
             scale={scale}
             onContinue={() => dispatch(setMode('start'))}
+          />
+        )
+
+      case 'replaySelection':
+        return <ReplaySelectionScreen scale={scale} />
+
+      case 'replay':
+        return (
+          <ReplayRenderer
+            rendererNew={rendererNew}
+            collisionService={collisionService}
+            spriteService={spriteService}
+            spriteRegistry={spriteRegistry}
+            width={512}
+            height={342}
+            scale={scale}
+            fps={20}
           />
         )
 

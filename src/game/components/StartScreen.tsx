@@ -4,7 +4,7 @@ import type { RootState, GameServices } from '../store'
 import type { HighScoreTable } from '@/core/highscore'
 import { getDefaultHighScoreTable } from '@/core/highscore'
 import { allowHighScore, invalidateHighScore } from '../gameSlice'
-import { openSettings } from '../appSlice'
+import { openSettings, setMode } from '../appSlice'
 import { loadGalaxy } from '../galaxyThunks'
 import { GALAXIES } from '../galaxyConfig'
 import type { MonochromeBitmap } from '@lib/bitmap/types'
@@ -398,6 +398,22 @@ const StartScreen: React.FC<StartScreenProps> = ({ scale, onStartGame }) => {
           }}
         >
           START GAME
+        </button>
+
+        <button
+          onClick={() => dispatch(setMode('replaySelection'))}
+          style={{
+            fontSize: `${8 * scale}px`,
+            padding: `${4 * scale}px ${10 * scale}px`,
+            backgroundColor: 'white',
+            color: 'black',
+            border: '1px solid white',
+            cursor: 'pointer',
+            fontFamily: 'monospace',
+            letterSpacing: `${1 * scale}px`
+          }}
+        >
+          WATCH REPLAY
         </button>
       </div>
 

@@ -6,7 +6,13 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { AlignmentMode } from '@/core/shared'
 
-export type GameMode = 'start' | 'playing' | 'highScoreEntry' | 'gameOver'
+export type GameMode =
+  | 'start'
+  | 'playing'
+  | 'highScoreEntry'
+  | 'gameOver'
+  | 'replaySelection'
+  | 'replay'
 
 export type CollisionMode = 'modern' | 'original'
 

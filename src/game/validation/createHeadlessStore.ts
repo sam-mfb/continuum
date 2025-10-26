@@ -1,6 +1,7 @@
 import { combineSlices, configureStore } from '@reduxjs/toolkit'
 import { gameSlice } from '@/game/gameSlice'
 import { appSlice } from '@/game/appSlice'
+import { replaySlice } from '@/game/replaySlice'
 import { shipSlice } from '@core/ship'
 import { shotsSlice } from '@core/shots'
 import { planetSlice } from '@core/planet'
@@ -33,6 +34,7 @@ type HeadlessServices = {
 const headlessReducer = combineSlices(
   appSlice,
   gameSlice,
+  replaySlice,
   controlsSlice,
   shipSlice,
   shotsSlice,

@@ -16,6 +16,7 @@ import type { RandomService } from '@/core/shared'
 // Import all reducers
 import { gameSlice } from './gameSlice'
 import { appSlice } from './appSlice'
+import { replaySlice } from './replaySlice'
 import { appMiddleware, loadAppSettings } from './appMiddleware'
 import { syncThunkMiddleware } from './syncThunkMiddleware'
 import { shipSlice } from '@core/ship'
@@ -66,6 +67,7 @@ export type GameInitialSettings = {
 const rootReducer = combineSlices(
   appSlice,
   gameSlice,
+  replaySlice,
   controlsSlice,
   shipSlice,
   shotsSlice,
