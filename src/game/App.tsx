@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import { useSelector } from 'react-redux'
 import GameRenderer from './components/GameRenderer'
 import StartScreen from './components/StartScreen'
 import HighScoreEntry from './components/HighScoreEntry'
@@ -23,12 +22,7 @@ import { shipSlice } from '@/core/ship'
 import { markCheatUsed } from '@core/game'
 import { clearExplosions } from '@/core/explosions'
 import { type SpriteService } from '@/core/sprites'
-import {
-  useAppDispatch,
-  useAppSelector,
-  getStoreServices,
-  type RootState
-} from './store'
+import { useAppDispatch, useAppSelector, getStoreServices } from './store'
 import { GAME_ENGINE_VERSION } from './version'
 import type {
   GameRenderLoop,
@@ -78,21 +72,6 @@ export const App: React.FC<AppProps> = ({
 
   // Use responsive scale that adapts to viewport size or fixed scale from settings
   const { scale, dimensions } = useResponsiveScale(scaleMode)
-
-  // Handle recording lifecycle - stop recording when returning to start or game over
-  const currentState = useSelector((state: RootState) => state)
-
-  useEffect(() => {
-    const recordingService = getStoreServices().recordingService
-
-    if (gameMode === 'gameOver' || gameMode === 'start') {
-      // Stop recording when game ends or returns to start screen
-      if (recordingService.isRecording()) {
-        recordingService.stopRecording(currentState)
-        console.log('Stopped recording')
-      }
-    }
-  }, [gameMode, currentState])
 
   // Re-evaluate touch controls when override setting changes
   useEffect(() => {

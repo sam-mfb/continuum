@@ -42,7 +42,7 @@ const createHeadlessGameEngine = (
   // Create state update callbacks for headless mode
   const stateUpdateCallbacks = {
     onGameOver: (): void => {
-      // No-op - headless doesn't care about UI transitions or high scores
+      // No-op - headless validation doesn't care about UI transitions or high scores
     },
     getGalaxyId: (): string => galaxyId,
     getInitialLives: (): number => initialLives,

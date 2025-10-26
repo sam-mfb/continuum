@@ -15,7 +15,7 @@ import type {
 import type { GameStore } from './store'
 import type { RandomService } from '@/core/shared'
 
-import { updateGameState } from '@core/game'
+import { updateGameState, type GameRootState } from '@core/game'
 import { renderGame } from './rendering'
 import type { GameRenderLoop, NewGameRenderLoop } from './types'
 import { renderGameOriginal } from './renderingOriginal'
@@ -23,6 +23,7 @@ import type { Frame } from '@/lib/frame/types'
 import { renderGameNew } from './renderingNew'
 import { setMode, setMostRecentScore } from './appSlice'
 import { TOTAL_INITIAL_LIVES } from './constants'
+import { getStoreServices } from './store'
 
 export const createGameRenderer = (
   store: GameStore,
@@ -40,12 +41,20 @@ export const createGameRenderer = (
 
   // Create state update callbacks
   const stateUpdateCallbacks = {
-    onGameOver: (
-      score: number,
-      level: number,
-      fuel: number,
-      cheatUsed: boolean
-    ): void => {
+    onGameOver: (finalState: GameRootState): void => {
+      const { score, currentlevel: level } = finalState.status
+      const { fuel } = finalState.ship
+      const { cheatUsed } = finalState.game
+
+      // Stop recording if active
+      const recordingService = getStoreServices().recordingService
+      if (recordingService.isRecording()) {
+        const recording = recordingService.stopRecording(finalState)
+        if (recording) {
+          console.log('Recording stopped on game over', recording)
+        }
+      }
+
       // Determine high score eligibility
       const highScoreEligible = !cheatUsed
 
@@ -149,12 +158,20 @@ export const createGameRendererNew = (
 
   // Create state update callbacks
   const stateUpdateCallbacks = {
-    onGameOver: (
-      score: number,
-      level: number,
-      fuel: number,
-      cheatUsed: boolean
-    ): void => {
+    onGameOver: (finalState: GameRootState): void => {
+      const { score, currentlevel: level } = finalState.status
+      const { fuel } = finalState.ship
+      const { cheatUsed } = finalState.game
+
+      // Stop recording if active
+      const recordingService = getStoreServices().recordingService
+      if (recordingService.isRecording()) {
+        const recording = recordingService.stopRecording(finalState)
+        if (recording) {
+          console.log('Recording stopped on game over', recording)
+        }
+      }
+
       // Determine high score eligibility
       const highScoreEligible = !cheatUsed
 

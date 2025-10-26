@@ -29,17 +29,9 @@ export type TransitionCallbacks = {
 export type StateUpdateCallbacks = {
   /**
    * Called when game over occurs
-   * @param score - Final score
-   * @param level - Level reached
-   * @param fuel - Fuel remaining
-   * @param cheatUsed - Whether cheats were used during the game
+   * @param finalState - The final game state at game over
    */
-  onGameOver: (
-    score: number,
-    level: number,
-    fuel: number,
-    cheatUsed: boolean
-  ) => void
+  onGameOver: (finalState: GameRootState) => void
 
   /**
    * Get the current galaxy ID (needed for level transitions)
@@ -472,13 +464,8 @@ const handleGameOver = (
 
   store.dispatch(triggerGameOver())
 
-  // Notify callback with game over data - callback handles high score logic and UI transitions
-  stateUpdateCallbacks.onGameOver(
-    state.status.score,
-    state.status.currentlevel,
-    state.ship.fuel,
-    state.game.cheatUsed
-  )
+  // Notify callback with final game state - callback handles recording stop, high scores, and UI transitions
+  stateUpdateCallbacks.onGameOver(state)
 
   // Reset everything for a new game
   store.dispatch(resetGame())
