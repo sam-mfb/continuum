@@ -22,6 +22,7 @@ import { renderGameOriginal } from './renderingOriginal'
 import type { Frame } from '@/lib/frame/types'
 import { renderGameNew } from './renderingNew'
 import { setMode, setMostRecentScore } from '../appSlice'
+import { TOTAL_INITIAL_LIVES } from '../constants'
 
 export const createGameRenderer = (
   store: GameStore,
@@ -80,7 +81,8 @@ export const createGameRenderer = (
         store.dispatch(setMode('gameOver'))
       }
     },
-    getGalaxyId: (): string => store.getState().app.currentGalaxyId
+    getGalaxyId: (): string => store.getState().app.currentGalaxyId,
+    getInitialLives: (): number => TOTAL_INITIAL_LIVES
   }
 
   return (frame, controls) => {
@@ -186,7 +188,8 @@ export const createGameRendererNew = (
         store.dispatch(setMode('gameOver'))
       }
     },
-    getGalaxyId: (): string => store.getState().app.currentGalaxyId
+    getGalaxyId: (): string => store.getState().app.currentGalaxyId,
+    getInitialLives: (): number => TOTAL_INITIAL_LIVES
   }
 
   return (frame, controls) => {

@@ -74,7 +74,8 @@ const main = async (): Promise<void> => {
     galaxyService,
     fizzTransitionService,
     randomService,
-    recording.galaxyId
+    recording.galaxyId,
+    recording.initialState.lives
   )
 
   const validator = createRecordingValidator(engine, store, recordingService)

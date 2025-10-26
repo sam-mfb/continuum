@@ -45,6 +45,12 @@ export type StateUpdateCallbacks = {
    * @returns The galaxy ID string
    */
   getGalaxyId: () => string
+
+  /**
+   * Get the initial number of lives for a new game
+   * @returns The initial lives count
+   */
+  getInitialLives: () => number
 }
 
 import { shipSlice, shipControl, CRITFUEL, handleBounceState } from '@core/ship'
@@ -104,8 +110,7 @@ import {
   resetKillShipNextFrame,
   gameSlice
 } from '../gameSlice'
-// App-level concerns (mode, scores) handled via stateUpdateCallbacks
-import { TOTAL_INITIAL_LIVES } from '../constants'
+// App-level concerns (mode, scores, initial lives) handled via stateUpdateCallbacks
 import { triggerShipDeath } from '../shipDeath'
 
 import { BunkerKind } from '@core/figs'
@@ -445,7 +450,9 @@ const handleGameOver = (
   store.dispatch(resetGame())
   store.dispatch(resetTransition())
   transitionCallbacks.reset()
-  store.dispatch(shipSlice.actions.setLives(TOTAL_INITIAL_LIVES))
+  store.dispatch(
+    shipSlice.actions.setLives(stateUpdateCallbacks.getInitialLives())
+  )
   store.dispatch(shipSlice.actions.resetFuel())
   store.dispatch(statusSlice.actions.initStatus())
   store.dispatch(shipSlice.actions.resetShip())

@@ -16,7 +16,8 @@ const createHeadlessGameEngine = (
   galaxyService: GalaxyService,
   _fizzTransitionService: FizzTransitionService,
   randomService: RandomService,
-  galaxyId: string
+  galaxyId: string,
+  initialLives: number
 ): HeadlessGameEngine => {
   // Track fizz state to simulate correct duration in headless mode
   let fizzFramesElapsed = 0
@@ -43,7 +44,8 @@ const createHeadlessGameEngine = (
     onGameOver: (): void => {
       // No-op - headless doesn't care about UI transitions or high scores
     },
-    getGalaxyId: (): string => galaxyId
+    getGalaxyId: (): string => galaxyId,
+    getInitialLives: (): number => initialLives
   }
 
   return {
