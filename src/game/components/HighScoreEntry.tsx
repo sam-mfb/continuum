@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useAppSelector } from '../store'
-import { createRecordingStorage, exportRecording } from '@core/recording'
+import { createRecordingStorage } from '@core/recording'
+import { exportRecording } from '../exportRecording'
 
 type HighScoreEntryProps = {
   scale: number

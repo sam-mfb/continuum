@@ -1,4 +1,4 @@
-import type { GameRecording } from './types'
+import type { GameRecording } from '@core/recording'
 
 /**
  * Export a recording to a downloadable JSON file
