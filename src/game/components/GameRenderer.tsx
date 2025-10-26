@@ -263,6 +263,45 @@ const GameRenderer: React.FC<GameRendererProps> = ({
 
             // Draw frame to canvas (background clearing is handled by viewClear in renderingNew.ts)
             drawFrameToCanvas(renderedFrame, ctx, scale, spriteRegistry, false)
+
+            if (getDebug()?.SHOW_COLLISION_MAP) {
+              const collisionMap = collisionService.getMap()
+              const ship = (store.getState() as RootState).ship
+
+              // Create a temporary canvas for unscaled overlay
+              const tempCanvas = document.createElement('canvas')
+              tempCanvas.width = width
+              tempCanvas.height = height
+              const tempCtx = tempCanvas.getContext('2d')!
+
+              // Draw scaled image to temp canvas at original size
+              tempCtx.drawImage(ctx.canvas, 0, 0, width, height)
+
+              // Get unscaled pixels
+              const unscaledImageData = tempCtx.getImageData(
+                0,
+                0,
+                width,
+                height
+              )
+
+              // Apply overlay at original scale
+              applyCollisionMapOverlay(
+                unscaledImageData.data,
+                collisionMap,
+                ship,
+                spriteService,
+                width,
+                height
+              )
+
+              // Put back to temp canvas
+              tempCtx.putImageData(unscaledImageData, 0, 0)
+
+              // Scale back up to main canvas
+              ctx.imageSmoothingEnabled = false
+              ctx.drawImage(tempCanvas, 0, 0, width * scale, height * scale)
+            }
           }
 
           lastFrameTimeRef.current = currentTime
