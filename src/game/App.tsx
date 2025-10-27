@@ -7,7 +7,9 @@ import SettingsModal from './components/SettingsModal'
 import VolumeButton from './components/VolumeButton'
 import FullscreenButton from './components/FullscreenButton'
 import InGameControlsPanel from './components/InGameControlsPanel'
-import { loadLevel } from './levelThunks'
+import ReplaySelectionScreen from './components/ReplaySelectionScreen'
+import ReplayRenderer from './components/ReplayRenderer'
+import { loadLevel } from '@core/game'
 import {
   startGame,
   setMode,
@@ -17,9 +19,12 @@ import {
 import { isTouchDevice } from './mobile/deviceDetection'
 import { setHighScore } from '@/core/highscore'
 import { shipSlice } from '@/core/ship'
-import { invalidateHighScore } from './gameSlice'
+import { statusSlice } from '@/core/status'
+import { markCheatUsed } from '@core/game'
+import { clearExplosions } from '@/core/explosions'
 import { type SpriteService } from '@/core/sprites'
-import { useAppDispatch, useAppSelector } from './store'
+import { useAppDispatch, useAppSelector, getStoreServices } from './store'
+import { GAME_ENGINE_VERSION } from './version'
 import type {
   GameRenderLoop,
   GameSoundService,
@@ -29,6 +34,7 @@ import type { CollisionService } from '@/core/collision'
 import { useResponsiveScale } from './hooks/useResponsiveScale'
 import { BASE_GAME_WIDTH, BASE_TOTAL_HEIGHT } from './constants/dimensions'
 import type { SpriteRegistry } from '@/lib/frame/types'
+import { getDebug } from './debug'
 
 type AppProps = {
   renderer: GameRenderLoop
@@ -53,13 +59,13 @@ export const App: React.FC<AppProps> = ({
   const volume = useAppSelector(state => state.app.volume)
   const soundMuted = useAppSelector(state => !state.app.soundOn)
   const renderMode = useAppSelector(state => state.app.renderMode)
+  const collisionMode = useAppSelector(state => state.app.collisionMode)
+  const currentLives = useAppSelector(state => state.ship.lives)
   const showInGameControls = useAppSelector(
     state => state.app.showInGameControls
   )
   const mostRecentScore = useAppSelector(state => state.app.mostRecentScore)
-  const highScoreEligible = useAppSelector(
-    state => state.game.highScoreEligible
-  )
+  const cheatUsed = useAppSelector(state => state.game.cheatUsed)
   const scaleMode = useAppSelector(state => state.app.scaleMode)
   const touchControlsOverride = useAppSelector(
     state => state.app.touchControlsOverride
@@ -176,15 +182,22 @@ export const App: React.FC<AppProps> = ({
             onStartGame={(level: number) => {
               // Reset ship and sound to clean state
               dispatch(shipSlice.actions.resetShip())
+              dispatch(shipSlice.actions.resetFuel())
 
-              // Invalidate high score if starting at level > 1
+              // Reset score and status for new game
+              dispatch(statusSlice.actions.initStatus(level))
+
+              // Mark cheat used if starting at level > 1
               if (level > 1) {
-                dispatch(invalidateHighScore())
+                dispatch(markCheatUsed())
               }
 
               // Reset sound service state for new game
               soundService.setVolume(volume)
               soundService.setMuted(soundMuted)
+
+              // Clear explosions state from any previous game
+              dispatch(clearExplosions())
 
               // Start audio engine proactively to avoid first-sound delay
               if (!soundMuted) {
@@ -194,7 +207,32 @@ export const App: React.FC<AppProps> = ({
                 })
               }
 
-              // Load the selected level
+              // Start recording BEFORE loading level (only if modern collision mode)
+              // This ensures the first level seed is captured
+              if (collisionMode === 'modern') {
+                const recordingService = getStoreServices().recordingService
+                const debug = getDebug()
+                const enableFullSnapshots =
+                  debug?.ENABLE_FULL_SNAPSHOTS ?? false
+
+                recordingService.startRecording(
+                  {
+                    engineVersion: GAME_ENGINE_VERSION,
+                    galaxyId: currentGalaxyId,
+                    startLevel: level,
+                    timestamp: Date.now(),
+                    initialState: {
+                      lives: currentLives
+                    }
+                  },
+                  enableFullSnapshots
+                )
+                console.log(
+                  `Started recording game (full snapshots: ${enableFullSnapshots})`
+                )
+              }
+
+              // Load the selected level (this will record the seed if recording is active)
               dispatch(loadLevel(level))
 
               // Start the game
@@ -270,6 +308,25 @@ export const App: React.FC<AppProps> = ({
           />
         )
 
+      case 'replaySelection':
+        return <ReplaySelectionScreen scale={scale} />
+
+      case 'replay':
+        return (
+          <ReplayRenderer
+            renderer={renderer}
+            rendererNew={rendererNew}
+            collisionService={collisionService}
+            spriteService={spriteService}
+            spriteRegistry={spriteRegistry}
+            renderMode={renderMode}
+            width={512}
+            height={342}
+            scale={scale}
+            fps={20}
+          />
+        )
+
       default:
         gameMode satisfies never
         return null
@@ -295,7 +352,7 @@ export const App: React.FC<AppProps> = ({
         >
           {renderGameContent()}
         </div>
-        {!highScoreEligible && (
+        {cheatUsed && (
           <div
             style={{
               position: 'fixed',

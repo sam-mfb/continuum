@@ -13,6 +13,7 @@ export {
   initializeBunkers,
   initializeFuels,
   updateFuelAnimations,
+  updateFuelAnimationsWithRandom,
   killBunker
 } from './planetSlice'
 

@@ -7,7 +7,7 @@
 
 import type { MonochromeBitmap } from '@lib/bitmap'
 import type { SpriteService } from '@core/sprites'
-import type { RootState, GameStore } from '../store'
+import type { RootState, GameStore } from './store'
 import type { BunkerKind, ShardSprite, ShardSpriteSet } from '@core/figs'
 import type { FizzTransitionService } from '@core/transition'
 
@@ -29,7 +29,8 @@ import { viewClear, viewWhite } from '@render/screen'
 import { whiteTerrain, blackTerrain } from '@render/walls'
 import { LINE_KIND } from '@core/walls'
 import { getAlignment, getBackgroundPattern } from '@core/shared'
-import { triggerShipDeath } from '../shipDeath'
+import type { RandomService } from '@/core/shared'
+import { triggerShipDeath } from '@core/game'
 import { FIZZ_DURATION } from '@core/transition'
 import { starBackground } from '@render/transition'
 
@@ -42,6 +43,7 @@ export type RenderOriginalContext = {
   // bounces currently have to take place in the rendering stage
   store: GameStore
   fizzTransitionService: FizzTransitionService
+  randomService: RandomService
 }
 
 /**
@@ -50,7 +52,14 @@ export type RenderOriginalContext = {
 export const renderGameOriginal = (
   context: RenderOriginalContext
 ): MonochromeBitmap => {
-  let { bitmap, state, spriteService, store, fizzTransitionService } = context
+  let {
+    bitmap,
+    state,
+    spriteService,
+    store,
+    fizzTransitionService,
+    randomService
+  } = context
 
   // Helper to add status bar to bitmap - used for fizz/starmap phases
   const addStatusBar = (bmp: MonochromeBitmap): MonochromeBitmap => {
@@ -406,7 +415,7 @@ export const renderGameOriginal = (
     })
 
     if (collision) {
-      triggerShipDeath(store)
+      triggerShipDeath(store, randomService)
       // Don't return - continue rendering the ship this frame
       // The death will take effect next frame
     }

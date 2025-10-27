@@ -1,4 +1,4 @@
-import { createSyncThunk } from '../utils/createSyncThunk'
+import { createSyncThunk } from './createSyncThunk'
 import {
   bitmapToCollisionItem,
   Collision,

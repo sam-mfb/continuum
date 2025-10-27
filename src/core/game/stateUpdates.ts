@@ -6,8 +6,10 @@
  */
 
 import type { GalaxyService } from '@core/galaxy'
-import type { GameStore, RootState } from '../store'
 import type { FrameInfo } from '@lib/bitmap'
+import type { RandomService } from '@/core/shared'
+import type { GameLogicServices, GameRootState } from './types'
+import { configureStore, type Reducer } from '@reduxjs/toolkit'
 
 /**
  * Transition service callbacks
@@ -20,29 +22,73 @@ export type TransitionCallbacks = {
   reset: () => void
 }
 
+/**
+ * State update callbacks
+ * Allows updateGameState to communicate game events without depending on app-level concerns
+ */
+export type StateUpdateCallbacks = {
+  /**
+   * Called when game over occurs
+   * @param finalState - The final game state at game over
+   */
+  onGameOver: (finalState: GameRootState) => void
+
+  /**
+   * Get the current galaxy ID (needed for level transitions)
+   * @returns The galaxy ID string
+   */
+  getGalaxyId: () => string
+
+  /**
+   * Get the initial number of lives for a new game
+   * @returns The initial lives count
+   */
+  getInitialLives: () => number
+
+  /**
+   * Get the current collision mode
+   * @returns The collision mode ('original' or 'modern')
+   */
+  getCollisionMode: () => 'original' | 'modern'
+}
+
 import { shipSlice, shipControl, CRITFUEL, handleBounceState } from '@core/ship'
 import {
   shotsSlice,
   doStrafes,
-  bunkShoot,
+  bunkShootThunk,
   moveBullets,
   clearBunkShots
 } from '@core/shots'
 import {
   updateBunkerRotations,
-  updateFuelAnimations,
+  updateFuelAnimationsWithRandom,
   killBunker
 } from '@core/planet'
+import { FUELFRAMES } from '@core/figs'
 import {
-  startExplosion,
+  startExplosionWithRandom,
   updateExplosions,
   resetSparksAlive,
   clearShards,
   decrementShipDeathFlash
 } from '@core/explosions'
+import {
+  EXPLSHARDS,
+  EXPLSPARKS,
+  SH_DISTRIB,
+  SH_LIFE,
+  SH_ADDLIFE,
+  SH_SPEED,
+  SH_ADDSPEED,
+  SH_SPIN2,
+  SPARKLIFE,
+  SPADDLIFE,
+  SP_SPEED16
+} from '@core/explosions/constants'
 import { statusSlice } from '@core/status'
 import { screenSlice, SCRWTH, VIEWHT, TOPMARG, BOTMARG } from '@core/screen'
-import { containShip, rint } from '@core/shared'
+import { containShip } from '@core/shared'
 import {
   startLevelTransition,
   decrementPreFizz,
@@ -53,25 +99,51 @@ import {
   skipToNextLevel
 } from '@core/transition'
 
-import { loadLevel } from '../levelThunks'
+import { loadLevel } from './levelThunks'
 import {
   markLevelComplete,
   triggerGameOver,
   resetGame,
-  invalidateHighScore,
+  markCheatUsed,
   killShipNextFrame,
   resetKillShipNextFrame,
   gameSlice
-} from '../gameSlice'
-import { setMode, setMostRecentScore } from '../appSlice'
-import { TOTAL_INITIAL_LIVES } from '../constants'
-import { triggerShipDeath } from '../shipDeath'
+} from './gameSlice'
+// App-level concerns (mode, scores, initial lives) handled via stateUpdateCallbacks
+import { triggerShipDeath } from './shipDeath'
 
 import { BunkerKind } from '@core/figs'
 import type { ControlMatrix } from '@/core/controls'
 import { createCollisionMap } from './createCollisionMapThunk'
 import { checkCollisions } from './checkCollisionsThunk'
 import { Collision } from '@/core/collision'
+import { createSyncThunkMiddleware } from '@/lib/redux'
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const storeForTyping = (
+  reducer: Reducer<GameRootState>,
+  services: GameLogicServices
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+) => {
+  const syncThunkMiddleware = createSyncThunkMiddleware<
+    GameRootState,
+    GameLogicServices
+  >()
+  return configureStore({
+    reducer: reducer,
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({
+        thunk: {
+          extraArgument: services
+        }
+      }).prepend(syncThunkMiddleware(services))
+  })
+}
+
+/**
+ * Generic game store type based on GameRootState
+ */
+export type GameStore = ReturnType<typeof storeForTyping>
 
 export type StateUpdateContext = {
   store: GameStore
@@ -79,28 +151,38 @@ export type StateUpdateContext = {
   controls: ControlMatrix
   galaxyService: GalaxyService
   transitionCallbacks: TransitionCallbacks
+  randomService: RandomService
+  stateUpdateCallbacks: StateUpdateCallbacks
 }
 
 /**
  * Main state update function
  */
 export const updateGameState = (context: StateUpdateContext): void => {
-  const { store, frame, controls, galaxyService, transitionCallbacks } = context
+  const {
+    store,
+    frame,
+    controls,
+    galaxyService,
+    transitionCallbacks,
+    randomService,
+    stateUpdateCallbacks
+  } = context
 
   let state = store.getState()
 
   if (controls.quit) {
-    handleGameOver(store, transitionCallbacks)
+    handleGameOver(store, transitionCallbacks, stateUpdateCallbacks)
     return
   }
 
   if (controls.extraLife) {
-    store.dispatch(invalidateHighScore())
+    store.dispatch(markCheatUsed())
     store.dispatch(shipSlice.actions.extraLife())
   }
 
   if (controls.nextLevel) {
-    store.dispatch(invalidateHighScore())
+    store.dispatch(markCheatUsed())
     store.dispatch(markLevelComplete())
 
     // Start transition directly using the reducer action
@@ -136,7 +218,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
     state.ship.lives <= 0 &&
     state.ship.deadCount === 0
   ) {
-    handleGameOver(store, transitionCallbacks)
+    handleGameOver(store, transitionCallbacks, stateUpdateCallbacks)
     return
   }
 
@@ -149,18 +231,32 @@ export const updateGameState = (context: StateUpdateContext): void => {
   }
 
   // Handle ship movement and controls
-  const { globalx, globaly } = handleShipMovement(store, controls)
+  const { globalx, globaly } = handleShipMovement(
+    store,
+    controls,
+    randomService
+  )
 
   store.dispatch(resetKillShipNextFrame())
 
   // Update bunker rotations for animated bunkers
   store.dispatch(updateBunkerRotations({ globalx, globaly }))
 
-  // Update fuel cell animations
-  store.dispatch(updateFuelAnimations())
+  // Update fuel cell animations with deterministic random values
+  const fuelState = store.getState()
+  const numFuels = fuelState.planet.fuels.length
+  const flash = numFuels > 0 ? randomService.rnumber(numFuels) : 0
+  const flashFrame = FUELFRAMES - 2 + randomService.rnumber(2) // 6 or 7
+
+  store.dispatch(
+    updateFuelAnimationsWithRandom({
+      flash,
+      flashFrame
+    })
+  )
 
   // Handle bunker shooting
-  handleBunkerShooting(store, globalx, globaly)
+  handleBunkerShooting(store, globalx, globaly, randomService)
 
   // Move ship shots
   const currentState = store.getState()
@@ -179,7 +275,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
   )
 
   // Process bunker kills
-  processBunkerKills(store)
+  processBunkerKills(store, randomService)
 
   // Handle self-hit shield feedback
   const shotsState = store.getState().shots
@@ -214,7 +310,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
     })
   )
 
-  if (finalState.app.collisionMode === 'modern') {
+  if (stateUpdateCallbacks.getCollisionMode() === 'modern') {
     if (
       state.ship.deadCount === 0 &&
       (state.transition.status === 'inactive' ||
@@ -254,7 +350,7 @@ export const updateGameState = (context: StateUpdateContext): void => {
  *       if (bp->alive && bp->kind != GENERATORBUNK)
  *           missioncomplete = FALSE;
  */
-function checkLevelComplete(state: RootState): boolean {
+function checkLevelComplete(state: GameRootState): boolean {
   // Don't check if already complete
   if (state.game.levelComplete) {
     return false
@@ -280,6 +376,16 @@ function checkLevelComplete(state: RootState): boolean {
 const handleDeathAndRespawn = (store: GameStore): void => {
   const prelimState = store.getState()
   if (prelimState.ship.deadCount > 0) {
+    // Don't decrement deadCount during level transitions - keep ship dead until next level
+    if (
+      prelimState.transition.status === 'level-complete' ||
+      prelimState.transition.status === 'fizz' ||
+      prelimState.transition.status === 'starmap'
+    ) {
+      // Ship stays dead during transition - deadCount will be reset when next level loads
+      return
+    }
+
     // Ship is dead - decrement counter and check for respawn
     store.dispatch(shipSlice.actions.decrementDeadCount())
     const newDeadCount = store.getState().ship.deadCount
@@ -288,6 +394,7 @@ const handleDeathAndRespawn = (store: GameStore): void => {
       if (store.getState().ship.lives === 0) {
         return
       }
+
       // Get planet state for respawn coordinates
       const planetState = store.getState().planet
 
@@ -361,44 +468,23 @@ const handleLevelCompletion = (
  */
 const handleGameOver = (
   store: GameStore,
-  transitionCallbacks: TransitionCallbacks
+  transitionCallbacks: TransitionCallbacks,
+  stateUpdateCallbacks: StateUpdateCallbacks
 ): void => {
   const state = store.getState()
 
   store.dispatch(triggerGameOver())
 
-  // Always record the most recent score
-  store.dispatch(
-    setMostRecentScore({
-      score: state.status.score,
-      planet: state.status.currentlevel,
-      fuel: state.ship.fuel
-    })
-  )
-
-  // Determine which mode to go to based on high score eligibility
-  const highScoreEligible = state.game.highScoreEligible
-  const currentGalaxyId = state.app.currentGalaxyId
-  const allHighScores = state.highscore
-  const highScores = allHighScores[currentGalaxyId]
-  const lowestScore = highScores
-    ? Math.min(...Object.values(highScores).map(hs => hs?.score || 0))
-    : 0
-  const recentScore = state.status.score
-
-  if (highScoreEligible && recentScore > lowestScore) {
-    // Score qualifies for high score entry
-    store.dispatch(setMode('highScoreEntry'))
-  } else {
-    // Go directly to game over
-    store.dispatch(setMode('gameOver'))
-  }
+  // Notify callback with final game state - callback handles recording stop, high scores, and UI transitions
+  stateUpdateCallbacks.onGameOver(state)
 
   // Reset everything for a new game
   store.dispatch(resetGame())
   store.dispatch(resetTransition())
   transitionCallbacks.reset()
-  store.dispatch(shipSlice.actions.setLives(TOTAL_INITIAL_LIVES))
+  store.dispatch(
+    shipSlice.actions.setLives(stateUpdateCallbacks.getInitialLives())
+  )
   store.dispatch(shipSlice.actions.resetFuel())
   store.dispatch(statusSlice.actions.initStatus())
   store.dispatch(shipSlice.actions.resetShip())
@@ -411,14 +497,15 @@ const handleGameOver = (
  */
 const handleShipMovement = (
   store: GameStore,
-  controls: ControlMatrix
+  controls: ControlMatrix,
+  randomService: RandomService
 ): { globalx: number; globaly: number } => {
   const state = store.getState()
 
   if (state.ship.deadCount === 0) {
     // Check for self-destruct command or death on previous frame
     if (controls.selfDestruct || state.game.killShipNextFrame) {
-      triggerShipDeath(store)
+      triggerShipDeath(store, randomService)
       return {
         globalx: state.ship.globalx,
         globaly: state.ship.globaly
@@ -521,18 +608,19 @@ const handleShipMovement = (
 const handleBunkerShooting = (
   store: GameStore,
   globalx: number,
-  globaly: number
+  globaly: number,
+  randomService: RandomService
 ): void => {
   const state = store.getState()
 
   // Check if bunkers should shoot this frame
-  const shootRoll = rint(100)
+  const shootRoll = randomService.rnumber(100)
   if (shootRoll < state.planet.shootslow) {
     const screenr = state.screen.screenx + SCRWTH
     const screenb = state.screen.screeny + VIEWHT
 
     store.dispatch(
-      bunkShoot({
+      bunkShootThunk({
         screenx: state.screen.screenx,
         screenr: screenr,
         screeny: state.screen.screeny,
@@ -551,7 +639,10 @@ const handleBunkerShooting = (
 /**
  * Process bunker kills from shot collisions
  */
-const processBunkerKills = (store: GameStore): void => {
+const processBunkerKills = (
+  store: GameStore,
+  randomService: RandomService
+): void => {
   const state = store.getState()
   const shotsState = store.getState().shots
 
@@ -573,12 +664,58 @@ const processBunkerKills = (store: GameStore): void => {
             })
           )
 
+          // Generate random values for explosion
+          const shardRandom = []
+          for (let i = 0; i < EXPLSHARDS; i++) {
+            const xOffset =
+              randomService.rnumber(SH_DISTRIB) - Math.floor(SH_DISTRIB / 2)
+            const yOffset =
+              randomService.rnumber(SH_DISTRIB) - Math.floor(SH_DISTRIB / 2)
+            const lifetime = SH_LIFE + randomService.rnumber(SH_ADDLIFE)
+            let angle: number
+            if (bunker.kind >= 2) {
+              // Rotating bunkers: random direction
+              angle = randomService.rnumber(32)
+            } else {
+              // Static bunkers: directional spread
+              angle = (randomService.rnumber(15) - 7 + (bunker.rot << 1)) & 31
+            }
+            const speed = SH_SPEED + randomService.rnumber(SH_ADDSPEED)
+            const rot16 = randomService.rnumber(256)
+            const rotspeed =
+              randomService.rnumber(SH_SPIN2) - Math.floor(SH_SPIN2 / 2)
+
+            shardRandom.push({
+              xOffset,
+              yOffset,
+              lifetime,
+              angle,
+              speed,
+              rot16,
+              rotspeed
+            })
+          }
+
+          const sparkRandom = []
+          const loangle = bunker.kind >= 2 ? 0 : ((bunker.rot - 4) & 15) << 5
+          const hiangle = bunker.kind >= 2 ? 511 : loangle + 256
+
+          for (let i = 0; i < EXPLSPARKS; i++) {
+            const lifetime = SPARKLIFE + randomService.rnumber(SPADDLIFE)
+            const angle = randomService.rnumber(hiangle - loangle + 1) + loangle
+            const speed = 8 + randomService.rnumber(SP_SPEED16)
+
+            sparkRandom.push({ lifetime, angle, speed })
+          }
+
           store.dispatch(
-            startExplosion({
+            startExplosionWithRandom({
               x: bunker.x,
               y: bunker.y,
               dir: bunker.rot,
-              kind: bunker.kind
+              kind: bunker.kind,
+              shardRandom,
+              sparkRandom
             })
           )
         }

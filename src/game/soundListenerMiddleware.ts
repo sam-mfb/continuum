@@ -6,7 +6,7 @@
  */
 
 import type { GameSoundService } from './types'
-import { shotsSlice, isNewShot } from '@/core/shots'
+import { shotsSlice, isNewShot, bunkShootThunk } from '@/core/shots'
 import { SCRWTH, VIEWHT, SOFTBORDER } from '@/core/screen'
 import type { AppDispatch, RootState } from './store'
 import type { TypedStartListening } from '@reduxjs/toolkit'
@@ -14,7 +14,8 @@ import { explosionsSlice } from '@/core/explosions'
 import { transitionSlice } from '@/core/transition'
 import { shipSlice } from '@/core/ship'
 import { appSlice } from './appSlice'
-import { gameSlice } from './gameSlice'
+import { gameSlice } from '@core/game'
+import { replaySlice } from './replaySlice'
 
 type SoundStartListening = TypedStartListening<RootState, AppDispatch>
 /**
@@ -71,7 +72,7 @@ export function setupSoundListener(
 
   // Listen for bunker shot creation
   soundStartListening({
-    actionCreator: shotsSlice.actions.bunkShoot,
+    matcher: bunkShootThunk.match,
     effect: (_, listenerApi) => {
       // Get the state before and after the action
       const prevState = listenerApi.getOriginalState()
@@ -136,7 +137,9 @@ export function setupSoundListener(
 
   soundStartListening({
     predicate: (_, currentState) =>
-      currentState.game.paused || !currentState.ship.shielding,
+      currentState.game.paused ||
+      currentState.replay.replayPaused ||
+      !currentState.ship.shielding,
     effect: () => {
       soundService.stopShipShield()
     }
@@ -154,7 +157,9 @@ export function setupSoundListener(
   })
   soundStartListening({
     predicate: (_, currentState) =>
-      currentState.game.paused || !currentState.ship.thrusting,
+      currentState.game.paused ||
+      currentState.replay.replayPaused ||
+      !currentState.ship.thrusting,
     effect: () => {
       soundService.stopShipThrust()
     }
@@ -162,7 +167,7 @@ export function setupSoundListener(
 
   // Listen for ship death
   soundStartListening({
-    actionCreator: explosionsSlice.actions.startShipDeath,
+    actionCreator: explosionsSlice.actions.startShipDeathWithRandom,
     effect: () => {
       soundService.playShipExplosion()
     }
@@ -170,7 +175,7 @@ export function setupSoundListener(
 
   // Listen for bunker explosion
   soundStartListening({
-    actionCreator: explosionsSlice.actions.startExplosion,
+    actionCreator: explosionsSlice.actions.startExplosionWithRandom,
     effect: () => {
       soundService.playBunkerExplosion()
     }
@@ -211,6 +216,50 @@ export function setupSoundListener(
     actionCreator: gameSlice.actions.triggerGameOver,
     effect: () => {
       soundService.cleanup()
+    }
+  })
+
+  // Stop continuous sounds when replay pauses
+  soundStartListening({
+    actionCreator: replaySlice.actions.pauseReplay,
+    effect: () => {
+      soundService.stopShipThrust()
+      soundService.stopShipShield()
+    }
+  })
+
+  // Cleanup all sounds when replay stops
+  soundStartListening({
+    actionCreator: replaySlice.actions.stopReplay,
+    effect: () => {
+      soundService.cleanup()
+    }
+  })
+
+  // Sync sound settings and cleanup when mode changes
+  soundStartListening({
+    actionCreator: appSlice.actions.setMode,
+    effect: (action, listenerApi) => {
+      const prevState = listenerApi.getOriginalState()
+      const currentState = listenerApi.getState()
+      const currentMode = action.payload
+
+      // Cleanup when entering replay selection screen (ensures clean state between replays)
+      if (currentMode === 'replaySelection') {
+        soundService.cleanup()
+      }
+
+      // When entering replay mode, cleanup first then sync sound service with current app settings
+      if (currentMode === 'replay' && prevState.app.mode !== 'replay') {
+        soundService.cleanup()
+        soundService.setVolume(currentState.app.volume)
+        soundService.setMuted(!currentState.app.soundOn)
+      }
+
+      // If we were in replay mode and are now leaving it, cleanup sounds
+      if (prevState.app.mode === 'replay' && currentMode !== 'replay') {
+        soundService.cleanup()
+      }
     }
   })
 }

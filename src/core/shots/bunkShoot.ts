@@ -1,13 +1,12 @@
 import type { Bunker } from '@core/planet'
 import { BunkerKind } from '@core/planet'
 import type { ShotRec } from './types'
-import type { LineRec } from '@core/shared'
+import type { LineRec, RandomService } from '@core/shared'
 import { SHOT, xbshotstart, ybshotstart } from './constants'
 import { SCRWTH } from '@core/screen'
 import { PLANET } from '@core/planet'
 import { aimBunk } from './aimBunk'
 import { aimDir } from './aimDir'
-import { rint } from '@core/shared'
 import { setLife } from './setLife'
 
 /**
@@ -20,6 +19,7 @@ function followShot(deps: {
   globaly: number
   worldwidth: number
   worldwrap: boolean
+  randomService: RandomService
 }): (sp: ShotRec) => ShotRec {
   return sp => {
     const straight = aimBunk(deps.bp, deps)
@@ -38,7 +38,11 @@ function followShot(deps: {
     angle *= 64
     angle = Math.floor(angle / 45) /* *(512/360) => 0-511 */
 
-    return randShot({ loangle: angle - 2, hiangle: angle + 2 })(sp)
+    return randShot({
+      loangle: angle - 2,
+      hiangle: angle + 2,
+      randomService: deps.randomService
+    })(sp)
   }
 }
 
@@ -49,9 +53,11 @@ function followShot(deps: {
 function randShot(deps: {
   loangle: number
   hiangle: number
+  randomService: RandomService
 }): (sp: ShotRec) => ShotRec {
   return sp => {
-    let angle = rint(deps.hiangle - deps.loangle + 1) + deps.loangle
+    let angle =
+      deps.randomService.rnumber(deps.hiangle - deps.loangle + 1) + deps.loangle
     angle &= 511
     const intangle = angle >> 4
     angle &= 15
@@ -117,6 +123,7 @@ export function bunkShoot(deps: {
   worldwrap: boolean
   globalx: number
   globaly: number
+  randomService: RandomService
 }): (bunkshots: ShotRec[]) => ShotRec[] {
   return bunkshots => {
     const { screenx, screenr, screeny, screenb, bunkrecs, worldwidth } = deps
@@ -183,7 +190,7 @@ export function bunkShoot(deps: {
     if (sum === 0) return bunkshots /* no bunker to shoot */
 
     // Select random weighted bunker
-    let selectedSum = rint(sum)
+    let selectedSum = deps.randomService.rnumber(sum)
     let bunkerIndex = 0
     for (bunkerIndex = 0; ; bunkerIndex++) {
       /* find n'th alive bunker */
@@ -194,7 +201,7 @@ export function bunkShoot(deps: {
     const bp = bunkrecs[bunkerIndex]! /* bp points to the bunker */
 
     // Create the shot using transformer functions
-    const rangeIndex = rint(2)
+    const rangeIndex = deps.randomService.rnumber(2)
 
     // Create a new shot with velocity based on bunker type
     const velocityTransformer =
@@ -202,7 +209,8 @@ export function bunkShoot(deps: {
         ? followShot({ bp, ...deps })
         : randShot({
             loangle: bp.ranges[rangeIndex]!.low,
-            hiangle: bp.ranges[rangeIndex]!.high
+            hiangle: bp.ranges[rangeIndex]!.high,
+            randomService: deps.randomService
           })
 
     // Apply transformations to create new shot

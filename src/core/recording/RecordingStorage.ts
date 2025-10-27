@@ -1,0 +1,154 @@
+import type { GameRecording } from './types'
+import { encodeRecordingGzip, decodeRecordingAuto } from './binaryCodec'
+import { compress, decompress } from './gzip.browser'
+
+const STORAGE_PREFIX = 'continuum_recording_'
+const STORAGE_INDEX_KEY = 'continuum_recording_index'
+const CURRENT_VERSION = '1.0'
+const MAX_RECORDINGS = 25
+
+/**
+ * Convert ArrayBuffer to base64 string for localStorage
+ */
+const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]!)
+  }
+  return btoa(binary)
+}
+
+/**
+ * Convert base64 string back to ArrayBuffer
+ */
+const base64ToArrayBuffer = (base64: string): ArrayBuffer => {
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+  return bytes.buffer
+}
+
+export type RecordingIndexEntry = {
+  id: string
+  timestamp: number
+  galaxyId: string
+  startLevel: number
+  finalScore?: number
+  finalLevel?: number
+  durationSeconds?: number
+}
+
+type RecordingIndex = RecordingIndexEntry[]
+
+type RecordingStorage = {
+  save: (recording: GameRecording) => Promise<string>
+  load: (id: string) => Promise<GameRecording | null>
+  list: () => RecordingIndex
+  delete: (id: string) => void
+}
+
+const createRecordingStorage = (): RecordingStorage => {
+  const generateId = (): string => {
+    return `${Date.now()}_${Math.random().toString(36).slice(2, 11)}`
+  }
+
+  const getIndex = (): RecordingIndex => {
+    const indexJson = localStorage.getItem(STORAGE_INDEX_KEY)
+    return indexJson ? JSON.parse(indexJson) : []
+  }
+
+  const saveIndex = (index: RecordingIndex): void => {
+    localStorage.setItem(STORAGE_INDEX_KEY, JSON.stringify(index))
+  }
+
+  return {
+    save: async (recording): Promise<string> => {
+      const id = generateId()
+      const recordingWithVersion = {
+        ...recording,
+        version: CURRENT_VERSION
+      }
+
+      // Check if we're at the limit and need to delete oldest
+      const index = getIndex()
+      if (index.length >= MAX_RECORDINGS) {
+        // Sort by timestamp to find oldest
+        const sorted = [...index].sort((a, b) => a.timestamp - b.timestamp)
+        const oldestId = sorted[0]?.id
+
+        if (oldestId) {
+          // Delete oldest recording
+          localStorage.removeItem(STORAGE_PREFIX + oldestId)
+          // Remove from index
+          const filteredIndex = index.filter(item => item.id !== oldestId)
+          saveIndex(filteredIndex)
+        }
+      }
+
+      // Encode to binary with gzip and convert to base64 for storage
+      const binaryData = await encodeRecordingGzip(
+        recordingWithVersion,
+        compress
+      )
+      const base64Data = arrayBufferToBase64(binaryData)
+
+      localStorage.setItem(STORAGE_PREFIX + id, base64Data)
+
+      // Update index (get fresh index after potential delete)
+      const updatedIndex = getIndex()
+
+      // Calculate duration from last input frame (20 fps)
+      const lastFrame = recording.inputs[recording.inputs.length - 1]?.frame
+      const durationSeconds = lastFrame ? lastFrame / 20 : undefined
+
+      updatedIndex.push({
+        id,
+        timestamp: recording.timestamp,
+        galaxyId: recording.galaxyId,
+        startLevel: recording.startLevel,
+        finalScore: recording.finalState?.score,
+        finalLevel: recording.finalState?.level,
+        durationSeconds
+      })
+      saveIndex(updatedIndex)
+
+      return id
+    },
+
+    load: async (id): Promise<GameRecording | null> => {
+      const data = localStorage.getItem(STORAGE_PREFIX + id)
+      if (!data) return null
+
+      try {
+        // Auto-detect format (gzipped binary, binary, or JSON)
+        const binaryData = base64ToArrayBuffer(data)
+        return await decodeRecordingAuto(binaryData, decompress)
+      } catch (e) {
+        // Fallback: try to parse as legacy JSON format
+        try {
+          return JSON.parse(data) as GameRecording
+        } catch {
+          console.error('Failed to parse recording:', e)
+          return null
+        }
+      }
+    },
+
+    list: (): RecordingIndex => {
+      return getIndex()
+    },
+
+    delete: (id): void => {
+      localStorage.removeItem(STORAGE_PREFIX + id)
+
+      const index = getIndex()
+      const filtered = index.filter(item => item.id !== id)
+      saveIndex(filtered)
+    }
+  }
+}
+
+export { createRecordingStorage, type RecordingStorage, MAX_RECORDINGS }

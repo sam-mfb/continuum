@@ -3,8 +3,8 @@ import { useSelector, useDispatch } from 'react-redux'
 import type { RootState, GameServices } from '../store'
 import type { HighScoreTable } from '@/core/highscore'
 import { getDefaultHighScoreTable } from '@/core/highscore'
-import { allowHighScore, invalidateHighScore } from '../gameSlice'
-import { openSettings } from '../appSlice'
+import { resetCheatUsed, markCheatUsed } from '@core/game'
+import { openSettings, setMode } from '../appSlice'
 import { loadGalaxy } from '../galaxyThunks'
 import { GALAXIES } from '../galaxyConfig'
 import type { MonochromeBitmap } from '@lib/bitmap/types'
@@ -38,7 +38,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ scale, onStartGame }) => {
 
   // Load title page from sprite service
   useEffect(() => {
-    dispatch(allowHighScore())
+    dispatch(resetCheatUsed())
     // Create a thunk to access the sprite service
     const loadTitlePage =
       () =>
@@ -140,7 +140,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ scale, onStartGame }) => {
       await dispatch(loadGalaxy(galaxyId)).unwrap()
       // Reset level selection to 1 when changing galaxies
       setSelectedLevel(1)
-      dispatch(allowHighScore())
+      dispatch(resetCheatUsed())
     } catch (error) {
       console.error('Failed to load galaxy:', error)
       // Revert selection on error
@@ -373,9 +373,9 @@ const StartScreen: React.FC<StartScreenProps> = ({ scale, onStartGame }) => {
               const lvl = Number(level)
               setSelectedLevel(lvl)
               if (lvl > 1) {
-                dispatch(invalidateHighScore())
+                dispatch(markCheatUsed())
               } else {
-                dispatch(allowHighScore())
+                dispatch(resetCheatUsed())
               }
             }}
             scale={scale}
@@ -398,6 +398,22 @@ const StartScreen: React.FC<StartScreenProps> = ({ scale, onStartGame }) => {
           }}
         >
           START GAME
+        </button>
+
+        <button
+          onClick={() => dispatch(setMode('replaySelection'))}
+          style={{
+            fontSize: `${8 * scale}px`,
+            padding: `${4 * scale}px ${10 * scale}px`,
+            backgroundColor: 'white',
+            color: 'black',
+            border: '1px solid white',
+            cursor: 'pointer',
+            fontFamily: 'monospace',
+            letterSpacing: `${1 * scale}px`
+          }}
+        >
+          GAME REPLAYS
         </button>
       </div>
 

@@ -33,6 +33,5 @@
       "@render-modern/*": ["src/render-modern/*"]
     }
   },
-  "include": ["src/**/*"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src/**/*"]
 }

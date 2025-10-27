@@ -9,10 +9,12 @@ export * from './constants'
 // State management and actions
 export {
   explosionsSlice,
-  startShipDeath,
-  startExplosion,
+  startShipDeathWithRandom,
+  startExplosionWithRandom,
+  startBlowupWithRandom,
   updateExplosions,
   decrementShipDeathFlash,
   resetSparksAlive,
-  clearShards
+  clearShards,
+  clearExplosions
 } from './explosionsSlice'

@@ -1,5 +1,10 @@
 # Changes
 
+## 1.3.0 - 2025.10.26
+
+Game recording, validation, and replay
+Change defaults to modern rendering and gray background
+
 ## 1.2.1 - 2025.10.19
 
 Modern rendering option requires modern collision model

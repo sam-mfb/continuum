@@ -3,7 +3,6 @@ import type { ShotRec, ShotsState } from './types'
 import { SHOT, NUMSTRAFES, STRAFE_LIFE } from './constants'
 import type { Bunker } from '@core/planet'
 import type { LineRec } from '@core/shared'
-import { bunkShoot as bunkShootFn } from './bunkShoot'
 import { setLife } from './setLife'
 import { bounceShot as bounceShotFunc } from './bounceShot'
 import { moveShot } from './moveShot'
@@ -12,6 +11,7 @@ import { checkShipCollision } from './checkShipCollision'
 import { startStrafe as startStrafeFunc } from './startStrafe'
 import { xyindistance } from './xyindistance'
 import { SHRADIUS } from '@core/ship'
+import { bunkShootThunk } from './bunkShootThunk'
 
 /**
  * Shot Lifecycle Architecture Note:
@@ -417,23 +417,6 @@ export const shotsSlice = createSlice({
         return updatedShot
       })
     },
-    bunkShoot: (
-      state,
-      action: PayloadAction<{
-        screenx: number
-        screenr: number
-        screeny: number
-        screenb: number
-        readonly bunkrecs: readonly Bunker[]
-        readonly walls: readonly LineRec[]
-        worldwidth: number
-        worldwrap: boolean
-        globalx: number
-        globaly: number
-      }>
-    ) => {
-      state.bunkshots = bunkShootFn(action.payload)(state.bunkshots)
-    },
     clearAllShots: state => {
       // Reset all ship shots
       state.shipshots = state.shipshots.map(() => initializeShot())
@@ -462,6 +445,18 @@ export const shotsSlice = createSlice({
       // We reinitialize the whole shot to ensure clean state
       state.bunkshots = state.bunkshots.map(() => initializeShot())
     }
+  },
+  extraReducers: builder => {
+    builder.addMatcher(bunkShootThunk.match, (state, action) => {
+      // Result is added by syncThunkMiddleware
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = (action as any).meta?.result as
+        | { bunkshots: ShotRec[] }
+        | undefined
+      if (result) {
+        state.bunkshots = result.bunkshots
+      }
+    })
   }
 })
 
@@ -471,7 +466,6 @@ export const {
   startStrafe,
   moveShipshots,
   moveBullets,
-  bunkShoot,
   clearAllShots,
   clearBunkShots
 } = shotsSlice.actions

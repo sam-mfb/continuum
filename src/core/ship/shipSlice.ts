@@ -80,6 +80,9 @@ export const shipSlice = createSlice({
       state.shielding = false
       state.refueling = false
 
+      // Reset death state - ship is alive when initialized
+      state.deadCount = 0
+
       // Reset fuel if requested (for respawn)
       if (action.payload.resetFuel) {
         state.fuel = FUELSTART
