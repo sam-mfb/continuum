@@ -1,4 +1,4 @@
-import { createSyncThunk } from '../utils/createSyncThunk'
+import { createSyncThunk } from './createSyncThunk'
 import {
   bitmapToCollisionItem,
   Collision,
@@ -108,13 +108,20 @@ export const createCollisionMap = createSyncThunk<void>(
 
       // Add bunker shots at normal position
       state.shots.bunkshots
-        .filter(shot => shot.lifecount > 0)
+        .filter(
+          shot =>
+            shot.lifecount > 0 || (shot.justDied === true && shot.strafedir < 0)
+        )
         .forEach(shot => addShotCollision(shot, state.screen.screenx))
 
       // Add bunker shots at wrapped position
       if (on_right_side && worldwrap) {
         state.shots.bunkshots
-          .filter(shot => shot.lifecount > 0)
+          .filter(
+            shot =>
+              shot.lifecount > 0 ||
+              (shot.justDied === true && shot.strafedir < 0)
+          )
           .forEach(shot =>
             addShotCollision(
               shot,

@@ -17,12 +17,12 @@ import {
   updateBunkerRotations,
   initializeBunkers
 } from '@core/planet'
-import { shotsSlice, bunkShoot, moveBullets, doStrafes } from '@core/shots'
+import { shotsSlice, bunkShootThunk, moveBullets, doStrafes } from '@core/shots'
 import { BunkerKind } from '@core/figs'
 import type { Bunker, PlanetState } from '@core/planet'
 import { drawDotSafe } from '@render/shots'
 import { drawStrafe } from '@render/shots'
-import { rint } from '@core/shared'
+import { rint, createRandomService } from '@core/shared'
 import { SBARHT, SCRWTH, VIEWHT } from '@core/screen'
 import { isOnRightSide } from '@core/shared/viewport'
 import { viewClear } from '@render/screen'
@@ -44,6 +44,10 @@ let initializationError: Error | null = null
 // Define a world larger than the viewport
 const WORLD_WIDTH = 1024
 const WORLD_HEIGHT = 1024
+
+// Create random service for demo
+const randomService = createRandomService()
+randomService.setSeed(Date.now())
 
 // Create initial planet state with bunkers
 const createInitialPlanetState = (): PlanetState => {
@@ -338,7 +342,7 @@ export const createBunkerDrawBitmapRenderer =
       const screenr = viewportState.x + bitmap.width
 
       store.dispatch(
-        bunkShoot({
+        bunkShootThunk({
           screenx: viewportState.x,
           screenr: screenr,
           screeny: viewportState.y,

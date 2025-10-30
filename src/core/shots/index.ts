@@ -12,10 +12,12 @@ export {
   initShipshot,
   clearAllShots,
   doStrafes,
-  bunkShoot,
   moveBullets,
   clearBunkShots
 } from './shotsSlice'
+
+// Thunks
+export { bunkShootThunk } from './bunkShootThunk'
 
 // Shot functions
 export { aimDir } from './aimDir'

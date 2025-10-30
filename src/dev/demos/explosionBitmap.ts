@@ -21,9 +21,22 @@ import type { ShardSprite, ShardSpriteSet } from '@core/figs'
 import { xbcenter, ybcenter } from '@core/planet'
 import {
   explosionsSlice,
-  startExplosion,
+  startExplosionWithRandom,
   updateExplosions
 } from '@core/explosions'
+import {
+  EXPLSHARDS,
+  EXPLSPARKS,
+  SH_DISTRIB,
+  SH_LIFE,
+  SH_ADDLIFE,
+  SH_SPEED,
+  SH_ADDSPEED,
+  SH_SPIN2,
+  SPARKLIFE,
+  SPADDLIFE,
+  SP_SPEED16
+} from '@core/explosions/constants'
 import { drawExplosions } from '@render/explosions'
 import type { ExplosionsState } from '@core/explosions'
 import { drawBunker } from '@render/planet'
@@ -259,13 +272,57 @@ const triggerBunkerExplosion = (bunker: BunkerConfig): void => {
     `Exploding bunker: kind=${bunker.kind}, rotation=${bunker.rotation}, dir=${dir}`
   )
 
+  // Generate random values for explosion (demo uses Math.random for simplicity)
+  const shardRandom = []
+  for (let i = 0; i < EXPLSHARDS; i++) {
+    const xOffset =
+      Math.floor(Math.random() * SH_DISTRIB) - Math.floor(SH_DISTRIB / 2)
+    const yOffset =
+      Math.floor(Math.random() * SH_DISTRIB) - Math.floor(SH_DISTRIB / 2)
+    const lifetime = SH_LIFE + Math.floor(Math.random() * SH_ADDLIFE)
+    let angle: number
+    if (bunker.kind >= 2) {
+      angle = Math.floor(Math.random() * 32)
+    } else {
+      angle = (Math.floor(Math.random() * 15) - 7 + (bunker.rotation << 1)) & 31
+    }
+    const speed = SH_SPEED + Math.floor(Math.random() * SH_ADDSPEED)
+    const rot16 = Math.floor(Math.random() * 256)
+    const rotspeed =
+      Math.floor(Math.random() * SH_SPIN2) - Math.floor(SH_SPIN2 / 2)
+
+    shardRandom.push({
+      xOffset,
+      yOffset,
+      lifetime,
+      angle,
+      speed,
+      rot16,
+      rotspeed
+    })
+  }
+
+  const sparkRandom = []
+  const loangle = bunker.kind >= 2 ? 0 : ((bunker.rotation - 4) & 15) << 5
+  const hiangle = bunker.kind >= 2 ? 511 : loangle + 256
+
+  for (let i = 0; i < EXPLSPARKS; i++) {
+    const lifetime = SPARKLIFE + Math.floor(Math.random() * SPADDLIFE)
+    const angle = Math.floor(Math.random() * (hiangle - loangle + 1)) + loangle
+    const speed = 8 + Math.floor(Math.random() * SP_SPEED16)
+
+    sparkRandom.push({ lifetime, angle, speed })
+  }
+
   // Trigger bunker explosion
   store.dispatch(
-    startExplosion({
+    startExplosionWithRandom({
       x: worldX % state.planet.worldwidth,
       y: worldY,
       dir,
-      kind: bunker.kind
+      kind: bunker.kind,
+      shardRandom,
+      sparkRandom
     })
   )
 

@@ -11,7 +11,7 @@ export type GameState = {
   levelComplete: boolean
   paused: boolean
   showMap: boolean
-  highScoreEligible: boolean // Whether this game is eligible for a highscore
+  cheatUsed: boolean // Whether cheats were used this game
   killShipNextFrame: boolean
 }
 
@@ -20,7 +20,7 @@ const initialState: GameState = {
   levelComplete: false,
   paused: false,
   showMap: false,
-  highScoreEligible: true,
+  cheatUsed: false,
   // used so timing of modern collisions is in sync with old style
   killShipNextFrame: false
 }
@@ -62,12 +62,12 @@ export const gameSlice = createSlice({
     hideMap: state => {
       state.showMap = false
     },
-    // Make game high score ineligible
-    invalidateHighScore: state => {
-      state.highScoreEligible = false
+    // Mark that a cheat was used
+    markCheatUsed: state => {
+      state.cheatUsed = true
     },
-    allowHighScore: state => {
-      state.highScoreEligible = true
+    resetCheatUsed: state => {
+      state.cheatUsed = false
     },
     killShipNextFrame: state => {
       state.killShipNextFrame = true
@@ -88,8 +88,8 @@ export const {
   togglePause,
   showMap,
   hideMap,
-  invalidateHighScore,
-  allowHighScore,
+  markCheatUsed,
+  resetCheatUsed,
   killShipNextFrame,
   resetKillShipNextFrame
 } = gameSlice.actions

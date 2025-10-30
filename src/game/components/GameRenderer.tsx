@@ -1,7 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react'
 import type { FrameInfo, KeyInfo, MonochromeBitmap } from '@lib/bitmap'
-import { useAppDispatch, useAppSelector, type RootState } from '../store'
-import { togglePause, showMap, hideMap, pause, unpause } from '../gameSlice'
+import {
+  useAppDispatch,
+  useAppSelector,
+  getStoreServices,
+  extractGameState,
+  type RootState
+} from '../store'
+import { togglePause, showMap, hideMap, pause, unpause } from '@core/game'
 import {
   getControls,
   mergeControls,
@@ -9,16 +15,14 @@ import {
   type ControlMatrix
 } from '@core/controls'
 import { Map } from './Map'
-import { bitmapToCollisionItem, type CollisionService } from '@/core/collision'
-import { Collision } from '@/core/collision/constants'
-import { SBARHT } from '@/core/screen'
+import { type CollisionService } from '@/core/collision'
 import { getDebug } from '../debug'
 import type { SpriteService } from '@/core/sprites'
-import { SCENTER } from '@/core/figs'
 import { useStore } from 'react-redux'
 import { TouchControlsOverlay } from '../mobile/TouchControlsOverlay'
 import type { Frame, SpriteRegistry } from '@/lib/frame/types'
 import { drawFrameToCanvas } from '@/lib/frame/drawFrameToCanvas'
+import { applyCollisionMapOverlay } from '../utils/collisionMapOverlay'
 
 type GameRendererProps = {
   renderer: (frame: FrameInfo, controls: ControlMatrix) => MonochromeBitmap
@@ -64,7 +68,8 @@ const GameRenderer: React.FC<GameRendererProps> = ({
   const touchControlsEnabled = useAppSelector(
     state => state.app.touchControlsEnabled
   )
-  const store = useStore()
+  const collisionMode = useAppSelector(state => state.app.collisionMode)
+  const store = useStore<RootState>()
   const dispatch = useAppDispatch()
 
   // Track touch controls state
@@ -172,8 +177,27 @@ const GameRenderer: React.FC<GameRendererProps> = ({
         if (controls.pause && !showMapState) {
           dispatch(togglePause())
         }
+        // Check collision mode and stop recording if it changed
+        const recordingService = getStoreServices().recordingService
+        if (recordingService.isRecording() && collisionMode !== 'modern') {
+          console.warn(
+            'Collision mode changed to original - stopping recording'
+          )
+          const currentState = store.getState() as RootState
+          recordingService.stopRecording(currentState)
+        }
+
         // Skip rendering when paused but keep the loop running
         if (!paused) {
+          // Record frame if recording is active
+          if (recordingService.isRecording()) {
+            recordingService.recordFrame(
+              frameCountRef.current,
+              controls,
+              extractGameState(store.getState())
+            )
+          }
+
           if (renderMode === 'original') {
             // Original bitmap renderer
             const renderedBitmap = renderer(frameInfo, controls)
@@ -213,71 +237,14 @@ const GameRenderer: React.FC<GameRendererProps> = ({
 
             if (getDebug()?.SHOW_COLLISION_MAP) {
               const ship = (store.getState() as RootState).ship
-              // Get ship collision item
-              const shipBitmap = spriteService.getShipSprite(ship.shiprot, {
-                variant: 'mask'
-              }).bitmap
-              const shipItem = bitmapToCollisionItem(
-                shipBitmap,
-                Collision.NONE,
-                ship.shipx - SCENTER,
-                ship.shipy - SCENTER
+              applyCollisionMapOverlay(
+                pixels,
+                collisionMap,
+                ship,
+                spriteService,
+                renderedBitmap.width,
+                renderedBitmap.height
               )
-
-              // Overlay collision map colors
-              for (let y = 0; y < renderedBitmap.height; y++) {
-                for (let x = 0; x < renderedBitmap.width; x++) {
-                  const pixelIndex = (y * renderedBitmap.width + x) * 4
-
-                  // Check if there's a collision at this point
-                  // NB: collision map doesn't include status bar
-                  const collision = collisionMap[x]?.[y - SBARHT] ?? 0
-
-                  if (collision === Collision.LETHAL) {
-                    // Blend red transparently on top
-                    const alpha = 0.5 // 50% transparency
-                    pixels[pixelIndex] = Math.round(
-                      pixels[pixelIndex]! * (1 - alpha) + 255 * alpha
-                    ) // R
-                    pixels[pixelIndex + 1] = Math.round(
-                      pixels[pixelIndex + 1]! * (1 - alpha) + 0 * alpha
-                    ) // G
-                    pixels[pixelIndex + 2] = Math.round(
-                      pixels[pixelIndex + 2]! * (1 - alpha) + 0 * alpha
-                    ) // B
-                  } else if (collision === Collision.BOUNCE) {
-                    // Blend green transparently on top
-                    const alpha = 0.5 // 50% transparency
-                    pixels[pixelIndex] = Math.round(
-                      pixels[pixelIndex]! * (1 - alpha) + 0 * alpha
-                    ) // R
-                    pixels[pixelIndex + 1] = Math.round(
-                      pixels[pixelIndex + 1]! * (1 - alpha) + 255 * alpha
-                    ) // G
-                    pixels[pixelIndex + 2] = Math.round(
-                      pixels[pixelIndex + 2]! * (1 - alpha) + 0 * alpha
-                    ) // B
-                  }
-
-                  // Check if this pixel is part of the ship collision mask
-                  const isShipPixel = shipItem.some(
-                    point => point.x === x && point.y === y - SBARHT
-                  )
-                  if (isShipPixel) {
-                    // Blend blue transparently on top
-                    const alpha = 0.5 // 50% transparency
-                    pixels[pixelIndex] = Math.round(
-                      pixels[pixelIndex]! * (1 - alpha) + 0 * alpha
-                    ) // R
-                    pixels[pixelIndex + 1] = Math.round(
-                      pixels[pixelIndex + 1]! * (1 - alpha) + 0 * alpha
-                    ) // G
-                    pixels[pixelIndex + 2] = Math.round(
-                      pixels[pixelIndex + 2]! * (1 - alpha) + 255 * alpha
-                    ) // B
-                  }
-                }
-              }
             }
 
             // Draw to offscreen canvas
@@ -298,6 +265,45 @@ const GameRenderer: React.FC<GameRendererProps> = ({
 
             // Draw frame to canvas (background clearing is handled by viewClear in renderingNew.ts)
             drawFrameToCanvas(renderedFrame, ctx, scale, spriteRegistry, false)
+
+            if (getDebug()?.SHOW_COLLISION_MAP) {
+              const collisionMap = collisionService.getMap()
+              const ship = (store.getState() as RootState).ship
+
+              // Create a temporary canvas for unscaled overlay
+              const tempCanvas = document.createElement('canvas')
+              tempCanvas.width = width
+              tempCanvas.height = height
+              const tempCtx = tempCanvas.getContext('2d')!
+
+              // Draw scaled image to temp canvas at original size
+              tempCtx.drawImage(ctx.canvas, 0, 0, width, height)
+
+              // Get unscaled pixels
+              const unscaledImageData = tempCtx.getImageData(
+                0,
+                0,
+                width,
+                height
+              )
+
+              // Apply overlay at original scale
+              applyCollisionMapOverlay(
+                unscaledImageData.data,
+                collisionMap,
+                ship,
+                spriteService,
+                width,
+                height
+              )
+
+              // Put back to temp canvas
+              tempCtx.putImageData(unscaledImageData, 0, 0)
+
+              // Scale back up to main canvas
+              ctx.imageSmoothingEnabled = false
+              ctx.drawImage(tempCanvas, 0, 0, width * scale, height * scale)
+            }
           }
 
           lastFrameTimeRef.current = currentTime
@@ -338,7 +344,8 @@ const GameRenderer: React.FC<GameRendererProps> = ({
     spriteService,
     spriteRegistry,
     store,
-    touchControls
+    touchControls,
+    collisionMode
   ])
 
   return (

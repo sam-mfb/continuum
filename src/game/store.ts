@@ -11,12 +11,14 @@ import type { GalaxyService } from '@core/galaxy'
 import type { SpriteService } from '@core/sprites'
 import type { FizzTransitionService } from '@core/transition'
 import type { GameSoundService } from './types'
+import type { RandomService } from '@/core/shared'
 
 // Import all reducers
-import { gameSlice } from './gameSlice'
+import { gameSlice, type GameRootState } from '@core/game'
 import { appSlice } from './appSlice'
+import { replaySlice } from './replaySlice'
 import { appMiddleware, loadAppSettings } from './appMiddleware'
-import { syncThunkMiddleware } from './syncThunkMiddleware'
+import { createSyncThunkMiddleware } from '@lib/redux'
 import { shipSlice } from '@core/ship'
 import { shotsSlice } from '@core/shots'
 import { planetSlice } from '@core/planet'
@@ -42,6 +44,7 @@ import {
 } from 'react-redux'
 import { setupSoundListener } from './soundListenerMiddleware'
 import type { CollisionService } from '@/core/collision'
+import type { RecordingService } from '@core/recording'
 
 // Define the services that will be injected
 export type GameServices = {
@@ -50,6 +53,8 @@ export type GameServices = {
   fizzTransitionService: FizzTransitionService
   soundService: GameSoundService
   collisionService: CollisionService
+  randomService: RandomService
+  recordingService: RecordingService
 }
 
 // Initial settings for the game
@@ -62,6 +67,7 @@ export type GameInitialSettings = {
 const rootReducer = combineSlices(
   appSlice,
   gameSlice,
+  replaySlice,
   controlsSlice,
   shipSlice,
   shotsSlice,
@@ -77,6 +83,22 @@ const rootReducer = combineSlices(
 export type RootReducer = typeof rootReducer
 export type RootState = ReturnType<RootReducer>
 
+/**
+ * Extract only GameRootState slices from RootState for recording
+ * This ensures recordings only contain game logic slices, not UI state
+ */
+export const extractGameState = (state: RootState): GameRootState => ({
+  game: state.game,
+  planet: state.planet,
+  ship: state.ship,
+  screen: state.screen,
+  status: state.status,
+  shots: state.shots,
+  explosions: state.explosions,
+  walls: state.walls,
+  transition: state.transition
+})
+
 // Factory function to create store and listeners
 const createStoreAndListeners = (
   reducer: RootReducer,
@@ -86,6 +108,11 @@ const createStoreAndListeners = (
 ) => {
   // Create the listener middleware instance
   const soundListenerMiddleware = createListenerMiddleware()
+  // Create the sync thunk middleware instance
+  const syncThunkMiddleware = createSyncThunkMiddleware<
+    RootState,
+    GameServices
+  >()
   // Load persisted high scores
   const persistedHighScores = loadHighScores()
   // Load persisted control bindings
@@ -164,6 +191,21 @@ export type AppDispatch = GameStore['dispatch']
 export const useAppDispatch: () => AppDispatch = useDispatch
 export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
 
+// Store instance for accessing services
+// This will be set when the store is created
+let storeInstance: GameStore | null = null
+
+export const getStoreServices = (): GameServices => {
+  if (!storeInstance) {
+    throw new Error('Store not initialized')
+  }
+  // Access services via the thunk extra argument (stored during creation)
+  // We'll need to store services separately since they're not in state
+  return servicesInstance!
+}
+
+let servicesInstance: GameServices | null = null
+
 export const createGameStore = (
   services: GameServices,
   initialSettings: GameInitialSettings
@@ -179,6 +221,10 @@ export const createGameStore = (
     soundListenerMiddleware.startListening.withTypes<RootState, AppDispatch>(),
     services.soundService
   )
+
+  // Store the instance and services for access
+  storeInstance = store
+  servicesInstance = services
 
   return store
 }

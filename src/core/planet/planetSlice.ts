@@ -101,11 +101,61 @@ export const planetSlice = createSlice({
     },
 
     /**
+     * Initialize bunkers with deterministic random values
+     * For use with RandomService to enable deterministic gameplay
+     */
+    initializeBunkersWithValues: (
+      state,
+      action: {
+        payload: Array<{
+          index: number
+          rot: number
+          rotcount: number
+        }>
+      }
+    ) => {
+      // First, sort bunkers by X position for collision optimization
+      let sentinelIndex = state.bunkers.findIndex(b => b.rot < 0)
+      if (sentinelIndex === -1) sentinelIndex = state.bunkers.length
+
+      const activeBunkers = state.bunkers.slice(0, sentinelIndex)
+      activeBunkers.sort((a, b) => a.x - b.x)
+      state.bunkers.splice(0, sentinelIndex, ...activeBunkers)
+
+      // Apply provided random values
+      for (const { index, rot, rotcount } of action.payload) {
+        const bunk = state.bunkers[index]
+        if (!bunk || bunk.rot < 0) continue
+
+        bunk.alive = true
+
+        if (bunk.kind >= BUNKROTKINDS) {
+          bunk.rot = rot
+          bunk.rotcount = rotcount
+        }
+
+        if (bunk.kind === BunkerKind.DIFF && (bunk.rot & 3) === 2) {
+          bunk.rotcount = 3
+        }
+      }
+
+      // Initialize gravity points
+      state.gravityPoints = []
+      for (const bunk of state.bunkers) {
+        if (bunk.rot < 0) break
+        if (bunk.alive && bunk.kind === BunkerKind.GENERATOR) {
+          state.gravityPoints.push({ x: bunk.x, y: bunk.y, str: -10 })
+        }
+      }
+    },
+
+    /**
      * Initialize bunkers for a new planet/game
      * Based on init_planet() at Play.c:137-147
      *
      * ROBUSTNESS: Also sorts bunkers by X position to optimize collision detection
      * Original assumes bunkers are pre-sorted from editor (Play.c:767-769)
+     * NOTE: Uses Math.random() - deprecated for deterministic gameplay
      */
     initializeBunkers: state => {
       // First, sort bunkers by X position for collision optimization
@@ -134,6 +184,8 @@ export const planetSlice = createSlice({
         bunk.alive = true
 
         // For animated bunkers, set random initial rotation and counter
+        // NOTE: Uses Math.random() - deprecated for deterministic gameplay
+        // Use initializeBunkersWithValues instead for deterministic behavior
         if (bunk.kind >= BUNKROTKINDS) {
           // Random rotation (0 to BUNKFRAMES-1)
           bunk.rot = Math.floor(Math.random() * BUNKFRAMES)
@@ -165,8 +217,56 @@ export const planetSlice = createSlice({
     },
 
     /**
+     * Update fuel cell animations with deterministic random values
+     * For use with RandomService to enable deterministic gameplay
+     */
+    updateFuelAnimationsWithRandom: (
+      state,
+      action: PayloadAction<{
+        flash: number
+        flashFrame: number
+      }>
+    ) => {
+      const { flash, flashFrame } = action.payload
+
+      // Check if fuels array exists and has elements
+      if (!state.fuels || state.fuels.length === 0) return
+
+      // Update animations for all fuel cells (Terrain.c:274-286)
+      for (let f = 0; f < state.fuels.length; f++) {
+        const fp = state.fuels[f]
+
+        // Skip undefined or null elements
+        if (!fp) continue
+
+        // Check for end marker
+        if (fp.x >= 10000) break
+
+        // Only animate if fuel is alive
+        if (fp.alive) {
+          if (f === flash) {
+            // Flash effect - use provided random frame (Terrain.c:277-280)
+            fp.currentfig = flashFrame
+            fp.figcount = 1
+          } else if (fp.figcount <= 0) {
+            // Advance to next animation frame (Terrain.c:281-286)
+            fp.currentfig++
+            if (fp.currentfig >= FUELFRAMES - 2) {
+              fp.currentfig = 0
+            }
+            fp.figcount = 1
+          } else {
+            // Decrement frame counter
+            fp.figcount--
+          }
+        }
+      }
+    },
+
+    /**
      * Update fuel cell animations
      * Based on the for loop in do_fuels() at Terrain.c:274-286
+     * NOTE: Uses rint() (Math.random) - deprecated for deterministic gameplay
      */
     updateFuelAnimations: state => {
       // Check if fuels array exists and has elements
@@ -210,19 +310,39 @@ export const planetSlice = createSlice({
      * Initialize fuel cells for a new planet/game
      * Based on init_planet() at Play.c:148-153
      */
-    initializeFuels: state => {
+    initializeFuelsWithValues: (
+      state,
+      action: {
+        payload: Array<{
+          index: number
+          currentfig: number
+          figcount: number
+        }>
+      }
+    ) => {
       // Check if fuels array exists and has elements
+      if (!state.fuels || state.fuels.length === 0) return
+
+      for (const { index, currentfig, figcount } of action.payload) {
+        const fp = state.fuels[index]
+        if (!fp || fp.x >= 10000) continue
+
+        fp.alive = true
+        fp.currentfig = currentfig
+        fp.figcount = figcount
+      }
+    },
+
+    initializeFuels: state => {
+      // Legacy action that uses Math.random() - deprecated for deterministic gameplay
+      // Use initializeFuelsWithValues or the initializeFuels thunk instead
       if (!state.fuels || state.fuels.length === 0) return
 
       for (let i = 0; i < state.fuels.length; i++) {
         const fp = state.fuels[i]
-        // Skip undefined or null elements
         if (!fp) continue
-
-        // Check for end marker
         if (fp.x >= 10000) break
 
-        // Set all fuels to alive with random animation state
         fp.alive = true
         fp.currentfig = rint(FUELFRAMES)
         fp.figcount = rint(FUELFCYCLES)
@@ -318,8 +438,11 @@ export const {
   loadPlanet,
   updateBunkerRotations,
   initializeBunkers,
+  initializeBunkersWithValues,
   updateFuelAnimations,
+  updateFuelAnimationsWithRandom,
   initializeFuels,
+  initializeFuelsWithValues,
   killBunker,
   collectFuelCells
 } = planetSlice.actions

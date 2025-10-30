@@ -1,5 +1,5 @@
 import type { Frame } from '@/lib/frame/types'
-import type { RootState } from '../store'
+import type { RootState } from './store'
 import type { SpriteService } from '@/core/sprites'
 import type { FizzTransitionServiceFrame } from '@/core/transition'
 import { LINE_KIND } from '@/core/shared'

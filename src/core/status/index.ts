@@ -10,6 +10,7 @@ export * from './scoring'
 
 // State management
 export { statusSlice } from './statusSlice'
+export type { StatusState } from './statusSlice'
 
 // Import and re-export actions
 import { statusSlice as _statusSlice } from './statusSlice'

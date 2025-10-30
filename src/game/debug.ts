@@ -1,5 +1,6 @@
 export type DebugOptions = {
   SHOW_COLLISION_MAP: boolean
+  ENABLE_FULL_SNAPSHOTS: boolean
 }
 
 let debug: Partial<DebugOptions> | undefined = undefined

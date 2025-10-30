@@ -17,7 +17,7 @@ import { createSoundService } from '@/core/sound'
 import { createModernSoundService } from '@/core/sound-modern'
 import { createGameRenderer, createGameRendererNew } from './gameLoop'
 import { loadAppSettings } from './appMiddleware'
-import { setAlignmentMode } from '@/core/shared'
+import { setAlignmentMode, createRandomService } from '@/core/shared'
 import { createGameStore } from './store'
 import {
   setCurrentGalaxy,
@@ -36,12 +36,13 @@ import { getDefaultGalaxy } from './galaxyConfig'
 import { createCollisionService } from '@/core/collision'
 import { SCRWTH, VIEWHT } from '@/core/screen'
 import { initializeSpriteRegistry } from '@/lib/frame/initializeSpriteRegistry'
-//import { enableDebugOption } from './debug'
+import { createRecordingService } from '@core/recording'
+import { enableDebugOption } from './debug'
 
 const app = document.querySelector<HTMLDivElement>('#app')!
 const root = createRoot(app)
 
-//enableDebugOption({ SHOW_COLLISION_MAP: true })
+enableDebugOption({ ENABLE_FULL_SNAPSHOTS: false })
 
 try {
   // Initialize services
@@ -86,6 +87,12 @@ try {
   collisionService.initialize({ width: SCRWTH, height: VIEWHT })
   console.log('Collision service created')
 
+  const randomService = createRandomService()
+  console.log('Random service created')
+
+  const recordingService = createRecordingService()
+  console.log('Recording service created')
+
   // Create store with services and initial settings
   const store = createGameStore(
     {
@@ -93,7 +100,9 @@ try {
       spriteService,
       fizzTransitionService,
       soundService,
-      collisionService
+      collisionService,
+      randomService,
+      recordingService
     },
     {
       soundVolume: DEFAULT_SOUND_VOLUME,
@@ -123,13 +132,15 @@ try {
     store,
     spriteService,
     galaxyService,
-    fizzTransitionService
+    fizzTransitionService,
+    randomService
   )
   const rendererNew = createGameRendererNew(
     store,
     spriteService,
     galaxyService,
-    fizzTransitionServiceFrame
+    fizzTransitionServiceFrame,
+    randomService
   )
 
   // Set up alignment mode subscription
