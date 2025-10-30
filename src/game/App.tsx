@@ -176,6 +176,7 @@ export const App: React.FC<AppProps> = ({
             onStartGame={(level: number) => {
               // Reset ship and sound to clean state
               dispatch(shipSlice.actions.resetShip())
+              dispatch(shipSlice.actions.resetLives())
 
               // Invalidate high score if starting at level > 1
               if (level > 1) {
