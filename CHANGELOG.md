@@ -2,7 +2,9 @@
 
 ## 1.3.1 - 2025.11.01
 
-Fix bug with number of starting lives
+**BREAKING CHANGE - Game Engine Version 2**
+
+Fix bug with number of starting lives - games now correctly start with 3 lives (SHIPSTART + 1) instead of 2. This is a breaking change for validation: recordings made with version 1 will fail validation as they have incorrect initial state.
 
 ## 1.3.0 - 2025.10.26
 
