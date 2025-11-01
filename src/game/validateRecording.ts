@@ -35,7 +35,6 @@ export const validateRecording = (
   // Create headless store
   const headlessStore = createHeadlessStore(
     headlessServices,
-    recording.initialState.lives ?? 3,
     recording.startLevel
   )
 
@@ -44,8 +43,7 @@ export const validateRecording = (
     headlessStore,
     services.galaxyService,
     services.randomService,
-    recording.galaxyId,
-    recording.initialState.lives ?? 3
+    recording.galaxyId
   )
 
   // Create validator

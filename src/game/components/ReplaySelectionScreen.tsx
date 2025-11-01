@@ -2,7 +2,7 @@ import React, { type ChangeEvent, useState, useEffect } from 'react'
 import { useAppDispatch, useAppSelector, getStoreServices } from '../store'
 import { loadRecording, startReplay } from '../replaySlice'
 import { setMode } from '../appSlice'
-import { shipSlice } from '@/core/ship'
+import { shipSlice, TOTAL_INITIAL_LIVES } from '@/core/ship'
 import { statusSlice } from '@/core/status'
 import { markCheatUsed } from '@core/game'
 import { clearExplosions } from '@/core/explosions'
@@ -135,8 +135,8 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
       // 3. Reset score and status for replay
       dispatch(statusSlice.actions.initStatus(recording.startLevel))
 
-      // 4. Set initial lives from recording
-      dispatch(shipSlice.actions.setLives(recording.initialState.lives ?? 3))
+      // 4. Set initial lives to TOTAL_INITIAL_LIVES (same as game start)
+      dispatch(shipSlice.actions.resetLives(TOTAL_INITIAL_LIVES))
 
       // 5. Clear explosions
       dispatch(clearExplosions())

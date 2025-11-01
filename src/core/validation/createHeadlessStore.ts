@@ -1,6 +1,6 @@
 import { combineSlices, configureStore } from '@reduxjs/toolkit'
 import { gameSlice } from '@core/game'
-import { shipSlice } from '@core/ship'
+import { shipSlice, TOTAL_INITIAL_LIVES } from '@core/ship'
 import { shotsSlice } from '@core/shots'
 import { planetSlice } from '@core/planet'
 import { screenSlice } from '@core/screen'
@@ -40,31 +40,15 @@ const headlessReducer = combineSlices(
 
 const createHeadlessStore = (
   services: HeadlessServices,
-  initialLives: number,
   startLevel: number
 ): ReturnType<typeof configureStore<GameRootState>> => {
-  const preloadedState = {
-    ship: {
-      ...shipSlice.getInitialState(),
-      lives: initialLives
-    },
-    status: {
-      ...statusSlice.getInitialState(),
-      currentlevel: startLevel
-    },
-    game: {
-      ...gameSlice.getInitialState(),
-      cheatUsed: startLevel > 1 // Mark cheat used if starting beyond level 1
-    }
-  }
-
   // Create the sync thunk middleware instance
   const syncThunkMiddleware = createSyncThunkMiddleware<
     GameRootState,
     HeadlessServices
   >()
 
-  return configureStore({
+  const store = configureStore({
     reducer: headlessReducer,
     middleware: getDefaultMiddleware =>
       getDefaultMiddleware({
@@ -74,9 +58,23 @@ const createHeadlessStore = (
         // Disable serialization checks for headless validation
         // (randomService functions are passed in actions but that's okay for validation)
         serializableCheck: false
-      }).prepend(syncThunkMiddleware(services)),
-    preloadedState
+      }).prepend(syncThunkMiddleware(services))
   })
+
+  // Initialize state using the same actions as replay and game
+  // (ReplaySelectionScreen.tsx:132-136 and App.tsx:186-189)
+  // This ensures validator state matches game/replay state exactly
+  store.dispatch(shipSlice.actions.resetShip())
+  store.dispatch(shipSlice.actions.resetFuel())
+  store.dispatch(statusSlice.actions.initStatus(startLevel))
+  store.dispatch(shipSlice.actions.resetLives(TOTAL_INITIAL_LIVES))
+
+  // Mark cheat used if starting beyond level 1
+  if (startLevel > 1) {
+    store.dispatch(gameSlice.actions.markCheatUsed())
+  }
+
+  return store
 }
 
 export type HeadlessStore = ReturnType<typeof createHeadlessStore>

@@ -6,6 +6,7 @@ import type { GalaxyService } from '@core/galaxy'
 import type { RandomService } from '@/core/shared'
 import { updateGameState } from '@core/game'
 import { FIZZ_DURATION } from '@core/transition'
+import { TOTAL_INITIAL_LIVES } from '@core/ship'
 
 type HeadlessGameEngine = {
   step: (frameCount: number, controls: ControlMatrix) => void
@@ -16,8 +17,7 @@ const createHeadlessGameEngine = (
   store: HeadlessStore,
   galaxyService: GalaxyService,
   randomService: RandomService,
-  galaxyId: string,
-  initialLives: number
+  galaxyId: string
 ): HeadlessGameEngine => {
   // Track fizz state to simulate correct duration in headless mode
   let fizzFramesElapsed = 0
@@ -48,7 +48,7 @@ const createHeadlessGameEngine = (
       capturedFinalState = finalState
     },
     getGalaxyId: (): string => galaxyId,
-    getInitialLives: (): number => initialLives,
+    getInitialLives: (): number => TOTAL_INITIAL_LIVES,
     getCollisionMode: (): 'original' | 'modern' => 'modern' // Headless validation uses modern collision
   }
 

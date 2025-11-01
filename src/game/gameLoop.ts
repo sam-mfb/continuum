@@ -14,6 +14,7 @@ import type {
 } from '@core/transition'
 import type { GameStore } from './store'
 import type { RandomService } from '@/core/shared'
+import { TOTAL_INITIAL_LIVES } from '@/core/ship'
 
 import { updateGameState, type GameRootState } from '@core/game'
 import { renderGame } from './rendering'
@@ -22,7 +23,6 @@ import { renderGameOriginal } from './renderingOriginal'
 import type { Frame } from '@/lib/frame/types'
 import { renderGameNew } from './renderingNew'
 import { setMode, setMostRecentScore, setLastRecordingId } from './appSlice'
-import { TOTAL_INITIAL_LIVES } from './constants'
 import { getStoreServices } from './store'
 import { createRecordingStorage } from '@core/recording'
 
