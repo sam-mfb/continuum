@@ -1,5 +1,9 @@
 # Changes
 
+## 1.3.1 - 2025.11.01
+
+Fix bug with number of starting lives
+
 ## 1.3.0 - 2025.10.26
 
 Game recording, validation, and replay
