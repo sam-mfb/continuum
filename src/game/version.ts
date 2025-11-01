@@ -13,5 +13,6 @@
  *
  * HISTORY:
  * - Version 1: Initial implementation with seeded RNG
+ * - Version 2: Fixed initial lives to 3 (TOTAL_INITIAL_LIVES = SHIPSTART + 1)
  */
-export const GAME_ENGINE_VERSION = 1
+export const GAME_ENGINE_VERSION = 2

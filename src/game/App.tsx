@@ -18,7 +18,7 @@ import {
 } from './appSlice'
 import { isTouchDevice } from './mobile/deviceDetection'
 import { setHighScore } from '@/core/highscore'
-import { shipSlice } from '@/core/ship'
+import { shipSlice, TOTAL_INITIAL_LIVES } from '@/core/ship'
 import { statusSlice } from '@/core/status'
 import { markCheatUsed } from '@core/game'
 import { clearExplosions } from '@/core/explosions'
@@ -182,7 +182,7 @@ export const App: React.FC<AppProps> = ({
             onStartGame={(level: number) => {
               // Reset ship and sound to clean state
               dispatch(shipSlice.actions.resetShip())
-              dispatch(shipSlice.actions.resetLives())
+              dispatch(shipSlice.actions.resetLives(TOTAL_INITIAL_LIVES))
               dispatch(shipSlice.actions.resetFuel())
 
               // Reset score and status for new game

@@ -29,9 +29,9 @@ import { isTouchDevice } from './mobile/deviceDetection'
 import {
   ASSET_PATHS,
   DEFAULT_SOUND_VOLUME,
-  DEFAULT_SOUND_MUTED,
-  TOTAL_INITIAL_LIVES
+  DEFAULT_SOUND_MUTED
 } from './constants'
+import { TOTAL_INITIAL_LIVES } from '@/core/ship'
 import { getDefaultGalaxy } from './galaxyConfig'
 import { createCollisionService } from '@/core/collision'
 import { SCRWTH, VIEWHT } from '@/core/screen'

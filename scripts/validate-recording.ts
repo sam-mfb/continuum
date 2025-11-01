@@ -75,19 +75,14 @@ const main = async (): Promise<void> => {
   }
 
   // Create headless store (no UI, sound, or persistence)
-  const store = createHeadlessStore(
-    services,
-    recording.initialState.lives,
-    recording.startLevel
-  )
+  const store = createHeadlessStore(services, recording.startLevel)
 
   // Create headless engine (uses frame counter instead of real fizz service)
   const engine = createHeadlessGameEngine(
     store,
     galaxyService,
     randomService,
-    recording.galaxyId,
-    recording.initialState.lives
+    recording.galaxyId
   )
 
   const validator = createRecordingValidator(engine, store, recordingService)

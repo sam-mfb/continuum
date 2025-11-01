@@ -2,10 +2,7 @@
  * @fileoverview Game-specific constants
  */
 
-import { SHIPSTART } from '@/core/ship'
-
 // Game progression
-export const TOTAL_INITIAL_LIVES = SHIPSTART + 1 // Total lives including current ship
 export const STARTING_LEVEL = 1
 
 // Sound defaults

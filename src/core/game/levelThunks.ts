@@ -12,7 +12,7 @@ import { statusSlice } from '@core/status'
 import { clearAllShots } from '@core/shots'
 import { resetSparksAlive, clearShards } from '@core/explosions'
 import { SCRWTH, TOPMARG, BOTMARG } from '@core/screen'
-import { clearLevelComplete } from './gameSlice'
+import { clearLevelComplete, resetKillShipNextFrame } from './gameSlice'
 import { setMessage } from '@/core/status'
 import { FUELFRAMES } from '@core/figs'
 
@@ -59,8 +59,9 @@ export const loadLevel =
     // Update the current level in status state to match what we're loading
     dispatch(statusSlice.actions.setLevel(levelNum))
 
-    // Reset level complete flag and status message for the new level
+    // Reset level complete flag, kill ship flag, and status message for the new level
     dispatch(clearLevelComplete())
+    dispatch(resetKillShipNextFrame())
     dispatch(setMessage(null))
 
     // Get the planet data for this level from the service

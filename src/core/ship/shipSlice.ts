@@ -1,13 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { ShipState } from './types'
-import {
-  SHIP,
-  DEAD_TIME,
-  FUELSTART,
-  FUELGAIN,
-  FUELBURN,
-  SHIPSTART
-} from './constants'
+import { SHIP, DEAD_TIME, FUELSTART, FUELGAIN, FUELBURN } from './constants'
 import type { ControlMatrix } from '../controls'
 
 // Note: TOTAL_INITIAL_LIVES will be set via preloadedState when creating the store
@@ -362,8 +355,8 @@ export const shipSlice = createSlice({
     /**
      * Reset lives for new game
      */
-    resetLives: state => {
-      state.lives = SHIPSTART
+    resetLives: (state, action: PayloadAction<number>) => {
+      state.lives = action.payload
     },
 
     /**
