@@ -100,6 +100,34 @@ const main = async (): Promise<void> => {
   console.log(`Frames validated: ${report.framesValidated}`)
   console.log(`Snapshots checked: ${report.snapshotsChecked}`)
 
+  // Display performance metrics
+  const perf = report.performance
+  console.log(`\n=== Performance Metrics ===`)
+  console.log(`Total time: ${perf.totalTime.toFixed(2)}ms`)
+  console.log(
+    `Frame loop time: ${perf.frameLoopTime.toFixed(2)}ms (${((perf.frameLoopTime / perf.totalTime) * 100).toFixed(1)}%)`
+  )
+  console.log(
+    `  - getReplayControls: ${perf.getReplayControlsTime.toFixed(2)}ms (${((perf.getReplayControlsTime / perf.frameLoopTime) * 100).toFixed(1)}%)`
+  )
+  console.log(
+    `  - Snapshot finding: ${perf.snapshotFindTime.toFixed(2)}ms (${((perf.snapshotFindTime / perf.frameLoopTime) * 100).toFixed(1)}%)`
+  )
+  console.log(
+    `  - Snapshot validation: ${perf.snapshotValidationTime.toFixed(2)}ms (${((perf.snapshotValidationTime / perf.frameLoopTime) * 100).toFixed(1)}%)`
+  )
+  console.log(
+    `  - Engine step: ${perf.engineStepTime.toFixed(2)}ms (${((perf.engineStepTime / perf.frameLoopTime) * 100).toFixed(1)}%)`
+  )
+  console.log(
+    `  - Other overhead: ${(perf.frameLoopTime - perf.getReplayControlsTime - perf.snapshotFindTime - perf.snapshotValidationTime - perf.engineStepTime).toFixed(2)}ms`
+  )
+  console.log(`Final validation: ${perf.finalValidationTime.toFixed(2)}ms`)
+  console.log(
+    `\nAverage time per frame: ${perf.averageTimePerFrame.toFixed(3)}ms`
+  )
+  console.log(`Frames per second: ${perf.framesPerSecond.toFixed(1)} FPS`)
+
   if (report.divergenceFrame !== null) {
     console.log(`\nDivergence at frame: ${report.divergenceFrame}`)
     const error = report.errors[0]

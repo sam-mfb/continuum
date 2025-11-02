@@ -18,6 +18,18 @@ type FinalStateError = {
   actual: number
 }
 
+type PerformanceMetrics = {
+  totalTime: number
+  frameLoopTime: number
+  getReplayControlsTime: number
+  snapshotFindTime: number
+  snapshotValidationTime: number
+  engineStepTime: number
+  finalValidationTime: number
+  averageTimePerFrame: number
+  framesPerSecond: number
+}
+
 type ValidationReport = {
   success: boolean
   framesValidated: number
@@ -25,6 +37,7 @@ type ValidationReport = {
   divergenceFrame: number | null
   finalStateMatch: boolean
   finalStateErrors?: FinalStateError[]
+  performance: PerformanceMetrics
   errors: {
     frame: number
     type: 'SNAPSHOT_MISMATCH' | 'MISSING_INPUT'
@@ -85,6 +98,14 @@ const createRecordingValidator = (
       let snapshotsChecked = 0
       let divergenceFrame: number | null = null
 
+      // Performance timing
+      const perfStart = performance.now()
+      let getReplayControlsTime = 0
+      let snapshotValidationTime = 0
+      let snapshotFindTime = 0
+      let engineStepTime = 0
+      let finalValidationTime = 0
+
       // Initialize recording service in replay mode
       recordingService.startReplay(recording)
 
@@ -118,9 +139,12 @@ const createRecordingValidator = (
         recording.inputs[recording.inputs.length - 1]?.frame ?? 0
 
       // Run through all frames
+      const frameLoopStart = performance.now()
       for (let frameCount = 0; frameCount <= totalFrames; frameCount++) {
         // Get controls for this frame
+        const controlsStart = performance.now()
         const controls = recordingService.getReplayControls(frameCount)
+        getReplayControlsTime += performance.now() - controlsStart
 
         if (controls === null) {
           errors.push({
@@ -132,15 +156,18 @@ const createRecordingValidator = (
 
         // Check snapshots BEFORE stepping for frame 0 (initial state after level load)
         // For all other frames, check AFTER stepping (post-update state)
+        const findStart = performance.now()
         const fullSnapshot = recording.fullSnapshots?.find(
           s => s.frame === frameCount
         )
         const hashSnapshot = recording.snapshots?.find(
           s => s.frame === frameCount
         )
+        snapshotFindTime += performance.now() - findStart
 
         // Validate snapshot before processing this frame (recording captures pre-update state)
         if (fullSnapshot || hashSnapshot) {
+          const snapshotStart = performance.now()
           if (fullSnapshot) {
             const state = store.getState()
             const diffs = compareStates(fullSnapshot.state, state)
@@ -170,10 +197,13 @@ const createRecordingValidator = (
               })
             }
           }
+          snapshotValidationTime += performance.now() - snapshotStart
         }
 
         // Step the game engine
+        const stepStart = performance.now()
         engine.step(frameCount, controls)
+        engineStepTime += performance.now() - stepStart
         framesValidated++
 
         // DON'T manually load the next level - the game engine does this automatically
@@ -205,7 +235,10 @@ const createRecordingValidator = (
         }
       }
 
+      const frameLoopTime = performance.now() - frameLoopStart
+
       // Validate final state if present in recording
+      const finalValidationStart = performance.now()
       let finalStateMatch = true
       const finalStateErrors: FinalStateError[] = []
 
@@ -254,8 +287,29 @@ const createRecordingValidator = (
         )
       }
 
+      finalValidationTime = performance.now() - finalValidationStart
+
       // Clean up
       recordingService.stopReplay()
+
+      // Calculate total time and metrics
+      const totalTime = performance.now() - perfStart
+      const averageTimePerFrame =
+        framesValidated > 0 ? frameLoopTime / framesValidated : 0
+      const framesPerSecond =
+        averageTimePerFrame > 0 ? 1000 / averageTimePerFrame : 0
+
+      const performanceMetrics: PerformanceMetrics = {
+        totalTime,
+        frameLoopTime,
+        getReplayControlsTime,
+        snapshotFindTime,
+        snapshotValidationTime,
+        engineStepTime,
+        finalValidationTime,
+        averageTimePerFrame,
+        framesPerSecond
+      }
 
       return {
         success: errors.length === 0 && finalStateMatch,
@@ -265,6 +319,7 @@ const createRecordingValidator = (
         finalStateMatch,
         finalStateErrors:
           finalStateErrors.length > 0 ? finalStateErrors : undefined,
+        performance: performanceMetrics,
         errors
       }
     }

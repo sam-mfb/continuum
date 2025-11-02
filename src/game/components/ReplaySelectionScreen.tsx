@@ -204,7 +204,18 @@ const ReplaySelectionScreen: React.FC<ReplaySelectionScreenProps> = ({
             snapshotsChecked: 0,
             divergenceFrame: null,
             finalStateMatch: false,
-            errors: []
+            errors: [],
+            performance: {
+              totalTime: 0,
+              frameLoopTime: 0,
+              getReplayControlsTime: 0,
+              snapshotFindTime: 0,
+              snapshotValidationTime: 0,
+              engineStepTime: 0,
+              finalValidationTime: 0,
+              averageTimePerFrame: 0,
+              framesPerSecond: 0
+            }
           }
         }))
       }
