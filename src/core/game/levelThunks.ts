@@ -144,12 +144,18 @@ export const loadLevel =
     const shipScreenX = SCRWTH / 2
     const shipScreenY = Math.floor((TOPMARG + BOTMARG) / 2)
 
+    // Check if ship was dead before loading new level
+    // If so, we need to reset fuel (fixes bug where dying at end of level doesn't reset fuel)
+    state = _getState()
+    const wasShipDead = state.ship.deadCount > 0
+
     dispatch(
       shipSlice.actions.initShip({
         x: shipScreenX,
         y: shipScreenY,
         globalx: planet.xstart,
-        globaly: planet.ystart
+        globaly: planet.ystart,
+        resetFuel: wasShipDead // Reset fuel if ship was dead during level transition
       })
     )
 
