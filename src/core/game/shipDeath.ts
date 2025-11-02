@@ -87,63 +87,63 @@ export const triggerShipDeath = (
             rot: bunker.rot
           })
         )
-      }
 
-      // Trigger bunker explosion
-      // Generate random values for explosion
-      const shardRandom = []
-      for (let i = 0; i < EXPLSHARDS; i++) {
-        const xOffset =
-          randomService.rnumber(SH_DISTRIB) - Math.floor(SH_DISTRIB / 2)
-        const yOffset =
-          randomService.rnumber(SH_DISTRIB) - Math.floor(SH_DISTRIB / 2)
-        const lifetime = SH_LIFE + randomService.rnumber(SH_ADDLIFE)
-        let angle: number
-        if (bunker.kind >= 2) {
-          // Rotating bunkers: random direction
-          angle = randomService.rnumber(32)
-        } else {
-          // Static bunkers: directional spread
-          angle = (randomService.rnumber(15) - 7 + (bunker.rot << 1)) & 31
+        // Trigger bunker explosion (only if bunker was actually destroyed)
+        // Generate random values for explosion
+        const shardRandom = []
+        for (let i = 0; i < EXPLSHARDS; i++) {
+          const xOffset =
+            randomService.rnumber(SH_DISTRIB) - Math.floor(SH_DISTRIB / 2)
+          const yOffset =
+            randomService.rnumber(SH_DISTRIB) - Math.floor(SH_DISTRIB / 2)
+          const lifetime = SH_LIFE + randomService.rnumber(SH_ADDLIFE)
+          let angle: number
+          if (bunker.kind >= 2) {
+            // Rotating bunkers: random direction
+            angle = randomService.rnumber(32)
+          } else {
+            // Static bunkers: directional spread
+            angle = (randomService.rnumber(15) - 7 + (bunker.rot << 1)) & 31
+          }
+          const speed = SH_SPEED + randomService.rnumber(SH_ADDSPEED)
+          const rot16 = randomService.rnumber(256)
+          const rotspeed =
+            randomService.rnumber(SH_SPIN2) - Math.floor(SH_SPIN2 / 2)
+
+          shardRandom.push({
+            xOffset,
+            yOffset,
+            lifetime,
+            angle,
+            speed,
+            rot16,
+            rotspeed
+          })
         }
-        const speed = SH_SPEED + randomService.rnumber(SH_ADDSPEED)
-        const rot16 = randomService.rnumber(256)
-        const rotspeed =
-          randomService.rnumber(SH_SPIN2) - Math.floor(SH_SPIN2 / 2)
 
-        shardRandom.push({
-          xOffset,
-          yOffset,
-          lifetime,
-          angle,
-          speed,
-          rot16,
-          rotspeed
-        })
+        const sparkRandom = []
+        const loangle = bunker.kind >= 2 ? 0 : ((bunker.rot - 4) & 15) << 5
+        const hiangle = bunker.kind >= 2 ? 511 : loangle + 256
+
+        for (let i = 0; i < EXPLSPARKS; i++) {
+          const lifetime = SPARKLIFE + randomService.rnumber(SPADDLIFE)
+          const angle = randomService.rnumber(hiangle - loangle + 1) + loangle
+          const speed = 8 + randomService.rnumber(SP_SPEED16)
+
+          sparkRandom.push({ lifetime, angle, speed })
+        }
+
+        store.dispatch(
+          startExplosionWithRandom({
+            x: bunker.x,
+            y: bunker.y,
+            dir: bunker.rot,
+            kind: bunker.kind,
+            shardRandom,
+            sparkRandom
+          })
+        )
       }
-
-      const sparkRandom = []
-      const loangle = bunker.kind >= 2 ? 0 : ((bunker.rot - 4) & 15) << 5
-      const hiangle = bunker.kind >= 2 ? 511 : loangle + 256
-
-      for (let i = 0; i < EXPLSPARKS; i++) {
-        const lifetime = SPARKLIFE + randomService.rnumber(SPADDLIFE)
-        const angle = randomService.rnumber(hiangle - loangle + 1) + loangle
-        const speed = 8 + randomService.rnumber(SP_SPEED16)
-
-        sparkRandom.push({ lifetime, angle, speed })
-      }
-
-      store.dispatch(
-        startExplosionWithRandom({
-          x: bunker.x,
-          y: bunker.y,
-          dir: bunker.rot,
-          kind: bunker.kind,
-          shardRandom,
-          sparkRandom
-        })
-      )
       break // Only kill ONE bunker per death (Play.c:345)
     }
   }
