@@ -57,7 +57,11 @@ const createHeadlessStore = (
         },
         // Disable serialization checks for headless validation
         // (randomService functions are passed in actions but that's okay for validation)
-        serializableCheck: false
+        serializableCheck: false,
+        // Disable immutability checks for headless validation
+        // This middleware adds overhead checking for mutations on every action,
+        // which is unnecessary for validation where we control state updates
+        immutableCheck: false
       }).prepend(syncThunkMiddleware(services))
   })
 
