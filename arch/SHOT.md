@@ -318,7 +318,6 @@ The strafe system consists of:
 The strafe direction is calculated **before** the actual collision occurs:
 
 1. **During Shot Movement** (`set_life()` in Terrain.c:146-230):
-
    - When calculating shot trajectory, the game predicts future wall collisions
    - Sets `sp->strafedir` immediately upon predicting a collision (lines 170, 195, 218)
    - Also sets `sp->lifecount` to frames until impact
@@ -329,6 +328,7 @@ The strafe direction is calculated **before** the actual collision occurs:
    if (sp->lifecount == 0 && sp->strafedir >= 0)
        start_strafe(sp->x, sp->y, sp->strafedir);
    ```
+
    - When lifecount reaches 0 (predicted collision time), creates the visual effect
    - Uses the pre-calculated direction stored in `strafedir`
 

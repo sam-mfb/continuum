@@ -52,7 +52,6 @@ Sets `shielding = FALSE` immediately with no fade-out period.
 The `move_bullets()` function handles enemy bullet collision with shield:
 
 1. **Bounding Box Check** - First checks if bullet is within rectangular region around ship (Play.c:830-831)
-
    - Left boundary: `globalx - SCENTER`
    - Right boundary: `globalx + SCENTER`
    - Top boundary: `globaly - SCENTER`
@@ -79,13 +78,11 @@ The `move_bullets()` function handles enemy bullet collision with shield:
 The shield system leverages specific drawing order for correct behavior:
 
 1. **Pre-Shield Phase** (Play.c:219-237)
-
    - Terrain, bunkers, and most objects drawn
    - If NOT shielding, `move_bullets()` called here (Play.c:238-239)
    - Bullets get drawn to screen buffer
 
 2. **Ship Rendering** (Play.c:241-251)
-
    - Ship collision check via `check_figure()` (Play.c:244)
    - Ship drawing with `full_figure()` (Play.c:248-249)
 

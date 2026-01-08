@@ -132,7 +132,6 @@ The XOR rendering system relies on pre-computed sprites that have the checkerboa
 **How it works:**
 
 1. **Background Pattern**: The game uses a checkerboard pattern where:
-
    - Even rows: 10101010... (0xAA repeated)
    - Odd rows: 01010101... (0x55 repeated)
    - This creates the characteristic "gray" appearance
@@ -255,12 +254,10 @@ int shotvecs[32]={0, 14, 27, 40, 51, 60, 67, 71,
 #### Firing Process
 
 1. **Angle Determination**:
-
    - **Standard Bunkers**: Randomly pick range 0 or 1, then random angle within that range
    - **Following Bunkers**: Calculate exact angle to player, add ±2 units for spread
 
 2. **Angle-to-Velocity Conversion** (`rand_shot()` - Bunkers.c:193-209):
-
    - Convert 512-unit angle to 32-direction system (angle >> 4)
    - Get fractional part (angle & 15)
    - Interpolate between adjacent shot vectors for smooth velocity

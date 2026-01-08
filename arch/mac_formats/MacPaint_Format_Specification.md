@@ -130,7 +130,6 @@ def read_macpaint(filename):
 MacPaint files can be identified by:
 
 1. **Finder Type/Creator** (Classic Mac OS):
-
    - Type: `PNTG`
    - Creator: `MPNT` (MacPaint) or `PANT` (FullPaint)
 

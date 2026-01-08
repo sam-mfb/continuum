@@ -60,7 +60,6 @@ The game efficiently determines which walls need drawing:
 With the visible walls identified, render them in the correct order:
 
 - **Fast phase first**:
-
   - Draw all pre-rendered pieces for visible walls
   - Add crosshatch patterns at junctions
   - Handle special cases (like NNE walls that need white-only treatment)
@@ -397,7 +396,6 @@ When creating walls programmatically (not loading from a planet file), you MUST 
 ### How the Background Works
 
 1. **Pattern Definition**: Two alternating patterns are used:
-
    - `backgr1 = 0xAAAAAAAA` (binary: 10101010...)
    - `backgr2 = 0x55555555` (binary: 01010101...)
 

@@ -26,7 +26,7 @@ export const bitmapToImageData = (
   for (let y = 0; y < bitmap.height; y++) {
     for (let x = 0; x < bitmap.width; x++) {
       const byteIndex = y * bitmap.rowBytes + Math.floor(x / 8)
-      const bitMask = 0x80 >> x % 8
+      const bitMask = 0x80 >> (x % 8)
       const isSet =
         byteIndex < bitmap.data.length &&
         (bitmap.data[byteIndex]! & bitMask) !== 0

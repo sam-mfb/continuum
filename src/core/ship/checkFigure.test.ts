@@ -28,7 +28,7 @@ function createMask(patterns: number[], height: number): MonochromeBitmap {
 // Helper to set a pixel on the screen
 function setScreenPixel(screen: MonochromeBitmap, x: number, y: number): void {
   const byteIndex = y * screen.rowBytes + Math.floor(x / 8)
-  const bitMask = 0x80 >> x % 8
+  const bitMask = 0x80 >> (x % 8)
   if (byteIndex < screen.data.length) {
     screen.data[byteIndex] = (screen.data[byteIndex] ?? 0) | bitMask
   }

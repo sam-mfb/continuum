@@ -47,12 +47,10 @@ Without special handling, this would cause constant false collision detections b
 The game uses an inverted masking technique:
 
 1. **Two patterns are stored** (see Draw.c:25 and view_clear implementation at Draw.c:1439-1440):
-
    - `background[0]` = 0xAAAAAAAA (10101010... pattern)
    - `background[1]` = 0x55555555 (01010101... pattern)
 
 2. **Key insight**: The pattern used for collision masking is the INVERSE of what's drawn on screen!
-
    - When row 0 has pattern 0xAAAA drawn, collision uses pattern 0x5555
    - When row 1 has pattern 0x5555 drawn, collision uses pattern 0xAAAA
 
@@ -337,7 +335,6 @@ The game uses completely different collision systems for bullets than for the sh
 Ship bullets **never use pixel collision**. Instead, they use two different methods:
 
 1. **Bunker collisions** (Play.c:767-784):
-
    - Uses bounding box check first (lines 763-766)
    - Then proximity detection with `xyindistance()` and `BRADIUS`
    - For rotating bunkers, also checks firing angle with `legal_angle()`
@@ -361,13 +358,11 @@ The shield system demonstrates another clever use of collision detection:
 ### How Shields Protect the Ship
 
 1. **Shield activation** (Play.c:507-527):
-
    - Activated by KEY_SHIELD when fuel > 0
    - Consumes fuel continuously (FUELSHIELD per frame)
    - Also triggers fuel cell collection within FRADIUS
 
 2. **Enemy bullet protection** (Play.c:830-837):
-
    - When `shielding` is TRUE, enemy bullets are checked for proximity
    - Uses bounding box check followed by `xyindistance()` with SHRADIUS
    - Bullets within shield radius have their `lifecount` set to 0
@@ -419,13 +414,11 @@ Using mathematical collision detection for bullets provides several advantages:
 The game elegantly uses three different collision detection methods:
 
 1. **Pixel collision** (`check_figure`):
-
    - Ship vs terrain/bunkers/enemy bullets
    - Most accurate for large, slow-moving objects
    - Handles complex shapes perfectly
 
 2. **Proximity detection** (`xyindist`, `xyindistance`):
-
    - Fuel cell pickup (with shield)
    - Bullet vs bunker initial check
    - Bullet vs ship shield
