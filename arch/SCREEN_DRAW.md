@@ -113,7 +113,6 @@ After all game logic updates, drawing begins:
    ```
 
 2. **Background elements** (lines 221-222):
-
    - `do_fuels()` - Fuel depot animations
    - `draw_craters()` - Crater marks from destroyed bunkers
 
@@ -125,7 +124,6 @@ After all game logic updates, drawing begins:
    ```
 
 4. **Terrain layers** (lines 228-236):
-
    - `white_terrain()` - White/visible walls
    - `black_terrain(L_GHOST)` - Ghost/transparent walls
    - `erase_figure()` - Clear ship area (line 232)
@@ -133,7 +131,6 @@ After all game logic updates, drawing begins:
    - `black_terrain(L_NORMAL)` - Normal black walls
 
 5. **Game objects** (lines 237-259):
-
    - `do_bunkers()` - Enemy bunkers
    - `move_bullets()` - Enemy projectiles (unless shielding)
    - **Ship sprite rendering** (lines 241-249):

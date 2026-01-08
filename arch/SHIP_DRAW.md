@@ -37,13 +37,11 @@ The function generates the remaining 27 rotations through bit manipulation:
    ```
 
 2. **Generate positions 5-8** (lines 663-667): 90° rotation
-
    - Rotates positions 0-3 by 90° clockwise
    - Maps pixel (x,y) → (SIZE-y, SIZE-x)
    - Creates right-facing ships from up-facing ones
 
 3. **Generate positions 24-31** (lines 670-674): 270° rotation
-
    - Rotates positions 1-8 by 270° clockwise (or 90° counter-clockwise)
    - Maps pixel (x,y) → (SIZE-x, y) then flips
    - Creates left-facing ships

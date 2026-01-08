@@ -23,7 +23,6 @@ Modern implementation of the Continuum sound system using AudioWorklet with mult
 The ring buffer provides two methods for clearing:
 
 - **`reset()`**: Resets positions AND fills buffer with silence (128 center value)
-
   - Used when stopping/clearing a channel completely
   - Ensures no garbage data in buffer
   - Slower due to memory fill operation

@@ -180,7 +180,6 @@ The original uses fixed-point math with 8-bit fractional precision (>> 8). When 
 2. **Animation Timing**: Visual effects (flame blink, sprite rotation) should use actual time, not frame counts.
 
 3. **Input Polling**: The original polls input once per frame. At higher framerates, this naturally provides more responsive input. However, this introduces new challenges:
-
    - **Rotation Speed**: Ship rotation (lines 475-478) changes by 1 position per frame, so at 60 FPS the ship would rotate 3x faster than at 20 FPS. This needs time-based accumulation.
    - **Integer Precision**: With small thrust values (e.g., thrustx[i]=9) and timeScale < 1.0, integer rounding could make certain angles feel different or weaker than intended.
 

@@ -16,7 +16,6 @@ This document describes how fuel cells and craters are implemented in the origin
 ### Initialization and Loading
 
 1. **Level Loading** (Main.c `get_planet()` function):
-
    - Fuel cell positions are read from the level file
    - Positions loaded into the `fuels` array (Main.c:808-815)
    - Cells with coordinates > 4000 are marked as end-of-list (x = 10000)
@@ -30,7 +29,6 @@ This document describes how fuel cells and craters are implemented in the origin
 ### Rendering Process
 
 1. **Animation Update** (`do_fuels()` in Terrain.c:267-290):
-
    - Called each frame from `move_and_display()`
    - Random "flash" effect: one random fuel cell per frame flashes bright
    - Normal cells cycle through animation frames
@@ -70,7 +68,6 @@ This document describes how fuel cells and craters are implemented in the origin
 ### Initialization and Loading
 
 1. **Level Loading** (Main.c `get_planet()`):
-
    - `numcraters` count read from level file (Main.c:768/852)
    - First 25 crater positions loaded from file (Main.c:817/895)
    - These are pre-placed craters defined in level design

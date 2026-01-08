@@ -79,7 +79,7 @@ export const setPixel = (
   if (x < 0 || x >= bitmap.width || y < 0 || y >= bitmap.height) return
 
   const byteIndex = y * bitmap.rowBytes + Math.floor(x / 8)
-  const bitMask = 0x80 >> x % 8
+  const bitMask = 0x80 >> (x % 8)
   if (byteIndex < bitmap.data.length) {
     bitmap.data[byteIndex]! |= bitMask
   }
@@ -96,7 +96,7 @@ export const clearPixel = (
   if (x < 0 || x >= bitmap.width || y < 0 || y >= bitmap.height) return
 
   const byteIndex = y * bitmap.rowBytes + Math.floor(x / 8)
-  const bitMask = 0x80 >> x % 8
+  const bitMask = 0x80 >> (x % 8)
   if (byteIndex < bitmap.data.length) {
     bitmap.data[byteIndex]! &= ~bitMask
   }
@@ -113,7 +113,7 @@ export const xorPixel = (
   if (x < 0 || x >= bitmap.width || y < 0 || y >= bitmap.height) return
 
   const byteIndex = y * bitmap.rowBytes + Math.floor(x / 8)
-  const bitMask = 0x80 >> x % 8
+  const bitMask = 0x80 >> (x % 8)
   if (byteIndex < bitmap.data.length) {
     bitmap.data[byteIndex]! ^= bitMask
   }
@@ -130,7 +130,7 @@ export const getPixel = (
   if (x < 0 || x >= bitmap.width || y < 0 || y >= bitmap.height) return false
 
   const byteIndex = y * bitmap.rowBytes + Math.floor(x / 8)
-  const bitMask = 0x80 >> x % 8
+  const bitMask = 0x80 >> (x % 8)
   return (
     byteIndex < bitmap.data.length && (bitmap.data[byteIndex]! & bitMask) !== 0
   )

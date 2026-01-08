@@ -145,7 +145,7 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
               for (let x = 0; x < renderedBitmap.width; x++) {
                 const byteIndex =
                   y * renderedBitmap.rowBytes + Math.floor(x / 8)
-                const bitMask = 0x80 >> x % 8
+                const bitMask = 0x80 >> (x % 8)
                 const isSet = (renderedBitmap.data[byteIndex]! & bitMask) !== 0
 
                 const pixelIndex = (y * renderedBitmap.width + x) * 4

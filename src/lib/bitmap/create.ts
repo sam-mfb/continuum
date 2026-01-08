@@ -54,7 +54,7 @@ export const createBitmapFromCanvas = (
       // Set bit if pixel is dark enough
       if (gray < threshold) {
         const byteIndex = py * bitmap.rowBytes + Math.floor(px / 8)
-        const bitMask = 0x80 >> px % 8
+        const bitMask = 0x80 >> (px % 8)
         if (byteIndex < bitmap.data.length) {
           bitmap.data[byteIndex]! |= bitMask
         }

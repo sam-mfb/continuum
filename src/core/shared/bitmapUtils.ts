@@ -138,7 +138,7 @@ export function macPaintToImageData(
 export function expandTitlePage(
   compressedData: ArrayBuffer,
   height: number = 342 // Default to SCRHT from GW.h
-): Uint8Array {
+): Uint8Array<ArrayBuffer> {
   const lines = height
   const packedBytes = new Uint8Array(compressedData)
   const unpackedBytes = new Uint8Array(lines * 64) // 64 bytes per line (512 pixels / 8)

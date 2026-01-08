@@ -52,7 +52,6 @@ When gameplay begins via **game()** (Main.c:654) or **do_cartoon()** (Main.c:699
 - Calls **open_sound()** (Sound.c:527) - Main sound system initialization that performs two core operations:
 
   **1. Memory Buffer Setup**
-
   - Checks system sound volume to determine if sound is enabled
   - Allocates/locates a 370-byte buffer for waveform data:
     - Mac Plus: Uses hard-coded memory location `HARDSNDBUF` at `MemTop - 0x300` (Sound.c:541)
@@ -60,7 +59,6 @@ When gameplay begins via **game()** (Main.c:654) or **do_cartoon()** (Main.c:699
   - Result: `soundbuffer` pointer references where waveforms will be generated
 
   **2. VBL Task Setup**
-
   - Creates VBL task record pointing to **do_sound()** function (Sound.c:554-556)
   - Configures task to run at 60Hz during vertical blanking interrupts
   - Calls **show_sound()** to install the VBL task via `VInstall()`
