@@ -324,6 +324,7 @@ The strafe direction is calculated **before** the actual collision occurs:
    - This happens each time trajectory is recalculated
 
 2. **At Collision Time** (Play.c:805-806):
+
    ```c
    if (sp->lifecount == 0 && sp->strafedir >= 0)
        start_strafe(sp->x, sp->y, sp->strafedir);
