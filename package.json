@@ -22,7 +22,8 @@
     "convert-sprites": "tsx scripts/convert-white-to-transparent.ts",
     "convert-digits": "tsx scripts/convert-digit-sprites.ts",
     "fix-shipshot": "tsx scripts/fix-shipshot.ts",
-    "validate-recording": "tsx scripts/validate-recording.ts"
+    "validate-recording": "tsx scripts/validate-recording.ts",
+    "analyze-recording": "tsx scripts/analyze-recording.ts"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.2",
