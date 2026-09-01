@@ -8,6 +8,111 @@ import type {
   SpriteRegistry
 } from './types'
 
+/**
+ * Sprites and the crosshatch pattern are blitted from scratch canvases rather
+ * than from ImageData directly (the 2D context can only putImageData at 1:1,
+ * ignoring scale and transforms). Those scratch canvases are cached here so a
+ * canvas is allocated once per sprite instead of once per sprite per frame -
+ * at 20fps a per-draw allocation churns through hundreds of canvas backing
+ * stores a second, which shows up as GC stalls mid-game.
+ *
+ * Keyed by the registry's ImageData so entries are collectable once sprites
+ * are unloaded; the inner key is the color override (shadows tint a copy).
+ */
+const spriteCanvasCache = new WeakMap<
+  ImageData,
+  Map<string, HTMLCanvasElement>
+>()
+
+const getSpriteCanvas = (
+  imageData: ImageData,
+  colorOverride: string | undefined
+): HTMLCanvasElement => {
+  let byColor = spriteCanvasCache.get(imageData)
+  if (!byColor) {
+    byColor = new Map()
+    spriteCanvasCache.set(imageData, byColor)
+  }
+
+  const key = colorOverride ?? ''
+  const cached = byColor.get(key)
+  if (cached) return cached
+
+  const spriteCanvas = document.createElement('canvas')
+  spriteCanvas.width = imageData.width
+  spriteCanvas.height = imageData.height
+  const spriteCtx = spriteCanvas.getContext('2d')!
+  spriteCtx.putImageData(imageData, 0, 0)
+
+  if (colorOverride) {
+    spriteCtx.globalCompositeOperation = 'source-in'
+    spriteCtx.fillStyle = colorOverride
+    spriteCtx.fillRect(0, 0, imageData.width, imageData.height)
+  }
+
+  byColor.set(key, spriteCanvas)
+  return spriteCanvas
+}
+
+/** Crosshatch tiles, keyed by alignment and scale */
+const patternTileCache = new Map<string, HTMLCanvasElement>()
+
+const getPatternTile = (
+  alignment: number,
+  scale: number
+): HTMLCanvasElement => {
+  const key = `${alignment}-${scale}`
+  const cached = patternTileCache.get(key)
+  if (cached) return cached
+
+  // Build the tile at 1:1 first, then scale it up
+  const unscaledCanvas = document.createElement('canvas')
+  unscaledCanvas.width = 32
+  unscaledCanvas.height = 2
+  const unscaledCtx = unscaledCanvas.getContext('2d')!
+  const patternData = unscaledCtx.createImageData(32, 2)
+
+  // Pattern 0: 0xaaaaaaaa (binary: 10101010...) - alternating pixels horizontally
+  // Pattern 1: 0x55555555 (binary: 01010101...) - inverse alternating pixels
+  // The pattern alternates by scanline (row), creating a diagonal checkerboard
+  const firstPattern = alignment === 0 ? 0xaaaaaaaa : 0x55555555
+  const secondPattern = alignment === 0 ? 0x55555555 : 0xaaaaaaaa
+
+  // Fill first row (32 pixels using firstPattern)
+  for (let x = 0; x < 32; x++) {
+    const bit = (firstPattern >>> (31 - x)) & 1
+    const color = bit ? 0 : 255 // bit 1 = black, bit 0 = white
+    const idx = x * 4
+    patternData.data[idx] = color // R
+    patternData.data[idx + 1] = color // G
+    patternData.data[idx + 2] = color // B
+    patternData.data[idx + 3] = 255 // A
+  }
+
+  // Fill second row (32 pixels using secondPattern)
+  for (let x = 0; x < 32; x++) {
+    const bit = (secondPattern >>> (31 - x)) & 1
+    const color = bit ? 0 : 255 // bit 1 = black, bit 0 = white
+    const idx = (32 + x) * 4 // Second row starts at pixel 32
+    patternData.data[idx] = color // R
+    patternData.data[idx + 1] = color // G
+    patternData.data[idx + 2] = color // B
+    patternData.data[idx + 3] = 255 // A
+  }
+
+  unscaledCtx.putImageData(patternData, 0, 0)
+
+  const patternCanvas = document.createElement('canvas')
+  patternCanvas.width = 32 * scale // Scale the pattern width
+  patternCanvas.height = 2 * scale // Scale the pattern height
+  const patternCtx = patternCanvas.getContext('2d')!
+  patternCtx.imageSmoothingEnabled = false // Keep pixels crisp
+  patternCtx.drawImage(unscaledCanvas, 0, 0, 32 * scale, 2 * scale)
+
+  patternTileCache.set(key, patternCanvas)
+  return patternCanvas
+}
+
 export function drawFrameToCanvas(
   frame: Frame,
   canvas: CanvasRenderingContext2D,
@@ -71,55 +176,7 @@ function drawRect(
   canvas.globalAlpha = debug ? 0.7 * rect.alpha : rect.alpha
 
   if (rect.fillPattern === 'crosshatch') {
-    // Create crosshatch pattern using the two background patterns
-    // Pattern 0: 0xaaaaaaaa (binary: 10101010...) - alternating pixels horizontally
-    // Pattern 1: 0x55555555 (binary: 01010101...) - inverse alternating pixels
-    // The pattern alternates by scanline (row), creating a diagonal checkerboard
-    const patternCanvas = document.createElement('canvas')
-    patternCanvas.width = 32 * scale // Scale the pattern width
-    patternCanvas.height = 2 * scale // Scale the pattern height
-    const patternCtx = patternCanvas.getContext('2d')!
-    patternCtx.imageSmoothingEnabled = false // Keep pixels crisp
-
-    // Create the pattern at 1:1 scale first
-    const unscaledCanvas = document.createElement('canvas')
-    unscaledCanvas.width = 32
-    unscaledCanvas.height = 2
-    const unscaledCtx = unscaledCanvas.getContext('2d')!
-    const patternData = unscaledCtx.createImageData(32, 2)
-
-    // Determine which pattern starts first based on alignment
-    const alignment = rect.patternAlignment ?? 0
-    const firstPattern = alignment === 0 ? 0xaaaaaaaa : 0x55555555
-    const secondPattern = alignment === 0 ? 0x55555555 : 0xaaaaaaaa
-
-    // Fill first row (32 pixels using firstPattern)
-    for (let x = 0; x < 32; x++) {
-      const bit = (firstPattern >>> (31 - x)) & 1
-      const color = bit ? 0 : 255 // bit 1 = black, bit 0 = white
-      const idx = x * 4
-      patternData.data[idx] = color // R
-      patternData.data[idx + 1] = color // G
-      patternData.data[idx + 2] = color // B
-      patternData.data[idx + 3] = 255 // A
-    }
-
-    // Fill second row (32 pixels using secondPattern)
-    for (let x = 0; x < 32; x++) {
-      const bit = (secondPattern >>> (31 - x)) & 1
-      const color = bit ? 0 : 255 // bit 1 = black, bit 0 = white
-      const idx = (32 + x) * 4 // Second row starts at pixel 32
-      patternData.data[idx] = color // R
-      patternData.data[idx + 1] = color // G
-      patternData.data[idx + 2] = color // B
-      patternData.data[idx + 3] = 255 // A
-    }
-
-    unscaledCtx.putImageData(patternData, 0, 0)
-
-    // Scale up the pattern
-    patternCtx.drawImage(unscaledCanvas, 0, 0, 32 * scale, 2 * scale)
-
+    const patternCanvas = getPatternTile(rect.patternAlignment ?? 0, scale)
     const pattern = canvas.createPattern(patternCanvas, 'repeat')!
     canvas.fillStyle = pattern
   } else {
@@ -228,23 +285,13 @@ function drawSprite(
     canvas.translate(-centerX, -centerY)
   }
 
-  // Create a temporary canvas to draw the ImageData
-  const tempCanvas = document.createElement('canvas')
-  tempCanvas.width = imageData.width
-  tempCanvas.height = imageData.height
-  const tempCtx = tempCanvas.getContext('2d')!
-  tempCtx.putImageData(imageData, 0, 0)
-
-  // Apply color override on temporary canvas (e.g., for shadows)
-  if (sprite.colorOverride) {
-    tempCtx.globalCompositeOperation = 'source-in'
-    tempCtx.fillStyle = sprite.colorOverride
-    tempCtx.fillRect(0, 0, imageData.width, imageData.height)
-  }
+  // Blit from the cached canvas for this sprite (and color override, e.g.
+  // for shadows) - built once per sprite, not once per draw
+  const spriteCanvas = getSpriteCanvas(imageData, sprite.colorOverride)
 
   // Draw the sprite with scaling
   canvas.drawImage(
-    tempCanvas,
+    spriteCanvas,
     0,
     0,
     imageData.width * scale,
