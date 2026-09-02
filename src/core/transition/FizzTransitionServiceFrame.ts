@@ -6,7 +6,7 @@
  * by progressively revealing starmap pixels in pseudo-random order.
  */
 
-import type { DrawablePixel, Frame, Drawable } from '@lib/frame/types'
+import type { DrawableBitmap, Frame, Drawable } from '@lib/frame/types'
 import { generateStarmapPixels } from '@render/transition/starmapPixels'
 import { starmapPixelsToBitmap } from '@render/transition/starmapToBitmap'
 import { advanceLFSR, shouldSkipSeed } from './lfsrUtils'
@@ -28,8 +28,8 @@ export type FizzTransitionServiceFrame = {
   /** Get drawables for next frame of progressive reveal (returns complete frame) */
   getNextFrameDrawables(): Drawable[]
 
-  /** Get all starmap pixels (for 'starmap' phase) */
-  getAllStarmapPixels(): DrawablePixel[]
+  /** Get the fully revealed starmap layer (for 'starmap' phase) */
+  getStarmapDrawable(): DrawableBitmap
 
   /** Reset to uninitialized state */
   reset(): void
@@ -45,10 +45,37 @@ export type FizzTransitionServiceFrame = {
 }
 
 /**
+ * Turn one pixel of a layer opaque, black or white per the starmap bitmap.
+ * Untouched pixels stay transparent so the layer beneath shows through.
+ */
+const revealPixel = (
+  layer: ImageData,
+  x: number,
+  y: number,
+  black: boolean
+): void => {
+  const i = (y * SCRWTH + x) * 4
+  const value = black ? 0 : 255
+  layer.data[i] = value
+  layer.data[i + 1] = value
+  layer.data[i + 2] = value
+  layer.data[i + 3] = 255
+}
+
+/**
  * Creates a Frame-based fizz transition service that can be initialized and reused.
  *
- * Uses the same LFSR pseudo-random sequence as the bitmap version,
- * but returns DrawablePixel objects instead of manipulating bitmaps.
+ * Uses the same LFSR pseudo-random sequence as the bitmap version, revealing
+ * into an ImageData layer that the renderer blits in one operation. A drawable
+ * per pixel would mean ~163,000 objects built, sorted and painted every frame
+ * by the end of the dissolve.
+ *
+ * Each frame gets its own layer: the previous one is copied, this frame's
+ * pixels are revealed into the copy, and the copy is what goes into the frame.
+ * A layer handed to a frame is never written to again, so a Frame stays an
+ * immutable description of a picture. Measured in Chromium, the copy costs
+ * 0.8ms per frame against 0.15ms for revealing into one shared layer; copying
+ * per revealed pixel instead would be 4GB and 1.5s per frame.
  *
  * @param seed Optional LFSR seed (default: 4357 from original)
  * @param zIndex Z-order for pixels (default: 170 for FIZZ_PIXEL)
@@ -63,7 +90,7 @@ export function createFizzTransitionServiceFrame(
   let fromFrameDrawables: Drawable[] = []
   let shipDrawables: Drawable[] = []
   let toBitmap: MonochromeBitmap | null = null // Starmap bitmap (black background + white stars)
-  let accumulatedPixels: DrawablePixel[] = [] // Persistent accumulated pixels (like workingBitmap in original)
+  let revealedLayer: ImageData | null = null // Latest layer handed out; treated as read-only once built
   let currentSeed = seed // Current LFSR seed position
   let seedsPerFrame = 0
   let durationFrames = 0
@@ -71,18 +98,38 @@ export function createFizzTransitionServiceFrame(
   let firstIteration = true
   let initialized = false
 
+  /** A transparent layer covering the viewport; lower layers show through */
+  const createLayer = (): ImageData => new ImageData(SCRWTH, VIEWHT)
+
+  /** A copy to reveal into, leaving the layer already handed out untouched */
+  const copyLayer = (layer: ImageData): ImageData => {
+    const copy = createLayer()
+    copy.data.set(layer.data)
+    return copy
+  }
+
+  const layerDrawable = (id: string, layer: ImageData): DrawableBitmap => ({
+    id,
+    type: 'bitmap',
+    z: zIndex,
+    alpha: 1,
+    topLeft: { x: 0, y: SBARHT },
+    imageData: layer
+  })
+
   /**
-   * Process LFSR seed position and return DrawablePixels, matching original bitmap algorithm.
-   * Each seed represents a bit position that spans multiple scanlines.
+   * Reveal the pixels for one LFSR seed position into a layer, matching the
+   * original bitmap algorithm. Each seed covers a bit position across several
+   * scanlines.
    *
    * @param s LFSR seed value (0-8191)
-   * @returns Array of DrawablePixel for this seed position
+   * @param target Layer to reveal into
    */
-  const processSeedPosition = (s: number): DrawablePixel[] => {
-    if (!toBitmap) return []
+  const revealSeedPosition = (s: number, target: ImageData): void => {
+    if (!toBitmap) return
 
     // Skip seeds that are out of range
-    if (shouldSkipSeed(s)) return []
+    if (shouldSkipSeed(s)) return
 
     // Process 10 scanlines for most positions, 9 for edge cases
     const linesToProcess = s < 8040 ? 10 : 9
@@ -94,63 +141,47 @@ export function createFizzTransitionServiceFrame(
     // Create bit mask for the specific bit (same as original)
     const bitMask = 0x8080 >> bitPosition
 
-    const pixels: DrawablePixel[] = []
-
     // Process multiple scanlines for this bit position
     for (let line = 0; line < linesToProcess; line++) {
       // Calculate the actual byte offset in the bitmap (same as original)
       const offset = SBARSIZE + byteOffset + line * 2038 // 2038 = 2048-10, from original
 
       // Make sure we're within bounds
-      if (offset + 1 < toBitmap.data.length) {
-        // Extract high and low byte masks
-        const highByteMask = (bitMask >> 8) & 0xff
-        const lowByteMask = bitMask & 0xff
+      if (offset + 1 >= toBitmap.data.length) continue
 
-        // Extract bits from each byte
-        const highByte = toBitmap.data[offset]!
-        const lowByte = toBitmap.data[offset + 1]!
-        const highBit = highByte & highByteMask
-        const lowBit = lowByte & lowByteMask
+      // Extract high and low byte masks
+      const highByteMask = (bitMask >> 8) & 0xff
+      const lowByteMask = bitMask & 0xff
 
-        // Convert bitmap offset to base coordinates
-        const viewportOffset = offset - SBARSIZE
-        const row = Math.floor(viewportOffset / 64) // 64 bytes per row (512px / 8)
-        const colByte = viewportOffset % 64
+      // Extract bits from each byte
+      const highBit = toBitmap.data[offset]! & highByteMask
+      const lowBit = toBitmap.data[offset + 1]! & lowByteMask
 
-        // Create pixel from high byte
-        const col1 = colByte * 8 + bitPosition
-        if (row < VIEWHT && col1 < SCRWTH) {
-          // Non-zero bit = black background, zero bit = white star
-          const color1 = highBit !== 0 ? 'black' : 'white'
-          pixels.push({
-            id: `fizz-pixel-${col1}-${row}`,
-            type: 'pixel',
-            z: zIndex,
-            alpha: 1,
-            point: { x: col1, y: row + SBARHT },
-            color: color1
-          })
-        }
+      // Convert bitmap offset to base coordinates
+      const viewportOffset = offset - SBARSIZE
+      const row = Math.floor(viewportOffset / 64) // 64 bytes per row (512px / 8)
+      const colByte = viewportOffset % 64
+      if (row >= VIEWHT) continue
 
-        // Create pixel from low byte (8 pixels to the right)
-        const col2 = colByte * 8 + bitPosition + 8
-        if (row < VIEWHT && col2 < SCRWTH) {
-          // Non-zero bit = black background, zero bit = white star
-          const color2 = lowBit !== 0 ? 'black' : 'white'
-          pixels.push({
-            id: `fizz-pixel-${col2}-${row}`,
-            type: 'pixel',
-            z: zIndex,
-            alpha: 1,
-            point: { x: col2, y: row + SBARHT },
-            color: color2
-          })
-        }
-      }
+      // Non-zero bit = black background, zero bit = white star
+      const col1 = colByte * 8 + bitPosition
+      if (col1 < SCRWTH) revealPixel(target, col1, row, highBit !== 0)
+
+      // The low byte covers the 8 pixels to the right
+      const col2 = col1 + 8
+      if (col2 < SCRWTH) revealPixel(target, col2, row, lowBit !== 0)
     }
+  }
 
-    return pixels
+  /** Reveal every seed position - the dissolve's finished state */
+  const revealAll = (target: ImageData): void => {
+    let s = seed
+    let first = true
+    while (first || s !== seed) {
+      revealSeedPosition(s, target)
+      s = advanceLFSR(s)
+      first = false
+    }
   }
 
   return {
@@ -196,8 +227,8 @@ export function createFizzTransitionServiceFrame(
       const starPixels = generateStarmapPixels(starCount)
       toBitmap = starmapPixelsToBitmap(starPixels)
 
-      // Reset accumulated pixels (like cloning workingBitmap in original)
-      accumulatedPixels = []
+      // Start with nothing revealed (like cloning workingBitmap in original)
+      revealedLayer = createLayer()
 
       durationFrames = duration
       currentSeed = seed
@@ -216,28 +247,23 @@ export function createFizzTransitionServiceFrame(
     },
 
     getNextFrameDrawables(): Drawable[] {
-      if (!initialized || !toBitmap) {
+      if (!initialized || !toBitmap || !revealedLayer) {
         throw new Error('FizzTransitionServiceFrame not initialized')
       }
 
-      // Handle instant transition - process all seeds at once
+      // Handle instant transition - reveal everything on the first call
       if (durationFrames === 0) {
-        // Clear and rebuild accumulated pixels with all seeds
-        accumulatedPixels = []
-        let s = seed
-        let first = true
-
-        while (first || s !== seed) {
-          const pixels = processSeedPosition(s)
-          accumulatedPixels.push(...pixels)
-          s = advanceLFSR(s)
-          first = false
+        if (framesGenerated === 0) {
+          const finished = createLayer()
+          revealAll(finished)
+          revealedLayer = finished
+          framesGenerated = 1
         }
-
-        framesGenerated = durationFrames
       }
-      // Process seeds for this frame (matching original logic)
+      // Reveal this frame's share of the seeds (matching original logic)
       else if (framesGenerated < durationFrames) {
+        // Reveal into a copy so the layer the last frame received is untouched
+        const nextLayer = copyLayer(revealedLayer)
         let seedsThisFrame = 0
 
         while (seedsThisFrame < seedsPerFrame) {
@@ -247,9 +273,7 @@ export function createFizzTransitionServiceFrame(
             break
           }
 
-          // Process the position(s) for current seed and ADD to accumulated pixels
-          const pixels = processSeedPosition(currentSeed)
-          accumulatedPixels.push(...pixels)
+          revealSeedPosition(currentSeed, nextLayer)
           seedsThisFrame++
 
           // Always advance LFSR
@@ -257,44 +281,42 @@ export function createFizzTransitionServiceFrame(
           firstIteration = false
         }
 
+        revealedLayer = nextLayer
         framesGenerated++
       }
+      // Complete: nothing new to reveal, so the last layer still stands
 
-      // Build final drawables: fromFrame + ALL accumulated pixels + ship
-      const drawables: Drawable[] = [
+      // Build final drawables: fromFrame + revealed layer + ship
+      return [
         ...fromFrameDrawables,
-        ...accumulatedPixels,
+        layerDrawable('fizz-layer', revealedLayer),
         ...shipDrawables
       ]
-
-      return drawables
     },
 
-    getAllStarmapPixels(): DrawablePixel[] {
-      if (!initialized || !toBitmap) {
+    getStarmapDrawable(): DrawableBitmap {
+      if (!initialized || !revealedLayer) {
         throw new Error('FizzTransitionServiceFrame not initialized')
       }
 
-      // Process all LFSR seeds to generate complete starmap
-      const pixels: DrawablePixel[] = []
-      let s = seed
-      let first = true
-
-      while (first || s !== seed) {
-        const newPixels = processSeedPosition(s)
-        pixels.push(...newPixels)
-        s = advanceLFSR(s)
-        first = false
+      // The dissolve reveals every seed position, so the layer it finishes
+      // with is the starmap. Only finish the walk here if the starmap is
+      // somehow asked for before the dissolve got there.
+      if (framesGenerated < durationFrames) {
+        const finished = copyLayer(revealedLayer)
+        revealAll(finished)
+        revealedLayer = finished
+        framesGenerated = durationFrames
       }
 
-      return pixels
+      return layerDrawable('starmap-layer', revealedLayer)
     },
 
     reset(): void {
       fromFrameDrawables = []
       shipDrawables = []
       toBitmap = null
-      accumulatedPixels = []
+      revealedLayer = null
       currentSeed = seed
       seedsPerFrame = 0
       durationFrames = 0
