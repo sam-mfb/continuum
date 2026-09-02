@@ -1,4 +1,5 @@
 import type {
+  DrawableBitmap,
   DrawableLine,
   DrawableRect,
   DrawableShape,
@@ -140,6 +141,9 @@ export function drawFrameToCanvas(
         break
       case 'pixel':
         drawPixel(drawable, canvas, scale, debug ?? false)
+        break
+      case 'bitmap':
+        drawBitmap(drawable, canvas, scale, debug ?? false)
         break
     }
   }
@@ -322,6 +326,53 @@ function drawPixel(
 
   // Draw a single pixel as a scaled rectangle
   canvas.fillRect(pixel.point.x * scale, pixel.point.y * scale, scale, scale)
+
+  canvas.restore()
+}
+
+/**
+ * Scratch canvas for bitmap layers. Their pixels change every frame, so unlike
+ * sprites this cannot be cached by content - but the canvas itself is reused.
+ */
+let bitmapScratch: {
+  canvas: HTMLCanvasElement
+  ctx: CanvasRenderingContext2D
+} | null = null
+
+function drawBitmap(
+  bitmap: DrawableBitmap,
+  canvas: CanvasRenderingContext2D,
+  scale: number,
+  debug: boolean
+): void {
+  const { imageData } = bitmap
+
+  if (!bitmapScratch) {
+    const scratch = document.createElement('canvas')
+    bitmapScratch = { canvas: scratch, ctx: scratch.getContext('2d')! }
+  }
+  if (
+    bitmapScratch.canvas.width !== imageData.width ||
+    bitmapScratch.canvas.height !== imageData.height
+  ) {
+    bitmapScratch.canvas.width = imageData.width
+    bitmapScratch.canvas.height = imageData.height
+  }
+
+  // putImageData replaces the region wholesale, alpha included, so there is
+  // nothing to clear first
+  bitmapScratch.ctx.putImageData(imageData, 0, 0)
+
+  canvas.save()
+
+  canvas.globalAlpha = debug ? 0.7 * bitmap.alpha : bitmap.alpha
+  canvas.drawImage(
+    bitmapScratch.canvas,
+    bitmap.topLeft.x * scale,
+    bitmap.topLeft.y * scale,
+    imageData.width * scale,
+    imageData.height * scale
+  )
 
   canvas.restore()
 }
