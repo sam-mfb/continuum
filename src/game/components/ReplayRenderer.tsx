@@ -18,6 +18,7 @@ import { getDebug } from '../debug'
 import { useStore } from 'react-redux'
 import { applyCollisionMapOverlay } from '../utils/collisionMapOverlay'
 import { shipSlice } from '@/core/ship'
+import { FRAME_INTERVAL_SLACK_MS } from '../constants'
 
 type ReplayRendererProps = {
   renderer: (frame: FrameInfo, controls: ControlMatrix) => MonochromeBitmap
@@ -81,7 +82,9 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
     const gameLoop = (currentTime: number): void => {
       const deltaTime = currentTime - lastFrameTimeRef.current
 
-      if (deltaTime >= frameIntervalMs) {
+      // Slack keeps the check off the exact refresh boundary - see
+      // FRAME_INTERVAL_SLACK_MS
+      if (deltaTime >= frameIntervalMs - FRAME_INTERVAL_SLACK_MS) {
         // Prepare frame info
         const frameInfo: FrameInfo = {
           frameCount: frameCountRef.current,

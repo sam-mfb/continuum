@@ -23,6 +23,7 @@ import { TouchControlsOverlay } from '../mobile/TouchControlsOverlay'
 import type { Frame, SpriteRegistry } from '@/lib/frame/types'
 import { drawFrameToCanvas } from '@/lib/frame/drawFrameToCanvas'
 import { applyCollisionMapOverlay } from '../utils/collisionMapOverlay'
+import { FRAME_INTERVAL_SLACK_MS } from '../constants'
 
 type GameRendererProps = {
   renderer: (frame: FrameInfo, controls: ControlMatrix) => MonochromeBitmap
@@ -120,7 +121,9 @@ const GameRenderer: React.FC<GameRendererProps> = ({
     const gameLoop = (currentTime: number): void => {
       const deltaTime = currentTime - lastFrameTimeRef.current
 
-      if (deltaTime >= frameIntervalMs) {
+      // Slack keeps the check off the exact refresh boundary - see
+      // FRAME_INTERVAL_SLACK_MS
+      if (deltaTime >= frameIntervalMs - FRAME_INTERVAL_SLACK_MS) {
         // Prepare frame and key info
         const frameInfo: FrameInfo = {
           frameCount: frameCountRef.current,
