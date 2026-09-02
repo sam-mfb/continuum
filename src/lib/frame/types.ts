@@ -9,11 +9,7 @@ export type Frame = {
 }
 
 export type Drawable =
-  | DrawableLine
-  | DrawableRect
-  | DrawableShape
-  | DrawableSprite
-  | DrawablePixel
+  DrawableLine | DrawableRect | DrawableShape | DrawableSprite | DrawablePixel
 
 type DrawableType = 'line' | 'rect' | 'shape' | 'sprite' | 'pixel'
 

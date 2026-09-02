@@ -23,10 +23,7 @@ export type TransitionRootState = {
  * Status of the transition state machine
  */
 export type TransitionStatus =
-  | 'inactive'
-  | 'level-complete'
-  | 'fizz'
-  | 'starmap'
+  'inactive' | 'level-complete' | 'fizz' | 'starmap'
 
 /**
  * State for managing level transition effects

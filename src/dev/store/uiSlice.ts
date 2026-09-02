@@ -4,13 +4,7 @@ import { loadUISettings } from './uiMiddleware'
 
 type UIState = {
   currentView:
-    | 'menu'
-    | 'game'
-    | 'settings'
-    | 'galaxy'
-    | 'graphics'
-    | 'sound'
-    | 'sprites'
+    'menu' | 'game' | 'settings' | 'galaxy' | 'graphics' | 'sound' | 'sprites'
   isGamePaused: boolean
   showDebugInfo: boolean
   showGameStats: boolean

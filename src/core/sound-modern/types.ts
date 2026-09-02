@@ -139,10 +139,7 @@ export type SetVolumeMessage = {
  * Union of all message types
  */
 export type WorkletMessage =
-  | PlayMessage
-  | StopMessage
-  | ClearMessage
-  | SetVolumeMessage
+  PlayMessage | StopMessage | ClearMessage | SetVolumeMessage
 
 /**
  * Sound ended event payload

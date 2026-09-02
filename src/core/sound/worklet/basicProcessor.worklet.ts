@@ -42,8 +42,7 @@ const BUFFER_SIZE = 8192 // Must be power of 2
  * Message types from main thread to worklet
  */
 type MainToWorkletMessage =
-  | { type: 'setGenerator'; generatorType: string }
-  | { type: 'clearSound' }
+  { type: 'setGenerator'; generatorType: string } | { type: 'clearSound' }
 
 /**
  * Message types from worklet to main thread

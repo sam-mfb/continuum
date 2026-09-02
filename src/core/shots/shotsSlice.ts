@@ -451,8 +451,7 @@ export const shotsSlice = createSlice({
       // Result is added by syncThunkMiddleware
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = (action as any).meta?.result as
-        | { bunkshots: ShotRec[] }
-        | undefined
+        { bunkshots: ShotRec[] } | undefined
       if (result) {
         state.bunkshots = result.bunkshots
       }
