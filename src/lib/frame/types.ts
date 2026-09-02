@@ -61,8 +61,11 @@ export type DrawablePixel = DrawableBase & {
  * A block of pixels blitted in one operation - for layers that cover a large
  * area and change every frame, where a drawable per pixel would not be
  * affordable (the fizz dissolve). Transparent pixels let lower layers show
- * through. The renderer reads the pixel data on every draw, so the owner may
- * keep mutating the same ImageData between frames.
+ * through.
+ *
+ * The pixel data is read-only, like every other drawable: a layer whose
+ * contents change supplies a new ImageData rather than writing over the one an
+ * earlier frame was given.
  */
 export type DrawableBitmap = DrawableBase & {
   type: 'bitmap'

@@ -331,8 +331,9 @@ function drawPixel(
 }
 
 /**
- * Scratch canvas for bitmap layers. Their pixels change every frame, so unlike
- * sprites this cannot be cached by content - but the canvas itself is reused.
+ * Scratch canvas for bitmap layers. A layer supplies fresh pixel data each
+ * frame, so there is nothing stable to cache the way sprites are - but the
+ * scratch canvas itself is reused rather than allocated per draw.
  */
 let bitmapScratch: {
   canvas: HTMLCanvasElement
