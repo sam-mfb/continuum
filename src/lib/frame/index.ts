@@ -1,5 +1,5 @@
-export type { Frame, SpriteRegistry } from './types'
-export { drawFrameToCanvas } from './drawFrameToCanvas'
+export type { Frame, FrameRenderCache, SpriteRegistry } from './types'
+export { drawFrameToCanvas, createFrameRenderCache } from './drawFrameToCanvas'
 export {
   createSpriteRegistryCanvas,
   addMultipleSprites

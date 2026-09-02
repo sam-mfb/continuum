@@ -14,7 +14,7 @@ import {
   type CustomStats
 } from './StatsOverlay'
 import type { Frame, SpriteRegistry } from '@/lib/frame'
-import { drawFrameToCanvas } from '@/lib/frame'
+import { drawFrameToCanvas, createFrameRenderCache } from '@/lib/frame'
 
 /**
  * GameView Component
@@ -125,6 +125,7 @@ const GameView: React.FC<GameViewProps> = ({
   onCleanup
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const frameRenderCacheRef = useRef(createFrameRenderCache())
   const animationFrameRef = useRef<number>(0)
   const [currentFps, setCurrentFps] = useState(0)
   const [currentFrameInfo, setCurrentFrameInfo] = useState<FrameInfo>({
@@ -359,6 +360,7 @@ const GameView: React.FC<GameViewProps> = ({
                   ctx,
                   1,
                   spriteRegistry,
+                  frameRenderCacheRef.current,
                   game.debug
                 )
               }

@@ -12,7 +12,10 @@ import { setMode } from '../appSlice'
 import type { SpriteService } from '@/core/sprites'
 import type { CollisionService } from '@/core/collision'
 import type { Frame, SpriteRegistry } from '@/lib/frame/types'
-import { drawFrameToCanvas } from '@/lib/frame/drawFrameToCanvas'
+import {
+  drawFrameToCanvas,
+  createFrameRenderCache
+} from '@/lib/frame/drawFrameToCanvas'
 import ReplayControls from './ReplayControls'
 import { getDebug } from '../debug'
 import { useStore } from 'react-redux'
@@ -49,6 +52,7 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
   fps
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const frameRenderCacheRef = useRef(createFrameRenderCache())
   const animationRef = useRef<number>(0)
   const lastFrameTimeRef = useRef<number>(0)
   const frameIntervalMs = 1000 / fps
@@ -188,7 +192,14 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
             const renderedFrame = rendererNew(frameInfo, controls)
 
             // Draw frame to canvas
-            drawFrameToCanvas(renderedFrame, ctx, scale, spriteRegistry, false)
+            drawFrameToCanvas(
+              renderedFrame,
+              ctx,
+              scale,
+              spriteRegistry,
+              frameRenderCacheRef.current,
+              false
+            )
 
             if (getDebug()?.SHOW_COLLISION_MAP) {
               const collisionMap = collisionService.getMap()

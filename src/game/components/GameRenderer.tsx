@@ -21,7 +21,10 @@ import type { SpriteService } from '@/core/sprites'
 import { useStore } from 'react-redux'
 import { TouchControlsOverlay } from '../mobile/TouchControlsOverlay'
 import type { Frame, SpriteRegistry } from '@/lib/frame/types'
-import { drawFrameToCanvas } from '@/lib/frame/drawFrameToCanvas'
+import {
+  drawFrameToCanvas,
+  createFrameRenderCache
+} from '@/lib/frame/drawFrameToCanvas'
 import { applyCollisionMapOverlay } from '../utils/collisionMapOverlay'
 
 type GameRendererProps = {
@@ -54,6 +57,7 @@ const GameRenderer: React.FC<GameRendererProps> = ({
   fps
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const frameRenderCacheRef = useRef(createFrameRenderCache())
   const animationRef = useRef<number>(0)
   const lastFrameTimeRef = useRef<number>(0)
   const frameIntervalMs = 1000 / fps
@@ -264,7 +268,14 @@ const GameRenderer: React.FC<GameRendererProps> = ({
             const renderedFrame = rendererNew(frameInfo, controls)
 
             // Draw frame to canvas (background clearing is handled by viewClear in renderingNew.ts)
-            drawFrameToCanvas(renderedFrame, ctx, scale, spriteRegistry, false)
+            drawFrameToCanvas(
+              renderedFrame,
+              ctx,
+              scale,
+              spriteRegistry,
+              frameRenderCacheRef.current,
+              false
+            )
 
             if (getDebug()?.SHOW_COLLISION_MAP) {
               const collisionMap = collisionService.getMap()
