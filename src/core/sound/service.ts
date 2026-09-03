@@ -11,7 +11,7 @@ import {
   SoundType,
   SOUND_PRIORITIES,
   SOUND_PRIORITY_DECAY
-} from '@/core/sound-shared'
+} from '@core/sound-shared'
 
 // Vertical blanking interval for screen interrupts on original Mac
 const VERT_BLANK_PER_SEC = 60

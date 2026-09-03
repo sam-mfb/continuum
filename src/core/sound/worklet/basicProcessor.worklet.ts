@@ -17,7 +17,7 @@
 
 /// <reference path="./worklet.d.ts" />
 
-import type { SampleGenerator, RingBuffer } from '@/core/sound-shared'
+import type { SampleGenerator, RingBuffer } from '@core/sound-shared'
 import {
   createRingBuffer,
   createSilenceGenerator,
@@ -32,7 +32,7 @@ import {
   createCrackGenerator,
   createFizzGenerator,
   createEchoGenerator
-} from '@/core/sound-shared'
+} from '@core/sound-shared'
 
 // Constants
 const CHUNK_SIZE = 370

@@ -6,8 +6,8 @@ import {
   createHeadlessStore
 } from '@core/validation'
 import { decompress } from './gzip.node'
-import { createGalaxyServiceNode } from '@/core/galaxy/createGalaxyServiceNode'
-import { createRandomService } from '@/core/shared'
+import { createGalaxyServiceNode } from '@core/galaxy/createGalaxyServiceNode'
+import { createRandomService } from '@core/shared'
 import { createCollisionService } from '@core/collision'
 import { createSpriteServiceNode } from '@core/sprites/createSpriteServiceNode'
 import { SCRWTH, VIEWHT } from '@core/screen'

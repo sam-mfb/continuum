@@ -1,4 +1,4 @@
-import type { ControlMatrix } from '@/core/controls'
+import type { ControlMatrix } from '@core/controls'
 import type { GameRootState } from '@core/game'
 
 export type { ControlMatrix }

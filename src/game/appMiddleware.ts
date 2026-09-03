@@ -24,7 +24,7 @@ import {
   type ScaleMode,
   type RenderMode
 } from './appSlice'
-import type { AlignmentMode } from '@/core/shared'
+import type { AlignmentMode } from '@core/shared'
 import type { RootState } from './store'
 
 const APP_SETTINGS_STORAGE_KEY = 'continuum_app_settings'

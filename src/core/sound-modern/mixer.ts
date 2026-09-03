@@ -13,8 +13,8 @@ import {
   SOUND_PRIORITIES,
   SOUND_PRIORITY_DECAY,
   SINGLETON_SOUNDS
-} from '@/core/sound-shared'
-import type { SampleGenerator } from '@/core/sound-shared'
+} from '@core/sound-shared'
+import type { SampleGenerator } from '@core/sound-shared'
 import type { ChannelState, PlayRequest, StopRequest } from './types'
 import { MAX_CHANNELS } from './types'
 

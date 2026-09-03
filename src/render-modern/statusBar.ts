@@ -8,7 +8,7 @@
  * - Ship icon sprites for lives
  */
 
-import type { Frame, DrawableSprite } from '@/lib/frame/types'
+import type { Frame, DrawableSprite } from '@lib/frame/types'
 import {
   LIVES_START_X,
   LIVES_Y,
@@ -24,7 +24,7 @@ import {
   SCORE_Y,
   SCORE_X_NORMAL,
   SCORE_X_LARGE
-} from '@/core/status'
+} from '@core/status'
 
 type StatusBarDeps = {
   lives: number

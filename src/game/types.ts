@@ -1,6 +1,6 @@
-import type { ControlMatrix } from '@/core/controls'
-import type { FrameInfo, MonochromeBitmap } from '@/lib/bitmap'
-import type { Frame } from '@/lib/frame/types'
+import type { ControlMatrix } from '@core/controls'
+import type { FrameInfo, MonochromeBitmap } from '@lib/bitmap'
+import type { Frame } from '@lib/frame/types'
 
 export type GameRenderLoop = (
   frame: FrameInfo,

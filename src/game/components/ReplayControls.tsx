@@ -2,7 +2,7 @@ import React from 'react'
 import { useAppDispatch, useAppSelector, getStoreServices } from '../store'
 import { pauseReplay, resumeReplay, stopReplay } from '../replaySlice'
 import { setMode } from '../appSlice'
-import { shipSlice } from '@/core/ship'
+import { shipSlice } from '@core/ship'
 
 type ReplayControlsProps = {
   scale: number

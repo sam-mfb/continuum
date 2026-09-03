@@ -5,10 +5,10 @@
  * Port of draw_dot_safe() from orig/Sources/Draw.c:579-593
  */
 
-import { SBARHT, SCRWTH, VIEWHT } from '@/core/screen'
-import { cloneFrame, type Frame } from '@/lib/frame'
+import { SBARHT, SCRWTH, VIEWHT } from '@core/screen'
+import { cloneFrame, type Frame } from '@lib/frame'
 import { Z } from './z'
-import type { StrafeRec, ShotRec } from '@/core/shots/types'
+import type { StrafeRec, ShotRec } from '@core/shots/types'
 
 // Constants from orig/Sources/GW.h:122-123
 const STRAFEHT = 8 // height of a strafe

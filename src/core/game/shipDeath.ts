@@ -32,7 +32,7 @@ import {
 } from '@core/explosions/constants'
 import { statusSlice } from '@core/status'
 import type { GameRootState } from './types'
-import type { RandomService } from '@/core/shared'
+import type { RandomService } from '@core/shared'
 
 /**
  * Trigger ship death sequence - extracted for reuse

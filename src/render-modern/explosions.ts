@@ -1,8 +1,8 @@
-import { SBARHT, SCRWTH, VIEWHT } from '@/core/screen'
-import { SHARDHT } from '@/core/explosions'
-import { cloneFrame, type Frame } from '@/lib/frame'
+import { SBARHT, SCRWTH, VIEWHT } from '@core/screen'
+import { SHARDHT } from '@core/explosions'
+import { cloneFrame, type Frame } from '@lib/frame'
 import { Z } from './z'
-import type { ShardRec } from '@/core/explosions'
+import type { ShardRec } from '@core/explosions'
 
 // Spark type from ExplosionsState
 type SparkRec = {

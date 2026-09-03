@@ -10,8 +10,8 @@ import type { DrawableBitmap, Frame, Drawable } from '@lib/frame/types'
 import { generateStarmapPixels } from '@render/transition/starmapPixels'
 import { starmapPixelsToBitmap } from '@render/transition/starmapToBitmap'
 import { advanceLFSR, shouldSkipSeed } from './lfsrUtils'
-import { SCRWTH, VIEWHT, SBARHT, SBARSIZE } from '@/core/screen'
-import type { MonochromeBitmap } from '@/lib/bitmap'
+import { SCRWTH, VIEWHT, SBARHT, SBARSIZE } from '@core/screen'
+import type { MonochromeBitmap } from '@lib/bitmap'
 
 /**
  * Service type for managing Frame-based fizz transitions

@@ -26,8 +26,8 @@ import { rint, createRandomService } from '@core/shared'
 import { SBARHT, SCRWTH, VIEWHT } from '@core/screen'
 import { isOnRightSide } from '@core/shared/viewport'
 import { viewClear } from '@render/screen'
-import type { Frame } from '@/lib/frame'
-import { drawBunkers } from '@/render-modern/bunkers'
+import type { Frame } from '@lib/frame'
+import { drawBunkers } from '@render-modern/bunkers'
 
 // Create store with planet and shots slices
 const store = configureStore({

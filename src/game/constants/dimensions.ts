@@ -1,7 +1,7 @@
 // Base dimensions constants for mobile scaling
 // These represent the original game dimensions at 1x scale
 
-import { SCRWTH, SCRHT } from '@/core/screen'
+import { SCRWTH, SCRHT } from '@core/screen'
 
 // Base game dimensions (from original 68k Mac game)
 export const BASE_GAME_WIDTH = SCRWTH // 512

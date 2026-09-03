@@ -1,9 +1,9 @@
-import { SBARHT, SCRWTH, VIEWHT } from '@/core/screen'
-import { xbcenter, ybcenter } from '@/core/planet'
-import { BunkerKind, BUNKROTKINDS } from '@/core/figs'
-import { cloneFrame, type Frame } from '@/lib/frame'
+import { SBARHT, SCRWTH, VIEWHT } from '@core/screen'
+import { xbcenter, ybcenter } from '@core/planet'
+import { BunkerKind, BUNKROTKINDS } from '@core/figs'
+import { cloneFrame, type Frame } from '@lib/frame'
 import { Z } from './z'
-import type { Bunker } from '@/core/planet'
+import type { Bunker } from '@core/planet'
 
 /**
  * From doBunks() in orig/Sources/Bunkers.c at 213-245
