@@ -26,7 +26,7 @@ import { createSpriteServiceNode } from '@core/sprites/createSpriteServiceNode'
 import { SCRWTH, VIEWHT } from '@core/screen'
 import { loadLevel } from '@core/game/levelThunks'
 import type { GameRootState } from '@core/game/types'
-import { GALAXIES } from '@/game/galaxyConfig'
+import { GALAXIES } from '@game/galaxyConfig'
 import fs from 'fs'
 import path from 'path'
 

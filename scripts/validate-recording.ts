@@ -11,7 +11,7 @@ import { createRandomService } from '@core/shared'
 import { createCollisionService } from '@core/collision'
 import { createSpriteServiceNode } from '@core/sprites/createSpriteServiceNode'
 import { SCRWTH, VIEWHT } from '@core/screen'
-import { GALAXIES } from '@/game/galaxyConfig'
+import { GALAXIES } from '@game/galaxyConfig'
 import fs from 'fs'
 import path from 'path'
 
