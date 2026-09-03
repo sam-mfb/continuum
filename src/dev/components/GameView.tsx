@@ -13,11 +13,12 @@ import {
   type StatsConfig,
   type CustomStats
 } from './StatsOverlay'
-import type { Frame, SpriteRegistry } from '@/lib/frame'
 import {
   drawFrameToCanvas,
   createSpriteCanvasCache,
   createPatternTileCache,
+  type Frame,
+  type SpriteRegistry,
   type SpriteCanvasCache,
   type PatternTileCache
 } from '@/lib/frame'

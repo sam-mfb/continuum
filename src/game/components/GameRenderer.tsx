@@ -20,16 +20,15 @@ import { getDebug } from '../debug'
 import type { SpriteService } from '@/core/sprites'
 import { useStore } from 'react-redux'
 import { TouchControlsOverlay } from '../mobile/TouchControlsOverlay'
-import type { Frame, SpriteRegistry } from '@/lib/frame/types'
-import { drawFrameToCanvas } from '@/lib/frame/drawFrameToCanvas'
 import {
+  drawFrameToCanvas,
   createSpriteCanvasCache,
-  type SpriteCanvasCache
-} from '@/lib/frame/spriteCanvasCache'
-import {
   createPatternTileCache,
+  type Frame,
+  type SpriteRegistry,
+  type SpriteCanvasCache,
   type PatternTileCache
-} from '@/lib/frame/patternTileCache'
+} from '@/lib/frame'
 import { applyCollisionMapOverlay } from '../utils/collisionMapOverlay'
 
 type GameRendererProps = {
