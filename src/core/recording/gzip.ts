@@ -2,7 +2,8 @@
  * @fileoverview Gzip compression interface for recording codec
  *
  * Defines the interface for gzip compression/decompression functions.
- * Platform-specific implementations are in gzip.browser.ts and gzip.node.ts
+ * Platform-specific implementations are in gzip.browser.ts and
+ * scripts/gzipNode.ts
  */
 
 /**
