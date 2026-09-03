@@ -30,7 +30,7 @@ import {
   type SpriteCanvasCache,
   type PatternTileCache,
   type BitmapScratchCache
-} from '@/lib/frame'
+} from '@lib/frame'
 import { applyCollisionMapOverlay } from '../utils/collisionMapOverlay'
 
 type GameRendererProps = {

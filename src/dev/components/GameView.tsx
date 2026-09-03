@@ -23,7 +23,7 @@ import {
   type SpriteCanvasCache,
   type PatternTileCache,
   type BitmapScratchCache
-} from '@/lib/frame'
+} from '@lib/frame'
 
 /**
  * GameView Component

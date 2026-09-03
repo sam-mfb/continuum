@@ -21,7 +21,7 @@ import {
   type SpriteCanvasCache,
   type PatternTileCache,
   type BitmapScratchCache
-} from '@/lib/frame'
+} from '@lib/frame'
 import ReplayControls from './ReplayControls'
 import { getDebug } from '../debug'
 import { useStore } from 'react-redux'
