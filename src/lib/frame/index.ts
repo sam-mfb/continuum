@@ -1,14 +1,13 @@
-export type {
-  Frame,
-  PatternTileCache,
-  SpriteCanvasCache,
-  SpriteRegistry
-} from './types'
+export type { Frame, SpriteRegistry } from './types'
+export { drawFrameToCanvas } from './drawFrameToCanvas'
 export {
-  drawFrameToCanvas,
   createSpriteCanvasCache,
-  createPatternTileCache
-} from './drawFrameToCanvas'
+  type SpriteCanvasCache
+} from './spriteCanvasCache'
+export {
+  createPatternTileCache,
+  type PatternTileCache
+} from './patternTileCache'
 export {
   createSpriteRegistryCanvas,
   addMultipleSprites

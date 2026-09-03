@@ -13,16 +13,13 @@ import {
   type StatsConfig,
   type CustomStats
 } from './StatsOverlay'
-import type {
-  Frame,
-  PatternTileCache,
-  SpriteCanvasCache,
-  SpriteRegistry
-} from '@/lib/frame'
+import type { Frame, SpriteRegistry } from '@/lib/frame'
 import {
   drawFrameToCanvas,
   createSpriteCanvasCache,
-  createPatternTileCache
+  createPatternTileCache,
+  type SpriteCanvasCache,
+  type PatternTileCache
 } from '@/lib/frame'
 
 /**
@@ -367,13 +364,19 @@ const GameView: React.FC<GameViewProps> = ({
               // If frameRenderer is provided, render the frame on top
               if (game.frameRenderer) {
                 const renderedFrame = game.frameRenderer(frameInfo, keyInfo)
+                if (spriteCanvasCacheRef.current === null) {
+                  spriteCanvasCacheRef.current = createSpriteCanvasCache()
+                }
+                if (patternTileCacheRef.current === null) {
+                  patternTileCacheRef.current = createPatternTileCache()
+                }
                 drawFrameToCanvas(
                   renderedFrame,
                   ctx,
                   1,
                   spriteRegistry,
-                  (spriteCanvasCacheRef.current ??= createSpriteCanvasCache()),
-                  (patternTileCacheRef.current ??= createPatternTileCache()),
+                  spriteCanvasCacheRef.current,
+                  patternTileCacheRef.current,
                   game.debug
                 )
               }

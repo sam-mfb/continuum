@@ -11,17 +11,16 @@ import { stopReplay, setReplayFrame } from '../replaySlice'
 import { setMode } from '../appSlice'
 import type { SpriteService } from '@/core/sprites'
 import type { CollisionService } from '@/core/collision'
-import type {
-  Frame,
-  PatternTileCache,
-  SpriteCanvasCache,
-  SpriteRegistry
-} from '@/lib/frame/types'
+import type { Frame, SpriteRegistry } from '@/lib/frame/types'
+import { drawFrameToCanvas } from '@/lib/frame/drawFrameToCanvas'
 import {
-  drawFrameToCanvas,
   createSpriteCanvasCache,
-  createPatternTileCache
-} from '@/lib/frame/drawFrameToCanvas'
+  type SpriteCanvasCache
+} from '@/lib/frame/spriteCanvasCache'
+import {
+  createPatternTileCache,
+  type PatternTileCache
+} from '@/lib/frame/patternTileCache'
 import ReplayControls from './ReplayControls'
 import { getDebug } from '../debug'
 import { useStore } from 'react-redux'
@@ -201,13 +200,19 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
             const renderedFrame = rendererNew(frameInfo, controls)
 
             // Draw frame to canvas
+            if (spriteCanvasCacheRef.current === null) {
+              spriteCanvasCacheRef.current = createSpriteCanvasCache()
+            }
+            if (patternTileCacheRef.current === null) {
+              patternTileCacheRef.current = createPatternTileCache()
+            }
             drawFrameToCanvas(
               renderedFrame,
               ctx,
               scale,
               spriteRegistry,
-              (spriteCanvasCacheRef.current ??= createSpriteCanvasCache()),
-              (patternTileCacheRef.current ??= createPatternTileCache()),
+              spriteCanvasCacheRef.current,
+              patternTileCacheRef.current,
               false
             )
 

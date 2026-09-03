@@ -20,17 +20,16 @@ import { getDebug } from '../debug'
 import type { SpriteService } from '@/core/sprites'
 import { useStore } from 'react-redux'
 import { TouchControlsOverlay } from '../mobile/TouchControlsOverlay'
-import type {
-  Frame,
-  PatternTileCache,
-  SpriteCanvasCache,
-  SpriteRegistry
-} from '@/lib/frame/types'
+import type { Frame, SpriteRegistry } from '@/lib/frame/types'
+import { drawFrameToCanvas } from '@/lib/frame/drawFrameToCanvas'
 import {
-  drawFrameToCanvas,
   createSpriteCanvasCache,
-  createPatternTileCache
-} from '@/lib/frame/drawFrameToCanvas'
+  type SpriteCanvasCache
+} from '@/lib/frame/spriteCanvasCache'
+import {
+  createPatternTileCache,
+  type PatternTileCache
+} from '@/lib/frame/patternTileCache'
 import { applyCollisionMapOverlay } from '../utils/collisionMapOverlay'
 
 type GameRendererProps = {
@@ -277,13 +276,19 @@ const GameRenderer: React.FC<GameRendererProps> = ({
             const renderedFrame = rendererNew(frameInfo, controls)
 
             // Draw frame to canvas (background clearing is handled by viewClear in renderingNew.ts)
+            if (spriteCanvasCacheRef.current === null) {
+              spriteCanvasCacheRef.current = createSpriteCanvasCache()
+            }
+            if (patternTileCacheRef.current === null) {
+              patternTileCacheRef.current = createPatternTileCache()
+            }
             drawFrameToCanvas(
               renderedFrame,
               ctx,
               scale,
               spriteRegistry,
-              (spriteCanvasCacheRef.current ??= createSpriteCanvasCache()),
-              (patternTileCacheRef.current ??= createPatternTileCache()),
+              spriteCanvasCacheRef.current,
+              patternTileCacheRef.current,
               false
             )
 

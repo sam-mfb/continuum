@@ -82,25 +82,3 @@ export type SpriteRegistry<TSpriteFormat> = {
   loadSprites: () => Promise<void>
   unloadSprites: () => void
 }
-
-/**
- * Sprite canvases the renderer blits from, built once per sprite.
- *
- * Keyed by the registry's ImageData so entries are collectable once sprites
- * are unloaded; the inner key is the color override (shadows tint a copy).
- *
- * Owned by whoever calls drawFrameToCanvas - create one alongside the canvas
- * being drawn to (see createSpriteCanvasCache) and pass the same one every
- * frame, so the draw function itself holds no state.
- */
-export type SpriteCanvasCache = {
-  cache: WeakMap<ImageData, Map<string, HTMLCanvasElement>>
-}
-
-/**
- * Crosshatch tiles the renderer fills from, keyed by alignment and scale.
- * Caller-owned on the same terms as SpriteCanvasCache.
- */
-export type PatternTileCache = {
-  cache: Map<string, HTMLCanvasElement>
-}
