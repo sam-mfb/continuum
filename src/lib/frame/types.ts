@@ -9,9 +9,9 @@ export type Frame = {
 }
 
 export type Drawable =
-  DrawableLine | DrawableRect | DrawableShape | DrawableSprite | DrawablePixel
+  DrawableLine | DrawableRect | DrawableShape | DrawableSprite | DrawableBitmap
 
-type DrawableType = 'line' | 'rect' | 'shape' | 'sprite' | 'pixel'
+type DrawableType = 'line' | 'rect' | 'shape' | 'sprite' | 'bitmap'
 
 type DrawableBase = {
   id: string
@@ -46,10 +46,20 @@ export type DrawableShape = DrawableBase & {
   fillColor: DrawableColor
 }
 
-export type DrawablePixel = DrawableBase & {
-  type: 'pixel'
-  point: DrawablePoint
-  color: DrawableColor
+/**
+ * A block of pixels blitted in one operation - for layers that cover a large
+ * area and change every frame, where a drawable per pixel would not be
+ * affordable (the fizz dissolve). Transparent pixels let lower layers show
+ * through.
+ *
+ * The pixel data is read-only, like every other drawable: a layer whose
+ * contents change supplies a new ImageData rather than writing over the one an
+ * earlier frame was given.
+ */
+export type DrawableBitmap = DrawableBase & {
+  type: 'bitmap'
+  topLeft: DrawablePoint
+  imageData: ImageData
 }
 
 type DrawablePoint = {
