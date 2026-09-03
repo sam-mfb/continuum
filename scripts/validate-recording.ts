@@ -5,7 +5,7 @@ import {
   createRecordingValidator,
   createHeadlessStore
 } from '@core/validation'
-import { decompress } from './gzip.node'
+import { decompress } from './gzipNode'
 import { createGalaxyServiceNode } from '@core/galaxy/createGalaxyServiceNode'
 import { createRandomService } from '@core/shared'
 import { createCollisionService } from '@core/collision'

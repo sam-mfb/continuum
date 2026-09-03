@@ -10,7 +10,7 @@ import {
   decodeRecordingAuto
 } from './binaryCodec'
 // Tests run in Node.js environment, so use Node.js gzip implementation
-import { compress, decompress } from '../../../scripts/gzip.node'
+import { compress, decompress } from '../../../scripts/gzipNode'
 import type { GameRecording } from './types'
 
 describe('binaryCodec', () => {
