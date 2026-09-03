@@ -1,14 +1,15 @@
 import type {
+  DrawableBitmap,
   DrawableLine,
   DrawableRect,
   DrawableShape,
   DrawableSprite,
-  DrawablePixel,
   Frame,
   SpriteRegistry
 } from './types'
 import { getSpriteCanvas, type SpriteCanvasCache } from './spriteCanvasCache'
 import { getPatternTile, type PatternTileCache } from './patternTileCache'
+import { getBitmapScratch, type BitmapScratchCache } from './bitmapScratchCache'
 
 export function drawFrameToCanvas(
   frame: Frame,
@@ -17,6 +18,7 @@ export function drawFrameToCanvas(
   spriteRegistry: SpriteRegistry<ImageData>,
   spriteCanvasCache: SpriteCanvasCache,
   patternTileCache: PatternTileCache,
+  bitmapScratchCache: BitmapScratchCache,
   debug?: boolean
 ): void {
   // Sort drawables by z index (lower z draws first, so higher z appears on top)
@@ -44,8 +46,8 @@ export function drawFrameToCanvas(
           debug ?? false
         )
         break
-      case 'pixel':
-        drawPixel(drawable, canvas, scale, debug ?? false)
+      case 'bitmap':
+        drawBitmap(drawable, canvas, scale, bitmapScratchCache, debug ?? false)
         break
     }
   }
@@ -225,19 +227,35 @@ function drawSprite(
   canvas.restore()
 }
 
-function drawPixel(
-  pixel: DrawablePixel,
+function drawBitmap(
+  bitmap: DrawableBitmap,
   canvas: CanvasRenderingContext2D,
   scale: number,
+  bitmapScratchCache: BitmapScratchCache,
   debug: boolean
 ): void {
+  const { imageData } = bitmap
+
+  const scratch = getBitmapScratch(
+    bitmapScratchCache,
+    imageData.width,
+    imageData.height
+  )
+
+  // putImageData replaces the region wholesale, alpha included, so there is
+  // nothing to clear first
+  scratch.ctx.putImageData(imageData, 0, 0)
+
   canvas.save()
 
-  canvas.globalAlpha = debug ? 0.7 * pixel.alpha : pixel.alpha
-  canvas.fillStyle = debug ? 'lime' : pixel.color
-
-  // Draw a single pixel as a scaled rectangle
-  canvas.fillRect(pixel.point.x * scale, pixel.point.y * scale, scale, scale)
+  canvas.globalAlpha = debug ? 0.7 * bitmap.alpha : bitmap.alpha
+  canvas.drawImage(
+    scratch.canvas,
+    bitmap.topLeft.x * scale,
+    bitmap.topLeft.y * scale,
+    imageData.width * scale,
+    imageData.height * scale
+  )
 
   canvas.restore()
 }
