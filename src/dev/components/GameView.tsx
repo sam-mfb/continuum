@@ -17,10 +17,12 @@ import {
   drawFrameToCanvas,
   createSpriteCanvasCache,
   createPatternTileCache,
+  createBitmapScratchCache,
   type Frame,
   type SpriteRegistry,
   type SpriteCanvasCache,
-  type PatternTileCache
+  type PatternTileCache,
+  type BitmapScratchCache
 } from '@/lib/frame'
 
 /**
@@ -136,6 +138,7 @@ const GameView: React.FC<GameViewProps> = ({
   // the component - see the React docs on avoiding recreating ref contents
   const spriteCanvasCacheRef = useRef<SpriteCanvasCache | null>(null)
   const patternTileCacheRef = useRef<PatternTileCache | null>(null)
+  const bitmapScratchCacheRef = useRef<BitmapScratchCache | null>(null)
   const animationFrameRef = useRef<number>(0)
   const [currentFps, setCurrentFps] = useState(0)
   const [currentFrameInfo, setCurrentFrameInfo] = useState<FrameInfo>({
@@ -371,6 +374,9 @@ const GameView: React.FC<GameViewProps> = ({
                 if (patternTileCacheRef.current === null) {
                   patternTileCacheRef.current = createPatternTileCache()
                 }
+                if (bitmapScratchCacheRef.current === null) {
+                  bitmapScratchCacheRef.current = createBitmapScratchCache()
+                }
                 drawFrameToCanvas(
                   renderedFrame,
                   ctx,
@@ -378,6 +384,7 @@ const GameView: React.FC<GameViewProps> = ({
                   spriteRegistry,
                   spriteCanvasCacheRef.current,
                   patternTileCacheRef.current,
+                  bitmapScratchCacheRef.current,
                   game.debug
                 )
               }

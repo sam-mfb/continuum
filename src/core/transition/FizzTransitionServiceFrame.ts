@@ -48,12 +48,12 @@ export type FizzTransitionServiceFrame = {
  * Turn one pixel of a layer opaque, black or white per the starmap bitmap.
  * Untouched pixels stay transparent so the layer beneath shows through.
  */
-const revealPixel = (
+function revealPixel(
   layer: ImageData,
   x: number,
   y: number,
   black: boolean
-): void => {
+): void {
   const i = (y * SCRWTH + x) * 4
   const value = black ? 0 : 255
   layer.data[i] = value

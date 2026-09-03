@@ -10,6 +10,7 @@ import type {
 } from './types'
 import { getSpriteCanvas, type SpriteCanvasCache } from './spriteCanvasCache'
 import { getPatternTile, type PatternTileCache } from './patternTileCache'
+import { getBitmapScratch, type BitmapScratchCache } from './bitmapScratchCache'
 
 export function drawFrameToCanvas(
   frame: Frame,
@@ -18,6 +19,7 @@ export function drawFrameToCanvas(
   spriteRegistry: SpriteRegistry<ImageData>,
   spriteCanvasCache: SpriteCanvasCache,
   patternTileCache: PatternTileCache,
+  bitmapScratchCache: BitmapScratchCache,
   debug?: boolean
 ): void {
   // Sort drawables by z index (lower z draws first, so higher z appears on top)
@@ -49,7 +51,7 @@ export function drawFrameToCanvas(
         drawPixel(drawable, canvas, scale, debug ?? false)
         break
       case 'bitmap':
-        drawBitmap(drawable, canvas, scale, debug ?? false)
+        drawBitmap(drawable, canvas, scale, bitmapScratchCache, debug ?? false)
         break
     }
   }
@@ -246,45 +248,30 @@ function drawPixel(
   canvas.restore()
 }
 
-/**
- * Scratch canvas for bitmap layers. A layer supplies fresh pixel data each
- * frame, so there is nothing stable to cache the way sprites are - but the
- * scratch canvas itself is reused rather than allocated per draw.
- */
-let bitmapScratch: {
-  canvas: HTMLCanvasElement
-  ctx: CanvasRenderingContext2D
-} | null = null
-
 function drawBitmap(
   bitmap: DrawableBitmap,
   canvas: CanvasRenderingContext2D,
   scale: number,
+  bitmapScratchCache: BitmapScratchCache,
   debug: boolean
 ): void {
   const { imageData } = bitmap
 
-  if (!bitmapScratch) {
-    const scratch = document.createElement('canvas')
-    bitmapScratch = { canvas: scratch, ctx: scratch.getContext('2d')! }
-  }
-  if (
-    bitmapScratch.canvas.width !== imageData.width ||
-    bitmapScratch.canvas.height !== imageData.height
-  ) {
-    bitmapScratch.canvas.width = imageData.width
-    bitmapScratch.canvas.height = imageData.height
-  }
+  const scratch = getBitmapScratch(
+    bitmapScratchCache,
+    imageData.width,
+    imageData.height
+  )
 
   // putImageData replaces the region wholesale, alpha included, so there is
   // nothing to clear first
-  bitmapScratch.ctx.putImageData(imageData, 0, 0)
+  scratch.ctx.putImageData(imageData, 0, 0)
 
   canvas.save()
 
   canvas.globalAlpha = debug ? 0.7 * bitmap.alpha : bitmap.alpha
   canvas.drawImage(
-    bitmapScratch.canvas,
+    scratch.canvas,
     bitmap.topLeft.x * scale,
     bitmap.topLeft.y * scale,
     imageData.width * scale,
