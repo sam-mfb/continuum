@@ -11,10 +11,16 @@ import { stopReplay, setReplayFrame } from '../replaySlice'
 import { setMode } from '../appSlice'
 import type { SpriteService } from '@/core/sprites'
 import type { CollisionService } from '@/core/collision'
-import type { Frame, SpriteRegistry } from '@/lib/frame/types'
+import type {
+  Frame,
+  PatternTileCache,
+  SpriteCanvasCache,
+  SpriteRegistry
+} from '@/lib/frame/types'
 import {
   drawFrameToCanvas,
-  createFrameRenderCache
+  createSpriteCanvasCache,
+  createPatternTileCache
 } from '@/lib/frame/drawFrameToCanvas'
 import ReplayControls from './ReplayControls'
 import { getDebug } from '../debug'
@@ -52,7 +58,10 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
   fps
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const frameRenderCacheRef = useRef(createFrameRenderCache())
+  // Built on first use, not on every render, and then kept for the life of
+  // the component - see the React docs on avoiding recreating ref contents
+  const spriteCanvasCacheRef = useRef<SpriteCanvasCache | null>(null)
+  const patternTileCacheRef = useRef<PatternTileCache | null>(null)
   const animationRef = useRef<number>(0)
   const lastFrameTimeRef = useRef<number>(0)
   const frameIntervalMs = 1000 / fps
@@ -197,7 +206,8 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
               ctx,
               scale,
               spriteRegistry,
-              frameRenderCacheRef.current,
+              (spriteCanvasCacheRef.current ??= createSpriteCanvasCache()),
+              (patternTileCacheRef.current ??= createPatternTileCache()),
               false
             )
 

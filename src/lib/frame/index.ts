@@ -1,5 +1,14 @@
-export type { Frame, FrameRenderCache, SpriteRegistry } from './types'
-export { drawFrameToCanvas, createFrameRenderCache } from './drawFrameToCanvas'
+export type {
+  Frame,
+  PatternTileCache,
+  SpriteCanvasCache,
+  SpriteRegistry
+} from './types'
+export {
+  drawFrameToCanvas,
+  createSpriteCanvasCache,
+  createPatternTileCache
+} from './drawFrameToCanvas'
 export {
   createSpriteRegistryCanvas,
   addMultipleSprites

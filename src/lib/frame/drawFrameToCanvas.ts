@@ -5,21 +5,24 @@ import type {
   DrawableSprite,
   DrawablePixel,
   Frame,
-  FrameRenderCache,
+  PatternTileCache,
+  SpriteCanvasCache,
   SpriteRegistry
 } from './types'
 
 /**
- * Builds the scratch-canvas cache that drawFrameToCanvas draws through.
+ * Builds the sprite canvas cache that drawFrameToCanvas blits through.
  *
  * Create one alongside the canvas being drawn to and pass the same one every
  * frame; the caller owns it, so drawFrameToCanvas keeps no state of its own.
  */
-export function createFrameRenderCache(): FrameRenderCache {
-  return {
-    spriteCanvases: new WeakMap(),
-    patternTiles: new Map()
-  }
+export function createSpriteCanvasCache(): SpriteCanvasCache {
+  return { cache: new WeakMap() }
+}
+
+/** Builds the crosshatch tile cache, caller-owned on the same terms. */
+export function createPatternTileCache(): PatternTileCache {
+  return { cache: new Map() }
 }
 
 export function drawFrameToCanvas(
@@ -27,7 +30,8 @@ export function drawFrameToCanvas(
   canvas: CanvasRenderingContext2D,
   scale: number,
   spriteRegistry: SpriteRegistry<ImageData>,
-  cache: FrameRenderCache,
+  spriteCanvasCache: SpriteCanvasCache,
+  patternTileCache: PatternTileCache,
   debug?: boolean
 ): void {
   // Sort drawables by z index (lower z draws first, so higher z appears on top)
@@ -40,7 +44,7 @@ export function drawFrameToCanvas(
         drawLine(drawable, canvas, scale, debug ?? false)
         break
       case 'rect':
-        drawRect(drawable, canvas, scale, cache.patternTiles, debug ?? false)
+        drawRect(drawable, canvas, scale, patternTileCache, debug ?? false)
         break
       case 'shape':
         drawShape(drawable, canvas, scale, debug ?? false)
@@ -51,7 +55,7 @@ export function drawFrameToCanvas(
           canvas,
           scale,
           spriteRegistry,
-          cache.spriteCanvases,
+          spriteCanvasCache,
           debug ?? false
         )
         break
@@ -86,7 +90,7 @@ function drawRect(
   rect: DrawableRect,
   canvas: CanvasRenderingContext2D,
   scale: number,
-  patternTiles: FrameRenderCache['patternTiles'],
+  patternTileCache: PatternTileCache,
   debug: boolean
 ): void {
   canvas.save()
@@ -95,7 +99,7 @@ function drawRect(
 
   if (rect.fillPattern === 'crosshatch') {
     const patternCanvas = getPatternTile(
-      patternTiles,
+      patternTileCache,
       rect.patternAlignment ?? 0,
       scale
     )
@@ -186,7 +190,7 @@ function drawSprite(
   canvas: CanvasRenderingContext2D,
   scale: number,
   spriteRegistry: SpriteRegistry<ImageData>,
-  spriteCanvases: FrameRenderCache['spriteCanvases'],
+  spriteCanvasCache: SpriteCanvasCache,
   debug: boolean
 ): void {
   const imageData = spriteRegistry.getSprite(sprite.spriteId)
@@ -211,7 +215,7 @@ function drawSprite(
   // Blit from the cached canvas for this sprite (and color override, e.g.
   // for shadows) - built once per sprite, not once per draw
   const spriteCanvas = getSpriteCanvas(
-    spriteCanvases,
+    spriteCanvasCache,
     imageData,
     sprite.colorOverride
   )
@@ -263,14 +267,14 @@ function drawPixel(
  * so each one is built once and kept in the caller's cache.
  */
 function getSpriteCanvas(
-  spriteCanvases: FrameRenderCache['spriteCanvases'],
+  spriteCanvasCache: SpriteCanvasCache,
   imageData: ImageData,
   colorOverride: string | undefined
 ): HTMLCanvasElement {
-  let byColor = spriteCanvases.get(imageData)
+  let byColor = spriteCanvasCache.cache.get(imageData)
   if (!byColor) {
     byColor = new Map()
-    spriteCanvases.set(imageData, byColor)
+    spriteCanvasCache.cache.set(imageData, byColor)
   }
 
   const key = colorOverride ?? ''
@@ -298,12 +302,12 @@ function getSpriteCanvas(
  * first use. Cached for the same reason sprite canvases are.
  */
 function getPatternTile(
-  patternTiles: FrameRenderCache['patternTiles'],
+  patternTileCache: PatternTileCache,
   alignment: number,
   scale: number
 ): HTMLCanvasElement {
   const key = `${alignment}-${scale}`
-  const cached = patternTiles.get(key)
+  const cached = patternTileCache.cache.get(key)
   if (cached) return cached
 
   // Build the tile at 1:1 first, then scale it up
@@ -350,6 +354,6 @@ function getPatternTile(
   patternCtx.imageSmoothingEnabled = false // Keep pixels crisp
   patternCtx.drawImage(unscaledCanvas, 0, 0, 32 * scale, 2 * scale)
 
-  patternTiles.set(key, patternCanvas)
+  patternTileCache.cache.set(key, patternCanvas)
   return patternCanvas
 }
