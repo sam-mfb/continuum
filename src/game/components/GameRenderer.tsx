@@ -20,8 +20,15 @@ import { getDebug } from '../debug'
 import type { SpriteService } from '@/core/sprites'
 import { useStore } from 'react-redux'
 import { TouchControlsOverlay } from '../mobile/TouchControlsOverlay'
-import type { Frame, SpriteRegistry } from '@/lib/frame/types'
-import { drawFrameToCanvas } from '@/lib/frame/drawFrameToCanvas'
+import {
+  drawFrameToCanvas,
+  createSpriteCanvasCache,
+  createPatternTileCache,
+  type Frame,
+  type SpriteRegistry,
+  type SpriteCanvasCache,
+  type PatternTileCache
+} from '@/lib/frame'
 import { applyCollisionMapOverlay } from '../utils/collisionMapOverlay'
 import { FRAME_INTERVAL_SLACK_MS } from '../constants'
 
@@ -55,6 +62,10 @@ const GameRenderer: React.FC<GameRendererProps> = ({
   fps
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  // Built on first use, not on every render, and then kept for the life of
+  // the component - see the React docs on avoiding recreating ref contents
+  const spriteCanvasCacheRef = useRef<SpriteCanvasCache | null>(null)
+  const patternTileCacheRef = useRef<PatternTileCache | null>(null)
   const animationRef = useRef<number>(0)
   const lastFrameTimeRef = useRef<number>(0)
   const frameIntervalMs = 1000 / fps
@@ -267,7 +278,21 @@ const GameRenderer: React.FC<GameRendererProps> = ({
             const renderedFrame = rendererNew(frameInfo, controls)
 
             // Draw frame to canvas (background clearing is handled by viewClear in renderingNew.ts)
-            drawFrameToCanvas(renderedFrame, ctx, scale, spriteRegistry, false)
+            if (spriteCanvasCacheRef.current === null) {
+              spriteCanvasCacheRef.current = createSpriteCanvasCache()
+            }
+            if (patternTileCacheRef.current === null) {
+              patternTileCacheRef.current = createPatternTileCache()
+            }
+            drawFrameToCanvas(
+              renderedFrame,
+              ctx,
+              scale,
+              spriteRegistry,
+              spriteCanvasCacheRef.current,
+              patternTileCacheRef.current,
+              false
+            )
 
             if (getDebug()?.SHOW_COLLISION_MAP) {
               const collisionMap = collisionService.getMap()
