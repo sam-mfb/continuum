@@ -35,7 +35,39 @@ export default [
         'error',
         { prefer: 'type-imports' }
       ],
-      '@typescript-eslint/consistent-type-definitions': ['error', 'type']
+      '@typescript-eslint/consistent-type-definitions': ['error', 'type'],
+      // Each section has its own alias (@core, @lib, @dev, @render,
+      // @render-modern); reach for that rather than the catch-all @/ so the
+      // same module is always spelled the same way. @/ stays available for
+      // src/game, which has no alias of its own.
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/core/*'],
+              message: 'Import from @core/ instead of @/core/.'
+            },
+            {
+              group: ['@/lib/*'],
+              message: 'Import from @lib/ instead of @/lib/.'
+            },
+            {
+              group: ['@/dev/*'],
+              message: 'Import from @dev/ instead of @/dev/.'
+            },
+            {
+              group: ['@/render/*'],
+              message: 'Import from @render/ instead of @/render/.'
+            },
+            {
+              group: ['@/render-modern/*'],
+              message:
+                'Import from @render-modern/ instead of @/render-modern/.'
+            }
+          ]
+        }
+      ]
     }
   }
 ]
