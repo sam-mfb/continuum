@@ -13,10 +13,9 @@ export type Drawable =
   | DrawableRect
   | DrawableShape
   | DrawableSprite
-  | DrawablePixel
   | DrawableBitmap
 
-type DrawableType = 'line' | 'rect' | 'shape' | 'sprite' | 'pixel' | 'bitmap'
+type DrawableType = 'line' | 'rect' | 'shape' | 'sprite' | 'bitmap'
 
 type DrawableBase = {
   id: string
@@ -49,12 +48,6 @@ export type DrawableShape = DrawableBase & {
   strokeColor: DrawableColor
   strokeWidth: number
   fillColor: DrawableColor
-}
-
-export type DrawablePixel = DrawableBase & {
-  type: 'pixel'
-  point: DrawablePoint
-  color: DrawableColor
 }
 
 /**

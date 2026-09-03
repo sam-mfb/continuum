@@ -4,7 +4,6 @@ import type {
   DrawableRect,
   DrawableShape,
   DrawableSprite,
-  DrawablePixel,
   Frame,
   SpriteRegistry
 } from './types'
@@ -46,9 +45,6 @@ export function drawFrameToCanvas(
           spriteCanvasCache,
           debug ?? false
         )
-        break
-      case 'pixel':
-        drawPixel(drawable, canvas, scale, debug ?? false)
         break
       case 'bitmap':
         drawBitmap(drawable, canvas, scale, bitmapScratchCache, debug ?? false)
@@ -227,23 +223,6 @@ function drawSprite(
     canvas.fillRect(0, 0, imageData.width * scale, imageData.height * scale)
     canvas.globalCompositeOperation = 'source-over'
   }
-
-  canvas.restore()
-}
-
-function drawPixel(
-  pixel: DrawablePixel,
-  canvas: CanvasRenderingContext2D,
-  scale: number,
-  debug: boolean
-): void {
-  canvas.save()
-
-  canvas.globalAlpha = debug ? 0.7 * pixel.alpha : pixel.alpha
-  canvas.fillStyle = debug ? 'lime' : pixel.color
-
-  // Draw a single pixel as a scaled rectangle
-  canvas.fillRect(pixel.point.x * scale, pixel.point.y * scale, scale, scale)
 
   canvas.restore()
 }
