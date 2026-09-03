@@ -48,8 +48,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ scale, onStartGame }) => {
         services: GameServices
       ): void => {
         const spriteService = services?.spriteService as
-          | SpriteService
-          | undefined
+          SpriteService | undefined
         if (spriteService) {
           const titlePageBitmap = spriteService.getTitlePage()
           if (titlePageBitmap) {

@@ -89,11 +89,10 @@ export const createAudioOutput = (): AudioOutput => {
 
   // Event callbacks
   let soundEndedCallback:
-    | ((channelId: number, soundType: number) => void)
-    | null = null
+    ((channelId: number, soundType: number) => void) | null = null
   let underrunCallback:
-    | ((channelId: number, available: number, needed: number) => void)
-    | null = null
+    ((channelId: number, available: number, needed: number) => void) | null =
+    null
 
   // Constants
   const SAMPLE_RATE = 22200 // Original Mac sample rate

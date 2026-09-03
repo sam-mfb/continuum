@@ -2,10 +2,7 @@ import React from 'react'
 import type { FrameInfo, KeyInfo } from '@lib/bitmap'
 
 export type StatsPosition =
-  | 'top-left'
-  | 'top-right'
-  | 'bottom-left'
-  | 'bottom-right'
+  'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
 
 export type StatsConfig = {
   showFps?: boolean
