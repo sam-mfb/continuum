@@ -15,11 +15,13 @@ import {
   drawFrameToCanvas,
   createSpriteCanvasCache,
   createPatternTileCache,
+  createBitmapScratchCache,
   type Frame,
   type SpriteRegistry,
   type SpriteCanvasCache,
-  type PatternTileCache
-} from '@/lib/frame'
+  type PatternTileCache,
+  type BitmapScratchCache
+} from '@lib/frame'
 import ReplayControls from './ReplayControls'
 import { getDebug } from '../debug'
 import { useStore } from 'react-redux'
@@ -61,6 +63,7 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
   // the component - see the React docs on avoiding recreating ref contents
   const spriteCanvasCacheRef = useRef<SpriteCanvasCache | null>(null)
   const patternTileCacheRef = useRef<PatternTileCache | null>(null)
+  const bitmapScratchCacheRef = useRef<BitmapScratchCache | null>(null)
   const animationRef = useRef<number>(0)
   const lastFrameTimeRef = useRef<number>(0)
   const frameIntervalMs = 1000 / fps
@@ -208,6 +211,9 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
             if (patternTileCacheRef.current === null) {
               patternTileCacheRef.current = createPatternTileCache()
             }
+            if (bitmapScratchCacheRef.current === null) {
+              bitmapScratchCacheRef.current = createBitmapScratchCache()
+            }
             drawFrameToCanvas(
               renderedFrame,
               ctx,
@@ -215,6 +221,7 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
               spriteRegistry,
               spriteCanvasCacheRef.current,
               patternTileCacheRef.current,
+              bitmapScratchCacheRef.current,
               false
             )
 

@@ -9,6 +9,10 @@ export {
   type PatternTileCache
 } from './patternTileCache'
 export {
+  createBitmapScratchCache,
+  type BitmapScratchCache
+} from './bitmapScratchCache'
+export {
   createSpriteRegistryCanvas,
   addMultipleSprites
 } from './spriteRegistryCanvas'
