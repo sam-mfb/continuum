@@ -1,4 +1,4 @@
-import { createSyncThunk } from '@game/utils/createSyncThunk'
+import { createSyncThunk } from '@core/game/createSyncThunk'
 import { bunkShoot as bunkShootFn } from './bunkShoot'
 import type { Bunker } from '@core/planet'
 import type { LineRec } from '@core/shared'
