@@ -13,8 +13,15 @@ import {
   type StatsConfig,
   type CustomStats
 } from './StatsOverlay'
-import type { Frame, SpriteRegistry } from '@/lib/frame'
-import { drawFrameToCanvas } from '@/lib/frame'
+import {
+  drawFrameToCanvas,
+  createSpriteCanvasCache,
+  createPatternTileCache,
+  type Frame,
+  type SpriteRegistry,
+  type SpriteCanvasCache,
+  type PatternTileCache
+} from '@/lib/frame'
 
 /**
  * GameView Component
@@ -125,6 +132,10 @@ const GameView: React.FC<GameViewProps> = ({
   onCleanup
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  // Built on first use, not on every render, and then kept for the life of
+  // the component - see the React docs on avoiding recreating ref contents
+  const spriteCanvasCacheRef = useRef<SpriteCanvasCache | null>(null)
+  const patternTileCacheRef = useRef<PatternTileCache | null>(null)
   const animationFrameRef = useRef<number>(0)
   const [currentFps, setCurrentFps] = useState(0)
   const [currentFrameInfo, setCurrentFrameInfo] = useState<FrameInfo>({
@@ -354,11 +365,19 @@ const GameView: React.FC<GameViewProps> = ({
               // If frameRenderer is provided, render the frame on top
               if (game.frameRenderer) {
                 const renderedFrame = game.frameRenderer(frameInfo, keyInfo)
+                if (spriteCanvasCacheRef.current === null) {
+                  spriteCanvasCacheRef.current = createSpriteCanvasCache()
+                }
+                if (patternTileCacheRef.current === null) {
+                  patternTileCacheRef.current = createPatternTileCache()
+                }
                 drawFrameToCanvas(
                   renderedFrame,
                   ctx,
                   1,
                   spriteRegistry,
+                  spriteCanvasCacheRef.current,
+                  patternTileCacheRef.current,
                   game.debug
                 )
               }
