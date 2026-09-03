@@ -15,7 +15,7 @@
 
 /// <reference path="./worklet.d.ts" />
 
-import type { SampleGenerator, RingBuffer } from '@/core/sound-shared'
+import type { SampleGenerator, RingBuffer } from '@core/sound-shared'
 import {
   SoundType,
   createRingBuffer,
@@ -31,7 +31,7 @@ import {
   createCrackGenerator,
   createFizzGenerator,
   createEchoGenerator
-} from '@/core/sound-shared'
+} from '@core/sound-shared'
 import type {
   WorkletMessage,
   WorkletEvent,

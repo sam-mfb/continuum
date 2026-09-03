@@ -13,7 +13,7 @@ import { clearAllShots } from '@core/shots'
 import { resetSparksAlive, clearShards } from '@core/explosions'
 import { SCRWTH, TOPMARG, BOTMARG } from '@core/screen'
 import { clearLevelComplete, resetKillShipNextFrame } from './gameSlice'
-import { setMessage } from '@/core/status'
+import { setMessage } from '@core/status'
 import { FUELFRAMES } from '@core/figs'
 
 const FUELFCYCLES = 3 // From GW.h - cycles each frame stays

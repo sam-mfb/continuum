@@ -25,12 +25,13 @@
     /* Path mapping */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
       "@core/*": ["src/core/*"],
+      "@game/*": ["src/game/*"],
       "@lib/*": ["src/lib/*"],
       "@dev/*": ["src/dev/*"],
+      "@render-modern/*": ["src/render-modern/*"],
       "@render/*": ["src/render/*"],
-      "@render-modern/*": ["src/render-modern/*"]
+      "@/*": ["src/*"]
     }
   },
   "include": ["src/**/*"]

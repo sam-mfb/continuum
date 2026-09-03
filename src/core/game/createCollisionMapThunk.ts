@@ -3,10 +3,10 @@ import {
   bitmapToCollisionItem,
   Collision,
   type CollisionItem
-} from '@/core/collision'
-import { xbcenter, ybcenter, type Bunker } from '@/core/planet'
-import { LINE_KIND, type LineRec } from '@/core/shared'
-import { SCRWTH } from '@/core/screen'
+} from '@core/collision'
+import { xbcenter, ybcenter, type Bunker } from '@core/planet'
+import { LINE_KIND, type LineRec } from '@core/shared'
+import { SCRWTH } from '@core/screen'
 
 export const createCollisionMap = createSyncThunk<void>(
   'game/createCollisionMap',

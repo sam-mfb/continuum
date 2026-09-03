@@ -17,12 +17,12 @@ import {
   disableTouchControls
 } from './appSlice'
 import { isTouchDevice } from './mobile/deviceDetection'
-import { setHighScore } from '@/core/highscore'
-import { shipSlice, TOTAL_INITIAL_LIVES } from '@/core/ship'
-import { statusSlice } from '@/core/status'
+import { setHighScore } from '@core/highscore'
+import { shipSlice, TOTAL_INITIAL_LIVES } from '@core/ship'
+import { statusSlice } from '@core/status'
 import { markCheatUsed } from '@core/game'
-import { clearExplosions } from '@/core/explosions'
-import { type SpriteService } from '@/core/sprites'
+import { clearExplosions } from '@core/explosions'
+import { type SpriteService } from '@core/sprites'
 import { useAppDispatch, useAppSelector, getStoreServices } from './store'
 import { GAME_ENGINE_VERSION } from './version'
 import type {
@@ -30,10 +30,10 @@ import type {
   GameSoundService,
   NewGameRenderLoop
 } from './types'
-import type { CollisionService } from '@/core/collision'
+import type { CollisionService } from '@core/collision'
 import { useResponsiveScale } from './hooks/useResponsiveScale'
 import { BASE_GAME_WIDTH, BASE_TOTAL_HEIGHT } from './constants/dimensions'
-import type { SpriteRegistry } from '@/lib/frame/types'
+import type { SpriteRegistry } from '@lib/frame/types'
 import { getDebug } from './debug'
 
 type AppProps = {

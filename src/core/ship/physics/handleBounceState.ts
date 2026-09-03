@@ -9,7 +9,7 @@
 import type { Store } from '@reduxjs/toolkit'
 import type { ShipState } from '@core/ship'
 import { shipSlice } from '@core/ship'
-import { Collision, type CollisionType } from '@/core/collision'
+import { Collision, type CollisionType } from '@core/collision'
 import {
   findClosestBounceWall,
   type WallData as HandleBounceData

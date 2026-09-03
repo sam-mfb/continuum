@@ -1,5 +1,5 @@
-import { SBARHT } from '@/core/screen'
-import { cloneFrame, type Frame } from '@/lib/frame'
+import { SBARHT } from '@core/screen'
+import { cloneFrame, type Frame } from '@lib/frame'
 import { Z } from './z'
 
 const SHADOW_OFFSET_X = 8

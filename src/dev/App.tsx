@@ -55,7 +55,7 @@ import {
 import { createStarBackgroundBitmapRenderer } from './demos/starBackgroundBitmap'
 import { createStatusBarDemo } from './demos/statusBarDemo'
 import { createShieldDemoRenderer } from './demos/shieldDemo'
-import type { SpriteRegistry } from '@/lib/frame/types'
+import type { SpriteRegistry } from '@lib/frame/types'
 import './index.css'
 
 type AppProps = {

@@ -85,7 +85,7 @@ import type { ShardSprite, ShardSpriteSet } from '@core/figs'
 import { SKILLBRADIUS } from '@core/ship'
 import { xyindist } from '@core/shots'
 import { legalAngle } from '@core/planet'
-import { ASSET_PATHS } from '@/dev/constants'
+import { ASSET_PATHS } from '@dev/constants'
 
 // Configure store with all slices and containment middleware
 const store = buildGameStore({})

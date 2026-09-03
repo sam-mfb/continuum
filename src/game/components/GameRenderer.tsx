@@ -15,9 +15,9 @@ import {
   type ControlMatrix
 } from '@core/controls'
 import { Map } from './Map'
-import { type CollisionService } from '@/core/collision'
+import { type CollisionService } from '@core/collision'
 import { getDebug } from '../debug'
-import type { SpriteService } from '@/core/sprites'
+import type { SpriteService } from '@core/sprites'
 import { useStore } from 'react-redux'
 import { TouchControlsOverlay } from '../mobile/TouchControlsOverlay'
 import {

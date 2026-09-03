@@ -21,8 +21,8 @@ import { LINE_KIND, NEW_TYPE } from '@core/walls'
 import { createWall } from '@core/walls'
 import { viewClear } from '@render/screen'
 import { createCollisionService, Collision } from '@core/collision'
-import type { Frame } from '@/lib/frame'
-import { SCRWTH, VIEWHT } from '@/core/screen'
+import type { Frame } from '@lib/frame'
+import { SCRWTH, VIEWHT } from '@core/screen'
 
 // Create store instance
 const store = buildGameStore()

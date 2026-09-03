@@ -35,7 +35,22 @@ export default [
         'error',
         { prefer: 'type-imports' }
       ],
-      '@typescript-eslint/consistent-type-definitions': ['error', 'type']
+      '@typescript-eslint/consistent-type-definitions': ['error', 'type'],
+      // Every directory under src/ has its own alias (@core, @game, @lib,
+      // @dev, @render, @render-modern); reach for that rather than the
+      // catch-all @/ so the same module is always spelled the same way.
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/*'],
+              message:
+                'Use the section alias (@core, @game, @lib, @dev, @render, @render-modern) rather than @/.'
+            }
+          ]
+        }
+      ]
     }
   }
 ]

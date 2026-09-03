@@ -12,11 +12,14 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, './src'),
+      // Kept in step with vite.config.ts, longest prefix first
       '@core': resolve(__dirname, './src/core'),
+      '@game': resolve(__dirname, './src/game'),
       '@lib': resolve(__dirname, './src/lib'),
       '@dev': resolve(__dirname, './src/dev'),
-      '@render': resolve(__dirname, './src/render')
+      '@render-modern': resolve(__dirname, './src/render-modern'),
+      '@render': resolve(__dirname, './src/render'),
+      '@': resolve(__dirname, './src')
     }
   }
 })

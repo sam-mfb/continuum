@@ -5,9 +5,9 @@
  */
 
 import React, { useState, useEffect } from 'react'
-import { createSoundService, type SoundService } from '@/core/sound'
-import { createModernSoundService } from '@/core/sound-modern'
-import { SOUND_PRIORITIES, SoundType } from '@/core/sound-shared'
+import { createSoundService, type SoundService } from '@core/sound'
+import { createModernSoundService } from '@core/sound-modern'
+import { SOUND_PRIORITIES, SoundType } from '@core/sound-shared'
 
 // Map SoundType enum values to display names
 const SOUND_NAMES: Record<SoundType, string> = {

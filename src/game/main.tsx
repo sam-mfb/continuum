@@ -13,11 +13,11 @@ import {
   createFizzTransitionService,
   createFizzTransitionServiceFrame
 } from '@core/transition'
-import { createSoundService } from '@/core/sound'
-import { createModernSoundService } from '@/core/sound-modern'
+import { createSoundService } from '@core/sound'
+import { createModernSoundService } from '@core/sound-modern'
 import { createGameRenderer, createGameRendererNew } from './gameLoop'
 import { loadAppSettings } from './appMiddleware'
-import { setAlignmentMode, createRandomService } from '@/core/shared'
+import { setAlignmentMode, createRandomService } from '@core/shared'
 import { createGameStore } from './store'
 import {
   setCurrentGalaxy,
@@ -31,11 +31,11 @@ import {
   DEFAULT_SOUND_VOLUME,
   DEFAULT_SOUND_MUTED
 } from './constants'
-import { TOTAL_INITIAL_LIVES } from '@/core/ship'
+import { TOTAL_INITIAL_LIVES } from '@core/ship'
 import { getDefaultGalaxy } from './galaxyConfig'
-import { createCollisionService } from '@/core/collision'
-import { SCRWTH, VIEWHT } from '@/core/screen'
-import { initializeSpriteRegistry } from '@/lib/frame/initializeSpriteRegistry'
+import { createCollisionService } from '@core/collision'
+import { SCRWTH, VIEWHT } from '@core/screen'
+import { initializeSpriteRegistry } from '@lib/frame/initializeSpriteRegistry'
 import { createRecordingService } from '@core/recording'
 import { enableDebugOption } from './debug'
 

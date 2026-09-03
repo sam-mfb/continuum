@@ -7,7 +7,7 @@
 
 import type { GalaxyService } from '@core/galaxy'
 import type { FrameInfo } from '@lib/bitmap'
-import type { RandomService } from '@/core/shared'
+import type { RandomService } from '@core/shared'
 import type { GameLogicServices, GameRootState } from './types'
 import { configureStore, type Reducer } from '@reduxjs/toolkit'
 
@@ -113,11 +113,11 @@ import {
 import { triggerShipDeath } from './shipDeath'
 
 import { BunkerKind } from '@core/figs'
-import type { ControlMatrix } from '@/core/controls'
+import type { ControlMatrix } from '@core/controls'
 import { createCollisionMap } from './createCollisionMapThunk'
 import { checkCollisions } from './checkCollisionsThunk'
-import { Collision } from '@/core/collision'
-import { createSyncThunkMiddleware } from '@/lib/redux'
+import { Collision } from '@core/collision'
+import { createSyncThunkMiddleware } from '@lib/redux'
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const storeForTyping = (

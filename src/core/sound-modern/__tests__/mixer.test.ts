@@ -8,7 +8,7 @@ import {
   SoundType,
   SOUND_PRIORITIES,
   createFireGenerator
-} from '@/core/sound-shared'
+} from '@core/sound-shared'
 
 describe('createMixer', () => {
   let mixer: ReturnType<typeof createMixer>

@@ -6,8 +6,8 @@
  * backward compatibility.
  */
 
-import type { SoundType } from '@/core/sound-shared'
-import type { SampleGenerator } from '@/core/sound-shared'
+import type { SoundType } from '@core/sound-shared'
+import type { SampleGenerator } from '@core/sound-shared'
 
 /**
  * Number of simultaneous audio channels supported by the mixer

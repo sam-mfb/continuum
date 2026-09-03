@@ -1,4 +1,4 @@
-import type { MonochromeBitmap } from '@/lib/bitmap'
+import type { MonochromeBitmap } from '@lib/bitmap'
 import type { CollisionItem, CollisionType } from './types'
 
 /**

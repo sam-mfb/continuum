@@ -29,7 +29,7 @@
  * 4. Use getBufferState() to monitor buffer health
  */
 
-import type { SampleGenerator } from '@/core/sound-shared'
+import type { SampleGenerator } from '@core/sound-shared'
 
 export type BufferManager = {
   /**

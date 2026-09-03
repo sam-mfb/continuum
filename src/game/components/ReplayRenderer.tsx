@@ -9,8 +9,8 @@ import {
 import { type ControlMatrix } from '@core/controls'
 import { stopReplay, setReplayFrame } from '../replaySlice'
 import { setMode } from '../appSlice'
-import type { SpriteService } from '@/core/sprites'
-import type { CollisionService } from '@/core/collision'
+import type { SpriteService } from '@core/sprites'
+import type { CollisionService } from '@core/collision'
 import {
   drawFrameToCanvas,
   createSpriteCanvasCache,
@@ -26,7 +26,7 @@ import ReplayControls from './ReplayControls'
 import { getDebug } from '../debug'
 import { useStore } from 'react-redux'
 import { applyCollisionMapOverlay } from '../utils/collisionMapOverlay'
-import { shipSlice } from '@/core/ship'
+import { shipSlice } from '@core/ship'
 import { FRAME_INTERVAL_SLACK_MS } from '../constants'
 
 type ReplayRendererProps = {
