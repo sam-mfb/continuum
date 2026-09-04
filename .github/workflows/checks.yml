@@ -1,0 +1,53 @@
+name: Checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Typecheck scripts
+        run: npm run typecheck:scripts
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Test
+        run: npm run test
+
+      - name: Build (game)
+        run: npm run build:game
+
+      - name: Build (dev)
+        run: npm run build:dev
+
+      # Nothing else exercises the recording scripts, so a dependency bump can
+      # break them without any check going red - which is exactly what happened
+      # when tsx 4.23 stopped resolving './gzip.node'. Replaying a committed
+      # recording runs both scripts end to end through the real game logic.
+      - name: Smoke-test the recording scripts
+        run: |
+          npm run validate-recording src/core/recording/__fixtures__/sample_recording.bin
+          npm run analyze-recording -- src/core/recording/__fixtures__/sample_recording.bin
