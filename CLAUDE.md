@@ -8,14 +8,12 @@ This is a recreation of the 68000 Mac game "Continuum" for the web, maintaining 
 
 ## Coding Practices - HIGHLY IMPORTANT
 
-- Typecheck, lint, and format after you finish editing a file
+- Typecheck, lint, and format after you finish editing a file. `scripts/` has its own tsconfig, so `npm run typecheck:scripts` too
 - Don't forget to format!!
-- If you touched anything under `scripts/`, or anything they import, also run `npm run typecheck:scripts` - it has its own tsconfig and `npm run typecheck` does not cover it
 - Commit changes to version control when you finish a task
 - Only run a background server or other background task if EXPLICITLY asked to by the user
-- Run `npm ci` before formatting if node_modules might be stale. Prettier's output changes between versions, and formatting with the wrong one rewrites files your change never touched
-- Only reformat files your change actually touches. If `git status` shows unrelated files modified after a format, revert them
-- Measure before diagnosing a performance problem. Profile, count the allocations, time the frame - don't reason from what looks expensive
+- Measure before you diagnose. Profile it, count it, time it - don't reason from what looks expensive
+- Leave everything you weren't asked to change alone, formatting included
 
 ## Architecture
 
@@ -33,6 +31,18 @@ The port makes several adaptations to modern javascript/coding practices:
 1. We try to keep a cleaner separation between game state and rendering than the original game (though the original game does a pretty good job)
 2. All game state updates (including physics) are maintained in redux slices
 3. Rendering is handled by using the MonochromeBitmap type to represent a black and white screen or image and then copying that to a canvas for every frame
+
+## Design Principles
+
+How code here is judged. These generalize - reason from them, don't wait for a rule that names your case.
+
+- **Prefer pure functions.** Given the same inputs, return the same outputs and touch nothing else. Impurity is a decision, not a default: when a function must mutate its argument or keep state, the doc comment says why and where the boundary it protects actually sits.
+- **Inject dependencies; never reach for a global.** Anything that outlives a single call - a cache, a scratch buffer, a service, randomness, the clock - belongs to the caller and arrives as a parameter. A module holding its own mutable state cannot be tested in isolation, reused by a second consumer, or run twice at once.
+- **Give each module one purpose.** A type belongs with the operations over it; nothing else moves in for convenience. If you can't name a module's job in a phrase, it's doing two things.
+- **Keep the layers separate and the dependencies one-directional.** `src/lib` is generic and knows nothing of this game; `src/core` is the game itself; `src/game` and `src/dev` are shells over it. Dependencies point inward only. Code two sections need moves into `lib` - it never gets imported sideways.
+- **Keep coupling loose.** Depend on the narrowest thing that does the job. Keep a generic mechanism and its application-specific binding as separate pieces: the mechanism generic in `lib`, the binding beside what it serves.
+- **Write clear code, not clever code.** An explicit check beats a terse operator that does the same thing. Optimize for the reader.
+- **Leave nothing dead.** Whatever a change orphans - functions, types, exports, files - goes in that same change.
 
 ## Development Rules
 
@@ -57,40 +67,7 @@ The port makes several adaptations to modern javascript/coding practices:
 ## Typescript
 
 - Don't use classes. Use factory function builder patterns.
-- No module-level mutable state in library and render modules - no module-scoped `let`, cache, or scratch buffer. State that has to outlive a call is created by the caller and passed in, so the function itself holds nothing
-- Give each such cache its own module, exporting its boxed type, its `create*` factory, and its accessors together. See `src/lib/frame/spriteCanvasCache.ts`:
-
-  ```ts
-  export type SpriteCanvasCache = { cache: WeakMap<...> }
-  export function createSpriteCanvasCache(): SpriteCanvasCache
-  export function getSpriteCanvas(cache: SpriteCanvasCache, ...): HTMLCanvasElement
-  ```
-
-  The consumer takes the cache as a parameter and never reaches for a global. Don't move the accessors into the consuming module - they belong with the type they operate on
-
-- Put the generic builder in `src/lib` and the pre-bound instance in the section that uses it: `buildCreateSyncThunk` lives in `src/lib/redux`, and `src/core/game/createSyncThunk.ts` is that builder bound to the core store's state and services. Import the bound one, never re-bind at a call site
-- Write it plainly. No `??=` or similar shortcuts in place of an explicit check
-- Delete code that no longer has callers, as part of the change that orphaned it - dead types and exports included
-- A function that mutates its argument in place needs a doc comment saying why and where the immutability boundary actually sits (see `revealPixel` in `src/core/transition/FizzTransitionServiceFrame.ts`). Without that, an in-place write reads as an oversight
-
-## React
-
-- Build a ref's contents lazily; never call a factory in the `useRef` argument, which runs it on every render and throws the result away:
-
-  ```ts
-  const cacheRef = useRef<SpriteCanvasCache | null>(null)
-  if (cacheRef.current === null) {
-    cacheRef.current = createSpriteCanvasCache()
-  }
-  ```
-
-## Imports
-
-- Use the bare section aliases for cross-section imports: `@core/`, `@game/`, `@lib/`, `@dev/`, `@render/`, `@render-modern/`. Reserve relative paths for siblings within the same directory
-- Never use `@/` - a lint rule rejects it
-- One import statement per module, not several from the same path
-- `src/game` and `src/dev` may import from `src/core` and `src/lib`. The reverse is a layering inversion: shared code belongs in `src/lib`. (A few `src/core` tests import the `@dev/file` test helper; production code has no such import)
-- Adding an alias means adding it to all four configs - `tsconfig.json`, `scripts/tsconfig.json`, `vite.config.ts`, `vitest.config.ts` - and listing longer prefixes first, since these are matched as string prefixes and `@render` would otherwise shadow `@render-modern`
+- Cross-section imports use the bare section aliases - `@core/`, `@game/`, `@lib/`, `@dev/`, `@render/`, `@render-modern/`. `@/` is rejected by lint. Relative paths are for siblings. A new alias has to be declared in every config that resolves them (`tsconfig.json`, `scripts/tsconfig.json`, `vite.config.ts`, `vitest.config.ts`), longest prefix first
 
 ## Test Writing
 
@@ -101,6 +78,5 @@ The port makes several adaptations to modern javascript/coding practices:
 ## Commits
 
 - Each commit should relate to a logical piece of work, e.g., don't commit work on two features in one commit
-- If you notice a commit mixing two logical changes, split it before pushing (`git reset --soft` and re-stage)
 - Keep commit messages to a single, concise line.
 - No attribution in commits
