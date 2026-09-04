@@ -1,10 +1,10 @@
-import { bitmapToCollisionItem } from '@/core/collision'
-import type { CollisionMap } from '@/core/collision/types'
-import { Collision } from '@/core/collision/constants'
-import { SBARHT } from '@/core/screen'
-import { SCENTER } from '@/core/figs'
-import type { SpriteService } from '@/core/sprites'
-import type { ShipState } from '@/core/ship/types'
+import { bitmapToCollisionItem } from '@core/collision'
+import type { CollisionMap } from '@core/collision/types'
+import { Collision } from '@core/collision/constants'
+import { SBARHT } from '@core/screen'
+import { SCENTER } from '@core/figs'
+import type { SpriteService } from '@core/sprites'
+import type { ShipState } from '@core/ship/types'
 
 /**
  * Applies collision map visualization overlay to ImageData pixels

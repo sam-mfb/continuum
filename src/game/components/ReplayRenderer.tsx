@@ -9,15 +9,24 @@ import {
 import { type ControlMatrix } from '@core/controls'
 import { stopReplay, setReplayFrame } from '../replaySlice'
 import { setMode } from '../appSlice'
-import type { SpriteService } from '@/core/sprites'
-import type { CollisionService } from '@/core/collision'
-import type { Frame, SpriteRegistry } from '@/lib/frame/types'
-import { drawFrameToCanvas } from '@/lib/frame/drawFrameToCanvas'
+import type { SpriteService } from '@core/sprites'
+import type { CollisionService } from '@core/collision'
+import {
+  drawFrameToCanvas,
+  createSpriteCanvasCache,
+  createPatternTileCache,
+  createBitmapScratchCache,
+  type Frame,
+  type SpriteRegistry,
+  type SpriteCanvasCache,
+  type PatternTileCache,
+  type BitmapScratchCache
+} from '@lib/frame'
 import ReplayControls from './ReplayControls'
 import { getDebug } from '../debug'
 import { useStore } from 'react-redux'
 import { applyCollisionMapOverlay } from '../utils/collisionMapOverlay'
-import { shipSlice } from '@/core/ship'
+import { shipSlice } from '@core/ship'
 import { FRAME_INTERVAL_SLACK_MS } from '../constants'
 
 type ReplayRendererProps = {
@@ -50,6 +59,11 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
   fps
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  // Built on first use, not on every render, and then kept for the life of
+  // the component - see the React docs on avoiding recreating ref contents
+  const spriteCanvasCacheRef = useRef<SpriteCanvasCache | null>(null)
+  const patternTileCacheRef = useRef<PatternTileCache | null>(null)
+  const bitmapScratchCacheRef = useRef<BitmapScratchCache | null>(null)
   const animationRef = useRef<number>(0)
   const lastFrameTimeRef = useRef<number>(0)
   const frameIntervalMs = 1000 / fps
@@ -191,7 +205,25 @@ const ReplayRenderer: React.FC<ReplayRendererProps> = ({
             const renderedFrame = rendererNew(frameInfo, controls)
 
             // Draw frame to canvas
-            drawFrameToCanvas(renderedFrame, ctx, scale, spriteRegistry, false)
+            if (spriteCanvasCacheRef.current === null) {
+              spriteCanvasCacheRef.current = createSpriteCanvasCache()
+            }
+            if (patternTileCacheRef.current === null) {
+              patternTileCacheRef.current = createPatternTileCache()
+            }
+            if (bitmapScratchCacheRef.current === null) {
+              bitmapScratchCacheRef.current = createBitmapScratchCache()
+            }
+            drawFrameToCanvas(
+              renderedFrame,
+              ctx,
+              scale,
+              spriteRegistry,
+              spriteCanvasCacheRef.current,
+              patternTileCacheRef.current,
+              bitmapScratchCacheRef.current,
+              false
+            )
 
             if (getDebug()?.SHOW_COLLISION_MAP) {
               const collisionMap = collisionService.getMap()

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import type { RootState, GameServices } from '../store'
-import type { HighScoreTable } from '@/core/highscore'
-import { getDefaultHighScoreTable } from '@/core/highscore'
+import type { HighScoreTable } from '@core/highscore'
+import { getDefaultHighScoreTable } from '@core/highscore'
 import { resetCheatUsed, markCheatUsed } from '@core/game'
 import { openSettings, setMode } from '../appSlice'
 import { loadGalaxy } from '../galaxyThunks'
@@ -48,8 +48,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ scale, onStartGame }) => {
         services: GameServices
       ): void => {
         const spriteService = services?.spriteService as
-          | SpriteService
-          | undefined
+          SpriteService | undefined
         if (spriteService) {
           const titlePageBitmap = spriteService.getTitlePage()
           if (titlePageBitmap) {

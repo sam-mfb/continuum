@@ -58,18 +58,20 @@ Some applications prepend a 512-byte header (often all zeros) before the actual 
 | 0x12   | 2    | Int16  | Subversion number         |
 
 **Version 2.1 (Fixed-point coordinates):**
-| Offset | Size | Type | Description |
-|--------|------|--------|-------------|
-| 0x14 | 16 | Fixed[4]| Picture frame as fixed-point |
-| 0x24 | 4 | UInt32 | Reserved (0) |
+
+| Offset | Size | Type     | Description                  |
+| ------ | ---- | -------- | ---------------------------- |
+| 0x14   | 16   | Fixed[4] | Picture frame as fixed-point |
+| 0x24   | 4    | UInt32   | Reserved (0)                 |
 
 **Version 2.2 (With resolution):**
-| Offset | Size | Type | Description |
-|--------|------|--------|-------------|
-| 0x14 | 4 | Fixed | Horizontal resolution (dpi) |
-| 0x18 | 4 | Fixed | Vertical resolution (dpi) |
-| 0x1C | 8 | Rect | Optimal bounds |
-| 0x24 | 4 | UInt32 | Reserved (0) |
+
+| Offset | Size | Type   | Description                 |
+| ------ | ---- | ------ | --------------------------- |
+| 0x14   | 4    | Fixed  | Horizontal resolution (dpi) |
+| 0x18   | 4    | Fixed  | Vertical resolution (dpi)   |
+| 0x1C   | 8    | Rect   | Optimal bounds              |
+| 0x24   | 4    | UInt32 | Reserved (0)                |
 
 ### 3. Picture Data (Opcodes)
 
@@ -152,39 +154,45 @@ For each shape type, the operation is determined by adding the method to the bas
 - +4: Fill (fill with fill pattern)
 
 **Rectangle Operations:**
-| Base | Name | Data Format |
-|------|------|-------------|
-| 0x30 | Rect | Rect |
+
+| Base | Name     | Data Format        |
+| ---- | -------- | ------------------ |
+| 0x30 | Rect     | Rect               |
 | 0x38 | SameRect | - (uses last rect) |
 
 **Round Rectangle Operations:**
-| Base | Name | Data Format |
-|------|------|-------------|
-| 0x40 | RRect | Rect |
+
+| Base | Name      | Data Format        |
+| ---- | --------- | ------------------ |
+| 0x40 | RRect     | Rect               |
 | 0x48 | SameRRect | - (uses last rect) |
 
 **Oval Operations:**
-| Base | Name | Data Format |
-|------|------|-------------|
-| 0x50 | Oval | Rect |
+
+| Base | Name     | Data Format        |
+| ---- | -------- | ------------------ |
+| 0x50 | Oval     | Rect               |
 | 0x58 | SameOval | - (uses last rect) |
 
 **Arc Operations:**
-| Base | Name | Data Format |
-|------|------|-------------|
-| 0x60 | Arc | Rect + angles |
-| 0x68 | SameArc | angles only |
+
+| Base | Name    | Data Format   |
+| ---- | ------- | ------------- |
+| 0x60 | Arc     | Rect + angles |
+| 0x68 | SameArc | angles only   |
 
 **Polygon Operations:**
-| Base | Name | Data Format |
-|------|------|-------------|
-| 0x70 | Poly | Polygon data |
+
+| Base | Name     | Data Format        |
+| ---- | -------- | ------------------ |
+| 0x70 | Poly     | Polygon data       |
 | 0x78 | SamePoly | - (uses last poly) |
 
 **Region Operations:**
-| Base | Name | Data Format |
-|------|------|-------------|
-| 0x80 | Region | Region data |
+
+| Base | Name       | Data Format          |
+| ---- | ---------- | -------------------- |
+| 0x80 | Region     | Region data          |
 | 0x88 | SameRegion | - (uses last region) |
 
 #### Bitmap/Pixmap Operations

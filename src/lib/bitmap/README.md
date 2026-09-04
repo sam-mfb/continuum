@@ -16,7 +16,7 @@ Emulates the original Mac's bitmap format where each pixel is represented as a s
 ## Usage Examples
 
 ```typescript
-import { createMonochromeBitmap, setPixel } from '@/lib/bitmap'
+import { createMonochromeBitmap, setPixel } from '@lib/bitmap'
 
 // Create 512x342 bitmap (Mac screen size)
 const bitmap = createMonochromeBitmap(512, 342)

@@ -1,9 +1,9 @@
-import { SBARHT, SCRWTH, VIEWHT } from '@/core/screen'
-import { FUELHT, FUELFRAMES } from '@/core/figs'
-import { FUELCENTER } from '@/core/planet'
-import { cloneFrame, type Frame } from '@/lib/frame'
+import { SBARHT, SCRWTH, VIEWHT } from '@core/screen'
+import { FUELHT, FUELFRAMES } from '@core/figs'
+import { FUELCENTER } from '@core/planet'
+import { cloneFrame, type Frame } from '@lib/frame'
 import { Z } from './z'
-import type { Fuel } from '@/core/planet'
+import type { Fuel } from '@core/planet'
 
 /**
  * From drawFuels() in orig/Sources/Terrain.c at 293-313

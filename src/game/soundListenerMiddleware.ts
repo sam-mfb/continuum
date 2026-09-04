@@ -6,13 +6,13 @@
  */
 
 import type { GameSoundService } from './types'
-import { shotsSlice, isNewShot, bunkShootThunk } from '@/core/shots'
-import { SCRWTH, VIEWHT, SOFTBORDER } from '@/core/screen'
+import { shotsSlice, isNewShot, bunkShootThunk } from '@core/shots'
+import { SCRWTH, VIEWHT, SOFTBORDER } from '@core/screen'
 import type { AppDispatch, RootState } from './store'
 import type { TypedStartListening } from '@reduxjs/toolkit'
-import { explosionsSlice } from '@/core/explosions'
-import { transitionSlice } from '@/core/transition'
-import { shipSlice } from '@/core/ship'
+import { explosionsSlice } from '@core/explosions'
+import { transitionSlice } from '@core/transition'
+import { shipSlice } from '@core/ship'
 import { appSlice } from './appSlice'
 import { gameSlice } from '@core/game'
 import { replaySlice } from './replaySlice'

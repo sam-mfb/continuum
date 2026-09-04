@@ -11,7 +11,7 @@ import type { GalaxyService } from '@core/galaxy'
 import type { SpriteService } from '@core/sprites'
 import type { FizzTransitionService } from '@core/transition'
 import type { GameSoundService } from './types'
-import type { RandomService } from '@/core/shared'
+import type { RandomService } from '@core/shared'
 
 // Import all reducers
 import { gameSlice, type GameRootState } from '@core/game'
@@ -31,19 +31,19 @@ import {
   highscoreSlice,
   highscoreMiddleware,
   loadHighScores
-} from '@/core/highscore'
+} from '@core/highscore'
 import {
   controlsSlice,
   controlsMiddleware,
   loadControlBindings
-} from '@/core/controls'
+} from '@core/controls'
 import {
   useDispatch,
   useSelector,
   type TypedUseSelectorHook
 } from 'react-redux'
 import { setupSoundListener } from './soundListenerMiddleware'
-import type { CollisionService } from '@/core/collision'
+import type { CollisionService } from '@core/collision'
 import type { RecordingService } from '@core/recording'
 
 // Define the services that will be injected

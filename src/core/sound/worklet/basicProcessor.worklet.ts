@@ -17,7 +17,7 @@
 
 /// <reference path="./worklet.d.ts" />
 
-import type { SampleGenerator, RingBuffer } from '@/core/sound-shared'
+import type { SampleGenerator, RingBuffer } from '@core/sound-shared'
 import {
   createRingBuffer,
   createSilenceGenerator,
@@ -32,7 +32,7 @@ import {
   createCrackGenerator,
   createFizzGenerator,
   createEchoGenerator
-} from '@/core/sound-shared'
+} from '@core/sound-shared'
 
 // Constants
 const CHUNK_SIZE = 370
@@ -42,8 +42,7 @@ const BUFFER_SIZE = 8192 // Must be power of 2
  * Message types from main thread to worklet
  */
 type MainToWorkletMessage =
-  | { type: 'setGenerator'; generatorType: string }
-  | { type: 'clearSound' }
+  { type: 'setGenerator'; generatorType: string } | { type: 'clearSound' }
 
 /**
  * Message types from worklet to main thread

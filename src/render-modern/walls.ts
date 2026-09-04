@@ -2,7 +2,7 @@
  * @fileoverview Corresponds to black_terrain() from orig/Sources/Terrain.c:46
  */
 
-import type { Frame } from '@/lib/frame'
+import type { Frame } from '@lib/frame'
 import {
   LINE_KIND,
   NEW_TYPE,
@@ -11,7 +11,7 @@ import {
   type NewType
 } from '@core/walls'
 import { Z } from './z'
-import { SBARHT } from '@/core/screen'
+import { SBARHT } from '@core/screen'
 
 // Screen boundary margins from original code
 const LEFT_MARGIN = 10 // Pixels to check left of screen

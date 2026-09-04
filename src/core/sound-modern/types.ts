@@ -6,8 +6,8 @@
  * backward compatibility.
  */
 
-import type { SoundType } from '@/core/sound-shared'
-import type { SampleGenerator } from '@/core/sound-shared'
+import type { SoundType } from '@core/sound-shared'
+import type { SampleGenerator } from '@core/sound-shared'
 
 /**
  * Number of simultaneous audio channels supported by the mixer
@@ -139,10 +139,7 @@ export type SetVolumeMessage = {
  * Union of all message types
  */
 export type WorkletMessage =
-  | PlayMessage
-  | StopMessage
-  | ClearMessage
-  | SetVolumeMessage
+  PlayMessage | StopMessage | ClearMessage | SetVolumeMessage
 
 /**
  * Sound ended event payload

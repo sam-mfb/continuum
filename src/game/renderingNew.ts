@@ -1,24 +1,24 @@
-import type { Frame } from '@/lib/frame/types'
+import type { Frame } from '@lib/frame/types'
 import type { RootState } from './store'
-import type { SpriteService } from '@/core/sprites'
-import type { FizzTransitionServiceFrame } from '@/core/transition'
-import { LINE_KIND } from '@/core/shared'
-import { SCRWTH, VIEWHT } from '@/core/screen'
-import { drawWalls } from '@/render-modern/walls'
-import { drawShip, drawShield } from '@/render-modern/ship'
-import { drawCraters } from '@/render-modern/craters'
-import { drawFuels } from '@/render-modern/fuel'
-import { drawBunkers } from '@/render-modern/bunkers'
-import { drawShards, drawSparks } from '@/render-modern/explosions'
+import type { SpriteService } from '@core/sprites'
+import type { FizzTransitionServiceFrame } from '@core/transition'
+import { LINE_KIND } from '@core/shared'
+import { SCRWTH, VIEWHT } from '@core/screen'
+import { drawWalls } from '@render-modern/walls'
+import { drawShip, drawShield } from '@render-modern/ship'
+import { drawCraters } from '@render-modern/craters'
+import { drawFuels } from '@render-modern/fuel'
+import { drawBunkers } from '@render-modern/bunkers'
+import { drawShards, drawSparks } from '@render-modern/explosions'
 import {
   drawStrafes,
   drawShipShots,
   drawBunkerShots
-} from '@/render-modern/shots'
-import { SCENTER } from '@/core/figs'
-import { FIZZ_DURATION } from '@/core/transition'
-import { viewClear } from '@/render-modern/viewClear'
-import { drawStatusBar } from '@/render-modern/statusBar'
+} from '@render-modern/shots'
+import { SCENTER } from '@core/figs'
+import { FIZZ_DURATION } from '@core/transition'
+import { viewClear } from '@render-modern/viewClear'
+import { drawStatusBar } from '@render-modern/statusBar'
 
 export type RenderContextNew = {
   frame: Frame

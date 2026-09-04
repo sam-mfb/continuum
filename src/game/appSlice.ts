@@ -4,7 +4,7 @@
  */
 
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
-import type { AlignmentMode } from '@/core/shared'
+import type { AlignmentMode } from '@core/shared'
 
 export type GameMode =
   | 'start'

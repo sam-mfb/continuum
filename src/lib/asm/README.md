@@ -16,7 +16,7 @@ Enables direct translation of 68K assembly code from the original game while mai
 ## Usage Examples
 
 ```typescript
-import { build68kArch } from '@/lib/asm'
+import { build68kArch } from '@lib/asm'
 
 // Create emulator instance
 const asm = build68kArch()

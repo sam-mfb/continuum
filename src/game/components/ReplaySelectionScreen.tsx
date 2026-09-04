@@ -2,10 +2,10 @@ import React, { type ChangeEvent, useState, useEffect } from 'react'
 import { useAppDispatch, useAppSelector, getStoreServices } from '../store'
 import { loadRecording, startReplay } from '../replaySlice'
 import { setMode } from '../appSlice'
-import { shipSlice, TOTAL_INITIAL_LIVES } from '@/core/ship'
-import { statusSlice } from '@/core/status'
+import { shipSlice, TOTAL_INITIAL_LIVES } from '@core/ship'
+import { statusSlice } from '@core/status'
 import { markCheatUsed } from '@core/game'
-import { clearExplosions } from '@/core/explosions'
+import { clearExplosions } from '@core/explosions'
 import { loadLevel } from '@core/game'
 import {
   createRecordingStorage,

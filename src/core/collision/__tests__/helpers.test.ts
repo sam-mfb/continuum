@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { bitmapToCollisionItem } from '../helpers'
 import { Collision } from '../constants'
-import type { MonochromeBitmap } from '@/lib/bitmap'
+import type { MonochromeBitmap } from '@lib/bitmap'
 
 /**
  * Helper to create a MonochromeBitmap with given dimensions and data

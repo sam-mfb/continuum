@@ -6,7 +6,7 @@
  */
 
 import type { GalaxyService } from '@core/galaxy'
-import type { RandomService } from '@/core/shared'
+import type { RandomService } from '@core/shared'
 import type { RecordingService } from '@core/recording'
 import type { SpriteService } from '@core/sprites'
 import type { CollisionService } from '@core/collision'

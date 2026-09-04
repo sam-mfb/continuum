@@ -1,8 +1,8 @@
-import { SBARHT, SCRWTH, VIEWHT } from '@/core/screen'
-import { CRATERCENTER } from '@/core/planet'
-import { cloneFrame, type Frame } from '@/lib/frame'
+import { SBARHT, SCRWTH, VIEWHT } from '@core/screen'
+import { CRATERCENTER } from '@core/planet'
+import { cloneFrame, type Frame } from '@lib/frame'
 import { Z } from './z'
-import type { Crater } from '@/core/planet'
+import type { Crater } from '@core/planet'
 
 /**
  * From drawCraters() in orig/Sources/Terrain.c at 507-527

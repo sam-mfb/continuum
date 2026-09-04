@@ -14,13 +14,7 @@ const UI_SETTINGS_STORAGE_KEY = 'continuum_dev_ui_settings'
 
 export type PersistedUISettings = {
   currentView:
-    | 'menu'
-    | 'game'
-    | 'settings'
-    | 'galaxy'
-    | 'graphics'
-    | 'sound'
-    | 'sprites'
+    'menu' | 'game' | 'settings' | 'galaxy' | 'graphics' | 'sound' | 'sprites'
   showDebugInfo: boolean
   showGameStats: boolean
   selectedGameIndex: number

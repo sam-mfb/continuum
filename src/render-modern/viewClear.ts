@@ -5,9 +5,9 @@
  * Creates the dithered gray background pattern before drawing game objects.
  */
 
-import type { Frame } from '@/lib/frame/types'
-import { VIEWHT, SCRWTH, SBARHT } from '@/core/screen'
-import { getAlignment } from '@/core/shared'
+import type { Frame } from '@lib/frame/types'
+import { VIEWHT, SCRWTH, SBARHT } from '@core/screen'
+import { getAlignment } from '@core/shared'
 
 const SOLID_GRAY = '#A9A9A9'
 

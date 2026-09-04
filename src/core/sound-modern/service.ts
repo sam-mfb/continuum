@@ -15,7 +15,7 @@
 
 import { createAudioOutput, type AudioOutput } from './audioOutput'
 import { createMixer } from './mixer'
-import type { SoundService } from '@/core/sound/types'
+import type { SoundService } from '@core/sound/types'
 import {
   SoundType,
   type SampleGenerator,
@@ -30,7 +30,7 @@ import {
   createCrackGenerator,
   createFizzGenerator,
   createEchoGenerator
-} from '@/core/sound-shared'
+} from '@core/sound-shared'
 
 // Vertical blanking interval for screen interrupts on original Mac
 const VERT_BLANK_PER_SEC = 60

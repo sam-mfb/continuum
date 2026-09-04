@@ -4,7 +4,7 @@ import { Provider } from 'react-redux'
 import { store } from './store/store'
 import { createSpriteService } from '@core/sprites'
 import { ASSET_PATHS } from './constants'
-import { initializeSpriteRegistry } from '@/lib/frame/initializeSpriteRegistry'
+import { initializeSpriteRegistry } from '@lib/frame/initializeSpriteRegistry'
 import App from './App'
 import './index.css'
 

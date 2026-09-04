@@ -13,14 +13,14 @@ import type {
   FizzTransitionServiceFrame
 } from '@core/transition'
 import type { GameStore } from './store'
-import type { RandomService } from '@/core/shared'
-import { TOTAL_INITIAL_LIVES } from '@/core/ship'
+import type { RandomService } from '@core/shared'
+import { TOTAL_INITIAL_LIVES } from '@core/ship'
 
 import { updateGameState, type GameRootState } from '@core/game'
 import { renderGame } from './rendering'
 import type { GameRenderLoop, NewGameRenderLoop } from './types'
 import { renderGameOriginal } from './renderingOriginal'
-import type { Frame } from '@/lib/frame/types'
+import type { Frame } from '@lib/frame/types'
 import { renderGameNew } from './renderingNew'
 import { setMode, setMostRecentScore, setLastRecordingId } from './appSlice'
 import { getStoreServices } from './store'

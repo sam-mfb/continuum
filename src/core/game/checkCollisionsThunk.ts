@@ -3,8 +3,8 @@ import {
   bitmapToCollisionItem,
   Collision,
   type CollisionType
-} from '@/core/collision'
-import { SCENTER } from '@/core/figs'
+} from '@core/collision'
+import { SCENTER } from '@core/figs'
 
 export const checkCollisions = createSyncThunk<CollisionType>(
   'game/checkCollisions',
