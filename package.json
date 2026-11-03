@@ -39,7 +39,7 @@
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.52.0",
     "@typescript-eslint/parser": "^8.52.0",
-    "@vitejs/plugin-react": "^4.5.0",
+    "@vitejs/plugin-react": "^6.2.1",
     "@vitest/ui": "^5.0.3",
     "canvas": "^3.2.0",
     "eslint": "^10.14.0",
@@ -51,8 +51,8 @@
     "sharp": "^0.35.4",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vite": "^6.4.2",
-    "vite-node": "^3.1.4",
+    "vite": "^8.3.5",
+    "vite-node": "^6.0.0",
     "vitest": "^5.0.3"
   },
   "overrides": {
