@@ -21,6 +21,9 @@ export default [
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      // Added to the recommended set in eslint-plugin-react-hooks 7. Off
+      // until the five existing setState-in-effect call sites are reworked.
+      'react-hooks/set-state-in-effect': 'off',
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true }
