@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.2",
-    "nipplejs": "^0.10.2",
+    "nipplejs": "^1.0.4",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-redux": "^9.2.0"

@@ -33,7 +33,8 @@ export const TouchJoystick: React.FC<TouchJoystickProps> = ({
     managerRef.current = manager
 
     // Handle joystick movement
-    manager.on('move', (_evt, data) => {
+    manager.on('move', evt => {
+      const data = evt.data
       const angle = data.angle.radian
       const force = Math.min(data.force, 2) / 2 // Normalize to 0-1
 
