@@ -18,15 +18,14 @@
     "noUncheckedIndexedAccess": true,
 
     /* Path mapping - same as main tsconfig */
-    "baseUrl": "..",
     "paths": {
-      "@core/*": ["src/core/*"],
-      "@game/*": ["src/game/*"],
-      "@lib/*": ["src/lib/*"],
-      "@dev/*": ["src/dev/*"],
-      "@render-modern/*": ["src/render-modern/*"],
-      "@render/*": ["src/render/*"],
-      "@/*": ["src/*"]
+      "@core/*": ["../src/core/*"],
+      "@game/*": ["../src/game/*"],
+      "@lib/*": ["../src/lib/*"],
+      "@dev/*": ["../src/dev/*"],
+      "@render-modern/*": ["../src/render-modern/*"],
+      "@render/*": ["../src/render/*"],
+      "@/*": ["../src/*"]
     }
   },
   "include": ["./**/*.ts"],
